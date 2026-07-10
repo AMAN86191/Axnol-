@@ -28,11 +28,11 @@ const INITIAL_FEED_DATA = [
     avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
     meta: '2 hours ago • Verified Sevak',
     text: "The new calf 'Nandi' is doing wonderfully! Thanks to the donor community for the specialized medical kit.",
-    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_calf_1781177033799.png')).uri,
+    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_calf_1781177033799.jpg')).uri,
     images: [
-      Image.resolveAssetSource(require('../../../assets/images/feed/cow_calf_1781177033799.png')).uri,
-      Image.resolveAssetSource(require('../../../assets/images/feed/cow_medical_1781177084941.png')).uri,
-      Image.resolveAssetSource(require('../../../assets/images/feed/cow_portrait_1781177072664.png')).uri
+      Image.resolveAssetSource(require('../../../assets/images/feed/cow_calf_1781177033799.jpg')).uri,
+      Image.resolveAssetSource(require('../../../assets/images/feed/cow_medical_1781177084941.jpg')).uri,
+      Image.resolveAssetSource(require('../../../assets/images/feed/cow_portrait_1781177072664.jpg')).uri
     ],
     likes: 124,
     comments: 18,
@@ -44,10 +44,10 @@ const INITIAL_FEED_DATA = [
     avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
     meta: '5 hours ago • Patron Member',
     text: "Visiting the main shed today. Clean environment and healthy diets for all the cows.",
-    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_feeding_1781177046811.png')).uri,
+    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_feeding_1781177046811.jpg')).uri,
     images: [
-      Image.resolveAssetSource(require('../../../assets/images/feed/cow_feeding_1781177046811.png')).uri,
-      Image.resolveAssetSource(require('../../../assets/images/feed/cow_shelter_1781177059865.png')).uri
+      Image.resolveAssetSource(require('../../../assets/images/feed/cow_feeding_1781177046811.jpg')).uri,
+      Image.resolveAssetSource(require('../../../assets/images/feed/cow_shelter_1781177059865.jpg')).uri
     ],
     likes: 98,
     comments: 12,
@@ -59,7 +59,7 @@ const INITIAL_FEED_DATA = [
     avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
     meta: '1 day ago • Volunteer Coordinator',
     text: 'Green grass distribution drive was completed successfully today.',
-    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_shelter_1781177059865.png')).uri,
+    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_shelter_1781177059865.jpg')).uri,
     likes: 230,
     comments: 45,
     isLiked: false,
@@ -70,7 +70,7 @@ const INITIAL_FEED_DATA = [
     avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
     meta: '2 days ago • Donor',
     text: 'Happy to contribute towards fodder and medical care.',
-    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_medical_1781177084941.png')).uri,
+    image: Image.resolveAssetSource(require('../../../assets/images/feed/cow_medical_1781177084941.jpg')).uri,
     likes: 87,
     comments: 9,
     isLiked: true,

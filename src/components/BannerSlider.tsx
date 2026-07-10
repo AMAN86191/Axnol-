@@ -5,18 +5,32 @@ import {
   View,
   Image,
   FlatList,
+  TouchableOpacity,
 } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../theme/colors';
 
-const SLIDES = [
+export interface SlideItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: any;
+  badge: string;
+  buttonText?: string;
+  targetScreen?: string;
+}
+
+const SLIDES: SlideItem[] = [
   {
     id: '1',
     title: 'Together, we create\na kinder tomorrow',
     subtitle: 'Support cows. Support life.',
     image: require('../../assets/images/banner_1.png'),
     badge: '',
+    buttonText: 'Donate Now',
+    targetScreen: 'DonateScreen',
   },
   {
     id: '2',
@@ -24,12 +38,19 @@ const SLIDES = [
     subtitle: 'Support feed for 450+ cows in the sanctuary.',
     image: require('../../assets/images/banner_2.png'),
     badge: '',
+    buttonText: 'Contribute',
+    targetScreen: 'DonateScreen',
   }
 ];
 
-export const BannerSlider = () => {
+interface BannerSliderProps {
+  onPressBanner?: (item: SlideItem) => void;
+}
+
+export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => {
   const flatListRef = useRef<FlatList>(null);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -56,7 +77,15 @@ export const BannerSlider = () => {
     }
   };
 
-  const renderSlideItem = ({ item }: { item: typeof SLIDES[0] }) => (
+  const handlePress = (item: SlideItem) => {
+    if (onPressBanner) {
+      onPressBanner(item);
+    } else if (item.targetScreen) {
+      navigation.navigate(item.targetScreen);
+    }
+  };
+
+  const renderSlideItem = ({ item }: { item: SlideItem }) => (
     <View style={styles.slideContainer}>
       <Image
         source={item.image}
@@ -69,15 +98,28 @@ export const BannerSlider = () => {
             <Text style={styles.eventBadgeText}>{item.badge}</Text>
           </View>
         ) : null}
-        {item.id === '1' ? (
-          <View style={styles.bannerTextContainer}>
-            <Text style={styles.eventTitleNormal}>Together, we create</Text>
-            <Text style={styles.eventTitleItalic}>a kinder tomorrow</Text>
+        <View style={styles.contentRow}>
+          <View style={styles.textContainer}>
+            {item.id === '1' ? (
+              <View style={styles.bannerTextContainer}>
+                <Text style={styles.eventTitleNormal}>Together, we create</Text>
+                <Text style={styles.eventTitleItalic}>a kinder tomorrow</Text>
+              </View>
+            ) : (
+              <Text style={styles.eventTitle}>{item.title}</Text>
+            )}
+            <Text style={styles.eventSubtitle}>{item.subtitle}</Text>
           </View>
-        ) : (
-          <Text style={styles.eventTitle}>{item.title}</Text>
-        )}
-        <Text style={styles.eventSubtitle}>{item.subtitle}</Text>
+          {item.buttonText ? (
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.85}
+              onPress={() => handlePress(item)}
+            >
+              <Text style={styles.actionButtonText}>{item.buttonText}</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -119,7 +161,7 @@ export const BannerSlider = () => {
 const styles = StyleSheet.create({
   bannerCard: {
     width: wp('96%'),
-    height: hp('40%'),
+    height: hp('20%'),
     borderRadius: wp('3%'),
     overflow: 'hidden',
     marginBottom: hp('2%'),
@@ -128,7 +170,7 @@ const styles = StyleSheet.create({
   },
   slideContainer: {
     width: wp('96%'),
-    height: hp('40%'),
+    height: hp('20%'),
     position: 'relative',
   },
   bannerImage: {
@@ -161,13 +203,13 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     color: Colors.white,
-    fontSize: RFValue(16),
+    fontSize: RFValue(12),
     fontWeight: '700',
     marginBottom: hp('0.4%'),
   },
   eventSubtitle: {
     color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: RFValue(10.5),
+    fontSize: RFValue(9.5),
     fontWeight: '500',
   },
   pagination: {
@@ -183,7 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.4)',
     marginHorizontal: 3,
   },
-  dotActive: {
+  dotActive: { 
     backgroundColor: Colors.white,
     width: 14,
   },
@@ -200,5 +242,36 @@ const styles = StyleSheet.create({
     fontSize: RFValue(19),
     fontWeight: '700',
     fontStyle: 'italic',
+  },
+  contentRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    width: '100%',
+  },
+  textContainer: {
+    flex: 1,
+    marginRight: wp('3%'),
+  },
+  actionButton: {
+    backgroundColor: 'rgba(255, 111, 52, 0.12)',
+    // backgroundColor: Colors.primary,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    paddingVertical: hp('0.8%'),
+    paddingHorizontal: wp('4%'),
+    borderRadius: wp('4%'),
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.primary, // Orange shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  actionButtonText: {
+    color: Colors.white,
+    fontSize: RFValue(10.5),
+    fontWeight: '700',
   },
 });

@@ -275,7 +275,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           <Text style={styles.sectionTitle}>ABOUT & GALLERY</Text>
         </View>
 
-        {renderDrawerItem('Trust Gallery', ImageIcon, 'GalleryScreen')}
+        {renderDrawerItem('Gallery', ImageIcon, 'GalleryScreen')}
         {renderDrawerItem('Contact Us', Phone, 'HelpSupportScreen')}
         {renderDrawerItem('About Trust', Info, 'AboutTrustScreen')}
 

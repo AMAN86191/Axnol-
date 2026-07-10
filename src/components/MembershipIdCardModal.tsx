@@ -81,8 +81,8 @@ export const MembershipIdCardModal = React.memo(({
               </View>
             </View>
 
-            {/* Barcode/QR Code Footer */}
-            <View style={styles.idCardFooter}>
+            
+            {/* <View style={styles.idCardFooter}>
               <View style={styles.barcodeWrapper}>
                 <Svg width={wp('42%')} height={hp('2.8%')} viewBox="0 0 100 20">
                   <Rect x="0" y="0" width="2" height="20" fill="#111827" />
@@ -121,7 +121,7 @@ export const MembershipIdCardModal = React.memo(({
               <View style={styles.idCardStamp}>
                 <Text style={{ fontSize: RFValue(14) }}>🐄</Text>
               </View>
-            </View>
+            </View> */}
           </View>
 
           {/* Action Buttons */}
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   idCardBody: {
     flexDirection: 'row',
-    marginBottom: hp('1.8%'),
+    // marginBottom: hp('1%'),
   },
   idCardPhotoContainer: {
     alignItems: 'center',
@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 111, 52, 0.05)',
   },
   idCardModalActions: {
-    marginTop: hp('2.5%'),
-    width: wp('80%'),
+    marginTop: hp('1%'),
+    width: wp('90%'),
   },
   idCardCloseBtn: {
     backgroundColor: '#FF6F34',

@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { Pencil, Award, Check, Mail, Phone, BadgeCheck } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { Colors } from '../theme/colors';
 
 interface ProfileHeaderProps {
   profileName: string;
@@ -44,7 +45,7 @@ export const ProfileHeader = React.memo(({
       <View style={styles.profileDetailsCard}>
         <View style={styles.profileTopRow}>
           {/* Double ring circular avatar */}
-          <View style={styles.avatarContainer}>
+          <View style={styles.avatarContainer}> 
             <View style={styles.avatarOuterRing}>
               <Image
                 source={{ uri: avatarUri }}
@@ -52,7 +53,7 @@ export const ProfileHeader = React.memo(({
               />
             </View>
             <TouchableOpacity style={styles.cameraBtn} onPress={onCameraPress} activeOpacity={0.85}>
-              <Pencil size={RFValue(8.5)} color="#FFF" strokeWidth={2.2} />
+              <Pencil size={RFValue(8.5)} color={Colors.white} strokeWidth={2.2} />
             </TouchableOpacity>
           </View>
 

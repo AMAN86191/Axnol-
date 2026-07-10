@@ -15,6 +15,7 @@ import EditPostScreen from '../screens/main/EditPostScreen';
 import PostDetailsScreen from '../screens/main/PostDetailsScreen';
 import ReferralScreen from '../screens/main/ReferralScreen';
 import GalleryScreen from '../screens/main/GalleryScreen';
+import EventGalleryScreen from '../screens/main/EventGalleryScreen';
 import PrivacyPolicyScreen from '../screens/main/PrivacyPolicyScreen';
 import TermsScreen from '../screens/main/TermsScreen';
 import PublicProfileScreen from '../screens/main/PublicProfileScreen';
@@ -98,6 +99,10 @@ const Allroute = () => {
         <Stack.Screen
           name="GalleryScreen"
           component={GalleryScreen}
+        />
+        <Stack.Screen
+          name="EventGalleryScreen"
+          component={EventGalleryScreen}
         />
         <Stack.Screen
           name="PrivacyPolicyScreen"

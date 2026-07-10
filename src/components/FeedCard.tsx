@@ -55,7 +55,7 @@ export const FeedCard = ({
   onProfilePress,
   onPostPress,
 }: FeedCardProps) => {
-  const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - wp('12%'));
+  const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - wp('8%'));
   const [isCommentsVisible, setIsCommentsVisible] = useState(false);
   const [commentsCount, setCommentsCount] = useState(comments);
   const [localComments, setLocalComments] = useState<Comment[]>([
@@ -103,7 +103,7 @@ export const FeedCard = ({
       onLayout={(e) => {
         const width = e.nativeEvent.layout.width;
         if (width > 0) {
-          setCardWidth(width - wp('8%')); // Subtract horizontal padding
+          setCardWidth(width - wp('4%')); // Subtract horizontal padding (wp('2%') * 2)
         }
       }}
     >
@@ -145,7 +145,7 @@ export const FeedCard = ({
           >
             {images.map((imgUri, idx) => (
               <View key={idx} style={[styles.carouselImageWrapper, { width: cardWidth }]}>
-                <Image source={{ uri: imgUri }} style={styles.feedImage} resizeMode="cover" />
+                <Image source={{ uri: imgUri }} style={[styles.feedImage, styles.carouselImage]} resizeMode="cover" />
                 {images.length > 1 && (
                   <View style={styles.carouselBadge}>
                     <Text style={styles.carouselBadgeText}>{idx + 1} / {images.length}</Text>
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     borderRadius: wp('3.5%'),
     // borderWidth: 1,
     // borderColor: Colors.border,
-    padding: wp('4%'),
+    padding: wp('2%'),
     marginBottom: hp('2%'),
     width: '100%',
   },
@@ -298,6 +298,9 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     borderRadius: wp('3%'),
+  },
+  carouselImage: {
+    marginBottom: 0,
   },
   carouselBadge: {
     position: 'absolute',
