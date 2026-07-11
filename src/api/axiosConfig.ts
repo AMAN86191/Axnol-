@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { zustandStorage } from '../utils/MMKV';
+import { zustandStorage } from '../utils/asyncstorage';
 
 const API_URL = 'https://gst.tambimotors.com/api/';
 const api = axios.create({
@@ -12,7 +12,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   async (config) => {
-    const token = await zustandStorage.getItem('userToken');
+    const authData = await zustandStorage.getItem('auth-storage');
+    const token = authData?.state?.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

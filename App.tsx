@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal} from 'react-native'
 import Allroute from './src/navigation/AllRoute'

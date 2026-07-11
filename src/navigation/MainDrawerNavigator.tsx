@@ -31,6 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MainTabNavigator from './MainTabNavigator';
 import { Colors } from '../theme/colors';
 import Svg, { Path } from 'react-native-svg';
+import useAuthStore from '../zustand/useAuthStore';
 
 const Drawer = createDrawerNavigator();
 
@@ -47,6 +48,7 @@ const WhatsAppIcon = ({ size, color }: { size: number; color: string }) => (
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const insets = useSafeAreaInsets();
   const { state, navigation } = props;
+  const { logout } = useAuthStore();
 
   // Mock User Details
   const user = {
@@ -65,11 +67,13 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             navigation.closeDrawer();
+            const res = await logout();
+            console.log(' logout res', res)
             // Reset to Login
             navigation.reset({
-              index: 0, 
+              index: 0,
               routes: [{ name: 'LoginScreen' }],
             });
           },

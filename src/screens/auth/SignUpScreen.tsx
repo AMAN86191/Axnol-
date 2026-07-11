@@ -9,6 +9,8 @@ import {
   Platform,
   TouchableOpacity,
   StatusBar,
+  Alert,
+  ToastAndroid,
 } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -21,6 +23,7 @@ import { AuthInput } from '../../components/AuthInput';
 import { AuthButton } from '../../components/AuthButton';
 import { LoginHeroSection } from '../../components/LoginHeroSection';
 import { RootStackParamList } from '../../navigation/types';
+import useAuthStore from '../../zustand/useAuthStore';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUpScreen'>;
 
@@ -51,12 +54,32 @@ const SignUpScreen = () => {
     }
   };
 
-  const handleSignUp = () => {
+  const { register } = useAuthStore();
+
+  const handleSignUp = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const formattedDob = dob ? `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}` : '';
+      
+      await register({
+        name,
+        email,
+        phone,
+        dob: formattedDob,
+        bio,
+        refer_by: reff
+      });
       setLoading(false);
-      navigation.navigate('OtpVerificationScreen', { email: email || 'user@example.com' });
-    }, 1000);
+      navigation.navigate('OtpVerificationScreen', { phoneNumber: phone });
+    } catch (err: any) {
+      setLoading(false);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to register';
+      if (Platform.OS === 'android') {
+        ToastAndroid.show(errorMessage, ToastAndroid.LONG);
+      } else {
+        Alert.alert('Registration Failed', errorMessage);
+      }
+    }
   };
 
   return (

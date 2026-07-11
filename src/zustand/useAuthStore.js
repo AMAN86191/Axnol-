@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { zustandStorage } from '../utils/MMKV';
+import { zustandStorage } from '../utils/asyncstorage';
 import api from '../api/axiosConfig';
 
 const useAuthStore = create(
@@ -14,7 +14,7 @@ const useAuthStore = create(
       register: async registerData => {
         set({ loading: true, error: null });
         try {
-          const res = await api.post(`/user_register`, registerData);
+          const res = await api.post(`user/register`, registerData);
           set({ loading: false });
           return res.data; // Let component handle success message
         } catch (error) {
@@ -26,27 +26,17 @@ const useAuthStore = create(
           throw error;
         }
       },
-      forgetPass: async (num) => {
-        set({ loading: true, error: null });
-        try {
-          const res = await api.post(`/get_otp_for_forget_password`, num);
-          set({ loading: false });
-          return res.data; // Let component handle success message
-        } catch (error) {
-          console.log('Error during otp sending:', error);
-          set({
-            error: error?.response?.data?.message || 'Verification failed',
-            loading: false,
-          });
-          throw error;
-        }
-      },
+ 
       otpVerify: async OtpData => {
         set({ loading: true, error: null });
         try {
-          const res = await api.post('/verify_register_otp', OtpData);
-          set({ loading: false });
+          const res = await api.post('user/verify-otp', OtpData);
           console.log('otp Verify response', res);
+          if (res.data && res.data.token) {
+            set({ token: res.data.token, user: res.data.user, loading: false });
+          } else {
+            set({ loading: false });
+          }
           return res.data;
         } catch (error) {
           console.log('Error during OTP Verification:', error);
@@ -58,93 +48,20 @@ const useAuthStore = create(
           throw error;
         }
       },
-      forgetOtpVerify: async forgetData => {
-        set({ loading: true, error: null });
-        try {
-          const res = await api.post(`/verify_otp`, forgetData);
-          set({ loading: false });
-          console.log('otp Verify response', res);
-          return res.data;
-        } catch (error) {
-          console.log('Error during OTP Verification:', error);
-          set({
-            error:
-              error?.response?.data?.message || error.message || 'Otp failed',
-            loading: false,
-          });
-          throw error;
-        }
-      },
-      setPassword: async passData => {
-        set({ loading: true, error: null });
 
-        try {
-          const res = await api.post('/set_pin', passData);
-
-          console.log('Set Password API Response:', res);
-
-          set({
-
-            loading: false,
-          });
-
-          return res.data; // Return API response for UI handling
-        } catch (error) {
-          console.error('Error during Set Password:', error);
-
-          const errorMsg =
-            error?.response?.data?.message ||
-            error?.message ||
-            'Failed to set password';
-
-          set({
-            error: errorMsg,
-            loading: false,
-          });
-
-          throw { ...error, message: errorMsg }; // Send error with message
-        }
-      },
-      setForgetPassword: async ForgetpassData => {
-        set({ loading: true, error: null });
-
-        try {
-          const res = await api.post('/update_password', ForgetpassData);
-
-          console.log('Set Password API Response:', res);
-
-          set({
-            loading: false,
-          });
-
-          return res.data; // Return API response for UI handling
-        } catch (error) {
-          console.error('Error during Set Password:', error);
-
-          const errorMsg =
-            error?.response?.data?.message ||
-            error?.message ||
-            'Failed to set password';
-
-          set({
-            error: errorMsg,
-            loading: false,
-          });
-
-          throw { ...error, message: errorMsg }; // Send error with message
-        }
-      },
+   
+   
 
       login: async (loginData) => {
         set({ loading: true, error: null });
         try {
-          const res = await api.post(`/user_login`, loginData);
+console.log('loginData', loginData)
+          const res = await api.post(`user/send-otp`, loginData);
           console.log("login api response=>", res)
-          set({ token: res.data.token, user: res.data, loading: false });
-          // zustandStorage.setItem("user",res.data.data);
+          set({ loading: false });
           return res.data;
         } catch (error) {
-          console.log('Error during login:', error);
+          console.log('Error during login:', error.message, error.config?.url, error.response?.data);
           set({
             error: error?.response?.data?.message || 'Login failed',
             loading: false,
@@ -153,12 +70,21 @@ const useAuthStore = create(
         }
       },
 
-      logout: () => {
-        set({ token: null, user: null });
+      logout: async () => {
+        set({ loading: true });
+        try {
+          const res = await api.post('user/logout');
+          return res.data;
+        } catch (error) {
+          console.log('Error during logout API call:', error);
+          return null;
+        } finally {
+          set({ token: null, user: null, loading: false });
+        }
       },
     }),
     {
-      name: 'auth-storage', // MMKV key
+      name: 'auth-storage', 
       storage: zustandStorage,
     },
   ),
