@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,10 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { Trash2 } from 'lucide-react-native';
 
 import { CommonHeader } from '../../components/CommonHeader';
 import { FeedCard } from '../../components/FeedCard';
@@ -22,43 +24,90 @@ import { RootStackParamList } from '../../navigation/types';
 import { Colors } from '../../theme/colors';
 import { Comment } from '../../components/CommentsModal';
 import { RFValue } from 'react-native-responsive-fontsize';
+import useHomeStore from '../../zustand/useHomeStore';
+import useAuthStore from '../../zustand/useAuthStore';
 
 type PostDetailsScreenRouteProp = RouteProp<RootStackParamList, 'PostDetailsScreen'>;
 
-const getUserIdFromAuthor = (authorName: string): string => {
-  if (authorName === 'Rahul Sharma') return 'user_rahul';
-  if (authorName === 'Priya Patel') return 'user_priya';
-  if (authorName === 'Vikram Singh') return 'user_vikram';
-  return 'current_user';
-};
 
 const PostDetailsScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<PostDetailsScreenRouteProp>();
   const { postId } = route.params;
+  const { getPostDetails, getComments, commentPost, deleteComment, deletePostStore } = useHomeStore();
+  const { user } = useAuthStore();
 
-  const { posts, toggleLikePost, deletePost } = usePosts();
+  const [post, setPost] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find the post in context
-  const post = posts.find(p => p.id === postId);
+  useFocusEffect(
+    useCallback(() => {
+      const fetchPost = async () => {
+        try {
+          const response = await getPostDetails(postId);
+          console.log('Post details api response', response);
+          const item = response?.post || response?.data || response;
+          if (item) {
+            let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
+            let additionalImages: string[] = [];
+            if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
+              additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
+            }
+            if (additionalImages.length === 0 && imageUrl) {
+              additionalImages = [imageUrl];
+            }
+            let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
+
+            setPost({
+              id: item.id?.toString() || postId,
+              author: item.user?.name || item.admin?.name || 'Unknown',
+              avatar: item.user?.avatar ? `https://gst.tambimotors.com/${item.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+              meta: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
+              text: item.description || '',
+              image: displayImage,
+              images: additionalImages,
+              likes: item.likes || 0,
+              comments: item.comments_count || 0,
+              isLiked: item.is_liked || false,
+              userId: item.user_id?.toString() || item.admin_id?.toString(),
+              status: item.status,
+            });
+          }
+        } catch (error) {
+          console.log('Error fetching post details:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const loadComments = async () => {
+        try {
+          const res = await getComments(postId);
+          console.log('post comment api response ', res)
+          const commentsArray = res?.comments?.data || res?.comments || res?.data || [];
+          if (commentsArray && Array.isArray(commentsArray)) {
+            const mappedComments = commentsArray.map((c: any) => ({
+              id: c.id?.toString() || Math.random().toString(),
+              author: c.user?.name || c.admin?.name || 'Unknown',
+              avatar: c.user?.avatar ? `https://gst.tambimotors.com/${c.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+              text: c.comment || '',
+              time: new Date(c.created_at).toLocaleDateString(),
+              userId: c.user_id?.toString() || c.admin_id?.toString(),
+            }));
+            setCommentsList(mappedComments);
+          }
+        } catch (error) {
+          console.log('Error loading comments:', error);
+        }
+      };
+
+      fetchPost();
+      loadComments();
+    }, [postId, getPostDetails, getComments])
+  );
 
   // Local state for inline comments
-  const [commentsList, setCommentsList] = useState<Comment[]>([
-    {
-      id: '1',
-      author: 'Rahul Sharma',
-      text: 'Beautiful cows! Jai Sri Ram. 🙏',
-      time: '2h ago',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-    },
-    {
-      id: '2',
-      author: 'Priya Patel',
-      text: 'Great work by the Gaumata Trust team. Keep it up!',
-      time: '1h ago',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
-    },
-  ]);
+  const [commentsList, setCommentsList] = useState<Comment[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
   const commentInputRef = useRef<TextInput>(null);
 
@@ -66,15 +115,19 @@ const PostDetailsScreen = () => {
     navigation.goBack();
   }, [navigation]);
 
-  const handleLike = useCallback(() => {
+  const handleLike = useCallback(async () => {
     if (post) {
-      toggleLikePost(post.id);
+      setPost((prev: any) => ({
+        ...prev,
+        isLiked: !prev.isLiked,
+        likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1,
+      }));
     }
-  }, [post, toggleLikePost]);
+  }, [post]);
 
   const handleEdit = useCallback(() => {
     if (post) {
-      (navigation as any).navigate('EditPostScreen', { postId: post.id });
+      (navigation as any).navigate('EditPostScreen', { post: post });
     }
   }, [post, navigation]);
 
@@ -89,34 +142,87 @@ const PostDetailsScreen = () => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            deletePost(post.id);
-            navigation.goBack();
+          onPress: async () => {
+            try {
+              await deletePostStore(post.id);
+              Alert.alert('Success', 'Post deleted successfully.');
+              navigation.goBack();
+            } catch (error) {
+              console.log('Failed to delete post:', error);
+              Alert.alert('Error', 'Failed to delete the post from the server.');
+            }
           },
         },
       ]
     );
-  }, [post, deletePost, navigation]);
+  }, [post, deletePostStore, navigation]);
 
   // When clicking on FeedCard's comment icon, focus the text input at the bottom of details screen
   const handleCommentIconPress = useCallback(() => {
     commentInputRef.current?.focus();
   }, []);
 
-  const handleAddComment = useCallback(() => {
+  const handleAddComment = useCallback(async () => {
     if (!newCommentText.trim()) return;
 
+    const tempId = Math.random().toString();
+    const commentText = newCommentText.trim();
     const newComment: Comment = {
-      id: String(commentsList.length + 1),
-      author: 'Ananda Das', // Mock current user
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150',
-      text: newCommentText.trim(),
+      id: tempId,
+      author: user?.name || 'You',
+      avatar: user?.avatar ? `https://gst.tambimotors.com/${user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+      text: commentText,
       time: 'Just now',
+      userId: user?.id?.toString(),
     };
 
     setCommentsList(prev => [...prev, newComment]);
+    setPost((prev: any) => ({ ...prev, comments: prev.comments + 1 }));
     setNewCommentText('');
-  }, [newCommentText, commentsList.length]);
+
+    try {
+      const res = await commentPost(postId, commentText);
+      console.log('Comment post response (inline):', res);
+    } catch (error) {
+      console.log('Error posting comment:', error);
+      setCommentsList(prev => prev.filter(c => c.id !== tempId));
+      setPost((prev: any) => ({ ...prev, comments: prev.comments - 1 }));
+      Alert.alert('Error', 'Failed to post comment.');
+    }
+  }, [newCommentText, postId, commentPost, user]);
+
+  const handleDeleteComment = useCallback((commentId: string) => {
+    Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setCommentsList(prev => prev.filter(c => c.id !== commentId));
+          setPost((prev: any) => ({ ...prev, comments: prev.comments - 1 }));
+
+          try {
+            await deleteComment(commentId);
+            console.log('Inline comment deleted successfully');
+          } catch (error) {
+            console.log('Failed to delete inline comment:', error);
+            Alert.alert('Error', 'Failed to delete comment from server.');
+          }
+        }
+      }
+    ]);
+  }, [deleteComment]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <CommonHeader title="Post Details" onBackPress={handleBack} />
+        <View style={[styles.errorContainer, { justifyContent: 'center' }]}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!post) {
     return (
@@ -128,7 +234,7 @@ const PostDetailsScreen = () => {
       </SafeAreaView>
     );
   }
-
+  console.log('post', post)
   return (
     <SafeAreaView style={styles.safeArea}>
       <CommonHeader title="Post Details" onBackPress={handleBack} />
@@ -144,6 +250,7 @@ const PostDetailsScreen = () => {
         >
           {/* FeedCard rendering with comment icon override */}
           <FeedCard
+            postId={post.id}
             author={post.author}
             avatar={post.avatar}
             meta={post.meta}
@@ -151,72 +258,52 @@ const PostDetailsScreen = () => {
             image={post.image}
             images={post.images}
             likes={post.likes}
-            comments={commentsList.length}
+            comments={post.comments}
             isLiked={post.isLiked}
-            isOwnPost={post.userId === 'current_user'}
             onLikePress={handleLike}
             onEditPress={handleEdit}
             onDeletePress={handleDelete}
             onCommentPress={handleCommentIconPress}
-            onProfilePress={() => {
-              if (post.userId === 'current_user') {
-                (navigation as any).navigate('Profile');
-              } else {
-                (navigation as any).navigate('PublicProfileScreen', { userId: post.userId });
-              }
-            }}
+            isOwnPost={post.userId === user?.id?.toString()}
+            status={post.status}
           />
 
           {/* Comments Section Title */}
           <View style={styles.commentsSectionHeader}>
-            <Text style={styles.commentsTitle}>Comments ({commentsList.length})</Text>
+            <Text style={styles.commentsTitle}>Comments ({post.comments})</Text>
           </View>
 
           {/* Comments List rendering */}
           <View style={styles.commentsContainer}>
             {commentsList.map((comment) => (
               <View key={comment.id} style={styles.commentItem}>
-                <TouchableOpacity
-                  onPress={() => {
-                    const cUserId = getUserIdFromAuthor(comment.author);
-                    if (cUserId === 'current_user') {
-                      (navigation as any).navigate('Profile');
-                    } else {
-                      (navigation as any).navigate('PublicProfileScreen', { userId: cUserId });
-                    }
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
-                </TouchableOpacity>
+
+                <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
+
                 <View style={styles.commentContent}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      const cUserId = getUserIdFromAuthor(comment.author);
-                      if (cUserId === 'current_user') {
-                        (navigation as any).navigate('Profile');
-                      } else {
-                        (navigation as any).navigate('PublicProfileScreen', { userId: cUserId });
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.commentAuthorText}>
-                      {comment.author}{' '}
-                      <Text style={styles.commentMetaText}>{comment.time}</Text>
-                    </Text>
-                  </TouchableOpacity>
+
+                  <Text style={styles.commentAuthorText}>
+                    {comment.author}{' '}
+                    <Text style={styles.commentMetaText}>{comment.time}</Text>
+                  </Text>
+
                   <Text style={styles.commentBodyText}>{comment.text}</Text>
                 </View>
+
+                {user?.id?.toString() === comment.userId && (
+                  <TouchableOpacity onPress={() => handleDeleteComment(comment.id)} style={{ padding: 5, marginLeft: wp('2%') }}>
+                    <Trash2 size={16} color="red" />
+                  </TouchableOpacity>
+                )}
               </View>
             ))}
           </View>
         </ScrollView>
 
         {/* Comment Input Bar at the bottom of the screen */}
-        {/* <View style={styles.inputBar}>
+        <View style={styles.inputBar}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }}
+            source={{ uri: 'https://randomuser.me/api/portraits/lego/1.jpg' }}
             style={styles.inputUserAvatar}
           />
           <TextInput
@@ -236,13 +323,13 @@ const PostDetailsScreen = () => {
             <Text
               style={[
                 styles.postButtonText,
-                newCommentText.trim() && styles.postButtonTextActive,
+                newCommentText.trim() ? styles.postButtonTextActive : {},
               ]}
             >
               Post
             </Text>
           </TouchableOpacity>
-        </View> */}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

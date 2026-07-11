@@ -11,7 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { X } from 'lucide-react-native';
+import { X, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -23,6 +23,7 @@ export interface Comment {
   avatar: string;
   text: string;
   time: string;
+  userId?: string;
 }
 
 interface CommentsModalProps {
@@ -30,20 +31,18 @@ interface CommentsModalProps {
   onClose: () => void;
   comments: Comment[];
   onAddComment: (commentText: string) => void;
+  currentUserId?: string;
+  onDeleteComment?: (commentId: string) => void;
 }
 
-const getUserIdFromAuthor = (authorName: string): string => {
-  if (authorName === 'Rahul Sharma') return 'user_rahul';
-  if (authorName === 'Priya Patel') return 'user_priya';
-  if (authorName === 'Vikram Singh') return 'user_vikram';
-  return 'current_user';
-};
 
 export const CommentsModal = ({
   visible,
   onClose,
   comments,
   onAddComment,
+  currentUserId,
+  onDeleteComment,
 }: CommentsModalProps) => {
   const navigation = useNavigation();
   const [newCommentText, setNewCommentText] = useState('');
@@ -86,20 +85,7 @@ export const CommentsModal = ({
             showsVerticalScrollIndicator={false}
           >
             {comments.map((comment) => (
-              <TouchableOpacity
-                key={comment.id}
-                onPress={() => {
-                  onClose();
-                  const cUserId = getUserIdFromAuthor(comment.author);
-                  if (cUserId === 'current_user') {
-                    (navigation as any).navigate('Profile');
-                  } else {
-                    (navigation as any).navigate('PublicProfileScreen', { userId: cUserId });
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.commentItem}>
+              <View key={comment.id} style={styles.commentItem}>
                   <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
                   <View style={styles.commentContent}>
                     <Text style={styles.commentAuthorText}>
@@ -108,8 +94,13 @@ export const CommentsModal = ({
                     </Text>
                     <Text style={styles.commentBodyText}>{comment.text}</Text>
                   </View>
+                  {currentUserId && comment.userId === currentUserId && (
+                    <TouchableOpacity onPress={() => onDeleteComment && onDeleteComment(comment.id)} style={{ padding: 5, marginLeft: wp('2%') }}>
+                      <Trash2 size={16} color="red" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
+            
             ))}
           </ScrollView>
 

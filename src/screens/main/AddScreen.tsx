@@ -12,6 +12,7 @@ import {
   Platform,
   Alert,
   Modal,
+  ToastAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -32,10 +33,12 @@ import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { CustomButton } from '../../components/CustomButton';
 import { usePosts } from '../../context/PostContext';
 import { FeedCard } from '../../components/FeedCard';
+import useHomeStore from '../../zustand/useHomeStore';
 
 const AddScreen = () => {
   const navigation = useNavigation();
   const { addPost } = usePosts();
+  const { createPost, loading: isCreatingPost } = useHomeStore();
   const [caption, setCaption] = useState('');
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +75,7 @@ const AddScreen = () => {
   const insertText = (textToInsert: string) => {
     const start = selection.start;
     const end = selection.end;
-    
+
     const s = start !== undefined ? start : caption.length;
     const e = end !== undefined ? end : caption.length;
 
@@ -133,7 +136,7 @@ const AddScreen = () => {
     const start = selection.start;
     const textBefore = caption.substring(0, start);
     const endsWithAt = textBefore.endsWith('@');
-    
+
     let textToInsert = mention + ' ';
     let replaceStart = start;
 
@@ -150,7 +153,7 @@ const AddScreen = () => {
       const newCursorPos = replaceStart + textToInsert.length;
       setSelection({ start: newCursorPos, end: newCursorPos });
     }
-    
+
     setTimeout(() => {
       captionInputRef.current?.focus();
     }, 50);
@@ -160,7 +163,7 @@ const AddScreen = () => {
     const start = selection.start;
     const textBefore = caption.substring(0, start);
     const endsWithHash = textBefore.endsWith('#');
-    
+
     let textToInsert = tag + ' ';
     let replaceStart = start;
 
@@ -267,29 +270,35 @@ const AddScreen = () => {
     try {
       setLoading(true);
       setIsPreviewVisible(false);
-      
-      const imageUris = images.map(img => img.uri);
-      const result = addPost(caption, imageUris);
 
-      if (result.success) {
-        Alert.alert('Success 🎉', 'Post published successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Reset
-              setCaption('');
-              setImages([]);
-              // Redirect to feed
-              navigation.navigate('Home' as never);
-            }
-          }
-        ]);
+      const formData = new FormData();
+      formData.append('description', caption);
+
+      images.forEach((img, index) => {
+        formData.append('post_img[]', {
+          uri: img.uri,
+          type: img.type || 'image/jpeg',
+          name: img.fileName || `image_${index}.jpg`,
+        } as any);
+      });
+
+      const response = await createPost(formData);
+      console.log('post create response', response);
+      if (response?.status || response?.status === true || response?.status_code === 201) {
+
+        ToastAndroid.show('your post is under review', ToastAndroid.LONG);
+        // Reset
+        setCaption('');
+        setImages([]);
+        // Redirect to feed
+        navigation.navigate('FeedScreen' as never);
       } else {
-        Alert.alert('Error', result.error || 'Failed to publish post.');
+        Alert.alert('Error', response?.message || 'Failed to publish post.');
       }
-    } catch (error) {
-      console.log(error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+    } catch (error: any) {
+      console.log('Post error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+      Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -482,7 +491,7 @@ const AddScreen = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContentCard}>
-            
+
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View style={styles.headerTitleContainer}>
@@ -501,7 +510,7 @@ const AddScreen = () => {
             {/* Modal Scrollable Body */}
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.previewTipText}>This is how your post will appear in the community feed:</Text>
-              
+
               {/* WYSIWYG Feed Card rendering */}
               <FeedCard
                 author="Ananda Das"
@@ -524,7 +533,7 @@ const AddScreen = () => {
               >
                 <Text style={styles.editBackBtnText}>Edit Content</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.confirmPublishBtn}
                 onPress={handleConfirmPublish}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,15 +6,17 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { EditProfileModal } from '../../components/EditProfileModal';
-import { usePosts } from '../../context/PostContext';
+import useHomeStore from '../../zustand/useHomeStore';
 
 // Extracted Sub-components with their own encapsulated styles
 import { ProfileHeader } from '../../components/ProfileHeader';
@@ -27,6 +29,8 @@ import { ContributionsTab } from '../../components/ContributionsTab';
 import { MembershipIdCardModal } from '../../components/MembershipIdCardModal';
 import { InstagramGrid } from '../../components/InstagramGrid';
 import { WelcomeNewUserCard } from '../../components/WelcomeNewUserCard';
+import useAuthStore from '../../zustand/useAuthStore';
+import { Colors } from '../../theme/colors';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -35,18 +39,67 @@ const ProfileScreen = () => {
   const [isNewUser, setIsNewUser] = useState(false);
 
   // Profile data states
-  const [profileName, setProfileName] = useState('Ananda Das');
-  const [profileEmail, setProfileEmail] = useState('anandadas@gmail.com');
-  const [profilePhone, setProfilePhone] = useState('+91 98765 43210');
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isIdCardModalVisible, setIsIdCardModalVisible] = useState(false);
+  const { user } = useAuthStore();
+  const { getmypost } = useHomeStore();
 
-  const { posts, deletePost } = usePosts();
+  const [myPosts, setMyPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Memoize user's posts to avoid re-filtering on every render
-  const userPosts = useMemo(() => {
-    return posts.filter(post => post.userId === 'current_user');
-  }, [posts]);
+  const fetchMyPosts = useCallback(async () => {
+    try {
+      const response = await getmypost();
+      if (response && response.posts && response.posts.data) {
+        const mappedPosts = response.posts.data.map((item: any) => {
+          let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
+          let additionalImages: string[] = [];
+          if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
+            additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
+          }
+          if (additionalImages.length === 0 && imageUrl) {
+            additionalImages = [imageUrl];
+          }
+          let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
+
+          return {
+            id: item.id?.toString(),
+            author: item.user?.name || item.admin?.name || 'Unknown',
+            avatar: item.user?.avatar ? `https://gst.tambimotors.com/${item.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+            meta: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
+            text: item.description || '',
+            image: displayImage,
+            images: additionalImages,
+            likes: item.likes || 0,
+            comments: item.comments_count || 0,
+            isLiked: item.is_liked || false,
+            userId: item.user_id?.toString() || item.admin_id?.toString(),
+            status: item.status,
+          };
+        });
+        setMyPosts(mappedPosts);
+      }
+    } catch (error) {
+      console.log('Error fetching my posts:', error);
+    } finally {
+      setLoadingPosts(false);
+      setRefreshing(false);
+    }
+  }, [getmypost]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchMyPosts();
+      }
+    }, [fetchMyPosts, user?.id])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMyPosts();
+  }, [fetchMyPosts]);
 
   // Wrap callbacks in useCallback to prevent recreating them on every render
   const handleCameraPress = useCallback(() => {
@@ -66,7 +119,7 @@ const ProfileScreen = () => {
   }, [navigation]);
 
   const handlePostPress = useCallback((postId: string) => {
-    (navigation as any).navigate('PostDetailsScreen', { postId });
+    (navigation as any).navigate('PostDetailsScreen', { postId: postId });
   }, [navigation]);
 
   const handleCertificatePress = useCallback(() => {
@@ -122,12 +175,23 @@ const ProfileScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <PrimaryHeader />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+        }
+      >
         {/* Profile Details Header Component */}
         <ProfileHeader
-          profileName={profileName}
-          profileEmail={profileEmail}
-          profilePhone={profilePhone}
+          profileName={user?.name || 'Loading...'}
+          profileEmail={user?.email || 'N/A'}
+          profilePhone={user?.phone ? `+91 ${user.phone}` : 'N/A'}
+          uid={user?.uid}
+          joinDate={user?.profile?.join_date}
+          designation={user?.profile?.designation}
+          bio={user?.profile?.bio}
+          avatarUri={user?.profile?.profile_pic ? `https://gst.tambimotors.com/${user.profile.profile_pic}` : undefined}
           onCameraPress={handleCameraPress}
           onEmailPress={handleEmailPress}
           onPhonePress={handlePhonePress}
@@ -137,7 +201,7 @@ const ProfileScreen = () => {
         {isNewUser ? (
           <WelcomeNewUserCard onDonatePress={handleDonatePress} />
         ) : (
-          <ProfileStats postsCount={userPosts.length} />
+          <ProfileStats postsCount={myPosts.length} />
         )}
 
         {/* Active Campaign Card Component */}
@@ -161,8 +225,12 @@ const ProfileScreen = () => {
         {/* Tab Content rendering */}
         {activeTab === 'posts' && (
           <View style={styles.myPostsFeedList}>
-            {userPosts.length > 0 ? (
-              <InstagramGrid posts={userPosts} onPostPress={handlePostPress} />
+            {loadingPosts ? (
+              <View style={{ padding: 20 }}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+              </View>
+            ) : myPosts.length > 0 ? (
+              <InstagramGrid posts={myPosts} onPostPress={handlePostPress} />
             ) : (
               <View style={styles.emptyFeedContainer}>
                 <Text style={styles.emptyFeedText}>You haven't posted anything yet. Tap the '+' tab to create one!</Text>
@@ -177,7 +245,7 @@ const ProfileScreen = () => {
       </ScrollView>
 
       {/* Edit Profile Modal */}
-      <EditProfileModal
+      {/* <EditProfileModal
         visible={isEditModalVisible}
         onClose={() => setIsEditModalVisible(false)}
         currentName={profileName}
@@ -188,13 +256,14 @@ const ProfileScreen = () => {
           setProfileEmail(newEmail);
           setProfilePhone(newPhone);
         }}
-      />
+      /> */}
 
       {/* Membership ID Card Modal Component */}
       <MembershipIdCardModal
         visible={isIdCardModalVisible}
         onClose={() => setIsIdCardModalVisible(false)}
-        profileName={profileName}
+        profileName={user?.name || 'Loading...'}
+        
       />
     </SafeAreaView>
   );

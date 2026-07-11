@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,18 +18,65 @@ import { FeedCard } from '../../components/FeedCard';
 import { QuickActions } from '../../components/QuickActions';
 import { BannerSlider } from '../../components/BannerSlider';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
-import { usePosts } from '../../context/PostContext';
+import useHomeStore from '../../zustand/useHomeStore';
+import useAuthStore from '../../zustand/useAuthStore';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { posts, toggleLikePost } = usePosts();
+  const { getPosts } = useHomeStore();
+  const [homePosts, setHomePosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user, token } = useAuthStore();
+  console.log('User:', user);
+  console.log('Token:', token);
+  useEffect(() => {
+    const fetchHomeFeed = async () => {
+      try {
+        const response = await getPosts(1);
+        console.log('Home screen feed get posts data ', response)
+        if (response && response.posts && response.posts.data) {
+          const mappedPosts = response.posts.data.map((item: any) => {
+            let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
+            let additionalImages: string[] = [];
+            if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
+              additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
+            }
+            if (additionalImages.length === 0 && imageUrl) {
+              additionalImages = [imageUrl];
+            }
+            let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
+
+            return {
+              id: item.id?.toString(),
+              author: item.user?.name || item.admin?.name || 'Unknown',
+              avatar: item.user?.avatar ? `https://gst.tambimotors.com/${item.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+              meta: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
+              text: item.description || '',
+              image: displayImage,
+              images: additionalImages,
+              likes: item.likes || 0,
+              comments: item.comments_count || 0,
+              isLiked: item.is_liked || false,
+              userId: item.user_id || item.admin_id,
+            };
+          });
+          setHomePosts(mappedPosts.slice(0, 5)); // show max 5 on home screen
+        }
+      } catch (error) {
+        console.log('Error fetching home feed:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHomeFeed();
+  }, [getPosts]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
 
       {/* Header */}
-      <PrimaryHeader  />
+      <PrimaryHeader />
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -42,8 +90,8 @@ const HomeScreen = () => {
         {/* Feed Section Header */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Community Feed</Text>
-          <TouchableOpacity 
-            activeOpacity={0.7} 
+          <TouchableOpacity
+            activeOpacity={0.7}
             onPress={() => navigation.navigate('FeedScreen' as never)}
             style={{ flexDirection: 'row', alignItems: 'center' }}
           >
@@ -53,10 +101,15 @@ const HomeScreen = () => {
         </View>
 
         {/* Dynamic Feed List */}
-        {posts.length > 0 ? (
-          posts.map((item) => (
+        {loading ? (
+          <View style={{ padding: 20 }}>
+            <ActivityIndicator size="large" color={Colors.primary} />
+          </View>
+        ) : homePosts.length > 0 ? (
+          homePosts.map((item) => (
             <FeedCard
               key={item.id}
+              postId={item.id}
               author={item.author}
               avatar={item.avatar}
               meta={item.meta}
@@ -67,8 +120,7 @@ const HomeScreen = () => {
               comments={item.comments}
               isLiked={item.isLiked}
               isOwnPost={false}
-              onLikePress={() => toggleLikePost(item.id)}
-              // onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: item.id })}
+              onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: item.id })}
               onProfilePress={() => {
                 if (item.userId === 'current_user') {
                   (navigation as any).navigate('Profile');
@@ -76,7 +128,6 @@ const HomeScreen = () => {
                   (navigation as any).navigate('PublicProfileScreen', { userId: item.userId });
                 }
               }}
-                   
             />
           ))
         ) : (

@@ -15,8 +15,12 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Colors } from '../theme/colors';
 import { CommentsModal, Comment } from './CommentsModal';
+import useHomeStore from '../zustand/useHomeStore';
+import useAuthStore from '../zustand/useAuthStore';
+import { useEffect } from 'react';
 
 interface FeedCardProps {
+  postId?: string;
   author: string;
   avatar: string;
   meta: string;
@@ -27,6 +31,7 @@ interface FeedCardProps {
   comments: number;
   isLiked?: boolean;
   isOwnPost?: boolean;
+  status?: string;
   onLikePress?: () => void;
   onCommentPress?: () => void;
   onSharePress?: () => void;
@@ -37,6 +42,7 @@ interface FeedCardProps {
 }
 
 export const FeedCard = ({
+  postId,
   author,
   avatar,
   meta,
@@ -47,6 +53,7 @@ export const FeedCard = ({
   comments,
   isLiked,
   isOwnPost,
+  status,
   onLikePress,
   onCommentPress,
   onSharePress,
@@ -58,10 +65,66 @@ export const FeedCard = ({
   const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - wp('8%'));
   const [isCommentsVisible, setIsCommentsVisible] = useState(false);
   const [commentsCount, setCommentsCount] = useState(comments);
-  const [localComments, setLocalComments] = useState<Comment[]>([
-    { id: '1', author: 'Rahul Sharma', text: 'Beautiful cows! Jai Sri Ram.', time: '2h', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' },
-    { id: '2', author: 'Priya Patel', text: 'So peaceful.', time: '1h', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' },
-  ]);
+  const [localLikes, setLocalLikes] = useState(likes);
+  const [localIsLiked, setLocalIsLiked] = useState(isLiked);
+
+  useEffect(() => {
+    setCommentsCount(comments);
+    setLocalLikes(likes);
+    setLocalIsLiked(isLiked);
+  }, [comments, likes, isLiked]);
+
+  const [localComments, setLocalComments] = useState<Comment[]>([]);
+  const { getComments, commentPost, toggleLikePost, deleteComment } = useHomeStore();
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (isCommentsVisible && postId) {
+      loadComments();
+    }
+  }, [isCommentsVisible, postId]);
+
+  const loadComments = async () => {
+    if (!postId) return;
+    try {
+      const res = await getComments(postId);
+      console.log('Get comments response:', res);
+      const commentsArray = res?.comments?.data || res?.comments || res?.data || [];
+      if (commentsArray && Array.isArray(commentsArray)) {
+        const mappedComments = commentsArray.map((c: any) => ({
+          id: c.id?.toString() || Math.random().toString(),
+          author: c.user?.name || c.admin?.name || 'Unknown',
+          avatar: c.user?.avatar ? `https://gst.tambimotors.com/${c.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+          text: c.comment || '',
+          time: new Date(c.created_at).toLocaleDateString(),
+          userId: c.user_id?.toString() || c.admin_id?.toString(),
+        }));
+        setLocalComments(mappedComments);
+      }
+    } catch (error) {
+      console.log('Error loading comments:', error);
+    }
+  };
+
+  const handleLikeButtonPress = async () => {
+    if (onLikePress) {
+      onLikePress();
+    }
+    
+    if (!postId) return;
+
+    setLocalIsLiked(prev => !prev);
+    setLocalLikes(prev => localIsLiked ? prev - 1 : prev + 1);
+
+    try {
+      const res = await toggleLikePost(postId);
+      console.log('FeedCard local like response:', res);
+    } catch (error) {
+      console.log('Error toggling like:', error);
+      setLocalIsLiked(prev => !prev);
+      setLocalLikes(prev => localIsLiked ? prev + 1 : prev - 1);
+    }
+  };
 
   const handleShare = async () => {
     if (onSharePress) {
@@ -84,17 +147,34 @@ export const FeedCard = ({
     setIsCommentsVisible(true);
   };
 
-  const handleAddComment = (commentText: string) => {
+  const handleAddComment = async (commentText: string) => {
+    const tempId = Math.random().toString();
     const newComment: Comment = {
-      id: String(localComments.length + 1),
-      author: 'Ananda Das', // Mock current user
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150', // Mock avatar
+      id: tempId,
+      author: user?.name || 'You',
+      avatar: user?.avatar ? `https://gst.tambimotors.com/${user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
       text: commentText,
       time: 'Just now',
+      userId: user?.id?.toString(),
     };
 
     setLocalComments(prev => [...prev, newComment]);
     setCommentsCount(prev => prev + 1);
+
+    if (postId) {
+      try {
+        const res = await commentPost(postId, commentText);
+        console.log('Comment post response:', res);
+        // Optionally reload comments to get the real ID and time
+        loadComments();
+      } catch (error) {
+        console.log('Error posting comment:', error);
+        // Rollback optimistic update
+        setLocalComments(prev => prev.filter(c => c.id !== tempId));
+        setCommentsCount(prev => prev - 1);
+        Alert.alert('Error', 'Failed to post comment.');
+      }
+    }
   };
 
   return (
@@ -124,6 +204,13 @@ export const FeedCard = ({
 
         {isOwnPost && (
           <View style={styles.feedHeaderActions}>
+            {status && (
+              <View style={[styles.statusBadge, { backgroundColor: status === 'active' ? '#E6F4EA' : '#FEE2E2' }]}>
+                <Text style={[styles.statusBadgeText, { color: status === 'active' ? '#137333' : '#B91C1C' }]}>
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Text>
+              </View>
+            )}
             <TouchableOpacity onPress={onEditPress} style={styles.headerActionBtn} activeOpacity={0.7}>
               <Pencil size={RFValue(11)} color={Colors.primary} strokeWidth={2.2} />
             </TouchableOpacity>
@@ -134,51 +221,61 @@ export const FeedCard = ({
         )}
       </View>
 
-      <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
         {/* Card Image or Carousel */}
         {images && images.length > 0 ? (
           <ScrollView
             horizontal
             pagingEnabled
+            snapToInterval={cardWidth}
+            decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             style={styles.carouselContainer}
           >
             {images.map((imgUri, idx) => (
-              <View key={idx} style={[styles.carouselImageWrapper, { width: cardWidth }]}>
+              <TouchableOpacity 
+                key={idx} 
+                style={[styles.carouselImageWrapper, { width: cardWidth }]}
+                activeOpacity={0.95} 
+                onPress={onPostPress} 
+                disabled={!onPostPress}
+              >
                 <Image source={{ uri: imgUri }} style={[styles.feedImage, styles.carouselImage]} resizeMode="cover" />
                 {images.length > 1 && (
                   <View style={styles.carouselBadge}>
                     <Text style={styles.carouselBadgeText}>{idx + 1} / {images.length}</Text>
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         ) : (
           image && (
-            <Image
-              source={{ uri: image }}
-              style={styles.feedImage}
-              resizeMode="cover"
-            />
+            <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+              <Image
+                source={{ uri: image }}
+                style={styles.feedImage}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
           )
         )}
 
         {/* Card Description */}
-        <Text style={styles.feedText}>{text}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+          <Text style={styles.feedText}>{text}</Text>
+        </TouchableOpacity>
 
       {/* Card Actions */}
       <View style={styles.feedActions}>
-        <TouchableOpacity style={styles.feedActionItem} onPress={onLikePress} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.feedActionItem} onPress={handleLikeButtonPress} activeOpacity={0.7}>
           <Heart
             size={RFValue(14)}
-            color={isLiked ? Colors.primary : Colors.gray}
-            fill={isLiked ? Colors.primary : 'none'}
+            color={localIsLiked ? Colors.primary : Colors.gray}
+            fill={localIsLiked ? Colors.primary : 'none'}
             strokeWidth={1.5}
           />
-          <Text style={[styles.feedActionText, isLiked && styles.activeActionText]}>
-            {likes}
+          <Text style={[styles.feedActionText, localIsLiked && styles.activeActionText]}>
+            {localLikes}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.feedActionItem} onPress={handleCommentButtonPress} activeOpacity={0.7}>
@@ -196,6 +293,30 @@ export const FeedCard = ({
         onClose={() => setIsCommentsVisible(false)}
         comments={localComments}
         onAddComment={handleAddComment}
+        currentUserId={user?.id?.toString()}
+        onDeleteComment={(commentId) => {
+          Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Delete', 
+              style: 'destructive',
+              onPress: async () => {
+                // Remove optimistically
+                setLocalComments(prev => prev.filter(c => c.id !== commentId));
+                setCommentsCount(prev => prev - 1);
+                
+                try {
+                const res =   await deleteComment(commentId);
+                console.log('Comment delete api res ', res)
+                  console.log('Comment deleted successfully');
+                } catch (error) {
+                  console.log('Failed to delete comment from server', error);
+                  Alert.alert('Error', 'Failed to delete comment from server.');
+                }
+              }
+            }
+          ]);
+        }}
       />
     </View>
   );
@@ -225,6 +346,20 @@ const styles = StyleSheet.create({
   feedHeaderActions: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  statusBadge: {
+    paddingHorizontal: wp('2%'),
+    paddingVertical: hp('0.3%'),
+    borderRadius: wp('1.5%'),
+    marginRight: wp('1.5%'),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  statusBadgeText: {
+    fontSize: RFValue(7.5),
+    fontWeight: '700',
   },
   headerActionBtn: {
     width: wp('7%'),

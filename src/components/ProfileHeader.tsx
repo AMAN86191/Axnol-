@@ -10,6 +10,10 @@ interface ProfileHeaderProps {
   profileEmail: string;
   profilePhone: string;
   avatarUri?: string;
+  uid?: string;
+  joinDate?: string;
+  designation?: string;
+  bio?: string;
   onCameraPress: () => void;
   onEmailPress: () => void;
   onPhonePress: () => void;
@@ -26,6 +30,10 @@ export const ProfileHeader = React.memo(({
   profileEmail,
   profilePhone,
   avatarUri = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300',
+  uid,
+  joinDate,
+  designation,
+  bio,
   onCameraPress,
   onEmailPress,
   onPhonePress,
@@ -64,29 +72,25 @@ export const ProfileHeader = React.memo(({
               <VerifiedBadge />
             </View>
 
-            <Text style={styles.designationText}>Gau Sevak • Trustee</Text>
+            <Text style={styles.designationText}>{designation || 'Community Member'}</Text>
 
             <View style={styles.statusRowBadgesHeader}>
               <View style={styles.patronBadge}>
                 <Award size={RFValue(8)} color="#D97706" strokeWidth={2} />
                 <Text style={styles.patronBadgeText}>Community Member</Text>
               </View>
-              <View style={[styles.patronBadge, { backgroundColor: '#E6F4EA', borderColor: '#A7F3D0', marginLeft: wp('1.5%') }]}>
-                <Check size={RFValue(8)} color="#137333" strokeWidth={3} style={{ marginRight: wp('0.5%') }} />
-                <Text style={[styles.patronBadgeText, { color: '#137333' }]}>Verified Member</Text>
-              </View>
             </View>
 
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>ID: </Text>
-              <Text style={styles.metaValue}>GMT-8394-2026</Text>
+              <Text style={styles.metaValue}>{uid || 'N/A'}</Text>
               <View style={styles.metaDot} />
               <Text style={styles.metaLabel}>Since: </Text>
-              <Text style={styles.metaValue}>Jan 2026</Text>
+              <Text style={styles.metaValue}>{joinDate ? new Date(joinDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'N/A'}</Text>
             </View>
 
             <Text style={[styles.bioText, { marginTop: hp('0.6%') }]}>
-              Passionate about animal welfare and Vedic heritage. Supporting local Gaushalas to preserve indigenous breeds.
+              {bio || 'No bio available.'}
             </Text>
           </View>
         </View>

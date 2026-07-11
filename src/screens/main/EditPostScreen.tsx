@@ -27,7 +27,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { CustomButton } from '../../components/CustomButton';
-import { usePosts } from '../../context/PostContext';
+import useHomeStore from '../../zustand/useHomeStore';
 import { RootStackParamList } from '../../navigation/types';
 
 type EditPostScreenRouteProp = RouteProp<RootStackParamList, 'EditPostScreen'>;
@@ -35,12 +35,10 @@ type EditPostScreenRouteProp = RouteProp<RootStackParamList, 'EditPostScreen'>;
 const EditPostScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<EditPostScreenRouteProp>();
-  const { postId } = route.params;
-  const { posts, updatePost } = usePosts();
+  const { post } = route.params as any;
+  const { updatePostStore } = useHomeStore();
 
-  const post = posts.find(p => p.id === postId);
-
-  const [caption, setCaption] = useState('');
+  const [caption, setCaption] = useState(post?.text || '');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
@@ -111,28 +109,7 @@ const EditPostScreen = () => {
 
   if (!post) return null;
 
-  const EMOJIS = {
-    smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬'],
-    animals: ['🐮', '🐄', '🐂', '🐾', '🌾', '🌱', '🌿', '☘️', '🍀', '🍂', '🍁', '🌸', '🌼', '🌻', '🌺', '🌹', '🐈', '🐕', '🐎', '🐐', '🐏', '🐑', '🐖', '🐓', '🦆', '🦅', '🕊️', '🦢', '🦉', '🦚', '🦜'],
-    symbols: ['🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💖', '💗', '💓', '💞', '💕', '✨', '🌟', '⭐', '💫', '🔥', '💥', '⚡', '🌈', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌧️', '❄️', '☃️', '🚩', '🏁', '📍', '📌', '🔔', '📣', '📢', '💬', '💭', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝']
-  };
 
-  const SUGGESTED_MENTIONS = [
-    '@gaumatatrust',
-    '@nandi_sanctuary',
-    '@sevak_rahul',
-    '@gaushala_feed',
-    '@donor_care',
-    '@save_cows_initiative',
-  ];
-
-  const SUGGESTED_HASHTAGS = [
-    '#Gaumata',
-    '#GauSeva',
-    '#CowSanctuary',
-    '#SaveCows',
-    '#CalfCare',
-  ];
 
   const insertText = (textToInsert: string) => {
     const start = selection.start;
@@ -253,25 +230,38 @@ const EditPostScreen = () => {
       Alert.alert('Validation Error', 'Please enter a caption.');
       return;
     }
-    if (images.length === 0) {
-      Alert.alert('Validation Error', 'Please upload at least one photo.');
-      return;
-    }
 
     try {
       setLoading(true);
-      const result = updatePost(postId, caption, images);
-
-      if (result.success) {
-        Alert.alert('Success 🎉', 'Post updated successfully!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
-      } else {
-        Alert.alert('Validation Error', result.error || 'Failed to update post.');
-      }
+      
+      const formData = new FormData();
+      formData.append('id', post.id);
+      formData.append('description', caption);
+      
+      // Keep track of old and new images, or simply send new ones
+      // Since it's update, depending on API, it might just need the new images or all.
+      // Append images to FormData
+      images.forEach((img, index) => {
+        if (!img.startsWith('http')) {
+          // New local image
+          const fileName = img.split('/').pop() || `image_${index}.jpg`;
+          const type = img.endsWith('png') ? 'image/png' : 'image/jpeg';
+          formData.append(`post_img[]`, {
+            uri: img,
+            name: fileName,
+            type: type,
+          } as any);
+        }
+      });
+   console.log('formData', formData)
+     const res =  await updatePostStore(formData);
+  console.log('edit post res', res)
+      Alert.alert('Success 🎉', 'Post updated successfully!', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } catch (error) {
-      console.log(error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+      console.log('Update post error:', error);
+      Alert.alert('Error', 'Failed to update post.');
     } finally {
       setLoading(false);
     }
@@ -348,101 +338,9 @@ const EditPostScreen = () => {
               selection={selection}
             />
             <View style={styles.captionFooter}>
-              <View style={styles.captionIconsRow}>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'emoji' && styles.captionIconBtnActive]}
-                  onPress={handleSmilePress}
-                  activeOpacity={0.7}
-                >
-                  <Smile size={20} color={activePanel === 'emoji' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'mention' && styles.captionIconBtnActive]}
-                  onPress={handleAtPress}
-                  activeOpacity={0.7}
-                >
-                  <AtSign size={20} color={activePanel === 'mention' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'hashtag' && styles.captionIconBtnActive]}
-                  onPress={handleHashPress}
-                  activeOpacity={0.7}
-                >
-                  <Hash size={20} color={activePanel === 'hashtag' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-              </View>
+            
               <Text style={styles.charCount}>{caption.length}/500</Text>
             </View>
-
-            {activePanel === 'emoji' && (
-              <View style={styles.emojiPanel}>
-                <View style={styles.emojiTabs}>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'smileys' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('smileys')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'smileys' && styles.emojiTabTextActive]}>😀 Smileys</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'animals' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('animals')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'animals' && styles.emojiTabTextActive]}>🐮 Animals</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'symbols' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('symbols')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'symbols' && styles.emojiTabTextActive]}>✨ Symbols</Text>
-                  </TouchableOpacity>
-                </View>
-                <ScrollView contentContainerStyle={styles.emojiGrid} nestedScrollEnabled showsVerticalScrollIndicator={true}>
-                  {EMOJIS[emojiCategory].map((emoji, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={styles.emojiGridCell}
-                      onPress={() => insertText(emoji)}
-                    >
-                      <Text style={styles.emojiGridText}>{emoji}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {activePanel === 'mention' && (
-              <View style={styles.helperPanel}>
-                <Text style={styles.helperPanelTitle}>Suggested Mentions</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.helperScroll}>
-                  {SUGGESTED_MENTIONS.map((mention, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.mentionChip}
-                      onPress={() => insertMention(mention)}
-                    >
-                      <Text style={styles.mentionChipText}>{mention}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {activePanel === 'hashtag' && (
-              <View style={styles.helperPanel}>
-                <Text style={styles.helperPanelTitle}>Trending Hashtags</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.helperScroll}>
-                  {SUGGESTED_HASHTAGS.map((tag, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.hashtagChip}
-                      onPress={() => insertHashtag(tag)}
-                    >
-                      <Text style={styles.hashtagChipText}>{tag}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
 
           <CustomButton
@@ -579,7 +477,7 @@ const styles = StyleSheet.create({
   },
   captionFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: Colors.background,
@@ -600,6 +498,7 @@ const styles = StyleSheet.create({
   charCount: {
     fontSize: RFValue(10),
     color: Colors.gray,
+    alignSelf: 'flex-end',
   },
   emojiPanel: {
     borderTopWidth: 1,

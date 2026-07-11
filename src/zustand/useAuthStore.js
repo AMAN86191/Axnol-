@@ -26,7 +26,7 @@ const useAuthStore = create(
           throw error;
         }
       },
- 
+
       otpVerify: async OtpData => {
         set({ loading: true, error: null });
         try {
@@ -49,13 +49,13 @@ const useAuthStore = create(
         }
       },
 
-   
-   
+
+
 
       login: async (loginData) => {
         set({ loading: true, error: null });
         try {
-console.log('loginData', loginData)
+          console.log('loginData', loginData)
           const res = await api.post(`user/send-otp`, loginData);
           console.log("login api response=>", res)
           set({ loading: false });
@@ -84,7 +84,7 @@ console.log('loginData', loginData)
       },
     }),
     {
-      name: 'auth-storage', 
+      name: 'auth-storage',
       storage: zustandStorage,
     },
   ),

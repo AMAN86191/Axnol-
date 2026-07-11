@@ -25,6 +25,7 @@ import AboutTrustScreen from '../screens/main/AboutTrustScreen';
 import { RootStackParamList } from './types';
 import FeedScreen from '../screens/main/FeedScreen';
 import DonationSuccessScreen from '../screens/main/DonationSuccessScreen';
+import PlansScreen from '../screens/main/PlansScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -131,6 +132,10 @@ const Allroute = () => {
         <Stack.Screen
           name="DonationSuccessScreen"
           component={DonationSuccessScreen}
+        />
+        <Stack.Screen
+          name="PlansScreen"
+          component={PlansScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

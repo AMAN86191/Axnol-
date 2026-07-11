@@ -23,6 +23,7 @@ import {
   FileCheck,
   Edit3,
   Bell,
+  List,
 } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -48,15 +49,7 @@ const WhatsAppIcon = ({ size, color }: { size: number; color: string }) => (
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const insets = useSafeAreaInsets();
   const { state, navigation } = props;
-  const { logout } = useAuthStore();
-
-  // Mock User Details
-  const user = {
-    name: 'Ananda Das',
-    role: 'Verified Sevak',
-    donationAmount: '₹12,500 Donated',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150',
-  };
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
     Alert.alert(
@@ -165,11 +158,14 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {/* Profile User Info Row */}
         <View style={styles.userInfoRow}>
           <View style={styles.avatarWrapper}>
-            <Image source={{ uri: user.avatar }} style={styles.profileAvatar} />
+            <Image 
+              source={{ uri: user?.profile?.profile_pic ? `https://gst.tambimotors.com/${user.profile.profile_pic}` : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }} 
+              style={styles.profileAvatar} 
+            />
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user.name}</Text>
+            <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
             <TouchableOpacity
               style={styles.editProfileCta}
               onPress={() => {
@@ -197,9 +193,9 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             </View>
           </View>
           <View style={styles.memberMetaRow}>
-            <Text style={styles.memberMetaText}>ID: GMT-8394-2026</Text>
+            <Text style={styles.memberMetaText}>ID: {user?.uid || 'N/A'}</Text>
             <View style={styles.metaDivider} />
-            <Text style={styles.memberMetaText}>Since: Jan 2026</Text>
+            <Text style={styles.memberMetaText}>Since: {user?.profile?.join_date ? new Date(user.profile.join_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</Text>
           </View>
         </View>
       </View>
@@ -270,6 +266,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
         {renderDrawerItem('Membership Certificate', Award, 'MembershipCertificateScreen')}
         {renderDrawerItem('Donation History', History, 'MainTabs', 'Profile')}
+        {renderDrawerItem('Membership ', List, 'PlansScreen')}
         {renderDrawerItem('Referral Friends', Share2, 'ReferralScreen')}
         {renderDrawerItem('WhatsApp Community', WhatsAppIcon, undefined, undefined, joinWhatsApp)}
 
