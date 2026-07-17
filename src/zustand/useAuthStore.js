@@ -56,7 +56,7 @@ const useAuthStore = create(
         set({ loading: true, error: null });
         try {
           console.log('loginData', loginData)
-          const res = await api.post(`user/send-otp`, loginData);
+          const res = await api.post(`user/send-otp`, loginData);+
           console.log("login api response=>", res)
           set({ loading: false });
           return res.data;
@@ -66,6 +66,49 @@ const useAuthStore = create(
             error: error?.response?.data?.message || 'Login failed',
             loading: false,
           });
+          throw error;
+        }
+      },
+
+      updateProfile: async (profileData) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await api.post('user/complete-profile', profileData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            }
+          });
+          console.log('update profile response', res.data);
+          if (res.data && res.data.user) {
+            set((state) => ({ user: { ...state.user, ...res.data.user }, loading: false }));
+          } else {
+            set({ loading: false });
+          }
+          return res.data;
+        } catch (error) {
+          console.log('Error during profile update:', error);
+          set({
+            error: error?.response?.data?.message || 'Profile update failed',
+            loading: false,
+          });
+          throw error;
+        }
+      },
+
+      getProfile: async () => {
+        set({ loading: true, error: null });
+        try {
+          const res = await api.get('user/get-profile');
+          console.log('get profile response:', res.data);
+          if (res.data && res.data.user) {
+            set((state) => ({ user: { ...state.user, ...res.data.user }, loading: false }));
+          } else {
+            set({ loading: false });
+          }
+          return res.data;
+        } catch (error) {
+          console.log('Error fetching profile:', error);
+          set({ loading: false });
           throw error;
         }
       },

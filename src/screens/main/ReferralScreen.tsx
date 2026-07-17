@@ -21,6 +21,7 @@ import {
 
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
+import useAuthStore from '../../zustand/useAuthStore';
 
 
 
@@ -31,7 +32,8 @@ export default function ReferralScreen() {
   const totalReferrals = 24;
 
   const [copied, setCopied] = useState(false);
-
+ const {user} = useAuthStore();
+  console.log('user', user)
   const shareMessage = `Join me in supporting Gau Seva and protecting our indigenous cows! Use my Referral Code *${referralCode}* on SignUp to help us grow. Invite link: ${referralLink}`;
 
   const handleBack = useCallback(() => {

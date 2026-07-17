@@ -159,7 +159,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         <View style={styles.userInfoRow}>
           <View style={styles.avatarWrapper}>
             <Image 
-              source={{ uri: user?.profile?.profile_pic ? `https://gst.tambimotors.com/${user.profile.profile_pic}` : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }} 
+              source={{ uri: user?.profile?.profile_pic ? `${user.profile.profile_pic}` : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }} 
               style={styles.profileAvatar} 
             />
             <View style={styles.onlineIndicator} />

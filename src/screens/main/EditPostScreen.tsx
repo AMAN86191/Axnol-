@@ -17,9 +17,6 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import {
-  Smile,
-  AtSign,
-  Hash,
   X,
   Image as ImageIcon,
 } from 'lucide-react-native';
@@ -36,14 +33,12 @@ const EditPostScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<EditPostScreenRouteProp>();
   const { post } = route.params as any;
-  const { updatePostStore } = useHomeStore();
+  const { updatePostStore, deletePostImageStore } = useHomeStore();
 
   const [caption, setCaption] = useState(post?.text || '');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [activePanel, setActivePanel] = useState<'none' | 'emoji' | 'mention' | 'hashtag'>('none');
-  const [emojiCategory, setEmojiCategory] = useState<'smileys' | 'animals' | 'symbols'>('smileys');
   const captionInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -103,7 +98,26 @@ const EditPostScreen = () => {
     }
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const imgToRemove = images[index];
+    // Check if it's a server image and we have original_post_images
+    if (imgToRemove.startsWith('http') && post?.original_post_images) {
+      // Find the image ID based on the URL
+      const foundImage = post.original_post_images.find((pi: any) => 
+        `https://gst.tambimotors.com/${pi.post_img}` === imgToRemove
+      );
+      
+      if (foundImage) {
+        try {
+          // Send request to server to delete image
+          await deletePostImageStore(post.id, foundImage.id);
+          console.log(`Image ${foundImage.id} deleted successfully from server.`);
+        } catch (error) {
+          Alert.alert('Error', 'Failed to delete this image from the server.');
+          return; // Do not remove from UI if API failed
+        }
+      }
+    }
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -111,119 +125,6 @@ const EditPostScreen = () => {
 
 
 
-  const insertText = (textToInsert: string) => {
-    const start = selection.start;
-    const end = selection.end;
-    
-    const s = start !== undefined ? start : caption.length;
-    const e = end !== undefined ? end : caption.length;
-
-    const textBefore = caption.substring(0, s);
-    const textAfter = caption.substring(e);
-    const newCaption = textBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = s + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
-
-  const handleSmilePress = () => {
-    setActivePanel(prev => prev === 'emoji' ? 'none' : 'emoji');
-  };
-
-  const handleAtPress = () => {
-    if (activePanel === 'mention') {
-      setActivePanel('none');
-    } else {
-      setActivePanel('mention');
-      const start = selection.start;
-      const textBefore = caption.substring(0, start);
-      if (!textBefore.endsWith('@')) {
-        insertText('@');
-      } else {
-        setTimeout(() => {
-          captionInputRef.current?.focus();
-        }, 50);
-      }
-    }
-  };
-
-  const handleHashPress = () => {
-    if (activePanel === 'hashtag') {
-      setActivePanel('none');
-    } else {
-      setActivePanel('hashtag');
-      const start = selection.start;
-      const textBefore = caption.substring(0, start);
-      if (!textBefore.endsWith('#')) {
-        insertText('#');
-      } else {
-        setTimeout(() => {
-          captionInputRef.current?.focus();
-        }, 50);
-      }
-    }
-  };
-
-  const insertMention = (mention: string) => {
-    const start = selection.start;
-    const textBefore = caption.substring(0, start);
-    const endsWithAt = textBefore.endsWith('@');
-    
-    let textToInsert = mention + ' ';
-    let replaceStart = start;
-
-    if (endsWithAt) {
-      replaceStart = start - 1;
-    }
-
-    const newTextBefore = caption.substring(0, replaceStart);
-    const textAfter = caption.substring(selection.end);
-    const newCaption = newTextBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = replaceStart + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-    
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
-
-  const insertHashtag = (tag: string) => {
-    const start = selection.start;
-    const textBefore = caption.substring(0, start);
-    const endsWithHash = textBefore.endsWith('#');
-    
-    let textToInsert = tag + ' ';
-    let replaceStart = start;
-
-    if (endsWithHash) {
-      replaceStart = start - 1;
-    }
-
-    const newTextBefore = caption.substring(0, replaceStart);
-    const textAfter = caption.substring(selection.end);
-    const newCaption = newTextBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = replaceStart + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
 
   const handleSavePost = async () => {
     if (!caption.trim()) {
@@ -253,6 +154,7 @@ const EditPostScreen = () => {
           } as any);
         }
       });
+
    console.log('formData', formData)
      const res =  await updatePostStore(formData);
   console.log('edit post res', res)

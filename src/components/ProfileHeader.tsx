@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Share } from 'react-native';
 import { Pencil, Award, Check, Mail, Phone, BadgeCheck } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Colors } from '../theme/colors';
+import { Share2 } from 'lucide-react-native';
 
 interface ProfileHeaderProps {
   profileName: string;
@@ -17,6 +18,12 @@ interface ProfileHeaderProps {
   onCameraPress: () => void;
   onEmailPress: () => void;
   onPhonePress: () => void;
+  membership: any;
+  dob?: string;
+  dom?: string;
+  profession?: string;
+  referralCode?: string;
+  country?: string;
 }
 
 const VerifiedBadge = () => (
@@ -37,7 +44,23 @@ export const ProfileHeader = React.memo(({
   onCameraPress,
   onEmailPress,
   onPhonePress,
+  membership,
+  dob,
+  dom,
+  profession,
+  referralCode,
+  country,
 }: ProfileHeaderProps) => {
+  const handleShareReferral = async (code: string) => {
+    try {
+      await Share.share({
+        message: `Join me on Gaumata Trust! Use my referral code: ${code}`,
+      });
+    } catch (error) {
+      console.log('Error sharing:', error);
+    }
+  };
+
   return (
     <>
       {/* Background Pasture Image & Header Actions */}
@@ -53,7 +76,7 @@ export const ProfileHeader = React.memo(({
       <View style={styles.profileDetailsCard}>
         <View style={styles.profileTopRow}>
           {/* Double ring circular avatar */}
-          <View style={styles.avatarContainer}> 
+          <View style={styles.avatarContainer}>
             <View style={styles.avatarOuterRing}>
               <Image
                 source={{ uri: avatarUri }}
@@ -77,7 +100,9 @@ export const ProfileHeader = React.memo(({
             <View style={styles.statusRowBadgesHeader}>
               <View style={styles.patronBadge}>
                 <Award size={RFValue(8)} color="#D97706" strokeWidth={2} />
-                <Text style={styles.patronBadgeText}>Community Member</Text>
+                <Text style={styles.patronBadgeText}>
+                  {membership ? membership.charAt(0).toUpperCase() + membership.slice(1) : 'Community Member'}
+                </Text>
               </View>
             </View>
 
@@ -93,6 +118,45 @@ export const ProfileHeader = React.memo(({
               {bio || 'No bio available.'}
             </Text>
           </View>
+        </View>
+
+        {/* Extra Details row */}
+        <View style={styles.extraDetailsContainer}>
+          {profession && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Profession: </Text>
+              <Text style={styles.detailValue}>{profession}</Text>
+            </View>
+          )}
+          {dob && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>DOB: </Text>
+              <Text style={styles.detailValue}>{dob}</Text>
+            </View>
+          )}
+          {dom && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>DOM: </Text>
+              <Text style={styles.detailValue}>{dom}</Text>
+            </View>
+          )}
+          {country && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Country: </Text>
+              <Text style={styles.detailValue}>{country}</Text>
+            </View>
+          )}
+          {referralCode && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Referral Code: </Text>
+              <View style={styles.referralCodeContainer}>
+                <Text style={styles.detailValue}>{referralCode}</Text>
+                <TouchableOpacity onPress={() => handleShareReferral(referralCode)} style={styles.shareBtn}>
+                  <Share2 size={RFValue(12)} color="#FF6F34" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Contact Details row */}
@@ -274,5 +338,39 @@ const styles = StyleSheet.create({
     width: 1,
     height: hp('1.8%'),
     backgroundColor: '#E5E7EB',
+  },
+  extraDetailsContainer: {
+    marginTop: hp('1.5%'),
+    paddingTop: hp('1%'),
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '48%',
+    marginBottom: hp('0.8%'),
+  },
+  detailLabel: {
+    fontSize: RFValue(9),
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  detailValue: {
+    fontSize: RFValue(9),
+    fontWeight: '700',
+    color: '#1F2937',
+    flexShrink: 1,
+  },
+  referralCodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  shareBtn: {
+    marginLeft: wp('2%'),
+    padding: wp('1%'),
   },
 });

@@ -6,15 +6,18 @@ import { RFValue } from 'react-native-responsive-fontsize';
 
 interface ProfileStatsProps {
   postsCount: number;
+  referralsCount?: number;
+  totalDonation?: number;
+  likesCount?: number;
 }
 
-export const ProfileStats = React.memo(({ postsCount }: ProfileStatsProps) => {
+export const ProfileStats = React.memo(({ postsCount, referralsCount = 0, totalDonation = 0, likesCount = 0 }: ProfileStatsProps) => {
   return (
     <View style={styles.statsRow}>
       {/* Total Impact Orange Card */}
       <View style={styles.impactCard}>
         <Text style={styles.impactLabel}>Total Impact 🍃</Text>
-        <Text style={styles.impactValue}>₹1.2L</Text>
+        <Text style={styles.impactValue}>₹{totalDonation.toLocaleString('en-IN')}</Text>
         <Text style={styles.impactSub}>Total Donations</Text>
       </View>
 
@@ -23,7 +26,7 @@ export const ProfileStats = React.memo(({ postsCount }: ProfileStatsProps) => {
         <View style={styles.miniStatIconCircle}>
           <Users size={RFValue(12)} color="#FF6F34" strokeWidth={2} />
         </View>
-        <Text style={styles.miniStatValue}>24</Text>
+        <Text style={styles.miniStatValue}>{referralsCount}</Text>
         <Text style={styles.miniStatLabel}>Referrals</Text>
         <Text style={styles.miniStatSub}>Invites</Text>
       </View>
@@ -43,7 +46,7 @@ export const ProfileStats = React.memo(({ postsCount }: ProfileStatsProps) => {
         <View style={styles.miniStatIconCircle}>
           <Users size={RFValue(12)} color="#FF6F34" strokeWidth={2} />
         </View>
-        <Text style={styles.miniStatValue}>1.2K</Text>
+        <Text style={styles.miniStatValue}>{likesCount}</Text>
         <Text style={styles.miniStatLabel}>Likes</Text>
         <Text style={styles.miniStatSub}>Received</Text>
       </View>

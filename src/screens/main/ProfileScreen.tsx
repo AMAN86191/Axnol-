@@ -15,7 +15,6 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 
 import { PrimaryHeader } from '../../components/PrimaryHeader';
-import { EditProfileModal } from '../../components/EditProfileModal';
 import useHomeStore from '../../zustand/useHomeStore';
 
 // Extracted Sub-components with their own encapsulated styles
@@ -39,10 +38,10 @@ const ProfileScreen = () => {
   const [isNewUser, setIsNewUser] = useState(false);
 
   // Profile data states
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isIdCardModalVisible, setIsIdCardModalVisible] = useState(false);
-  const { user } = useAuthStore();
-  const { getmypost } = useHomeStore();
+  const [profileData, setProfileData] = useState<any>(null);
+  const { user, updateProfile, getProfile } = useAuthStore();
+  const { getmypost, getContributionsStore } = useHomeStore();
 
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -103,11 +102,11 @@ const ProfileScreen = () => {
 
   // Wrap callbacks in useCallback to prevent recreating them on every render
   const handleCameraPress = useCallback(() => {
-    setIsEditModalVisible(true);
-  }, []);
+    (navigation as any).navigate('EditProfileScreen');
+  }, [navigation]);
 
   const handleEmailPress = useCallback(() => {
-    setIsEditModalVisible(false);
+    // Navigate or handle email press
   }, []);
 
   const handlePhonePress = useCallback(() => {
@@ -131,44 +130,51 @@ const ProfileScreen = () => {
   }, []);
 
 
-  const contributionsData = useMemo(() => [
-    {
-      id: 'c1',
-      title: 'Daily Grass Seva',
-      category: 'Feed Support',
-      amount: '₹1,100',
-      date: '08 Jun 2026',
-      status: 'Completed',
-      txnId: 'TXN83940174',
-    },
-    {
-      id: 'c2',
-      title: 'Emergency Medical Kit',
-      category: 'Medical Care',
-      amount: '₹2,500',
-      date: '28 May 2026',
-      status: 'Completed',
-      txnId: 'TXN83910543',
-    },
-    {
-      id: 'c3',
-      title: 'Calf Shelter Sponsorship',
-      category: 'Shelter Build',
-      amount: '₹10,000',
-      date: '15 May 2026',
-      status: 'Completed',
-      txnId: 'TXN83890212',
-    },
-    {
-      id: 'c4',
-      title: 'Monthly Gaushala Care',
-      category: 'Recurring Feed',
-      amount: '₹500',
-      date: '01 May 2026',
-      status: 'Active',
-      txnId: 'TXN83764923',
-    },
-  ], []);
+  const [contributionsData, setContributionsData] = useState<any[]>([]);
+
+  const fetchContributions = useCallback(async () => {
+    try {
+      const response = await getContributionsStore();
+      console.log('Contributions API Response:', response);
+      if (response && response.donations) {
+        const mappedData = response.donations.map((d: any) => ({
+          id: d.id?.toString() || Math.random().toString(),
+          title: d.plan?.plan_name || 'Donation',
+          category: d.plan?.duration 
+            ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1) 
+            : 'General',
+          amount: `₹${parseFloat(d.amount || 0).toLocaleString('en-IN')}`,
+          date: d.date || 'N/A',
+          status: d.payment_status?.toLowerCase() === 'paid' ? 'Completed' : 'Pending',
+          txnId: d.transaction_id || 'N/A',
+        }));
+        setContributionsData(mappedData);
+      }
+    } catch (error) {
+      console.log('Error fetching contributions:', error);
+    }
+  }, [getContributionsStore]);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const response = await getProfile();
+      console.log('User Profile API Response:', response);
+      if (response?.data) {
+        setProfileData(response.data);
+      }
+    } catch (error) {
+      console.log('Error fetching user profile:', error);
+    }
+  }, [getProfile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchContributions();
+        fetchProfile();
+      }
+    }, [fetchContributions, fetchProfile, user?.id])
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -184,24 +190,39 @@ const ProfileScreen = () => {
       >
         {/* Profile Details Header Component */}
         <ProfileHeader
-          profileName={user?.name || 'Loading...'}
-          profileEmail={user?.email || 'N/A'}
-          profilePhone={user?.phone ? `+91 ${user.phone}` : 'N/A'}
-          uid={user?.uid}
-          joinDate={user?.profile?.join_date}
-          designation={user?.profile?.designation}
-          bio={user?.profile?.bio}
-          avatarUri={user?.profile?.profile_pic ? `https://gst.tambimotors.com/${user.profile.profile_pic}` : undefined}
+          profileName={profileData?.user?.name || user?.name || 'Loading...'}
+          profileEmail={profileData?.user?.email || user?.email || 'N/A'}
+          profilePhone={profileData?.user?.phone || user?.phone ? `+91 ${profileData?.user?.phone || user?.phone}` : 'N/A'}
+          uid={profileData?.user?.uid || user?.uid}
+          joinDate={profileData?.profile?.join_date || user?.profile?.join_date}
+          designation={profileData?.profile?.designation || user?.profile?.designation}
+          bio={profileData?.profile?.bio || user?.profile?.bio}
+          avatarUri={
+            profileData?.profile?.profile_pic 
+              ? `${profileData.profile.profile_pic}` 
+              : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
+          }
           onCameraPress={handleCameraPress}
           onEmailPress={handleEmailPress}
           onPhonePress={handlePhonePress}
+          membership={profileData?.user?.membership || user?.membership}
+          dob={profileData?.profile?.dob || user?.profile?.dob}
+          dom={profileData?.profile?.dom || user?.profile?.dom}  
+          profession={profileData?.profile?.profession || user?.profile?.profession}
+          referralCode={profileData?.profile?.referral_code || user?.profile?.referral_code}
+          country={profileData?.profile?.country || user?.profile?.country}
         />
 
         {/* Profile Statistics Component */}
         {isNewUser ? (
           <WelcomeNewUserCard onDonatePress={handleDonatePress} />
         ) : (
-          <ProfileStats postsCount={myPosts.length} />
+          <ProfileStats 
+            postsCount={profileData?.statistics?.posts_count || myPosts.length} 
+            referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
+            totalDonation={profileData?.statistics?.total_donation || 0}
+            likesCount={profileData?.statistics?.likes_count || 0}
+          />
         )}
 
         {/* Active Campaign Card Component */}
@@ -243,20 +264,6 @@ const ProfileScreen = () => {
           <ContributionsTab contributions={contributionsData} />
         )}
       </ScrollView>
-
-      {/* Edit Profile Modal */}
-      {/* <EditProfileModal
-        visible={isEditModalVisible}
-        onClose={() => setIsEditModalVisible(false)}
-        currentName={profileName}
-        currentEmail={profileEmail}
-        currentPhone={profilePhone}
-        onUpdate={(newName, newEmail, newPhone) => {
-          setProfileName(newName);
-          setProfileEmail(newEmail);
-          setProfilePhone(newPhone);
-        }}
-      /> */}
 
       {/* Membership ID Card Modal Component */}
       <MembershipIdCardModal

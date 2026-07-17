@@ -21,7 +21,7 @@ import TermsScreen from '../screens/main/TermsScreen';
 import PublicProfileScreen from '../screens/main/PublicProfileScreen';
 import NotificationScreen from '../screens/main/NotificationScreen';
 import AboutTrustScreen from '../screens/main/AboutTrustScreen';
-
+import EditProfileScreen from '../screens/main/EditProfileScreen';
 import { RootStackParamList } from './types';
 import FeedScreen from '../screens/main/FeedScreen';
 import DonationSuccessScreen from '../screens/main/DonationSuccessScreen';
@@ -136,6 +136,10 @@ const Allroute = () => {
         <Stack.Screen
           name="PlansScreen"
           component={PlansScreen}
+        />
+        <Stack.Screen
+          name="EditProfileScreen"
+          component={EditProfileScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -14,9 +14,11 @@ interface HomeState {
   deleteComment: (commentId: string | number) => Promise<any>;
   getmypost: () => Promise<any>;
   deletePostStore: (postId: string | number) => Promise<any>;
+  deletePostImageStore: (postId: string | number, imageId: string | number) => Promise<any>;
   updatePostStore: (formData: any) => Promise<any>;
   getPlansStore: () => Promise<any>;
   purchasePlanStore: (payload: { plan_id: number; amount: number; payment_status: string; transaction_id: string }) => Promise<any>;
+  getContributionsStore: () => Promise<any>;
 }
 
 const useHomeStore = create<HomeState>((set) => ({
@@ -119,6 +121,16 @@ const useHomeStore = create<HomeState>((set) => ({
       throw error;
     }
   },
+  deletePostImageStore: async (postId: string | number, imageId: string | number) => {
+    try {
+      // Sending post_id and image_id as body payload or query params depending on typical pattern
+      const response = await api.delete('/user/delete-post-image', { data: { post_id: postId, id: imageId } });
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in deletePostImageStore:', error.response?.data || error.message);
+      throw error;
+    }
+  },
   updatePostStore: async (formData: any) => {
     try {
       const response = await api.post('/user/update-post', formData, {
@@ -147,6 +159,16 @@ const useHomeStore = create<HomeState>((set) => ({
       return response.data;
     } catch (error: any) {
       console.log('Error in purchasePlanStore:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  getContributionsStore: async () => {
+    try {
+      // Endpoint might need to be adjusted based on actual backend API
+      const response = await api.get('/user/donation-history'); 
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in getContributionsStore:', error.response?.data || error.message);
       throw error;
     }
   }

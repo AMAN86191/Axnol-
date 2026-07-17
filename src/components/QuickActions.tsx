@@ -12,7 +12,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { ArrowRight } from 'lucide-react-native';
 
 export const QuickActions = () => {
   const navigation = useNavigation<any>();
@@ -89,8 +88,8 @@ const styles = StyleSheet.create({
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: wp('4%'),
-    paddingVertical: hp('1%'),
+    // paddingHorizontal: wp('4%'),
+    // paddingVertical: hp('0.5%'),
     width: '100%',
     gap: wp('3%'),
   },
@@ -112,8 +111,8 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   iconContainer: {
-    width: wp('11.5%'),
-    height: wp('11.5%'),
+    width: wp('10.5%'),
+    height: wp('10.5%'),
     backgroundColor: '#FFFFFF',
     borderRadius: wp('3%'),
     alignItems: 'center',

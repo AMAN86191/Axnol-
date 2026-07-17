@@ -23,4 +23,5 @@ export type RootStackParamList = {
   FeedScreen: undefined;
   DonationSuccessScreen: { amount: number; transactionId: string; date: string };
   PlansScreen: undefined;
+  EditProfileScreen: undefined;
 };

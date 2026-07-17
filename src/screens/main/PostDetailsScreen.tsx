@@ -71,6 +71,7 @@ const PostDetailsScreen = () => {
               isLiked: item.is_liked || false,
               userId: item.user_id?.toString() || item.admin_id?.toString(),
               status: item.status,
+              original_post_images: item.post_images || [],
             });
           }
         } catch (error) {
