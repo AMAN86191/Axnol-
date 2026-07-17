@@ -61,7 +61,7 @@ export const ContributionsTab = React.memo(({ contributions }: ContributionsTabP
 
 const styles = StyleSheet.create({
   contributionsList: {
-    paddingHorizontal: wp('4%'),
+    // paddingHorizontal: wp('2%'),
     marginTop: hp('1.5%'),
   },
   contributionCard: {

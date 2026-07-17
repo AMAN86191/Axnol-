@@ -266,7 +266,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
         {renderDrawerItem('Membership Certificate', Award, 'MembershipCertificateScreen')}
         {renderDrawerItem('Donation History', History, 'MainTabs', 'Profile')}
-        {renderDrawerItem('Membership ', List, 'PlansScreen')}
+        {/* {renderDrawerItem('Membership ', List, 'PlansScreen')} */}
         {renderDrawerItem('Referral Friends', Share2, 'ReferralScreen')}
         {renderDrawerItem('WhatsApp Community', WhatsAppIcon, undefined, undefined, joinWhatsApp)}
 

@@ -33,7 +33,7 @@ export const QuickActions = () => {
       id: 'event',
       title: 'Upcoming Event',
       icon: require('../../assets/images/logo/gift.png'),
-      screen: null,
+      screen: 'UpcomingEventsScreen',
     },
 
   ];

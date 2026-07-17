@@ -60,7 +60,7 @@ const SignUpScreen = () => {
     setLoading(true);
     try {
       const formattedDob = dob ? `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}` : '';
-      
+
       await register({
         name,
         email,

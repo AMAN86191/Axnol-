@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Colors } from '../theme/colors';
+import useAuthStore from '../zustand/useAuthStore';
 
 export interface Comment {
   id: string;
@@ -46,6 +47,7 @@ export const CommentsModal = ({
 }: CommentsModalProps) => {
   const navigation = useNavigation();
   const [newCommentText, setNewCommentText] = useState('');
+  const { user } = useAuthStore();
 
   const handleAddComment = () => {
     if (!newCommentText.trim()) return;
@@ -106,13 +108,21 @@ export const CommentsModal = ({
 
           {/* Sticky Input Bar */}
           <View style={styles.inputBar}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }}
-              style={styles.inputUserAvatar}
-            />
+            {user?.profile?.profile_pic? (
+              <Image 
+                source={{ uri: user?.profile?.profile_pic.startsWith('http') ? user.profile.profile_pic : `https://gst.tambimotors.com/${user.profile.profile_pic}` }}
+                style={styles.inputUserAvatar}
+              />
+            ) : (
+              <View style={[styles.inputUserAvatar, { backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: Colors.white, fontWeight: 'bold', fontSize: RFValue(12) }}>
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </Text>
+              </View>
+            )}
             <TextInput
               style={styles.commentInput}
-              placeholder="Comment as Ananda Das..."
+              placeholder={`Comment as ${user?.name || 'User'}...`}
               placeholderTextColor={Colors.gray}
               value={newCommentText}
               onChangeText={setNewCommentText}

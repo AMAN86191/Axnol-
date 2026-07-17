@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,9 +7,10 @@ import {
   StatusBar,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { ChevronRight } from 'lucide-react-native';
@@ -18,21 +19,32 @@ import { FeedCard } from '../../components/FeedCard';
 import { QuickActions } from '../../components/QuickActions';
 import { BannerSlider } from '../../components/BannerSlider';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
+import { UpcomingEventsSection } from '../../components/UpcomingEventsSection';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
-  const { getPosts } = useHomeStore();
+  const { getPosts, getEvents } = useHomeStore();
   const [homePosts, setHomePosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, token } = useAuthStore();
-  console.log('User:', user);
-  console.log('Token:', token);
-  useEffect(() => {
-    const fetchHomeFeed = async () => {
+  const { user, token, getProfile } = useAuthStore();
+
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (token) {
+        getProfile().catch((err: any) => console.log('Error refreshing profile in Home:', err));
+      }
+    }, [token, getProfile])
+  );
+
+  const fetchHomeFeed = async () => {
       try {
         const response = await getPosts(1);
+        getEvents().catch(e => console.log('Error fetching events:', e));
         console.log('Home screen feed get posts data ', response)
         if (response && response.posts && response.posts.data) {
           const mappedPosts = response.posts.data.map((item: any) => {
@@ -68,8 +80,19 @@ const HomeScreen = () => {
         setLoading(false);
       }
     };
+
+  useEffect(() => {
     fetchHomeFeed();
   }, [getPosts]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchHomeFeed();
+    if (token) {
+      await getProfile().catch((err: any) => console.log('Error refreshing profile:', err));
+    }
+    setRefreshing(false);
+  }, [token, getPosts]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -80,12 +103,18 @@ const HomeScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+        }
       >
         {/* Banner Card Slider / Carousel */}
         <BannerSlider />
 
         {/* Quick Actions Component */}
         <QuickActions />
+
+        {/* Upcoming Events Section */}
+        {/* <UpcomingEventsSection /> */}
 
         {/* Feed Section Header */}
         <View style={styles.sectionHeader}>

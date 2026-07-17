@@ -110,7 +110,7 @@ export const FeedCard = ({
     if (onLikePress) {
       onLikePress();
     }
-    
+
     if (!postId) return;
 
     setLocalIsLiked(prev => !prev);
@@ -178,7 +178,7 @@ export const FeedCard = ({
   };
 
   return (
-    <View 
+    <View
       style={styles.feedCard}
       onLayout={(e) => {
         const width = e.nativeEvent.layout.width;
@@ -221,49 +221,49 @@ export const FeedCard = ({
         )}
       </View>
 
-        {/* Card Image or Carousel */}
-        {images && images.length > 0 ? (
-          <ScrollView
-            horizontal
-            pagingEnabled
-            snapToInterval={cardWidth}
-            decelerationRate="fast"
-            showsHorizontalScrollIndicator={false}
-            style={styles.carouselContainer}
-          >
-            {images.map((imgUri, idx) => (
-              <TouchableOpacity 
-                key={idx} 
-                style={[styles.carouselImageWrapper, { width: cardWidth }]}
-                activeOpacity={0.95} 
-                onPress={onPostPress} 
-                disabled={!onPostPress}
-              >
-                <Image source={{ uri: imgUri }} style={[styles.feedImage, styles.carouselImage]} resizeMode="cover" />
-                {images.length > 1 && (
-                  <View style={styles.carouselBadge}>
-                    <Text style={styles.carouselBadgeText}>{idx + 1} / {images.length}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        ) : (
-          image && (
-            <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
-              <Image
-                source={{ uri: image }}
-                style={styles.feedImage}
-                resizeMode="cover"
-              />
+      {/* Card Image or Carousel */}
+      {images && images.length > 0 ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          snapToInterval={cardWidth}
+          decelerationRate="fast"
+          showsHorizontalScrollIndicator={false}
+          style={styles.carouselContainer}
+        >
+          {images.map((imgUri, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={[styles.carouselImageWrapper, { width: cardWidth }]}
+              activeOpacity={0.95}
+              onPress={onPostPress}
+              disabled={!onPostPress}
+            >
+              <Image source={{ uri: imgUri }} style={[styles.feedImage, styles.carouselImage]} resizeMode="contain" />
+              {images.length > 1 && (
+                <View style={styles.carouselBadge}>
+                  <Text style={styles.carouselBadgeText}>{idx + 1} / {images.length}</Text>
+                </View>
+              )}
             </TouchableOpacity>
-          )
-        )}
+          ))}
+        </ScrollView>
+      ) : (
+        image && (
+          <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+            <Image
+              source={{ uri: image }}
+              style={styles.feedImage}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        )
+      )}
 
-        {/* Card Description */}
-        <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
-          <Text style={styles.feedText}>{text}</Text>
-        </TouchableOpacity>
+      {/* Card Description */}
+      <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+        <Text style={styles.feedText}>{text}</Text>
+      </TouchableOpacity>
 
       {/* Card Actions */}
       <View style={styles.feedActions}>
@@ -297,17 +297,17 @@ export const FeedCard = ({
         onDeleteComment={(commentId) => {
           Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
             { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Delete', 
+            {
+              text: 'Delete',
               style: 'destructive',
               onPress: async () => {
                 // Remove optimistically
                 setLocalComments(prev => prev.filter(c => c.id !== commentId));
                 setCommentsCount(prev => prev - 1);
-                
+
                 try {
-                const res =   await deleteComment(commentId);
-                console.log('Comment delete api res ', res)
+                  const res = await deleteComment(commentId);
+                  console.log('Comment delete api res ', res)
                   console.log('Comment deleted successfully');
                 } catch (error) {
                   console.log('Failed to delete comment from server', error);
@@ -326,8 +326,8 @@ const styles = StyleSheet.create({
   feedCard: {
     backgroundColor: Colors.white,
     borderRadius: wp('3.5%'),
-    // borderWidth: 1,
-    // borderColor: Colors.border,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
     padding: wp('2%'),
     marginBottom: hp('2%'),
     width: '100%',
@@ -403,6 +403,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: wp('3%'),
     marginBottom: hp('1.5%'),
+    backgroundColor: '#F9FAFB', // very light gray to fill empty space
   },
   feedActions: {
     flexDirection: 'row',

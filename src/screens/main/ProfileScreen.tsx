@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -122,8 +123,8 @@ const ProfileScreen = () => {
   }, [navigation]);
 
   const handleCertificatePress = useCallback(() => {
-    (navigation as any).navigate('MembershipCertificateScreen');
-  }, [navigation]);
+    (navigation as any).navigate('MembershipCertificateScreen', { profileData });
+  }, [navigation, profileData]);
 
   const handleDemoTogglePress = useCallback(() => {
     setIsMember(prev => !prev);
@@ -175,6 +176,8 @@ const ProfileScreen = () => {
       }
     }, [fetchContributions, fetchProfile, user?.id])
   );
+
+  const hasMembership = !!(profileData?.user?.membership || user?.membership);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -229,13 +232,15 @@ const ProfileScreen = () => {
         <ActiveCampaignCard onDonatePress={handleDonatePress} />
 
         {/* Membership Section Component */}
-        <MembershipBenefits
-          isMember={isMember}
-          onCertificatePress={handleCertificatePress}
-          onIdCardPress={() => setIsIdCardModalVisible(true)}
-          onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
-          onDemoTogglePress={handleDemoTogglePress}
-        />
+        {hasMembership && (
+          <MembershipBenefits
+            isMember={true}
+            onCertificatePress={handleCertificatePress}
+            onIdCardPress={() => setIsIdCardModalVisible(true)}
+            onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
+            onDemoTogglePress={handleDemoTogglePress}
+          />
+        )}
 
         {/* Quote Section Component */}
         <QuoteCard />
@@ -261,7 +266,27 @@ const ProfileScreen = () => {
         )}
 
         {activeTab === 'contributions' && (
-          <ContributionsTab contributions={contributionsData} />
+          <View style={styles.myPostsFeedList}>
+            {contributionsData.length > 0 ? (
+              <ContributionsTab contributions={contributionsData} />
+            ) : (
+              <View style={styles.emptyFeedContainer}>
+                <Text style={styles.emptyFeedText}>You haven't made any contributions yet.</Text>
+                <TouchableOpacity 
+                  style={{ 
+                    marginTop: hp('2%'), 
+                    paddingVertical: hp('1.2%'), 
+                    paddingHorizontal: wp('6%'), 
+                    backgroundColor: Colors.primary, 
+                    borderRadius: wp('5%') 
+                  }}
+                  onPress={handleDonatePress}
+                >
+                  <Text style={{ color: '#FFF', fontSize: RFValue(11), fontWeight: '700' }}>Donate Now</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         )}
       </ScrollView>
 
@@ -269,8 +294,17 @@ const ProfileScreen = () => {
       <MembershipIdCardModal
         visible={isIdCardModalVisible}
         onClose={() => setIsIdCardModalVisible(false)}
-        profileName={user?.name || 'Loading...'}
-        
+        profileName={profileData?.user?.name || user?.name || 'Unknown'}
+        avatarUri={
+          profileData?.profile?.profile_pic 
+            ? `${profileData.profile.profile_pic}` 
+            : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
+        }
+        memberId={profileData?.user?.uid || user?.uid || 'N/A'}
+        designation={(profileData?.user?.membership || user?.membership) ? 'Member' : 'N/A'}
+        since={profileData?.user?.start_date || user?.start_date 
+          ? new Date(profileData?.user?.start_date || user?.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) 
+          : 'N/A'}
       />
     </SafeAreaView>
   );

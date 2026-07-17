@@ -79,8 +79,13 @@ const useAuthStore = create(
             }
           });
           console.log('update profile response', res.data);
-          if (res.data && res.data.user) {
-            set((state) => ({ user: { ...state.user, ...res.data.user }, loading: false }));
+          const responseData = res.data?.data || res.data;
+          
+          if (responseData && responseData.user) {
+            const updatedUser = { ...responseData.user };
+            if (responseData.profile) updatedUser.profile = responseData.profile;
+            if (responseData.statistics) updatedUser.statistics = responseData.statistics;
+            set((state) => ({ user: { ...state.user, ...updatedUser }, loading: false }));
           } else {
             set({ loading: false });
           }
@@ -100,8 +105,13 @@ const useAuthStore = create(
         try {
           const res = await api.get('user/get-profile');
           console.log('get profile response:', res.data);
-          if (res.data && res.data.user) {
-            set((state) => ({ user: { ...state.user, ...res.data.user }, loading: false }));
+          const responseData = res.data?.data || res.data;
+          
+          if (responseData && responseData.user) {
+            const updatedUser = { ...responseData.user };
+            if (responseData.profile) updatedUser.profile = responseData.profile;
+            if (responseData.statistics) updatedUser.statistics = responseData.statistics;
+            set((state) => ({ user: { ...state.user, ...updatedUser }, loading: false }));
           } else {
             set({ loading: false });
           }

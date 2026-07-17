@@ -36,7 +36,7 @@ export const ProfileHeader = React.memo(({
   profileName,
   profileEmail,
   profilePhone,
-  avatarUri = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300',
+  avatarUri = '',
   uid,
   joinDate,
   designation,
@@ -78,10 +78,18 @@ export const ProfileHeader = React.memo(({
           {/* Double ring circular avatar */}
           <View style={styles.avatarContainer}>
             <View style={styles.avatarOuterRing}>
-              <Image
-                source={{ uri: avatarUri }}
-                style={styles.avatarImage}
-              />
+              {avatarUri ? (
+                <Image
+                  source={{ uri: avatarUri }}
+                  style={styles.avatarImage}
+                />
+              ) : (
+                <View style={[styles.avatarImage, { backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{ color: '#FFF', fontSize: RFValue(20), fontWeight: '800' }}>
+                    {profileName ? profileName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
+                  </Text>
+                </View>
+              )}
             </View>
             <TouchableOpacity style={styles.cameraBtn} onPress={onCameraPress} activeOpacity={0.85}>
               <Pencil size={RFValue(8.5)} color={Colors.white} strokeWidth={2.2} />
@@ -121,43 +129,45 @@ export const ProfileHeader = React.memo(({
         </View>
 
         {/* Extra Details row */}
-        <View style={styles.extraDetailsContainer}>
-          {profession && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Profession: </Text>
-              <Text style={styles.detailValue}>{profession}</Text>
-            </View>
-          )}
-          {dob && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>DOB: </Text>
-              <Text style={styles.detailValue}>{dob}</Text>
-            </View>
-          )}
-          {dom && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>DOM: </Text>
-              <Text style={styles.detailValue}>{dom}</Text>
-            </View>
-          )}
-          {country && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Country: </Text>
-              <Text style={styles.detailValue}>{country}</Text>
-            </View>
-          )}
-          {referralCode && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Referral Code: </Text>
-              <View style={styles.referralCodeContainer}>
-                <Text style={styles.detailValue}>{referralCode}</Text>
-                <TouchableOpacity onPress={() => handleShareReferral(referralCode)} style={styles.shareBtn}>
-                  <Share2 size={RFValue(12)} color="#FF6F34" />
-                </TouchableOpacity>
+        {(profession || dob || dom || country || referralCode) ? (
+          <View style={styles.extraDetailsContainer}>
+            {profession ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Profession: </Text>
+                <Text style={styles.detailValue}>{profession}</Text>
               </View>
-            </View>
-          )}
-        </View>
+            ) : null}
+            {dob ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>DOB: </Text>
+                <Text style={styles.detailValue}>{dob}</Text>
+              </View>
+            ) : null}
+            {dom ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>DOM: </Text>
+                <Text style={styles.detailValue}>{dom}</Text>
+              </View>
+            ) : null}
+            {country ? (
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Country: </Text>
+                <Text style={styles.detailValue}>{country}</Text>
+              </View>
+            ) : null}
+            {referralCode ? (
+              <View style={[styles.detailRow, { width: '100%' }]}>
+                <Text style={styles.detailLabel}>Referral Code: </Text>
+                <View style={styles.referralCodeContainer}>
+                  <Text style={styles.detailValue}>{referralCode}</Text>
+                  <TouchableOpacity onPress={() => handleShareReferral(referralCode)} style={styles.shareBtn}>
+                    <Share2 size={RFValue(12)} color="#FF6F34" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* Contact Details row */}
         <View style={styles.contactContainer}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,26 +10,20 @@ import {
   Platform,
   Modal,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import {
-  User,
-  Mail,
-  Phone,
-  ShieldCheck,
-  CheckCircle,
-  Leaf,
-  MapPin,
-  Building,
-  Home,
-  Camera,
-  X,
-  Calendar,
-  FileText,
+  User, Mail, Phone, ShieldCheck, CheckCircle, Leaf,
+  MapPin, Building, Home, Camera, X, Calendar, FileText,
+  CreditCard, Award, Star,
+  Globe,
+  Briefcase
 } from 'lucide-react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -39,34 +33,122 @@ import { RootStackParamList } from '../../navigation/types';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { InputField } from '../../components/InputField';
 import { CustomButton } from '../../components/CustomButton';
+import useAuthStore from '../../zustand/useAuthStore';
+import useHomeStore from '../../zustand/useHomeStore';
+import { MembershipCertificateCard } from '../../components/MembershipCertificateCard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'JoinMembershipScreen'>;
 
+interface Plan {
+  id: number;
+  plan_name: string;
+  price: string;
+  duration: string;
+  status: number;
+}
+
 const JoinMembershipScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const [fullName, setFullName] = useState('Ananda Das');
-  const [email, setEmail] = useState('ananda@example.com');
-  const [phone, setPhone] = useState('+91 98765 43210');
-  const [agree, setAgree] = useState(false);
+  const { user, updateProfile } = useAuthStore();
+  const { getPlansStore, purchasePlanStore  } = useHomeStore();
+  const { getProfile } = useAuthStore();
+ console.log('user', user)
+  const hasMembership = !!user?.membership;
 
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [agree, setAgree] = useState(false);
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
+  const [country, setCountry] = useState('');
   const [dob, setDob] = useState('');
   const [bio, setBio] = useState('');
+  const [profession, setProfession] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+
+  // Plans state
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [fetchingPlans, setFetchingPlans] = useState(false);
+  const [purchasingId, setPurchasingId] = useState<number | null>(null);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateObj, setDateObj] = useState(new Date());
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.name || '');
+      setEmail(user.email || '');
+      setPhone(user.phone || '');
+      setDob(user.profile?.dob || '');
+      setBio(user.profile?.bio || '');
+      setProfession(user.profile?.profession || '');
+      setCountry(user.profile?.country || '');
+      setProfilePhoto(user.profile?.profile_pic ? `${user.profile.profile_pic}` : null);
+    }
+  }, [user]);
+
+  const fetchPlans = async () => {
+    setFetchingPlans(true);
+    try {
+      const response = await getPlansStore();
+      if (response && response.status && response.plans) {
+        setPlans(response.plans);
+      }
+    } catch (error) {
+      console.log('Error fetching plans:', error);
+    } finally {
+      setFetchingPlans(false);
+    }
+  };
+
+  useEffect(() => {
+    if (hasMembership && plans.length === 0) {
+      fetchPlans();
+    }
+  }, [hasMembership]);
+
+  const handlePurchase = async (plan: Plan) => {
+    setPurchasingId(plan.id);
+    try {
+      const payload = {
+        plan_id: plan.id,
+        amount: parseFloat(plan.price),
+        payment_status: "paid",
+        transaction_id: "2345746"
+      };
+
+      const response = await purchasePlanStore(payload);
+
+      if (response && response.status) {
+        setModalVisible(false);
+        await getProfile();
+        navigation.navigate('DonationSuccessScreen', {
+          amount: parseFloat(plan.price),
+          transactionId: '2345746',
+          date: new Date().toLocaleDateString()
+        });
+      } else {
+        Alert.alert('Error', response?.message || 'Failed to purchase plan.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while purchasing the plan.');
+    } finally {
+      setPurchasingId(null);
+    }
+  };
 
   const onDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === 'ios');
     if (selectedDate) {
       setDateObj(selectedDate);
       if (event.type === 'set' || Platform.OS === 'ios') {
-        const formattedDate = `${String(selectedDate.getDate()).padStart(2, '0')}/${String(selectedDate.getMonth() + 1).padStart(2, '0')}/${selectedDate.getFullYear()}`;
+        const formattedDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
         setDob(formattedDate);
         setShowDatePicker(false);
       }
@@ -80,16 +162,98 @@ const JoinMembershipScreen = () => {
       mediaType: 'photo',
       quality: 0.5,
     });
-
     if (!result.didCancel && result.assets && result.assets.length > 0) {
       setProfilePhoto(result.assets[0].uri || null);
     }
   };
 
+  const handleJoinMembership = async () => {
+    if (!agree) {
+      Alert.alert('Agreement Required', 'Please agree to the Terms & Conditions.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', fullName);
+      formData.append('email', email);
+      formData.append('phone', phone);
+      formData.append('dob', dob);
+      formData.append('bio', bio);
+      formData.append('country', country);
+      formData.append('profession', profession);
+      formData.append('city', city);
+      formData.append('state', state);
+      formData.append('pincode', pincode);
+      formData.append('address', address);
+
+      if (profilePhoto && !profilePhoto.startsWith('http')) {
+        formData.append('profile_pic', {
+          uri: profilePhoto,
+          name: profilePhoto.split('/').pop() || 'profile.jpg',
+          type: profilePhoto.endsWith('.png') ? 'image/png' : 'image/jpeg',
+        } as any);
+      }
+
+      await updateProfile(formData);
+
+      setModalVisible(true);
+      fetchPlans();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Dynamic Member Data for Certificate
+  const memberDetails = {
+    name: user?.name || 'Member Name',
+    memberId: user?.uid || 'N/A',
+    tier: user?.membership ? user.membership.charAt(0).toUpperCase() + user.membership.slice(1) : 'Community',
+    joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
+    endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
+    status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active',
+    verified: 'Verified Sevak',
+    impact: `₹0 Contributed`,
+  };
+
+  const renderPlanCard = (plan: Plan, isPremium: boolean) => {
+    return (
+      <View key={plan.id} style={[styles.planCard, isPremium && styles.premiumCard]}>
+        {isPremium && (
+          <View style={styles.premiumBadge}>
+            <Star size={RFValue(8)} color="#FFF" fill="#FFF" />
+            <Text style={styles.premiumBadgeText}>RECOMMENDED</Text>
+          </View>
+        )}
+        <View style={styles.planHeader}>
+          <View style={styles.planIconBox}>
+            <Award size={RFValue(16)} color={isPremium ? Colors.primary : Colors.dark} />
+          </View>
+          <Text style={styles.planName}>{plan.plan_name}</Text>
+        </View>
+
+        <View style={styles.planPriceContainer}>
+          <Text style={styles.currencySymbol}>₹</Text>
+          <Text style={styles.planPrice}>{parseInt(plan.price).toLocaleString('en-IN')}</Text>
+          <Text style={styles.planDuration}>/{plan.duration}</Text>
+        </View>
+
+        <CustomButton
+          title="Select & Pay"
+          onPress={() => handlePurchase(plan)}
+          loading={purchasingId === plan.id}
+          disabled={purchasingId !== null}
+          style={{ marginTop: hp('1%'), width: '100%', height: hp('5%') }}
+        />
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-
       <PrimaryHeader />
 
       <KeyboardAvoidingView
@@ -100,176 +264,231 @@ const JoinMembershipScreen = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
         >
-          {/* Main Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Join the Mission</Text>
-            <Text style={styles.cardSubtitle}>Create your member account to get started.</Text>
+          {hasMembership ? (
+            <View>
+              <MembershipCertificateCard memberDetails={memberDetails} />
+              
+              <View style={{ marginTop: hp('3%'), paddingHorizontal: wp('2%'), marginBottom: hp('2%') }}>
+                <Text style={{ fontSize: RFValue(14), fontWeight: '700', color: Colors.dark, marginBottom: hp('0.5%') }}>Upgrade Membership</Text>
+                <Text style={{ fontSize: RFValue(10), color: Colors.gray, marginBottom: hp('2%') }}>Choose a higher tier to increase your impact and benefits.</Text>
 
-            {/* Profile Photo */}
-            <View style={styles.photoContainer}>
-              <TouchableOpacity style={styles.photoPicker} onPress={handleChoosePhoto} activeOpacity={0.8}>
-                {profilePhoto ? (
-                  <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
+                {fetchingPlans ? (
+                  <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('3%') }} />
                 ) : (
-                  <View style={styles.photoPlaceholder}>
-                    <Camera size={24} color={Colors.gray} />
-                    <Text style={styles.photoText}>Add Photo</Text>
+                  <View>
+                    {plans
+                      .filter(plan => 
+                        plan.plan_name.toLowerCase() !== user?.membership?.toLowerCase() &&
+                        plan.duration.toLowerCase() !== user?.membership?.toLowerCase()
+                      )
+                      .map((plan) => renderPlanCard(plan, plan.duration.toLowerCase() === 'lifetime'))
+                    }
+                    {plans.filter(plan => 
+                      plan.plan_name.toLowerCase() !== user?.membership?.toLowerCase() &&
+                      plan.duration.toLowerCase() !== user?.membership?.toLowerCase()
+                    ).length === 0 && !fetchingPlans && (
+                      <Text style={{ textAlign: 'center', color: Colors.gray, marginTop: hp('2%') }}>
+                        No upgrade plans available at the moment.
+                      </Text>
+                    )}
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             </View>
+          ) : (
+            <>
+              {/* Main Card */}
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>Join the Mission</Text>
+                <Text style={styles.cardSubtitle}>Create your member account to get started.</Text>
 
-            {/* Full Name */}
-            <InputField
-              label="Full Name"
-              placeholder="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              leftIcon={<User size={18} color={Colors.gray} strokeWidth={1.5} />}
-            />
+                {/* Profile Photo */}
+                <View style={styles.photoContainer}>
+                  <TouchableOpacity style={styles.photoPicker} onPress={handleChoosePhoto} activeOpacity={0.8}>
+                    {profilePhoto ? (
+                      <Image source={{ uri: profilePhoto }} style={styles.profileImage} />
+                    ) : (
+                      <View style={styles.photoPlaceholder}>
+                        <Camera size={24} color={Colors.gray} />
+                        <Text style={styles.photoText}>Add Photo</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
 
-            {/* Email Address */}
-            <InputField
-              label="Email Address"
-              placeholder="Email Address"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<Mail size={18} color={Colors.gray} strokeWidth={1.5} />}
-            />
-
-            {/* Mobile Number */}
-            <InputField
-              label="Mobile Number"
-              placeholder="Mobile Number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              leftIcon={<Phone size={18} color={Colors.gray} strokeWidth={1.5} />}
-            />
-
-            {/* Date of Birth */}
-            <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={1}>
-              <View pointerEvents="none">
+                {/* Full Name */}
                 <InputField
-                  label="Date of Birth"
-                  placeholder="DD/MM/YYYY"
-                  value={dob}
-                  editable={false}
-                  leftIcon={<Calendar size={18} color={Colors.gray} strokeWidth={1.5} />}
+                  label="Full Name"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChangeText={setFullName}
+                  leftIcon={<User size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+
+                {/* Email Address */}
+                <InputField
+                  label="Email Address"
+                  placeholder="Email Address"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  leftIcon={<Mail size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+
+                {/* Mobile Number */}
+                <InputField
+                  label="Mobile Number"
+                  placeholder="Mobile Number"
+                  value={phone}
+                  onChangeText={setPhone}
+                  keyboardType="phone-pad"
+                  leftIcon={<Phone size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+
+
+
+                {/* Date of Birth */}
+                <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={1}>
+                  <View pointerEvents="none">
+                    <InputField
+                      label="Date of Birth"
+                      placeholder="YYYY-MM-DD"
+                      value={dob}
+                      editable={false}
+                      leftIcon={<Calendar size={18} color={Colors.gray} strokeWidth={1.5} />}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={dateObj}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={onDateChange}
+                    maximumDate={new Date()}
+                  />
+                )}
+
+                {/* Description / Bio */}
+                <InputField
+                  label="Description / Bio"
+                  placeholder="Tell us about yourself"
+                  value={bio}
+                  onChangeText={setBio}
+                  leftIcon={<FileText size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+                {/* profession */}
+                <InputField
+                  label="Profession"
+                  placeholder="Profession"
+                  value={profession}
+                  onChangeText={setProfession}
+                  leftIcon={<Briefcase size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+
+                {/* Address */}
+                <InputField
+                  label="Address"
+                  placeholder="Full Address"
+                  value={address}
+                  onChangeText={setAddress}
+                  leftIcon={<Home size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+                <View style={styles.rowContainer}>
+                  <View style={styles.halfWidth}>
+                    <InputField
+                      label="City"
+                      placeholder="City"
+                      value={city}
+                      onChangeText={setCity}
+                      leftIcon={<Building size={18} color={Colors.gray} strokeWidth={1.5} />}
+                    />
+                  </View>
+                  <View style={styles.halfWidth}>
+                    <InputField
+                      label="Pincode"
+                      placeholder="000000"
+                      value={pincode}
+                      onChangeText={setPincode}
+                      keyboardType="numeric"
+                      leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
+                    />
+                  </View>
+                </View>
+     
+
+
+                {/* State & Pincode Row */}
+                <View style={styles.rowContainer}>
+                  <View style={styles.halfWidth}>
+                    <InputField
+                      label="State"
+                      placeholder="State"
+                      value={state}
+                      onChangeText={setState}
+                      leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
+                    />
+                  </View>
+                  <View style={styles.halfWidth}>
+                    <InputField
+                      label='Country'
+                      value={country}
+                      onChangeText={setCountry}
+                      leftIcon={<Globe size={18} color={Colors.gray} strokeWidth={1.5} />}
+                    />
+                  </View>
+                </View>
+
+                {/* Checkbox Agreement */}
+                <TouchableOpacity
+                  style={styles.checkboxContainer}
+                  onPress={() => setAgree(!agree)}
+                  activeOpacity={0.8}
+                >
+                  <View style={[styles.checkbox, agree && styles.checkboxActive]}>
+                    {agree && <View style={styles.checkboxTick} />}
+                  </View>
+                  <Text style={styles.checkboxText}>
+                    I agree to the <Text style={styles.highlightText}>Terms & Conditions</Text>{' '}
+                    and <Text style={styles.highlightText}>Privacy Policy</Text>
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Action Button */}
+                <CustomButton
+                  title="Submit & View Plans"
+                  onPress={handleJoinMembership}
+                  loading={loading}
                 />
               </View>
-            </TouchableOpacity>
 
-            {showDatePicker && (
-              <DateTimePicker
-                value={dateObj}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={onDateChange}
-                maximumDate={new Date()}
-              />
-            )}
-
-            {/* Description / Bio */}
-            <InputField
-              label="Description / Bio"
-              placeholder="Tell us about yourself"
-              value={bio}
-              onChangeText={setBio}
-              leftIcon={<FileText size={18} color={Colors.gray} strokeWidth={1.5} />}
-            />
-
-
-
-            {/* City */}
-            <InputField
-              label="City"
-              placeholder="City"
-              value={city}
-              onChangeText={setCity}
-              leftIcon={<Building size={18} color={Colors.gray} strokeWidth={1.5} />}
-            />
-
-            {/* Address */}
-            <InputField
-              label="Address"
-              placeholder="Full Address"
-              value={address}
-              onChangeText={setAddress}
-              leftIcon={<Home size={18} color={Colors.gray} strokeWidth={1.5} />}
-            />
-            {/* State & Pincode Row */}
-            <View style={styles.rowContainer}>
-
-              <View style={styles.halfWidth}>
-                <InputField
-                  label="Pincode"
-                  placeholder="000000"
-                  value={pincode}
-                  onChangeText={setPincode}
-                  keyboardType="numeric"
-                  leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
-                />
+              {/* Bottom Trust Badges */}
+              <View style={styles.trustRow}>
+                <View style={styles.trustItem}>
+                  <ShieldCheck size={22} color={Colors.gray} strokeWidth={1.5} />
+                  <Text style={styles.trustLabel}>SECURED</Text>
+                </View>
+                <View style={styles.trustItem}>
+                  <CheckCircle size={22} color={Colors.gray} strokeWidth={1.5} />
+                  <Text style={styles.trustLabel}>CERTIFIED</Text>
+                </View>
+                <View style={styles.trustItem}>
+                  <Leaf size={22} color={Colors.gray} strokeWidth={1.5} />
+                  <Text style={styles.trustLabel}>ORGANIC</Text>
+                </View>
               </View>
-              <View style={styles.halfWidth}>
-                <InputField
-                  label="State"
-                  placeholder="State"
-                  value={state}
-                  onChangeText={setState}
-                  leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
-                />
-              </View>
-            </View>
-            {/* Checkbox Agreement */}
-            <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => setAgree(!agree)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.checkbox, agree && styles.checkboxActive]}>
-                {agree && <View style={styles.checkboxTick} />}
-              </View>
-              <Text style={styles.checkboxText}>
-                I agree to the <Text style={styles.highlightText}>Terms & Conditions</Text>{' '}
-                and <Text style={styles.highlightText}>Privacy Policy</Text>
-              </Text>
-            </TouchableOpacity>
-
-            {/* Action Button */}
-            <CustomButton
-              title="Join Membership"
-              onPress={() => setModalVisible(true)}
-            />
-
-
-          </View>
-
-          {/* Bottom Trust Badges */}
-          <View style={styles.trustRow}>
-            <View style={styles.trustItem}>
-              <ShieldCheck size={22} color={Colors.gray} strokeWidth={1.5} />
-              <Text style={styles.trustLabel}>SECURED</Text>
-            </View>
-            <View style={styles.trustItem}>
-              <CheckCircle size={22} color={Colors.gray} strokeWidth={1.5} />
-              <Text style={styles.trustLabel}>CERTIFIED</Text>
-            </View>
-            <View style={styles.trustItem}>
-              <Leaf size={22} color={Colors.gray} strokeWidth={1.5} />
-              <Text style={styles.trustLabel}>ORGANIC</Text>
-            </View>
-          </View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Membership Card Modal */}
+      {/* Plans Modal */}
       <Modal
         visible={modalVisible}
         transparent={true}
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
@@ -281,43 +500,21 @@ const JoinMembershipScreen = () => {
               <X size={24} color={Colors.gray} />
             </TouchableOpacity>
 
-            <Text style={styles.modalTitle}>Membership Generated!</Text>
+            <Text style={styles.modalTitle}>Choose Your Plan</Text>
 
-            {/* ID Card View */}
-            <View style={styles.idCard}>
-              <View style={styles.idHeader}>
-                <Text style={styles.idHeaderText}>GAUMATA TRUST</Text>
-                <Text style={styles.idHeaderSub}>Official Member</Text>
-              </View>
-              <View style={styles.idBody}>
-                <View style={styles.idPhotoContainer}>
-                  {profilePhoto ? (
-                    <Image source={{ uri: profilePhoto }} style={styles.idPhoto} />
-                  ) : (
-                    <View style={styles.idPhotoPlaceholder}>
-                      <User size={30} color="#CCC" />
-                    </View>
-                  )}
-                </View>
-                <View style={styles.idDetails}>
-                  <Text style={styles.idName}>{fullName || 'N/A'}</Text>
-                  <Text style={styles.idText}>ID: GT-{Math.floor(100000 + Math.random() * 900000)}</Text>
-                  <Text style={styles.idText}>{phone || 'N/A'}</Text>
-                  <Text style={styles.idText}>{city ? `${city}, ${state}` : 'N/A'}</Text>
-                </View>
-              </View>
-              <View style={styles.idFooter}>
-                <Text style={styles.idFooterText}>Valid for Lifetime</Text>
-              </View>
-            </View>
+            {fetchingPlans ? (
+              <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('5%') }} />
+            ) : (
+              <ScrollView style={styles.plansScroll} showsVerticalScrollIndicator={false}>
+                {plans.map((plan) => renderPlanCard(plan, plan.duration.toLowerCase() === 'lifetime'))}
 
-            <CustomButton
-              title="Confirm & Auto Set"
-              onPress={() => {
-                setModalVisible(false);
-              }}
-              style={{ marginTop: hp('3%'), width: '100%' }}
-            />
+                {plans.length === 0 && (
+                  <View style={{ alignItems: 'center', padding: hp('3%') }}>
+                    <Text style={{ color: Colors.gray }}>No plans available right now.</Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
@@ -376,7 +573,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginTop: hp('0.5%'),
-    // marginBottom: hp('3%'),
+    marginBottom: hp('2%'),
   },
   checkbox: {
     width: wp('4.5%'),
@@ -407,29 +604,6 @@ const styles = StyleSheet.create({
   highlightText: {
     color: '#A03000',
     fontWeight: '700',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: hp('3%'),
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#EAEAEA',
-  },
-  dividerText: {
-    fontSize: RFValue(10),
-    fontWeight: '700',
-    color: '#999',
-    marginHorizontal: wp('3%'),
-  },
-  loginFooter: {
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: RFValue(12),
-    color: Colors.gray,
   },
   trustRow: {
     flexDirection: 'row',
@@ -477,110 +651,119 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
   modalContent: {
-    width: wp('90%'),
+    width: wp('100%'),
+    maxHeight: hp('85%'),
     backgroundColor: Colors.white,
-    borderRadius: wp('5%'),
-    padding: wp('3%'),
+    borderTopLeftRadius: wp('6%'),
+    borderTopRightRadius: wp('6%'),
+    padding: wp('5%'),
+    paddingBottom: hp('5%'),
     alignItems: 'center',
   },
   closeButton: {
     position: 'absolute',
-    top: hp('1.5%'),
-    right: wp('4%'),
+    top: hp('2%'),
+    right: wp('5%'),
     zIndex: 10,
+    backgroundColor: '#F5F5F5',
+    borderRadius: wp('4%'),
+    padding: wp('1.5%'),
   },
   modalTitle: {
     fontSize: RFValue(14),
-    fontWeight: '800',
-    color: Colors.primary,
-    marginBottom: hp('3%'),
-    marginTop: hp('1%'),
+    fontWeight: '600',
+    color: Colors.dark,
+    marginBottom: hp('2%'),
+    alignSelf: 'flex-start',
   },
-  idCard: {
+  plansScroll: {
     width: '100%',
+  },
+  planCard: {
     backgroundColor: '#FFF',
-    borderRadius: wp('3%'),
-    overflow: 'hidden',
+    borderRadius: wp('4%'),
+    paddingHorizontal: wp('2%'),
     borderWidth: 1,
     borderColor: '#EAEAEA',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 5,
-    elevation: 1,
-  },
-  idHeader: {
-    backgroundColor: Colors.primary,
-    paddingVertical: hp('1%'),
-    alignItems: 'center',
-  },
-  idHeaderText: {
-    color: '#FFF',
-    fontSize: RFValue(11),
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  idHeaderSub: {
-    color: '#FFDDBB',
-    fontSize: RFValue(8),
-    fontWeight: '600',
-  },
-  idBody: {
-    flexDirection: 'row',
-    padding: wp('3%'),
-    alignItems: 'center',
-  },
-  idPhotoContainer: {
-    width: wp('20%'),
-    height: wp('26%'),
-    borderRadius: wp('2%'),
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#EAEAEA',
+    elevation: 2,
+    marginBottom: hp('1.5%'),
+    position: 'relative',
     overflow: 'hidden',
-    justifyContent: 'center',
+  },
+  premiumCard: {
+    borderColor: Colors.primary,
+    borderWidth: 2,
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.1,
+    elevation: 4,
+  },
+  premiumBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: Colors.primary,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: wp('4%'),
+    paddingHorizontal: wp('2%'),
+    paddingVertical: hp('0.4%'),
+    borderBottomLeftRadius: wp('2%'),
   },
-  idPhoto: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  idPhotoPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  idDetails: {
-    flex: 1,
-  },
-  idName: {
-    fontSize: RFValue(12),
+  premiumBadgeText: {
+    color: '#FFF',
+    fontSize: RFValue(7),
     fontWeight: '800',
-    color: Colors.dark,
-    marginBottom: hp('0.5%'),
+    marginLeft: wp('1%'),
+    letterSpacing: 0.5,
   },
-  idText: {
-    fontSize: RFValue(9),
-    color: Colors.gray,
-    marginBottom: hp('0.3%'),
-    fontWeight: '500',
-  },
-  idFooter: {
-    backgroundColor: '#F9FAFB',
-    paddingVertical: hp('1%'),
+  planHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderTopColor: '#EAEAEA',
+    marginBottom: hp('1%'),
   },
-  idFooterText: {
-    fontSize: RFValue(8),
-    color: Colors.gray,
+  planIconBox: {
+    width: wp('7%'),
+    height: wp('7%'),
+    borderRadius: wp('2.5%'),
+    backgroundColor: '#FFF5F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: wp('3%'),
+  },
+  planName: {
+    fontSize: RFValue(12),
+    fontWeight: '700',
+    color: '#333',
+  },
+  planPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: hp('1%'),
+  },
+  currencySymbol: {
+    fontSize: RFValue(12),
+    fontWeight: '700',
+    color: '#333',
+    marginRight: wp('1%'),
+  },
+  planPrice: {
+    fontSize: RFValue(15),
+    fontWeight: '900',
+    color: '#111',
+  },
+  planDuration: {
+    fontSize: RFValue(9.5),
+    color: '#666',
     fontWeight: '600',
+    marginLeft: wp('1%'),
+    textTransform: 'capitalize',
   },
 });
 

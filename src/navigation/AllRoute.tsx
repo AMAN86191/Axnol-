@@ -22,6 +22,7 @@ import PublicProfileScreen from '../screens/main/PublicProfileScreen';
 import NotificationScreen from '../screens/main/NotificationScreen';
 import AboutTrustScreen from '../screens/main/AboutTrustScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
+import UpcomingEventsScreen from '../screens/main/UpcomingEventsScreen';
 import { RootStackParamList } from './types';
 import FeedScreen from '../screens/main/FeedScreen';
 import DonationSuccessScreen from '../screens/main/DonationSuccessScreen';
@@ -38,10 +39,6 @@ const Allroute = () => {
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
-          animationDuration: 350,
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          fullScreenGestureEnabled: true,
         }}
       >
         <Stack.Screen
@@ -140,6 +137,10 @@ const Allroute = () => {
         <Stack.Screen
           name="EditProfileScreen"
           component={EditProfileScreen}
+        />
+        <Stack.Screen
+          name="UpcomingEventsScreen"
+          component={UpcomingEventsScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -57,12 +57,7 @@ const SplashScreen = () => {
     ]).start();
 
     const timer = setTimeout(() => {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: token ? 'MainDrawer' : 'LoginScreen' }],
-        })
-      );
+      navigation.replace(token ? 'MainDrawer' : 'LoginScreen');
     }, 3000);
 
     return () => clearTimeout(timer);

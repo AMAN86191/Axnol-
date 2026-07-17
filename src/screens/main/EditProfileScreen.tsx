@@ -278,17 +278,27 @@ const EditProfileScreen = () => {
               )}
 
               {/* Date of Marriage Picker */}
-              <TouchableOpacity onPress={() => setShowDomPicker(true)} activeOpacity={1}>
-                <View pointerEvents="none">
-                  <InputField
-                    label="Date of Marriage (Optional)"
-                    placeholder="YYYY-MM-DD"
-                    value={dom}
-                    editable={false}
-                    leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
-                  />
-                </View>
-              </TouchableOpacity>
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity onPress={() => setShowDomPicker(true)} activeOpacity={1}>
+                  <View pointerEvents="none">
+                    <InputField
+                      label="Date of Marriage (Optional)"
+                      placeholder="YYYY-MM-DD"
+                      value={dom}
+                      editable={false}
+                      leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
+                    />
+                  </View>
+                </TouchableOpacity>
+                {!!dom && (
+                  <TouchableOpacity 
+                    onPress={() => setDom('')}
+                    style={{ position: 'absolute', right: 0, top: -hp('0.2%'), paddingHorizontal: wp('2%'), paddingVertical: hp('0.5%'), zIndex: 10 }}
+                  >
+                    <Text style={{ fontSize: RFValue(11), color: Colors.primary, fontWeight: '600' }}>Clear</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               {showDomPicker && (
                 <DateTimePicker
                   value={dateObjDom}

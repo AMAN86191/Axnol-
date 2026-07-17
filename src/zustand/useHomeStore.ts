@@ -5,6 +5,7 @@ interface HomeState {
   loading: boolean;
   error: string | null;
   posts: any[];
+  events: any[];
   createPost: (formData: FormData) => Promise<any>;
   getPosts: (page?: number) => Promise<any>;
   getPostDetails: (id: string | number) => Promise<any>;
@@ -19,12 +20,15 @@ interface HomeState {
   getPlansStore: () => Promise<any>;
   purchasePlanStore: (payload: { plan_id: number; amount: number; payment_status: string; transaction_id: string }) => Promise<any>;
   getContributionsStore: () => Promise<any>;
+  getPublicProfileStore: (userId: string | number) => Promise<any>;
+  getEvents: () => Promise<any>;
 }
 
 const useHomeStore = create<HomeState>((set) => ({
   loading: false,
   error: null,
   posts: [],
+  events: [],
   createPost: async (formData: FormData) => {
     set({ loading: true, error: null });
     try {
@@ -169,6 +173,39 @@ const useHomeStore = create<HomeState>((set) => ({
       return response.data;
     } catch (error: any) {
       console.log('Error in getContributionsStore:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  getPublicProfileStore: async (userId: string | number) => {
+    try {
+      const response = await api.get(`user/public-profile/${userId}`);
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in getPublicProfileStore:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  getEvents: async () => {
+    try {
+      const response = await api.get('/user/events');
+      
+      // Attempt to safely extract the array of events
+      let extractedEvents = [];
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+           extractedEvents = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+           extractedEvents = response.data.data;
+        } else if (response.data.events && Array.isArray(response.data.events)) {
+           extractedEvents = response.data.events;
+        } else if (response.data.data?.data && Array.isArray(response.data.data.data)) {
+           extractedEvents = response.data.data.data;
+        }
+      }
+      set({ events: extractedEvents });
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in getEvents:', error.response?.data || error.message);
       throw error;
     }
   }
