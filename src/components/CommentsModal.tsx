@@ -88,7 +88,15 @@ export const CommentsModal = ({
           >
             {comments.map((comment) => (
               <View key={comment.id} style={styles.commentItem}>
+                {comment.avatar ? (
                   <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
+                ) : (
+                  <View style={[styles.commentAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                    <Text style={{ fontSize: RFValue(11), fontWeight: '700', color: Colors.dark }}>
+                      {(comment.author || 'U').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                   <View style={styles.commentContent}>
                     <Text style={styles.commentAuthorText}>
                       {comment.author}{' '}
@@ -108,18 +116,23 @@ export const CommentsModal = ({
 
           {/* Sticky Input Bar */}
           <View style={styles.inputBar}>
-            {user?.profile?.profile_pic? (
-              <Image 
-                source={{ uri: user?.profile?.profile_pic.startsWith('http') ? user.profile.profile_pic : `https://gst.tambimotors.com/${user.profile.profile_pic}` }}
-                style={styles.inputUserAvatar}
-              />
-            ) : (
-              <View style={[styles.inputUserAvatar, { backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: Colors.white, fontWeight: 'bold', fontSize: RFValue(12) }}>
-                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                </Text>
-              </View>
-            )}
+            {(() => {
+              let currentUserAvatar = '';
+              if (user?.profile?.profile_pic) {
+                currentUserAvatar = user.profile.profile_pic;
+              } else if (user?.avatar) {
+                currentUserAvatar = user.avatar.startsWith('http') ? user.avatar : `https://gst.tambimotors.com/${user.avatar}`;
+              }
+              return currentUserAvatar ? (
+                <Image source={{ uri: currentUserAvatar }} style={styles.inputUserAvatar} />
+              ) : (
+                <View style={[styles.inputUserAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                  <Text style={{ fontSize: RFValue(11), fontWeight: '700', color: Colors.dark }}>
+                    {(user?.name || 'U').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              );
+            })()}
             <TextInput
               style={styles.commentInput}
               placeholder={`Comment as ${user?.name || 'User'}...`}

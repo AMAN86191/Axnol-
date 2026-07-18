@@ -33,7 +33,7 @@ export const QuickActions = () => {
       id: 'event',
       title: 'Upcoming Event',
       icon: require('../../assets/images/logo/gift.png'),
-      screen: 'UpcomingEventsScreen',
+      screen: 'GalleryScreen',
     },
 
   ];
@@ -71,8 +71,6 @@ export const QuickActions = () => {
               />
             </View>
             <Text style={styles.cardTitle}>{action.title}</Text>
-
-
           </TouchableOpacity>
         ))}
       </View>
@@ -88,8 +86,6 @@ const styles = StyleSheet.create({
   rowContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    // paddingHorizontal: wp('4%'),
-    // paddingVertical: hp('0.5%'),
     width: '100%',
     gap: wp('3%'),
   },
@@ -101,14 +97,13 @@ const styles = StyleSheet.create({
     padding: wp('2%'),
     alignItems: 'center',
     position: 'relative',
-    overflow: 'hidden',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#FFFFFF', // To simulate glassmorphism edge
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowColor: '#888888', // Gray shadow
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
   },
   iconContainer: {
     width: wp('10.5%'),

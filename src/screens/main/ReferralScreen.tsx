@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Share,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -27,13 +28,34 @@ import useAuthStore from '../../zustand/useAuthStore';
 
 export default function ReferralScreen() {
   const navigation = useNavigation();
-  const referralCode = 'ANANDA8394';
-  const referralLink = `https://gaumata.org/invite/${referralCode}`;
-  const totalReferrals = 24;
+  const { user, getProfile } = useAuthStore();
 
   const [copied, setCopied] = useState(false);
- const {user} = useAuthStore();
-  console.log('user', user)
+  const [referredFriends, setReferredFriends] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      const res = await getProfile();
+      if (res?.data?.referred_users) {
+        setReferredFriends(res.data.referred_users);
+      }
+    } catch (error) {
+      console.log('Error fetching profile in ReferralScreen:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const referralCode = user?.profile?.referral_code || '';
+  const referralLink = `https://gaumata.org/invite/${referralCode}`;
+  const totalReferrals = user?.statistics?.referrals_count || 0;
+
   const shareMessage = `Join me in supporting Gau Seva and protecting our indigenous cows! Use my Referral Code *${referralCode}* on SignUp to help us grow. Invite link: ${referralLink}`;
 
   const handleBack = useCallback(() => {
@@ -67,13 +89,11 @@ export default function ReferralScreen() {
     }
   }, [shareMessage]);
 
-  // Mock list of referred friends
-  const referredFriends = [
-    { id: '1', name: 'Rahul Sharma', date: '08 Jun 2026', status: 'Active' },
-    { id: '2', name: 'Priya Patel', date: '04 Jun 2026', status: 'Active' },
-    { id: '3', name: 'Amit Verma', date: '28 May 2026', status: 'Active' },
-    { id: '4', name: 'Suresh Kumar', date: '15 May 2026', status: 'Pending' },
-  ];
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -125,27 +145,46 @@ export default function ReferralScreen() {
 
         {/* Referred Friends History */}
         <Text style={styles.sectionTitle}>RECENT REFERRALS</Text>
-        <View style={styles.historyContainer}>
-          {referredFriends.map((friend) => (
-            <View key={friend.id} style={styles.historyItem}>
-              <View style={styles.historyLeft}>
-                <View style={styles.avatarPlaceholder}>
-                  <Text style={styles.avatarInitial}>{friend.name.charAt(0)}</Text>
-                </View>
-                <View>
-                  <Text style={styles.friendName}>{friend.name}</Text>
-                  <Text style={styles.friendJoined}>Joined {friend.date}</Text>
-                </View>
-              </View>
-              <View style={styles.historyRight}>
-                <CheckCircle size={RFValue(10)} color={friend.status === 'Active' ? '#10B981' : '#9CA3AF'} />
-                <Text style={[styles.statusText, { color: friend.status === 'Active' ? '#10B981' : '#6B7280' }]}>
-                  {friend.status}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        {loading ? (
+          <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: hp('2%') }} />
+        ) : (
+          <View style={styles.historyContainer}>
+            {referredFriends.length === 0 ? (
+              <Text style={{ textAlign: 'center', padding: hp('2%'), color: Colors.gray }}>No referrals yet.</Text>
+            ) : (
+              referredFriends.map((friend) => {
+                const isActive = friend.status === 'active';
+                const statusColor = isActive ? '#10B981' : '#9CA3AF';
+                const statusText = isActive ? 'Active' : 'Inactive';
+                const name = friend.name || 'Unknown';
+                const designation = friend.profile?.designation;
+                
+                return (
+                  <View key={friend.id} style={styles.historyItem}>
+                    <View style={styles.historyLeft}>
+                      <View style={styles.avatarPlaceholder}>
+                        <Text style={styles.avatarInitial}>{name.charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.friendName}>{name}</Text>
+                        <Text style={styles.friendJoined}>Joined {formatDate(friend.created_at)}</Text>
+                        {designation ? (
+                          <Text style={styles.friendDesignation}>{designation}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                    <View style={styles.historyRight}>
+                      <CheckCircle size={RFValue(10)} color={statusColor} />
+                      <Text style={[styles.statusText, { color: statusColor }]}>
+                        {statusText}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -366,6 +405,12 @@ const styles = StyleSheet.create({
     fontSize: RFValue(8.2),
     color: Colors.gray,
     marginTop: hp('0.1%'),
+  },
+  friendDesignation: {
+    fontSize: RFValue(8.2),
+    color: Colors.primary,
+    fontWeight: '600',
+    marginTop: hp('0.2%'),
   },
   historyRight: {
     flexDirection: 'row',

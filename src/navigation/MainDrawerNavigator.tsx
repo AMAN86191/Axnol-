@@ -188,8 +188,8 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
               <Text style={styles.statusBadgeTextGreen}>Profile Verified</Text>
             </View>
             <View style={styles.statusBadgeOrange}>
-              <Award size={RFValue(8.5)} color="#FF6F34" />
-              <Text style={styles.statusBadgeTextOrange}>Become a Member</Text>
+              <Award size={RFValue(8.5)} color="#FF6F34" />s
+              <Text style={styles.statusBadgeTextOrange}>{user?.membership ? 'Member' : 'Become a Member'}</Text>
             </View>
           </View>
           <View style={styles.memberMetaRow}>

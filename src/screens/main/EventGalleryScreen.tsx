@@ -19,8 +19,8 @@ import { X, Share2, Download, Calendar, MapPin, Image as ImageIcon } from 'lucid
 
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
-import { galleryEvents, GalleryPhoto } from '../../data/galleryData';
 import { RootStackParamList } from '../../navigation/types';
+import useHomeStore from '../../zustand/useHomeStore';
 
 type EventGalleryScreenRouteProp = RouteProp<RootStackParamList, 'EventGalleryScreen'>;
 
@@ -32,34 +32,43 @@ export default function EventGalleryScreen() {
 
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
-  // Retrieve current event details
+  // Retrieve current event details from dynamic store
+  const events = useHomeStore(state => state.events);
   const event = useMemo(() => {
-    return galleryEvents.find((e) => e.id === eventId);
-  }, [eventId]);
+    return events.find((e: any) => e.id.toString() === eventId);
+  }, [eventId, events]);
 
-  const handleShare = useCallback(async (photo: GalleryPhoto) => {
+  const parsedGallery = useMemo(() => {
+    if (!event || !event.gallery) return [];
+    if (typeof event.gallery === 'string') {
+      try { return JSON.parse(event.gallery); } catch (e) { return []; }
+    }
+    return Array.isArray(event.gallery) ? event.gallery : [];
+  }, [event]);
+
+  const handleShare = useCallback(async (photo: any) => {
     try {
-      const shareMsg = `Check out this beautiful photo "${photo.title}" from "${event?.title}" event organized by Gau Mata Trust. Join our mission!`;
+      const shareMsg = `Check out this beautiful photo from "${event?.name}" event organized by Gau Mata Trust. Join our mission!`;
       await Share.share({
         message: shareMsg,
-        url: photo.isLocal ? undefined : photo.image.uri,
+        url: photo.image,
       });
     } catch (error: any) {
       console.error('Error sharing:', error.message);
     }
   }, [event]);
 
-  const handleDownload = useCallback((photo: GalleryPhoto) => {
-    Alert.alert('Download Started', `Downloading "${photo.title}" to your device gallery.`);
+  const handleDownload = useCallback((photo: any) => {
+    Alert.alert('Download Started', `Downloading photo to your device gallery.`);
   }, []);
 
-  const renderPhotoItem = ({ item, index }: { item: GalleryPhoto; index: number }) => (
+  const renderPhotoItem = ({ item, index }: { item: any; index: number }) => (
     <TouchableOpacity
       style={styles.gridItem}
       activeOpacity={0.9}
       onPress={() => setSelectedIndex(index)}
     >
-      <Image source={item.image} style={styles.gridImage} />
+      <Image source={{ uri: item.image }} style={styles.gridImage} />
     </TouchableOpacity>
   );
 
@@ -79,8 +88,8 @@ export default function EventGalleryScreen() {
       <CommonHeader title="Event Photos" onBackPress={() => navigation.goBack()} />
 
       <FlatList
-        data={event.photos}
-        keyExtractor={(item) => item.id}
+        data={parsedGallery}
+        keyExtractor={(item: any) => item.id.toString()}
         renderItem={renderPhotoItem}
         numColumns={3}
         contentContainerStyle={[styles.gridContainer, { paddingBottom: insets.bottom + hp('3%') }]}
@@ -89,29 +98,29 @@ export default function EventGalleryScreen() {
           <View style={styles.eventInfoCard}>
             <View style={styles.eventHeaderRow}>
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{event.category.toUpperCase()}</Text>
+                <Text style={styles.categoryText}>EVENT</Text>
               </View>
             </View>
 
-            <Text style={styles.eventTitle}>{event.title}</Text>
+            <Text style={styles.eventTitle}>{event.name}</Text>
 
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
                 <Calendar size={RFValue(11)} color={Colors.primary} style={{ marginRight: wp('1.5%') }} />
-                <Text style={styles.metaText}>{event.date}</Text>
+                <Text style={styles.metaText}>{event.event_date}</Text>
               </View>
               <View style={styles.metaDivider} />
               <View style={styles.metaItem}>
                 <MapPin size={RFValue(11)} color={Colors.primary} style={{ marginRight: wp('1.5%') }} />
-                <Text style={styles.metaText}>{event.location}</Text>
+                <Text style={styles.metaText}>{event.address}</Text>
               </View>
             </View>
 
-            <Text style={styles.eventDescription}>{event.description}</Text>
+            {event.description ? <Text style={styles.eventDescription}>{event.description}</Text> : null}
 
             <View style={styles.sectionHeader}>
               <ImageIcon size={RFValue(12)} color={Colors.dark} style={{ marginRight: wp('2%') }} />
-              <Text style={styles.sectionTitle}>PHOTOS ({event.photos.length})</Text>
+              <Text style={styles.sectionTitle}>PHOTOS ({parsedGallery.length})</Text>
             </View>
           </View>
         }
@@ -137,7 +146,7 @@ export default function EventGalleryScreen() {
 
             <View style={styles.lightboxIndexContainer}>
               <Text style={styles.lightboxIndexText}>
-                {selectedIndex !== null ? `${selectedIndex + 1} / ${event.photos.length}` : ''}
+                {selectedIndex !== null ? `${selectedIndex + 1} / ${parsedGallery.length}` : ''}
               </Text>
             </View>
 
@@ -146,7 +155,7 @@ export default function EventGalleryScreen() {
           
           {selectedIndex !== null && (
             <FlatList
-              data={event.photos}
+              data={parsedGallery}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
@@ -158,12 +167,12 @@ export default function EventGalleryScreen() {
                 const newIndex = Math.round(e.nativeEvent.contentOffset.x / wp('100%'));
                 setSelectedIndex(newIndex);
               }}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item: any) => item.id.toString()}
               renderItem={({ item }) => (
                 <View style={styles.previewContainer}>
-                  <Image source={item.image} style={styles.previewImage} />
+                  <Image source={{ uri: item.image }} style={styles.previewImage} />
                   <View style={[styles.previewDetails, { paddingBottom: insets.bottom + hp('3%') }]}>
-                    <Text style={styles.previewTitle}>{item.title}</Text>
+                    {item.title ? <Text style={styles.previewTitle}>{item.title}</Text> : null}
                     
                     <View style={styles.previewActionRow}>
                       <TouchableOpacity

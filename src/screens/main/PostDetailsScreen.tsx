@@ -50,28 +50,44 @@ const PostDetailsScreen = () => {
           if (item) {
             let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
             let additionalImages: string[] = [];
-            if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
+            
+            if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+              additionalImages = item.images.map((img: any) => img.image);
+            } else if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
               additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
             }
+            
             if (additionalImages.length === 0 && imageUrl) {
               additionalImages = [imageUrl];
             }
             let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
 
+            let avatarUrl = '';
+            if (item.author?.profile_pic) {
+              avatarUrl = item.author.profile_pic;
+            } else if (item.user?.avatar) {
+              avatarUrl = item.user.avatar.startsWith('http') ? item.user.avatar : `https://gst.tambimotors.com/${item.user.avatar}`;
+            }
+
+            const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id 
+                ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
+                : item.is_liked || false;
+
             setPost({
               id: item.id?.toString() || postId,
-              author: item.user?.name || item.admin?.name || 'Unknown',
-              avatar: item.user?.avatar ? `https://gst.tambimotors.com/${item.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
-              meta: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
+              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+              avatar: avatarUrl,
+              meta: item.created_at || 'Just now',
               text: item.description || '',
               image: displayImage,
               images: additionalImages,
-              likes: item.likes || 0,
+              likes: item.likes_count ?? item.likes ?? 0,
               comments: item.comments_count || 0,
-              isLiked: item.is_liked || false,
+              isLiked: isLikedByCurrentUser,
+              likedBy: item.liked_by || [],
               userId: item.user_id?.toString() || item.admin_id?.toString(),
               status: item.status,
-              original_post_images: item.post_images || [],
+              original_post_images: item.images || item.post_images || [],
             });
           }
         } catch (error) {
@@ -87,14 +103,25 @@ const PostDetailsScreen = () => {
           console.log('post comment api response ', res)
           const commentsArray = res?.comments?.data || res?.comments || res?.data || [];
           if (commentsArray && Array.isArray(commentsArray)) {
-            const mappedComments = commentsArray.map((c: any) => ({
-              id: c.id?.toString() || Math.random().toString(),
-              author: c.user?.name || c.admin?.name || 'Unknown',
-              avatar: c.user?.avatar ? `https://gst.tambimotors.com/${c.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
-              text: c.comment || '',
-              time: new Date(c.created_at).toLocaleDateString(),
-              userId: c.user_id?.toString() || c.admin_id?.toString(),
-            }));
+            const mappedComments = commentsArray.map((c: any) => {
+              let avatarUrl = '';
+              if (c.user?.profile_pic) {
+                avatarUrl = c.user.profile_pic;
+              } else if (c.user?.avatar) {
+                avatarUrl = c.user.avatar.startsWith('http') ? c.user.avatar : `https://gst.tambimotors.com/${c.user.avatar}`;
+              } else if (c.admin?.avatar) {
+                avatarUrl = c.admin.avatar.startsWith('http') ? c.admin.avatar : `https://gst.tambimotors.com/${c.admin.avatar}`;
+              }
+
+              return {
+                id: c.id?.toString() || Math.random().toString(),
+                author: c.user?.name || c.admin?.name || 'Unknown',
+                avatar: avatarUrl,
+                text: c.comment || '',
+                time: c.created_at || 'Just now',
+                userId: c.user_id?.toString() || c.admin_id?.toString(),
+              };
+            });
             setCommentsList(mappedComments);
           }
         } catch (error) {
@@ -118,13 +145,34 @@ const PostDetailsScreen = () => {
 
   const handleLike = useCallback(async () => {
     if (post) {
-      setPost((prev: any) => ({
-        ...prev,
-        isLiked: !prev.isLiked,
-        likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1,
-      }));
+      setPost((prev: any) => {
+        const willBeLiked = !prev.isLiked;
+        let newLikedBy = [...(prev.likedBy || [])];
+        
+        if (willBeLiked) {
+          if (user?.id && !newLikedBy.some(u => u.id === user.id)) {
+            newLikedBy.unshift({
+              id: user.id,
+              name: user.name || 'You',
+              profile_pic: user.profile_pic || user.profile?.profile_pic,
+              designation: user.designation || user.profile?.designation,
+            });
+          }
+        } else {
+          if (user?.id) {
+            newLikedBy = newLikedBy.filter(u => u.id !== user.id);
+          }
+        }
+
+        return {
+          ...prev,
+          isLiked: willBeLiked,
+          likes: willBeLiked ? prev.likes + 1 : prev.likes - 1,
+          likedBy: newLikedBy,
+        };
+      });
     }
-  }, [post]);
+  }, [post, user]);
 
   const handleEdit = useCallback(() => {
     if (post) {
@@ -168,10 +216,17 @@ const PostDetailsScreen = () => {
 
     const tempId = Math.random().toString();
     const commentText = newCommentText.trim();
+    let currentUserAvatar = '';
+    if (user?.profile?.profile_pic) {
+      currentUserAvatar = user.profile.profile_pic;
+    } else if (user?.avatar) {
+      currentUserAvatar = user.avatar.startsWith('http') ? user.avatar : `https://gst.tambimotors.com/${user.avatar}`;
+    }
+
     const newComment: Comment = {
       id: tempId,
       author: user?.name || 'You',
-      avatar: user?.avatar ? `https://gst.tambimotors.com/${user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+      avatar: currentUserAvatar,
       text: commentText,
       time: 'Just now',
       userId: user?.id?.toString(),
@@ -261,6 +316,7 @@ const PostDetailsScreen = () => {
             likes={post.likes}
             comments={post.comments}
             isLiked={post.isLiked}
+            likedBy={post.likedBy}
             onLikePress={handleLike}
             onEditPress={handleEdit}
             onDeletePress={handleDelete}
@@ -279,7 +335,15 @@ const PostDetailsScreen = () => {
             {commentsList.map((comment) => (
               <View key={comment.id} style={styles.commentItem}>
 
-                <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
+                {comment.avatar ? (
+                  <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
+                ) : (
+                  <View style={[styles.commentAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                    <Text style={{ fontSize: RFValue(11), fontWeight: '700', color: Colors.dark }}>
+                      {(comment.author || 'U').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
 
                 <View style={styles.commentContent}>
 
@@ -303,10 +367,23 @@ const PostDetailsScreen = () => {
 
         {/* Comment Input Bar at the bottom of the screen */}
         <View style={styles.inputBar}>
-          <Image
-            source={{ uri: 'https://randomuser.me/api/portraits/lego/1.jpg' }}
-            style={styles.inputUserAvatar}
-          />
+          {(() => {
+            let currentUserAvatar = '';
+            if (user?.profile?.profile_pic) {
+              currentUserAvatar = user.profile.profile_pic;
+            } else if (user?.avatar) {
+              currentUserAvatar = user.avatar.startsWith('http') ? user.avatar : `https://gst.tambimotors.com/${user.avatar}`;
+            }
+            return currentUserAvatar ? (
+              <Image source={{ uri: currentUserAvatar }} style={styles.inputUserAvatar} />
+            ) : (
+              <View style={[styles.inputUserAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                <Text style={{ fontSize: RFValue(11), fontWeight: '700', color: Colors.dark }}>
+                  {(user?.name || 'U').charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            );
+          })()}
           <TextInput
             ref={commentInputRef}
             style={styles.commentInput}

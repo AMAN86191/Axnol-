@@ -15,6 +15,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Colors } from '../theme/colors';
 import { CommentsModal, Comment } from './CommentsModal';
+import { LikesModal, LikedUser } from './LikesModal';
 import useHomeStore from '../zustand/useHomeStore';
 import useAuthStore from '../zustand/useAuthStore';
 import { useEffect } from 'react';
@@ -30,6 +31,7 @@ interface FeedCardProps {
   likes: number;
   comments: number;
   isLiked?: boolean;
+  likedBy?: any[];
   isOwnPost?: boolean;
   status?: string;
   onLikePress?: () => void;
@@ -40,6 +42,8 @@ interface FeedCardProps {
   onProfilePress?: () => void;
   onPostPress?: () => void;
 }
+
+const EMPTY_ARRAY: any[] = [];
 
 export const FeedCard = ({
   postId,
@@ -52,6 +56,7 @@ export const FeedCard = ({
   likes,
   comments,
   isLiked,
+  likedBy = EMPTY_ARRAY,
   isOwnPost,
   status,
   onLikePress,
@@ -64,15 +69,18 @@ export const FeedCard = ({
 }: FeedCardProps) => {
   const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - wp('8%'));
   const [isCommentsVisible, setIsCommentsVisible] = useState(false);
+  const [isLikesModalVisible, setIsLikesModalVisible] = useState(false);
   const [commentsCount, setCommentsCount] = useState(comments);
   const [localLikes, setLocalLikes] = useState(likes);
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
+  const [localLikedBy, setLocalLikedBy] = useState<any[]>(likedBy);
 
   useEffect(() => {
     setCommentsCount(comments);
     setLocalLikes(likes);
     setLocalIsLiked(isLiked);
-  }, [comments, likes, isLiked]);
+    setLocalLikedBy(likedBy);
+  }, [comments, likes, isLiked, likedBy]);
 
   const [localComments, setLocalComments] = useState<Comment[]>([]);
   const { getComments, commentPost, toggleLikePost, deleteComment } = useHomeStore();
@@ -91,14 +99,25 @@ export const FeedCard = ({
       console.log('Get comments response:', res);
       const commentsArray = res?.comments?.data || res?.comments || res?.data || [];
       if (commentsArray && Array.isArray(commentsArray)) {
-        const mappedComments = commentsArray.map((c: any) => ({
-          id: c.id?.toString() || Math.random().toString(),
-          author: c.user?.name || c.admin?.name || 'Unknown',
-          avatar: c.user?.avatar ? `https://gst.tambimotors.com/${c.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
-          text: c.comment || '',
-          time: new Date(c.created_at).toLocaleDateString(),
-          userId: c.user_id?.toString() || c.admin_id?.toString(),
-        }));
+        const mappedComments = commentsArray.map((c: any) => {
+          let avatarUrl = '';
+          if (c.user?.profile_pic) {
+            avatarUrl = c.user.profile_pic;
+          } else if (c.user?.avatar) {
+            avatarUrl = c.user.avatar.startsWith('http') ? c.user.avatar : `https://gst.tambimotors.com/${c.user.avatar}`;
+          } else if (c.admin?.avatar) {
+            avatarUrl = c.admin.avatar.startsWith('http') ? c.admin.avatar : `https://gst.tambimotors.com/${c.admin.avatar}`;
+          }
+
+          return {
+            id: c.id?.toString() || Math.random().toString(),
+            author: c.user?.name || c.admin?.name || 'Unknown',
+            avatar: avatarUrl,
+            text: c.comment || '',
+            time: c.created_at || 'Just now',
+            userId: c.user_id?.toString() || c.admin_id?.toString(),
+          };
+        });
         setLocalComments(mappedComments);
       }
     } catch (error) {
@@ -113,16 +132,40 @@ export const FeedCard = ({
 
     if (!postId) return;
 
-    setLocalIsLiked(prev => !prev);
-    setLocalLikes(prev => localIsLiked ? prev - 1 : prev + 1);
+    const previousLikedBy = [...localLikedBy];
+    const willBeLiked = !localIsLiked;
+
+    setLocalIsLiked(willBeLiked);
+    setLocalLikes(prev => willBeLiked ? prev + 1 : prev - 1);
+
+    setLocalLikedBy(prevLikedBy => {
+      if (willBeLiked) {
+        if (user?.id && !prevLikedBy.some(u => u.id === user.id)) {
+          const currentUserLike = {
+            id: user.id,
+            name: user.name || 'You',
+            profile_pic: user.profile_pic || user.profile?.profile_pic,
+            designation: user.designation || user.profile?.designation,
+          };
+          return [currentUserLike, ...prevLikedBy];
+        }
+        return prevLikedBy;
+      } else {
+        if (user?.id) {
+          return prevLikedBy.filter(u => u.id !== user.id);
+        }
+        return prevLikedBy;
+      }
+    });
 
     try {
       const res = await toggleLikePost(postId);
       console.log('FeedCard local like response:', res);
     } catch (error) {
       console.log('Error toggling like:', error);
-      setLocalIsLiked(prev => !prev);
-      setLocalLikes(prev => localIsLiked ? prev + 1 : prev - 1);
+      setLocalIsLiked(!willBeLiked);
+      setLocalLikes(prev => !willBeLiked ? prev + 1 : prev - 1);
+      setLocalLikedBy(previousLikedBy);
     }
   };
 
@@ -149,10 +192,17 @@ export const FeedCard = ({
 
   const handleAddComment = async (commentText: string) => {
     const tempId = Math.random().toString();
+    let currentUserAvatar = '';
+    if (user?.profile?.profile_pic) {
+      currentUserAvatar = user.profile.profile_pic;
+    } else if (user?.avatar) {
+      currentUserAvatar = user.avatar.startsWith('http') ? user.avatar : `https://gst.tambimotors.com/${user.avatar}`;
+    }
+
     const newComment: Comment = {
       id: tempId,
       author: user?.name || 'You',
-      avatar: user?.avatar ? `https://gst.tambimotors.com/${user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
+      avatar: currentUserAvatar,
       text: commentText,
       time: 'Just now',
       userId: user?.id?.toString(),
@@ -195,7 +245,15 @@ export const FeedCard = ({
           disabled={!onProfilePress}
           activeOpacity={0.7}
         >
-          <Image source={{ uri: avatar }} style={styles.feedAvatar} />
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.feedAvatar} />
+          ) : (
+            <View style={[styles.feedAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+              <Text style={{ fontSize: RFValue(12), fontWeight: '700', color: Colors.dark }}>
+                {(author || 'U').charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
           <View style={styles.textContainer}>
             <Text style={styles.feedAuthor}>{author}</Text>
             <Text style={styles.feedMeta}>{meta}</Text>
@@ -267,17 +325,21 @@ export const FeedCard = ({
 
       {/* Card Actions */}
       <View style={styles.feedActions}>
-        <TouchableOpacity style={styles.feedActionItem} onPress={handleLikeButtonPress} activeOpacity={0.7}>
-          <Heart
-            size={RFValue(14)}
-            color={localIsLiked ? Colors.primary : Colors.gray}
-            fill={localIsLiked ? Colors.primary : 'none'}
-            strokeWidth={1.5}
-          />
-          <Text style={[styles.feedActionText, localIsLiked && styles.activeActionText]}>
-            {localLikes}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.feedActionItem}>
+          <TouchableOpacity onPress={handleLikeButtonPress} activeOpacity={0.7} style={{ padding: wp('1%'), marginLeft: -wp('1%') }}>
+            <Heart
+              size={RFValue(14)}
+              color={localIsLiked ? Colors.primary : Colors.gray}
+              fill={localIsLiked ? Colors.primary : 'none'}
+              strokeWidth={1.5}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setIsLikesModalVisible(true)} activeOpacity={0.7} style={{ padding: wp('1%') }}>
+            <Text style={[styles.feedActionText, localIsLiked && styles.activeActionText, { marginLeft: 0 }]}>
+              {localLikes}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={styles.feedActionItem} onPress={handleCommentButtonPress} activeOpacity={0.7}>
           <MessageSquare size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
           <Text style={styles.feedActionText}>{commentsCount}</Text>
@@ -317,6 +379,12 @@ export const FeedCard = ({
             }
           ]);
         }}
+      />
+      {/* Reusable Likes Modal */}
+      <LikesModal
+        visible={isLikesModalVisible}
+        onClose={() => setIsLikesModalVisible(false)}
+        likedBy={localLikedBy}
       />
     </View>
   );

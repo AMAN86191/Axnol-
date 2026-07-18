@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, StatusBar, ScrollView, Image, ActivityIndicator, View, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, StatusBar, ScrollView, Image, ActivityIndicator, View, TouchableOpacity, Text, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -8,6 +8,7 @@ import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { FeedCard } from '../../components/FeedCard';
 import useHomeStore from '../../zustand/useHomeStore';
+import useAuthStore from '../../zustand/useAuthStore';
 import { RFValue } from 'react-native-responsive-fontsize';
 
 interface PostItem {
@@ -21,12 +22,16 @@ interface PostItem {
   likes: number;
   comments: number;
   isLiked: boolean;
+  likedBy?: any[];
+  userId?: string;
+  status?: string;
 }
 
 
 const FeedScreen = () => {
   const navigation = useNavigation();
   const { getPosts, loading, toggleLikePost } = useHomeStore();
+  const { user } = useAuthStore();
   const [feedData, setFeedData] = useState<PostItem[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -48,7 +53,9 @@ const FeedScreen = () => {
           let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
           
           let additionalImages: string[] = [];
-          if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
+          if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+            additionalImages = item.images.map((img: any) => img.image);
+          } else if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
              additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
           }
           
@@ -60,17 +67,31 @@ const FeedScreen = () => {
           // Use imageUrl or the first image from the array
           let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
 
+          let avatarUrl = '';
+          if (item.author?.profile_pic) {
+            avatarUrl = item.author.profile_pic;
+          } else if (item.user?.avatar) {
+            avatarUrl = item.user.avatar.startsWith('http') ? item.user.avatar : `https://gst.tambimotors.com/${item.user.avatar}`;
+          }
+
+          const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id 
+              ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
+              : item.is_liked || false;
+
           return {
             id: item.id?.toString() || Math.random().toString(),
-            author: item.user?.name || item.admin?.name || 'Unknown',
-            avatar: item.user?.avatar ? `https://gst.tambimotors.com/${item.user.avatar}` : 'https://randomuser.me/api/portraits/lego/1.jpg',
-            meta: item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Just now',
+            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+            avatar: avatarUrl,
+            meta: item.created_at || 'Just now',
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
-            likes: item.likes || 0,
+            likes: item.likes_count ?? item.likes ?? 0,
             comments: item.comments_count || 0,
-            isLiked: item.is_liked || false,
+            isLiked: isLikedByCurrentUser,
+            likedBy: item.liked_by || [],
+            userId: item.user_id?.toString() || item.admin_id?.toString(),
+            status: item.status,
           };
         });
 
@@ -113,10 +134,29 @@ const FeedScreen = () => {
     setFeedData(prev =>
       prev.map(post => {
         if (post.id === postId) {
+          const willBeLiked = !post.isLiked;
+          let newLikedBy = [...(post.likedBy || [])];
+          
+          if (willBeLiked) {
+            if (user?.id && !newLikedBy.some(u => u.id === user.id)) {
+              newLikedBy.unshift({
+                id: user.id,
+                name: user.name || 'You',
+                profile_pic: user.profile_pic || user.profile?.profile_pic,
+                designation: user.designation || user.profile?.designation,
+              });
+            }
+          } else {
+            if (user?.id) {
+              newLikedBy = newLikedBy.filter(u => u.id !== user.id);
+            }
+          }
+
           return {
             ...post,
-            isLiked: !post.isLiked,
-            likes: post.isLiked ? post.likes - 1 : post.likes + 1,
+            isLiked: willBeLiked,
+            likes: willBeLiked ? post.likes + 1 : post.likes - 1,
+            likedBy: newLikedBy,
           };
         }
         return post;
@@ -134,44 +174,41 @@ const FeedScreen = () => {
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       ) : (
-        <ScrollView
+        <FlatList
+          data={feedData}
+          keyExtractor={(item, index) => item.id + index.toString()}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContainer}
-        >
-          {feedData.map(post => (
+          renderItem={({ item: post }) => (
             <FeedCard
-              key={post.id}
               postId={post.id}
               author={post.author}
               avatar={post.avatar}
               meta={post.meta}
               text={post.text}
-          
               images={(post as any).images}
               likes={post.likes}
               comments={post.comments}
               isLiked={post.isLiked}
+              likedBy={post.likedBy}
               onLikePress={() => toggleLike(post.id)}
               onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: post.id })}
-             
             />
-          ))}
-
-          {hasMore && (
-            <TouchableOpacity
-              style={styles.loadMoreBtn}
-              onPress={handleLoadMore}
-              disabled={loadingMore}
-            >
-              {loadingMore ? (
-                <ActivityIndicator size="small" color="#FFF" />
-              ) : (
-                <Text style={styles.loadMoreText}>Load More</Text>
-              )}
-            </TouchableOpacity>
           )}
-
-        </ScrollView>
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.loadMoreContainer}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+              </View>
+            ) : hasMore ? (
+              <TouchableOpacity style={styles.loadMoreBtn} onPress={handleLoadMore}>
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            ) : null
+          }
+        />
       )}
     </SafeAreaView>
   );
@@ -191,6 +228,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadMoreContainer: {
+    paddingVertical: hp('2%'),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadMoreBtn: {
     backgroundColor: Colors.primary,

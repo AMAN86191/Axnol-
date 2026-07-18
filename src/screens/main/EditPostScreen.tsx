@@ -34,7 +34,7 @@ const EditPostScreen = () => {
   const route = useRoute<EditPostScreenRouteProp>();
   const { post } = route.params as any;
   const { updatePostStore, deletePostImageStore } = useHomeStore();
-
+console.log('Edit post', post)
   const [caption, setCaption] = useState(post?.text || '');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,9 +103,11 @@ const EditPostScreen = () => {
     // Check if it's a server image and we have original_post_images
     if (imgToRemove.startsWith('http') && post?.original_post_images) {
       // Find the image ID based on the URL
-      const foundImage = post.original_post_images.find((pi: any) => 
-        `https://gst.tambimotors.com/${pi.post_img}` === imgToRemove
-      );
+      const foundImage = post.original_post_images.find((pi: any) => {
+        if (pi.image) return pi.image === imgToRemove;
+        if (pi.post_img) return pi.post_img.startsWith('http') ? pi.post_img === imgToRemove : `https://gst.tambimotors.com/${pi.post_img}` === imgToRemove;
+        return false;
+      });
       
       if (foundImage) {
         try {

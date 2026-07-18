@@ -21,6 +21,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { InstagramGrid } from '../../components/InstagramGrid';
 import { FeedCard } from '../../components/FeedCard';
 import { CommonHeader } from '../../components/CommonHeader';
+import useAuthStore from '../../zustand/useAuthStore';
 
 type PublicProfileScreenRouteProp = RouteProp<RootStackParamList, 'PublicProfileScreen'>;
 
@@ -36,6 +37,39 @@ const PublicProfileScreen = () => {
   const [publicPosts, setPublicPosts] = useState<any[]>([]);
 
   const getPublicProfileStore = useHomeStore(state => state.getPublicProfileStore);
+  const { user: currentUser } = useAuthStore();
+
+  const handleLike = useCallback((postId: string) => {
+    setPublicPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        const willBeLiked = !post.isLiked;
+        let newLikedBy = [...(post.likedBy || [])];
+        
+        if (willBeLiked) {
+          if (currentUser?.id && !newLikedBy.some((u: any) => u.id === currentUser.id)) {
+            newLikedBy.unshift({
+              id: currentUser.id,
+              name: currentUser.name || 'You',
+              profile_pic: currentUser.profile_pic || currentUser.profile?.profile_pic,
+              designation: currentUser.designation || currentUser.profile?.designation,
+            });
+          }
+        } else {
+          if (currentUser?.id) {
+            newLikedBy = newLikedBy.filter((u: any) => u.id !== currentUser.id);
+          }
+        }
+
+        return {
+          ...post,
+          isLiked: willBeLiked,
+          likes: willBeLiked ? post.likes + 1 : post.likes - 1,
+          likedBy: newLikedBy,
+        };
+      }
+      return post;
+    }));
+  }, [currentUser]);
 
   React.useEffect(() => {
     const fetchProfile = async () => {
@@ -49,7 +83,7 @@ const PublicProfileScreen = () => {
         const userObj = responseData?.user || {};
         const profileObj = responseData?.profile || {};
         const statisticsObj = responseData?.statistics || {};
-        const userPostsData = responseData?.posts || [];
+        const userPostsData = responseData?.posts?.data || responseData?.posts || [];
 
         // Map posts correctly based on the new API format
         const mappedPosts = Array.isArray(userPostsData) ? userPostsData.map((item: any) => {
@@ -61,10 +95,14 @@ const PublicProfileScreen = () => {
 
           let displayImage = additionalImages.length > 0 ? additionalImages[0] : null;
 
-          let authorAvatar = 'https://randomuser.me/api/portraits/lego/1.jpg';
+          let authorAvatar = '';
           if (profileObj.profile_pic) {
             authorAvatar = typeof profileObj.profile_pic === 'string' ? profileObj.profile_pic : authorAvatar;
           }
+
+          const isLikedByCurrentUser = Array.isArray(item.liked_by) && currentUser?.id 
+              ? item.liked_by.some((likedUser: any) => likedUser.id === currentUser.id)
+              : item.is_liked || false;
 
           return {
             id: item.id?.toString() || Math.random().toString(),
@@ -74,9 +112,10 @@ const PublicProfileScreen = () => {
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
-            likes: item.likes || 0,
+            likes: item.likes_count ?? item.likes ?? 0,
             comments: item.comments_count || 0,
-            isLiked: item.is_liked || false,
+            isLiked: isLikedByCurrentUser,
+            likedBy: item.liked_by || [],
             userId: userObj.id,
           };
         }) : [];
@@ -152,7 +191,15 @@ console.log('userPosts', userPosts)
         <View style={styles.profileInfoContainer}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarRing}>
-              <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              {user.avatar ? (
+                <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarImage, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                  <Text style={{ fontSize: RFValue(28), fontWeight: '700', color: Colors.dark }}>
+                    {(user.name || 'U').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -260,8 +307,9 @@ console.log('userPosts', userPosts)
                     likes={post.likes}
                     comments={post.comments}
                     isLiked={post.isLiked}
+                    likedBy={post.likedBy}
                     isOwnPost={false}
-
+                    onLikePress={() => handleLike(post.id)}
                     onPostPress={() => handlePostPress(post.id)}
                   />
                 ))}
