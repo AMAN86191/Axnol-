@@ -88,35 +88,40 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
     icon: React.ComponentType<any>,
     targetScreen?: string,
     tabName?: string,
-    onPressAction?: () => void
+    onPressAction?: () => void,
+    highlightWhenActive: boolean = true
   ) => {
     let isActive = false;
-    if (targetScreen === 'MainTabs' && tabName) {
-      // Find nested tab state if available
-      const tabState = state.routes[state.index]?.state;
-      if (tabState) {
-        const activeTabRoute = tabState.routes?.[tabState.index ?? 0]?.name;
-        isActive = activeTabRoute === tabName;
-      } else {
-        // Default to true for Home tab if first screen
-        isActive = tabName === 'Home' && state.index === 0;
+    if (highlightWhenActive) {
+      if (targetScreen === 'MainTabs' && tabName) {
+        // Find nested tab state if available
+        const tabState = state.routes[state.index]?.state;
+        if (tabState) {
+          const activeTabRoute = tabState.routes?.[tabState.index ?? 0]?.name;
+          isActive = activeTabRoute === tabName;
+        } else {
+          // Default to true for Home tab if first screen
+          isActive = tabName === 'Home' && state.index === 0;
+        }
+      } else if (targetScreen) {
+        const activeRouteName = state.routes[state.index]?.name;
+        isActive = activeRouteName === targetScreen;
       }
-    } else if (targetScreen) {
-      const activeRouteName = state.routes[state.index]?.name;
-      isActive = activeRouteName === targetScreen;
     }
 
     const IconComponent = icon;
 
     const handlePress = () => {
       navigation.closeDrawer();
-      if (onPressAction) {
-        onPressAction();
-      } else if (targetScreen === 'MainTabs' && tabName) {
-        navigation.navigate('MainTabs', { screen: tabName });
-      } else if (targetScreen) {
-        navigation.navigate(targetScreen);
-      }
+      setTimeout(() => {
+        if (onPressAction) {
+          onPressAction();
+        } else if (targetScreen === 'MainTabs' && tabName) {
+          navigation.navigate('MainTabs', { screen: tabName });
+        } else if (targetScreen) {
+          navigation.navigate(targetScreen);
+        }
+      }, 0);
     };
 
     return (
@@ -158,40 +163,40 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {/* Profile User Info Row */}
         <View style={styles.userInfoRow}>
           <View style={styles.avatarWrapper}>
-            <Image 
-              source={{ uri: user?.profile?.profile_pic ? `${user.profile.profile_pic}` : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }} 
-              style={styles.profileAvatar} 
-            />
+            {user?.profile?.profile_pic ? (
+              <Image 
+                source={{ uri: `${user.profile.profile_pic}` }} 
+                style={styles.profileAvatar} 
+              />
+            ) : (
+              <View style={[styles.profileAvatar, { backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#FFF', fontSize: RFValue(12), fontWeight: '800' }}>
+                  {user?.name ? user.name.split(' ').map((n:any) => n[0]).join('').substring(0, 2).toUpperCase() : '?'}
+                </Text>
+              </View>
+            )}
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
-            <TouchableOpacity
-              style={styles.editProfileCta}
-              onPress={() => {
-                navigation.closeDrawer();
-                navigation.navigate('MainTabs', { screen: 'Profile' });
-              }}
-              activeOpacity={0.7}
-            >
-              <Edit3 size={RFValue(9)} color={Colors.primary} style={{ marginRight: wp('1%') }} />
-              <Text style={styles.editProfileText}>Edit Profile</Text>
-            </TouchableOpacity>
+            <Text style={styles.userEmailText} numberOfLines={1}>{user?.email || ''}</Text>
           </View>
         </View>
 
         {/* Badges and Membership Details Card */}
         <View style={styles.membershipDetailsCard}>
-          <View style={styles.statusBadgesRow}>
-            <View style={styles.statusBadgeGreen}>
-              <ShieldCheck size={RFValue(8.5)} color="#10B981" />
-              <Text style={styles.statusBadgeTextGreen}>Profile Verified</Text>
+          <Text style={styles.designationText}>{user?.profile?.designation || 'User'}</Text>
+
+          {user?.membership ? (
+            <View style={styles.statusRowBadgesHeader}>
+              <View style={styles.patronBadge}>
+                <Award size={RFValue(8)} color="#D97706" strokeWidth={2} />
+                <Text style={styles.patronBadgeText}>
+                  {user.membership.charAt(0).toUpperCase() + user.membership.slice(1)}
+                </Text>
+              </View>
             </View>
-            <View style={styles.statusBadgeOrange}>
-              <Award size={RFValue(8.5)} color="#FF6F34" />s
-              <Text style={styles.statusBadgeTextOrange}>{user?.membership ? 'Member' : 'Become a Member'}</Text>
-            </View>
-          </View>
+          ) : null}
           <View style={styles.memberMetaRow}>
             <Text style={styles.memberMetaText}>ID: {user?.uid || 'N/A'}</Text>
             <View style={styles.metaDivider} />
@@ -250,8 +255,8 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
         {renderDrawerItem('Home', Home, 'MainTabs', 'Home')}
         {renderDrawerItem('My Profile', User, 'MainTabs', 'Profile')}
-        {renderDrawerItem('My Posts', Edit3, 'MainTabs', 'Profile')}
-        {renderDrawerItem('Notifications', Bell, 'NotificationScreen')}
+        {renderDrawerItem('My Posts', Edit3, 'MainTabs', 'Profile', undefined, false)}
+        {/* {renderDrawerItem('Notifications', Bell, 'NotificationScreen')} */}
         {renderDrawerItem('Become a Member', CreditCard, 'MainTabs', 'Membership')}
 
 
@@ -265,7 +270,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         </View>
 
         {renderDrawerItem('Membership Certificate', Award, 'MembershipCertificateScreen')}
-        {renderDrawerItem('Donation History', History, 'MainTabs', 'Profile')}
+        {renderDrawerItem('Donation History', History, 'MainTabs', 'Profile', undefined, false)}
         {/* {renderDrawerItem('Membership ', List, 'PlansScreen')} */}
         {renderDrawerItem('Referral Friends', Share2, 'ReferralScreen')}
         {renderDrawerItem('WhatsApp Community', WhatsAppIcon, undefined, undefined, joinWhatsApp)}
@@ -377,15 +382,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.dark,
   },
-  editProfileCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: hp('0.3%'),
-  },
-  editProfileText: {
+  userEmailText: {
     fontSize: RFValue(9),
-    color: Colors.primary,
-    fontWeight: '700',
+    color: Colors.gray,
+    fontWeight: '500',
+    marginTop: hp('0.3%'),
   },
   membershipDetailsCard: {
     backgroundColor: '#FFFFFF',
@@ -400,41 +401,33 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  statusBadgesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: hp('1%'),
-  },
-  statusBadgeGreen: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: wp('1.8%'),
-    paddingVertical: hp('0.4%'),
-    borderRadius: wp('1%'),
-    marginRight: wp('1.5%'),
-    borderWidth: 0.5,
-    borderColor: '#A7F3D0',
-  },
-  statusBadgeOrange: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF5F0',
-    paddingHorizontal: wp('1.8%'),
-    paddingVertical: hp('0.4%'),
-    borderRadius: wp('1%'),
-    borderWidth: 0.5,
-    borderColor: '#FFE0D0',
-  },
-  statusBadgeTextGreen: {
-    color: '#065F46',
-    fontSize: RFValue(7.8),
-    fontWeight: '700',
-    marginLeft: wp('1%'),
-  },
-  statusBadgeTextOrange: {
+  designationText: {
+    fontSize: RFValue(9.5),
     color: '#FF6F34',
-    fontSize: RFValue(7.8),
+    fontWeight: '700',
+    marginTop: hp('0.2%'),
+    marginBottom: hp('0.4%'),
+  },
+  statusRowBadgesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp('0.8%'),
+  },
+  patronBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8F2',
+    borderWidth: 0.8,
+    borderColor: '#FFEBE0',
+    borderRadius: wp('1%'),
+    paddingVertical: hp('0.3%'),
+    paddingHorizontal: wp('2%'),
+    alignSelf: 'flex-start',
+    marginBottom: hp('0.8%'),
+  },
+  patronBadgeText: {
+    fontSize: RFValue(9),
+    color: '#D97706',
     fontWeight: '700',
     marginLeft: wp('1%'),
   },

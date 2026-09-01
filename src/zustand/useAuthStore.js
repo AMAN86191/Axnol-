@@ -29,6 +29,7 @@ const useAuthStore = create(
 
       otpVerify: async OtpData => {
         set({ loading: true, error: null });
+        console.log('OtpData', OtpData)
         try {
           const res = await api.post('user/verify-otp', OtpData);
           console.log('otp Verify response', res);

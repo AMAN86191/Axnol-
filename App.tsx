@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal} from 'react-native'
 import Allroute from './src/navigation/AllRoute'
 import { PostProvider } from './src/context/PostContext'
@@ -8,6 +8,7 @@ import LinearGradient from 'react-native-linear-gradient'
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen'
 import { RFValue } from 'react-native-responsive-fontsize'
 import { Colors } from './src/theme/colors'
+import { initializeNotifications } from './src/utils/notificationService'
 
 const App = () => {
   const { isRestartRequired, newReleaseBundle } = useStallionUpdate()
@@ -30,6 +31,46 @@ const App = () => {
 
     return () => {
       subscription?.remove()
+    }
+  }, [])
+
+  // ── Firebase Push Notifications + Notifee ──
+  useEffect(() => {
+    let unsubscribeForeground: (() => void) | undefined
+    let unsubscribeOpenedApp: (() => void) | undefined
+    let unsubscribeTokenRefresh: (() => void) | undefined
+    let unsubscribeNotifeeEvents: (() => void) | undefined
+
+    const setup = async () => {
+      try {
+        const subs = await initializeNotifications(
+          // Foreground notification callback (notification banner is shown via Notifee automatically)
+          (notification) => {
+            console.log('[App] Foreground notification:', notification.title, notification.body)
+          },
+          // Notification tap callback (from background/quit)
+          (data) => {
+            console.log('[App] Notification tapped with data:', data)
+            // Handle deep-link / navigation based on data here
+            // e.g. if (data.screen) { navigationRef.navigate(data.screen, data.params) }
+          },
+        )
+        unsubscribeForeground = subs.unsubscribeForeground
+        unsubscribeOpenedApp = subs.unsubscribeOpenedApp
+        unsubscribeTokenRefresh = subs.unsubscribeTokenRefresh
+        unsubscribeNotifeeEvents = subs.unsubscribeNotifeeEvents
+      } catch (error) {
+        console.log('[App] Notification setup error:', error)
+      }
+    }
+
+    setup()
+
+    return () => {
+      unsubscribeForeground?.()
+      unsubscribeOpenedApp?.()
+      unsubscribeTokenRefresh?.()
+      unsubscribeNotifeeEvents?.()
     }
   }, [])
 
