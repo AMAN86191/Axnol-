@@ -32,7 +32,7 @@ export const ContributionsTab = React.memo(({ contributions }: ContributionsTabP
               <Text style={styles.contributionSub}>
                 {item.category} • {item.date}
               </Text>
-              <Text style={styles.txnIdText}>{item.txnId}</Text>
+              {/* <Text style={styles.txnIdText}>{item.txnId}</Text> */}
             </View>
           </View>
           <View style={styles.contributionRight}>
@@ -61,7 +61,7 @@ export const ContributionsTab = React.memo(({ contributions }: ContributionsTabP
 
 const styles = StyleSheet.create({
   contributionsList: {
-    paddingHorizontal: wp('4%'),
+    // paddingHorizontal: wp('2%'),
     marginTop: hp('1.5%'),
   },
   contributionCard: {

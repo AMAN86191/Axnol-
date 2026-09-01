@@ -73,7 +73,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
               activeOpacity={0.8}
             >
               <View style={styles.createIconContainer}>
-                <Plus color={Colors.white} size={RFValue(22)} strokeWidth={3} />
+                <Plus color={Colors.white} size={RFValue(20)} strokeWidth={3} />
               </View>
               <Text style={styles.createTabText}>
                 {label}
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     bottom: hp('3%'),
     left: wp('5%'),
     right: wp('5%'),
-    borderRadius: wp('6%'),
+    borderRadius: wp('5%'),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
@@ -180,19 +180,19 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.primary,
-    fontSize: RFValue(9.5),
+    fontSize: RFValue(9),
     fontWeight: '700',
     marginTop: hp('0.5%'),
   },
   inactiveTabText: {
     color: Colors.white,
-    fontSize: RFValue(9),
+    fontSize: RFValue(8.5),
     fontWeight: '600',
     marginTop: hp('0.5%'),
   },
   createTabText: {
     color: Colors.white,
-    fontSize: RFValue(9.5),
+    fontSize: RFValue(8.5),
     fontWeight: '600',
     marginTop: hp('0.2%'),
   }

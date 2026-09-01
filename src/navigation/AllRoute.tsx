@@ -15,15 +15,18 @@ import EditPostScreen from '../screens/main/EditPostScreen';
 import PostDetailsScreen from '../screens/main/PostDetailsScreen';
 import ReferralScreen from '../screens/main/ReferralScreen';
 import GalleryScreen from '../screens/main/GalleryScreen';
+import EventGalleryScreen from '../screens/main/EventGalleryScreen';
 import PrivacyPolicyScreen from '../screens/main/PrivacyPolicyScreen';
 import TermsScreen from '../screens/main/TermsScreen';
 import PublicProfileScreen from '../screens/main/PublicProfileScreen';
 import NotificationScreen from '../screens/main/NotificationScreen';
 import AboutTrustScreen from '../screens/main/AboutTrustScreen';
-
+import EditProfileScreen from '../screens/main/EditProfileScreen';
+import UpcomingEventsScreen from '../screens/main/UpcomingEventsScreen';
 import { RootStackParamList } from './types';
 import FeedScreen from '../screens/main/FeedScreen';
 import DonationSuccessScreen from '../screens/main/DonationSuccessScreen';
+import PlansScreen from '../screens/main/PlansScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -36,10 +39,6 @@ const Allroute = () => {
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
-          animationDuration: 350,
-          gestureEnabled: true,
-          gestureDirection: 'horizontal',
-          fullScreenGestureEnabled: true,
         }}
       >
         <Stack.Screen
@@ -100,6 +99,10 @@ const Allroute = () => {
           component={GalleryScreen}
         />
         <Stack.Screen
+          name="EventGalleryScreen"
+          component={EventGalleryScreen}
+        />
+        <Stack.Screen
           name="PrivacyPolicyScreen"
           component={PrivacyPolicyScreen}
         />
@@ -126,6 +129,18 @@ const Allroute = () => {
         <Stack.Screen
           name="DonationSuccessScreen"
           component={DonationSuccessScreen}
+        />
+        <Stack.Screen
+          name="PlansScreen"
+          component={PlansScreen}
+        />
+        <Stack.Screen
+          name="EditProfileScreen"
+          component={EditProfileScreen}
+        />
+        <Stack.Screen
+          name="UpcomingEventsScreen"
+          component={UpcomingEventsScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

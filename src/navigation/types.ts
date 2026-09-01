@@ -14,6 +14,7 @@ export type RootStackParamList = {
   PostDetailsScreen: { postId: string };
   ReferralScreen: undefined;
   GalleryScreen: undefined;
+  EventGalleryScreen: { eventId: string };
   PrivacyPolicyScreen: undefined;
   TermsScreen: undefined;
   PublicProfileScreen: { userId: string };
@@ -21,4 +22,7 @@ export type RootStackParamList = {
   AboutTrustScreen: undefined;
   FeedScreen: undefined;
   DonationSuccessScreen: { amount: number; transactionId: string; date: string };
+  PlansScreen: undefined;
+  EditProfileScreen: undefined;
+  UpcomingEventsScreen: undefined;
 };

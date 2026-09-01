@@ -15,17 +15,19 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
+import useAuthStore from '../../zustand/useAuthStore';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'LoginScreen'>;
 
 const SplashScreen = () => {
   const navigation = useNavigation<NavigationProp>();
 
-  // Persist animated values across re-renders to prevent visibility bugs
   const scaleValue = useRef(new Animated.Value(0.95)).current;
   const opacityValue = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.3)).current;
   const textSlideUp = useRef(new Animated.Value(30)).current;
+
+  const { token } = useAuthStore();
 
   useEffect(() => {
     // Sequence animations
@@ -55,16 +57,11 @@ const SplashScreen = () => {
     ]).start();
 
     const timer = setTimeout(() => {
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'LoginScreen' }],
-        })
-      );
+      navigation.replace(token ? 'MainDrawer' : 'LoginScreen');
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigation, scaleValue, opacityValue, logoScale, textSlideUp]);
+  }, [navigation, scaleValue, opacityValue, logoScale, textSlideUp, token]);
 
   return (
     <View style={styles.container}>

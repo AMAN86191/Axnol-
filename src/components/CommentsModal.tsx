@@ -11,11 +11,12 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { X } from 'lucide-react-native';
+import { X, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Colors } from '../theme/colors';
+import useAuthStore from '../zustand/useAuthStore';
 
 export interface Comment {
   id: string;
@@ -23,6 +24,7 @@ export interface Comment {
   avatar: string;
   text: string;
   time: string;
+  userId?: string;
 }
 
 interface CommentsModalProps {
@@ -30,23 +32,22 @@ interface CommentsModalProps {
   onClose: () => void;
   comments: Comment[];
   onAddComment: (commentText: string) => void;
+  currentUserId?: string;
+  onDeleteComment?: (commentId: string) => void;
 }
 
-const getUserIdFromAuthor = (authorName: string): string => {
-  if (authorName === 'Rahul Sharma') return 'user_rahul';
-  if (authorName === 'Priya Patel') return 'user_priya';
-  if (authorName === 'Vikram Singh') return 'user_vikram';
-  return 'current_user';
-};
 
 export const CommentsModal = ({
   visible,
   onClose,
   comments,
   onAddComment,
+  currentUserId,
+  onDeleteComment,
 }: CommentsModalProps) => {
   const navigation = useNavigation();
   const [newCommentText, setNewCommentText] = useState('');
+  const { user } = useAuthStore();
 
   const handleAddComment = () => {
     if (!newCommentText.trim()) return;
@@ -86,21 +87,16 @@ export const CommentsModal = ({
             showsVerticalScrollIndicator={false}
           >
             {comments.map((comment) => (
-              <TouchableOpacity
-                key={comment.id}
-                onPress={() => {
-                  onClose();
-                  const cUserId = getUserIdFromAuthor(comment.author);
-                  if (cUserId === 'current_user') {
-                    (navigation as any).navigate('Profile');
-                  } else {
-                    (navigation as any).navigate('PublicProfileScreen', { userId: cUserId });
-                  }
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.commentItem}>
+              <View key={comment.id} style={styles.commentItem}>
+                {comment.avatar ? (
                   <Image source={{ uri: comment.avatar }} style={styles.commentAvatar} />
+                ) : (
+                  <View style={[styles.commentAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                    <Text style={{ fontSize: RFValue(11), fontWeight: '700', color: Colors.dark }}>
+                      {(comment.author || 'U').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                   <View style={styles.commentContent}>
                     <Text style={styles.commentAuthorText}>
                       {comment.author}{' '}
@@ -108,20 +104,38 @@ export const CommentsModal = ({
                     </Text>
                     <Text style={styles.commentBodyText}>{comment.text}</Text>
                   </View>
+                  {currentUserId && comment.userId === currentUserId && (
+                    <TouchableOpacity onPress={() => onDeleteComment && onDeleteComment(comment.id)} style={{ padding: 5, marginLeft: wp('2%') }}>
+                      <Trash2 size={16} color="red" />
+                    </TouchableOpacity>
+                  )}
                 </View>
-              </TouchableOpacity>
+            
             ))}
           </ScrollView>
 
           {/* Sticky Input Bar */}
           <View style={styles.inputBar}>
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150' }}
-              style={styles.inputUserAvatar}
-            />
+            {(() => {
+              let currentUserAvatar = '';
+              if (user?.profile?.profile_pic) {
+                currentUserAvatar = user.profile.profile_pic;
+              } else if (user?.avatar) {
+                currentUserAvatar = user.avatar.startsWith('http') ? user.avatar : `https://gst.tambimotors.com/${user.avatar}`;
+              }
+              return currentUserAvatar ? (
+                <Image source={{ uri: currentUserAvatar }} style={styles.inputUserAvatar} />
+              ) : (
+                <View style={[styles.inputUserAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
+                  <Text style={{ fontSize: RFValue(11), fontWeight: '700', color: Colors.dark }}>
+                    {(user?.name || 'U').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              );
+            })()}
             <TextInput
               style={styles.commentInput}
-              placeholder="Comment as Ananda Das..."
+              placeholder={`Comment as ${user?.name || 'User'}...`}
               placeholderTextColor={Colors.gray}
               value={newCommentText}
               onChangeText={setNewCommentText}

@@ -35,6 +35,8 @@ import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { InputField } from '../../components/InputField';
+import useHomeStore from '../../zustand/useHomeStore';
+import useAuthStore from '../../zustand/useAuthStore';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DonateScreen'>;
 
@@ -49,6 +51,8 @@ const PRESET_AMOUNTS: Array<{ amount: number | 'custom', desc: string }> = [
 
 export default function DonateScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { purchasePlanStore } = useHomeStore();
+  const { user } = useAuthStore();
   const [donationType, setDonationType] = useState<'one-time' | 'monthly' | 'occasion'>('one-time');
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
   const [customAmount, setCustomAmount] = useState('');
@@ -69,7 +73,7 @@ export default function DonateScreen() {
     return `₹${selectedAmount} can help with: ${preset?.desc.toLowerCase()}. Together, we can create a better life for them.`;
   };
 
-  const handleDonate = () => {
+  const handleDonate = async () => {
     const finalAmount = selectedAmount === 'custom' ? parseInt(customAmount, 10) : selectedAmount;
     if (!finalAmount || finalAmount <= 0) {
       Alert.alert('Validation', 'Please select or enter a valid donation amount');
@@ -82,12 +86,27 @@ export default function DonateScreen() {
       hour: '2-digit',
       minute: '2-digit',
     });
-    
-    navigation.navigate('DonationSuccessScreen', {
-      amount: finalAmount,
-      transactionId: `TXN${Math.floor(Math.random() * 10000000000)}`,
-      date: dateStr,
-    });
+
+    try {
+      const payload = {
+        donation_type: donationType,
+        user_id: user?.id,
+        amount: finalAmount,
+        payment_status: "paid",
+        remark: remark,
+      };
+      console.log('Donation api payload', payload)
+      const res = await purchasePlanStore(payload as any);
+      console.log('Donation api response', res)
+
+      navigation.navigate('DonationSuccessScreen', {
+        amount: finalAmount,
+        transactionId: `TXN${Math.floor(Math.random() * 10000000000)}`,
+        date: dateStr,
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to process donation. Please try again.');
+    }
   };
 
   return (

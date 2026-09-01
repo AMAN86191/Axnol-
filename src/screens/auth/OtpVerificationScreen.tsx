@@ -22,6 +22,7 @@ import { AuthButton } from '../../components/AuthButton';
 import { LoginHeroSection } from '../../components/LoginHeroSection';
 import { RootStackParamList } from '../../navigation/types';
 import { ArrowRight, UserPlus, ShieldCheck } from 'lucide-react-native';
+import useAuthStore from '../../zustand/useAuthStore';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OtpVerificationScreen'>;
 type OtpScreenRouteProp = RouteProp<RootStackParamList, 'OtpVerificationScreen'>;
@@ -35,6 +36,8 @@ const OtpVerificationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(30);
   const [error, setError] = useState('');
+  
+  const { otpVerify } = useAuthStore();
   
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
@@ -78,7 +81,7 @@ const OtpVerificationScreen = () => {
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const otpString = otp.join('');
     if (otpString.length < 4) {
       setError('Please enter all 4 digits');
@@ -88,18 +91,20 @@ const OtpVerificationScreen = () => {
     setLoading(true);
     setError('');
 
-    // Simulate backend verification (correct code is 123456)
-    setTimeout(() => {
+    try {
+      const res = await otpVerify({ phone: phoneNumber, otp: otpString });
       setLoading(false);
-      if (otpString === '1234') {
+      
+      if (res?.token) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'MainDrawer' }],
         });
-      } else {
-        setError('Invalid OTP. Use 1234 for testing.');
       }
-    }, 1200);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err?.response?.data?.message || err?.message || 'Invalid OTP');
+    }
   };
 
   const handleResend = () => {

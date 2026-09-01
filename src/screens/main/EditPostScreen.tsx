@@ -17,9 +17,6 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import {
-  Smile,
-  AtSign,
-  Hash,
   X,
   Image as ImageIcon,
 } from 'lucide-react-native';
@@ -27,7 +24,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { CustomButton } from '../../components/CustomButton';
-import { usePosts } from '../../context/PostContext';
+import useHomeStore from '../../zustand/useHomeStore';
 import { RootStackParamList } from '../../navigation/types';
 
 type EditPostScreenRouteProp = RouteProp<RootStackParamList, 'EditPostScreen'>;
@@ -35,17 +32,13 @@ type EditPostScreenRouteProp = RouteProp<RootStackParamList, 'EditPostScreen'>;
 const EditPostScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<EditPostScreenRouteProp>();
-  const { postId } = route.params;
-  const { posts, updatePost } = usePosts();
-
-  const post = posts.find(p => p.id === postId);
-
-  const [caption, setCaption] = useState('');
+  const { post } = route.params as any;
+  const { updatePostStore, deletePostImageStore } = useHomeStore();
+console.log('Edit post', post)
+  const [caption, setCaption] = useState(post?.text || '');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [activePanel, setActivePanel] = useState<'none' | 'emoji' | 'mention' | 'hashtag'>('none');
-  const [emojiCategory, setEmojiCategory] = useState<'smileys' | 'animals' | 'symbols'>('smileys');
   const captionInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -105,173 +98,74 @@ const EditPostScreen = () => {
     }
   };
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
+    const imgToRemove = images[index];
+    // Check if it's a server image and we have original_post_images
+    if (imgToRemove.startsWith('http') && post?.original_post_images) {
+      // Find the image ID based on the URL
+      const foundImage = post.original_post_images.find((pi: any) => {
+        if (pi.image) return pi.image === imgToRemove;
+        if (pi.post_img) return pi.post_img.startsWith('http') ? pi.post_img === imgToRemove : `https://gst.tambimotors.com/${pi.post_img}` === imgToRemove;
+        return false;
+      });
+      
+      if (foundImage) {
+        try {
+          // Send request to server to delete image
+          await deletePostImageStore(post.id, foundImage.id);
+          console.log(`Image ${foundImage.id} deleted successfully from server.`);
+        } catch (error) {
+          Alert.alert('Error', 'Failed to delete this image from the server.');
+          return; // Do not remove from UI if API failed
+        }
+      }
+    }
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   if (!post) return null;
 
-  const EMOJIS = {
-    smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬'],
-    animals: ['🐮', '🐄', '🐂', '🐾', '🌾', '🌱', '🌿', '☘️', '🍀', '🍂', '🍁', '🌸', '🌼', '🌻', '🌺', '🌹', '🐈', '🐕', '🐎', '🐐', '🐏', '🐑', '🐖', '🐓', '🦆', '🦅', '🕊️', '🦢', '🦉', '🦚', '🦜'],
-    symbols: ['🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💖', '💗', '💓', '💞', '💕', '✨', '🌟', '⭐', '💫', '🔥', '💥', '⚡', '🌈', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌧️', '❄️', '☃️', '🚩', '🏁', '📍', '📌', '🔔', '📣', '📢', '💬', '💭', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝']
-  };
 
-  const SUGGESTED_MENTIONS = [
-    '@gaumatatrust',
-    '@nandi_sanctuary',
-    '@sevak_rahul',
-    '@gaushala_feed',
-    '@donor_care',
-    '@save_cows_initiative',
-  ];
 
-  const SUGGESTED_HASHTAGS = [
-    '#Gaumata',
-    '#GauSeva',
-    '#CowSanctuary',
-    '#SaveCows',
-    '#CalfCare',
-  ];
-
-  const insertText = (textToInsert: string) => {
-    const start = selection.start;
-    const end = selection.end;
-    
-    const s = start !== undefined ? start : caption.length;
-    const e = end !== undefined ? end : caption.length;
-
-    const textBefore = caption.substring(0, s);
-    const textAfter = caption.substring(e);
-    const newCaption = textBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = s + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
-
-  const handleSmilePress = () => {
-    setActivePanel(prev => prev === 'emoji' ? 'none' : 'emoji');
-  };
-
-  const handleAtPress = () => {
-    if (activePanel === 'mention') {
-      setActivePanel('none');
-    } else {
-      setActivePanel('mention');
-      const start = selection.start;
-      const textBefore = caption.substring(0, start);
-      if (!textBefore.endsWith('@')) {
-        insertText('@');
-      } else {
-        setTimeout(() => {
-          captionInputRef.current?.focus();
-        }, 50);
-      }
-    }
-  };
-
-  const handleHashPress = () => {
-    if (activePanel === 'hashtag') {
-      setActivePanel('none');
-    } else {
-      setActivePanel('hashtag');
-      const start = selection.start;
-      const textBefore = caption.substring(0, start);
-      if (!textBefore.endsWith('#')) {
-        insertText('#');
-      } else {
-        setTimeout(() => {
-          captionInputRef.current?.focus();
-        }, 50);
-      }
-    }
-  };
-
-  const insertMention = (mention: string) => {
-    const start = selection.start;
-    const textBefore = caption.substring(0, start);
-    const endsWithAt = textBefore.endsWith('@');
-    
-    let textToInsert = mention + ' ';
-    let replaceStart = start;
-
-    if (endsWithAt) {
-      replaceStart = start - 1;
-    }
-
-    const newTextBefore = caption.substring(0, replaceStart);
-    const textAfter = caption.substring(selection.end);
-    const newCaption = newTextBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = replaceStart + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-    
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
-
-  const insertHashtag = (tag: string) => {
-    const start = selection.start;
-    const textBefore = caption.substring(0, start);
-    const endsWithHash = textBefore.endsWith('#');
-    
-    let textToInsert = tag + ' ';
-    let replaceStart = start;
-
-    if (endsWithHash) {
-      replaceStart = start - 1;
-    }
-
-    const newTextBefore = caption.substring(0, replaceStart);
-    const textAfter = caption.substring(selection.end);
-    const newCaption = newTextBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = replaceStart + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
 
   const handleSavePost = async () => {
     if (!caption.trim()) {
       Alert.alert('Validation Error', 'Please enter a caption.');
       return;
     }
-    if (images.length === 0) {
-      Alert.alert('Validation Error', 'Please upload at least one photo.');
-      return;
-    }
 
     try {
       setLoading(true);
-      const result = updatePost(postId, caption, images);
+      
+      const formData = new FormData();
+      formData.append('id', post.id);
+      formData.append('description', caption);
+      
+      // Keep track of old and new images, or simply send new ones
+      // Since it's update, depending on API, it might just need the new images or all.
+      // Append images to FormData
+      images.forEach((img, index) => {
+        if (!img.startsWith('http')) {
+          // New local image
+          const fileName = img.split('/').pop() || `image_${index}.jpg`;
+          const type = img.endsWith('png') ? 'image/png' : 'image/jpeg';
+          formData.append(`post_img[]`, {
+            uri: img,
+            name: fileName,
+            type: type,
+          } as any);
+        }
+      });
 
-      if (result.success) {
-        Alert.alert('Success 🎉', 'Post updated successfully!', [
-          { text: 'OK', onPress: () => navigation.goBack() }
-        ]);
-      } else {
-        Alert.alert('Validation Error', result.error || 'Failed to update post.');
-      }
+   console.log('formData', formData)
+     const res =  await updatePostStore(formData);
+  console.log('edit post res', res)
+      Alert.alert('Success 🎉', 'Post updated successfully!', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
     } catch (error) {
-      console.log(error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+      console.log('Update post error:', error);
+      Alert.alert('Error', 'Failed to update post.');
     } finally {
       setLoading(false);
     }
@@ -348,101 +242,9 @@ const EditPostScreen = () => {
               selection={selection}
             />
             <View style={styles.captionFooter}>
-              <View style={styles.captionIconsRow}>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'emoji' && styles.captionIconBtnActive]}
-                  onPress={handleSmilePress}
-                  activeOpacity={0.7}
-                >
-                  <Smile size={20} color={activePanel === 'emoji' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'mention' && styles.captionIconBtnActive]}
-                  onPress={handleAtPress}
-                  activeOpacity={0.7}
-                >
-                  <AtSign size={20} color={activePanel === 'mention' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'hashtag' && styles.captionIconBtnActive]}
-                  onPress={handleHashPress}
-                  activeOpacity={0.7}
-                >
-                  <Hash size={20} color={activePanel === 'hashtag' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-              </View>
+            
               <Text style={styles.charCount}>{caption.length}/500</Text>
             </View>
-
-            {activePanel === 'emoji' && (
-              <View style={styles.emojiPanel}>
-                <View style={styles.emojiTabs}>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'smileys' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('smileys')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'smileys' && styles.emojiTabTextActive]}>😀 Smileys</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'animals' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('animals')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'animals' && styles.emojiTabTextActive]}>🐮 Animals</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'symbols' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('symbols')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'symbols' && styles.emojiTabTextActive]}>✨ Symbols</Text>
-                  </TouchableOpacity>
-                </View>
-                <ScrollView contentContainerStyle={styles.emojiGrid} nestedScrollEnabled showsVerticalScrollIndicator={true}>
-                  {EMOJIS[emojiCategory].map((emoji, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={styles.emojiGridCell}
-                      onPress={() => insertText(emoji)}
-                    >
-                      <Text style={styles.emojiGridText}>{emoji}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {activePanel === 'mention' && (
-              <View style={styles.helperPanel}>
-                <Text style={styles.helperPanelTitle}>Suggested Mentions</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.helperScroll}>
-                  {SUGGESTED_MENTIONS.map((mention, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.mentionChip}
-                      onPress={() => insertMention(mention)}
-                    >
-                      <Text style={styles.mentionChipText}>{mention}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {activePanel === 'hashtag' && (
-              <View style={styles.helperPanel}>
-                <Text style={styles.helperPanelTitle}>Trending Hashtags</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.helperScroll}>
-                  {SUGGESTED_HASHTAGS.map((tag, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.hashtagChip}
-                      onPress={() => insertHashtag(tag)}
-                    >
-                      <Text style={styles.hashtagChipText}>{tag}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
 
           <CustomButton
@@ -579,7 +381,7 @@ const styles = StyleSheet.create({
   },
   captionFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: Colors.background,
@@ -600,6 +402,7 @@ const styles = StyleSheet.create({
   charCount: {
     fontSize: RFValue(10),
     color: Colors.gray,
+    alignSelf: 'flex-end',
   },
   emojiPanel: {
     borderTopWidth: 1,

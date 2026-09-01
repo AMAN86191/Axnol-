@@ -8,10 +8,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { X, User, Mail, Phone, KeyRound } from 'lucide-react-native';
+import { X, User, Mail, Phone, KeyRound, Briefcase, Calendar, Info, Image as ImageIcon } from 'lucide-react-native';
 import { Colors } from '../theme/colors';
 import { InputField } from './InputField';
 import { CustomButton } from './CustomButton';
@@ -22,7 +23,13 @@ interface EditProfileModalProps {
   currentName: string;
   currentEmail: string;
   currentPhone: string;
-  onUpdate: (name: string, email: string, phone: string) => void;
+  currentDesignation?: string;
+  currentDob?: string;
+  currentDom?: string;
+  currentProfession?: string;
+  currentBio?: string;
+  currentProfilePic?: string;
+  onUpdate: (data: any) => void;
 }
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
@@ -31,11 +38,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   currentName,
   currentEmail,
   currentPhone,
+  currentDesignation = '',
+  currentDob = '',
+  currentDom = '',
+  currentProfession = '',
+  currentBio = '',
+  currentProfilePic = '',
   onUpdate,
 }) => {
   const [name, setName] = useState(currentName);
   const [email, setEmail] = useState(currentEmail);
   const [phone, setPhone] = useState(currentPhone);
+  const [designation, setDesignation] = useState(currentDesignation);
+  const [dob, setDob] = useState(currentDob);
+  const [dom, setDom] = useState(currentDom);
+  const [profession, setProfession] = useState(currentProfession);
+  const [bio, setBio] = useState(currentBio);
+  const [profilePic, setProfilePic] = useState(currentProfilePic);
 
   // States to track flow
   const [showOtpView, setShowOtpView] = useState(false);
@@ -48,25 +67,39 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setName(currentName);
       setEmail(currentEmail);
       setPhone(currentPhone);
+      setDesignation(currentDesignation || '');
+      setDob(currentDob || '');
+      setDom(currentDom || '');
+      setProfession(currentProfession || '');
+      setBio(currentBio || '');
+      setProfilePic(currentProfilePic || '');
       setShowOtpView(false);
       setOtpCode('');
       setLoading(false);
     }
-  }, [visible, currentName, currentEmail, currentPhone]);
+  }, [visible, currentName, currentEmail, currentPhone, currentDesignation, currentDob, currentDom, currentProfession, currentBio, currentProfilePic]);
 
   const handleSave = () => {
     if (!name.trim()) {
       Alert.alert('Validation Error', 'Please enter your name');
       return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
-      return;
-    }
     if (!phone.trim() || phone.length < 8) {
       Alert.alert('Validation Error', 'Please enter a valid phone number');
       return;
     }
+
+    const payload = {
+      name,
+      email,
+      phone,
+      designation,
+      dob,
+      dom,
+      profession,
+      bio,
+      profile_pic: profilePic,
+    };
 
     // Check if phone number is updated
     const isPhoneChanged = phone.trim() !== currentPhone.trim();
@@ -85,8 +118,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       }, 1000);
     } else {
       // Phone is not changed, update other fields directly
-      onUpdate(name, email, phone);
-      Alert.alert('Success 🎉', 'Profile updated successfully!', [{ text: 'OK', onPress: onClose }]);
+      onUpdate(payload);
     }
   };
 
@@ -99,11 +131,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      onUpdate(name, email, phone);
+      const payload = {
+        name,
+        email,
+        phone,
+        designation,
+        dob,
+        dom,
+        profession,
+        bio,
+        profile_pic: profilePic,
+      };
+      onUpdate(payload);
       Alert.alert(
         'Verified Successfully! ✅',
         'Your phone number has been verified and profile updated.',
-        [{ text: 'OK', onPress: onClose }]
       );
     }, 1200);
   };
@@ -133,7 +175,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
             {/* Modal Body */}
             {!showOtpView ? (
-              <View style={styles.modalBody}>
+              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('2%') }}>
                 <InputField
                   label="Display Name"
                   placeholder="Enter your name"
@@ -161,6 +203,54 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   leftIcon={<Phone size={RFValue(12)} color={Colors.primary} />}
                 />
 
+                <InputField
+                  label="Designation"
+                  placeholder="Enter your designation"
+                  value={designation}
+                  onChangeText={setDesignation}
+                  leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
+                />
+
+                <InputField
+                  label="Profession"
+                  placeholder="Enter your profession"
+                  value={profession}
+                  onChangeText={setProfession}
+                  leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
+                />
+
+                <InputField
+                  label="Date of Birth"
+                  placeholder="YYYY-MM-DD"
+                  value={dob}
+                  onChangeText={setDob}
+                  leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
+                />
+
+                <InputField
+                  label="Date of Marriage"
+                  placeholder="YYYY-MM-DD (Optional)"
+                  value={dom}
+                  onChangeText={setDom}
+                  leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
+                />
+
+                <InputField
+                  label="Bio"
+                  placeholder="Tell us about yourself"
+                  value={bio}
+                  onChangeText={setBio}
+                  leftIcon={<Info size={RFValue(12)} color={Colors.primary} />}
+                />
+
+                <InputField
+                  label="Profile Picture URL"
+                  placeholder="Enter image URL"
+                  value={profilePic}
+                  onChangeText={setProfilePic}
+                  leftIcon={<ImageIcon size={RFValue(12)} color={Colors.primary} />}
+                />
+
                 <Text style={styles.noteText}>
                   * Note: Changing your phone number will require entering a one-time password (OTP) to verify it.
                 </Text>
@@ -171,7 +261,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   onPress={handleSave}
                   style={styles.saveBtn}
                 />
-              </View>
+              </ScrollView>
             ) : (
               <View style={styles.modalBody}>
                 <Text style={styles.otpDescription}>
@@ -234,9 +324,11 @@ const styles = StyleSheet.create({
     width: '90%',
     justifyContent: 'center',
     alignItems: 'center',
+    maxHeight: '90%',
   },
   modalContainer: {
     width: '100%',
+    maxHeight: '100%',
     backgroundColor: Colors.white,
     borderRadius: wp('4%'),
     padding: wp('5%'),

@@ -12,6 +12,7 @@ import {
   Platform,
   Alert,
   Modal,
+  ToastAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -20,9 +21,6 @@ import { useNavigation } from '@react-navigation/native';
 import {
   Image as ImageIcon,
   X,
-  Smile,
-  AtSign,
-  Hash,
   Eye,
   CheckCircle,
 } from 'lucide-react-native';
@@ -30,158 +28,27 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { Colors } from '../../theme/colors';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { CustomButton } from '../../components/CustomButton';
-import { usePosts } from '../../context/PostContext';
 import { FeedCard } from '../../components/FeedCard';
+import useHomeStore from '../../zustand/useHomeStore';
+import useAuthStore from '../../zustand/useAuthStore';
 
 const AddScreen = () => {
   const navigation = useNavigation();
-  const { addPost } = usePosts();
+  const { createPost, loading: isCreatingPost } = useHomeStore();
+  const { user } = useAuthStore();
   const [caption, setCaption] = useState('');
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [activePanel, setActivePanel] = useState<'none' | 'emoji' | 'mention' | 'hashtag'>('none');
-  const [emojiCategory, setEmojiCategory] = useState<'smileys' | 'animals' | 'symbols'>('smileys');
   const captionInputRef = useRef<TextInput>(null);
 
-  const EMOJIS = {
-    smileys: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬'],
-    animals: ['🐮', '🐄', '🐂', '🐾', '🌾', '🌱', '🌿', '☘️', '🍀', '🍂', '🍁', '🌸', '🌼', '🌻', '🌺', '🌹', '🐈', '🐕', '🐎', '🐐', '🐏', '🐑', '🐖', '🐓', '🦆', '🦅', '🕊️', '🦢', '🦉', '🦚', '🦜'],
-    symbols: ['🙏', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💖', '💗', '💓', '💞', '💕', '✨', '🌟', '⭐', '💫', '🔥', '💥', '⚡', '🌈', '☀️', '🌤️', '⛅', '🌥️', '☁️', '🌧️', '❄️', '☃️', '🚩', '🏁', '📍', '📌', '🔔', '📣', '📢', '💬', '💭', '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝']
-  };
 
-  const SUGGESTED_MENTIONS = [
-    '@gaumatatrust',
-    '@nandi_sanctuary',
-    '@sevak_rahul',
-    '@gaushala_feed',
-    '@donor_care',
-    '@save_cows_initiative',
-  ];
 
-  const SUGGESTED_HASHTAGS = [
-    '#Gaumata',
-    '#GauSeva',
-    '#CowSanctuary',
-    '#SaveCows',
-    '#CalfCare',
-  ];
 
-  const insertText = (textToInsert: string) => {
-    const start = selection.start;
-    const end = selection.end;
-    
-    const s = start !== undefined ? start : caption.length;
-    const e = end !== undefined ? end : caption.length;
 
-    const textBefore = caption.substring(0, s);
-    const textAfter = caption.substring(e);
-    const newCaption = textBefore + textToInsert + textAfter;
 
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = s + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
-
-  const handleSmilePress = () => {
-    setActivePanel(prev => prev === 'emoji' ? 'none' : 'emoji');
-  };
-
-  const handleAtPress = () => {
-    if (activePanel === 'mention') {
-      setActivePanel('none');
-    } else {
-      setActivePanel('mention');
-      const start = selection.start;
-      const textBefore = caption.substring(0, start);
-      if (!textBefore.endsWith('@')) {
-        insertText('@');
-      } else {
-        setTimeout(() => {
-          captionInputRef.current?.focus();
-        }, 50);
-      }
-    }
-  };
-
-  const handleHashPress = () => {
-    if (activePanel === 'hashtag') {
-      setActivePanel('none');
-    } else {
-      setActivePanel('hashtag');
-      const start = selection.start;
-      const textBefore = caption.substring(0, start);
-      if (!textBefore.endsWith('#')) {
-        insertText('#');
-      } else {
-        setTimeout(() => {
-          captionInputRef.current?.focus();
-        }, 50);
-      }
-    }
-  };
-
-  const insertMention = (mention: string) => {
-    const start = selection.start;
-    const textBefore = caption.substring(0, start);
-    const endsWithAt = textBefore.endsWith('@');
-    
-    let textToInsert = mention + ' ';
-    let replaceStart = start;
-
-    if (endsWithAt) {
-      replaceStart = start - 1;
-    }
-
-    const newTextBefore = caption.substring(0, replaceStart);
-    const textAfter = caption.substring(selection.end);
-    const newCaption = newTextBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = replaceStart + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-    
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
-
-  const insertHashtag = (tag: string) => {
-    const start = selection.start;
-    const textBefore = caption.substring(0, start);
-    const endsWithHash = textBefore.endsWith('#');
-    
-    let textToInsert = tag + ' ';
-    let replaceStart = start;
-
-    if (endsWithHash) {
-      replaceStart = start - 1;
-    }
-
-    const newTextBefore = caption.substring(0, replaceStart);
-    const textAfter = caption.substring(selection.end);
-    const newCaption = newTextBefore + textToInsert + textAfter;
-
-    if (newCaption.length <= 500) {
-      setCaption(newCaption);
-      const newCursorPos = replaceStart + textToInsert.length;
-      setSelection({ start: newCursorPos, end: newCursorPos });
-    }
-
-    setTimeout(() => {
-      captionInputRef.current?.focus();
-    }, 50);
-  };
 
   const pickImages = async () => {
     if (images.length >= 5) {
@@ -233,24 +100,8 @@ const AddScreen = () => {
   };
 
   const validateInputs = (): boolean => {
-    if (images.length === 0) {
-      Alert.alert('Validation Error ⚠️', 'Please upload at least one photo (supports up to 5 photos).');
-      return false;
-    }
-
-    if (!caption.trim()) {
-      Alert.alert('Validation Error ⚠️', 'Please write a caption for your post.');
-      return false;
-    }
-
-    if (caption.length > 500) {
-      Alert.alert('Validation Error ⚠️', 'Caption cannot exceed 500 characters.');
-      return false;
-    }
-
-    const urlPattern = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9-]+\.[a-zA-Z]{2,6}\b[^\s]*)/gi;
-    if (urlPattern.test(caption)) {
-      Alert.alert('Validation Error ⚠️', 'Links or URLs are not allowed in captions.');
+    if (images.length === 0 && !caption.trim()) {
+      Alert.alert('Validation Error ⚠️', 'Please provide either a photo or a caption for your post.');
       return false;
     }
 
@@ -267,29 +118,35 @@ const AddScreen = () => {
     try {
       setLoading(true);
       setIsPreviewVisible(false);
-      
-      const imageUris = images.map(img => img.uri);
-      const result = addPost(caption, imageUris);
 
-      if (result.success) {
-        Alert.alert('Success 🎉', 'Post published successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Reset
-              setCaption('');
-              setImages([]);
-              // Redirect to feed
-              navigation.navigate('Home' as never);
-            }
-          }
-        ]);
+      const formData = new FormData();
+      formData.append('description', caption);
+
+      images.forEach((img, index) => {
+        formData.append('post_img[]', {
+          uri: img.uri,
+          type: img.type || 'image/jpeg',
+          name: img.fileName || `image_${index}.jpg`,
+        } as any);
+      });
+
+      const response = await createPost(formData);
+      console.log('post create response', response);
+      if (response?.status || response?.status === true || response?.status_code === 201) {
+
+        ToastAndroid.show('your post is under review', ToastAndroid.LONG);
+        // Reset
+        setCaption('');
+        setImages([]);
+        // Redirect to feed
+        navigation.navigate('FeedScreen' as never);
       } else {
-        Alert.alert('Error', result.error || 'Failed to publish post.');
+        Alert.alert('Error', response?.message || 'Failed to publish post.');
       }
-    } catch (error) {
-      console.log(error);
-      Alert.alert('Error', 'An unexpected error occurred.');
+    } catch (error: any) {
+      console.log('Post error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+      Alert.alert('Error', errorMsg);
     } finally {
       setLoading(false);
     }
@@ -366,101 +223,11 @@ const AddScreen = () => {
               selection={selection}
             />
             <View style={styles.captionFooter}>
-              <View style={styles.captionIconsRow}>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'emoji' && styles.captionIconBtnActive]}
-                  onPress={handleSmilePress}
-                  activeOpacity={0.7}
-                >
-                  <Smile size={20} color={activePanel === 'emoji' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'mention' && styles.captionIconBtnActive]}
-                  onPress={handleAtPress}
-                  activeOpacity={0.7}
-                >
-                  <AtSign size={20} color={activePanel === 'mention' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.captionIconBtn, activePanel === 'hashtag' && styles.captionIconBtnActive]}
-                  onPress={handleHashPress}
-                  activeOpacity={0.7}
-                >
-                  <Hash size={20} color={activePanel === 'hashtag' ? Colors.primary : Colors.dark} strokeWidth={1.8} />
-                </TouchableOpacity>
-              </View>
+
               <Text style={styles.charCount}>{caption.length}/500</Text>
             </View>
 
-            {activePanel === 'emoji' && (
-              <View style={styles.emojiPanel}>
-                <View style={styles.emojiTabs}>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'smileys' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('smileys')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'smileys' && styles.emojiTabTextActive]}>😀 Smileys</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'animals' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('animals')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'animals' && styles.emojiTabTextActive]}>🐮 Animals</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.emojiTab, emojiCategory === 'symbols' && styles.emojiTabActive]}
-                    onPress={() => setEmojiCategory('symbols')}
-                  >
-                    <Text style={[styles.emojiTabText, emojiCategory === 'symbols' && styles.emojiTabTextActive]}>✨ Symbols</Text>
-                  </TouchableOpacity>
-                </View>
-                <ScrollView contentContainerStyle={styles.emojiGrid} nestedScrollEnabled showsVerticalScrollIndicator={true}>
-                  {EMOJIS[emojiCategory].map((emoji, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={styles.emojiGridCell}
-                      onPress={() => insertText(emoji)}
-                    >
-                      <Text style={styles.emojiGridText}>{emoji}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
 
-            {activePanel === 'mention' && (
-              <View style={styles.helperPanel}>
-                <Text style={styles.helperPanelTitle}>Suggested Mentions</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.helperScroll}>
-                  {SUGGESTED_MENTIONS.map((mention, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.mentionChip}
-                      onPress={() => insertMention(mention)}
-                    >
-                      <Text style={styles.mentionChipText}>{mention}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {activePanel === 'hashtag' && (
-              <View style={styles.helperPanel}>
-                <Text style={styles.helperPanelTitle}>Trending Hashtags</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.helperScroll}>
-                  {SUGGESTED_HASHTAGS.map((tag, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.hashtagChip}
-                      onPress={() => insertHashtag(tag)}
-                    >
-                      <Text style={styles.hashtagChipText}>{tag}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
 
           {/* Trigger Button: Shows Preview first */}
@@ -482,7 +249,7 @@ const AddScreen = () => {
       >
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContentCard}>
-            
+
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <View style={styles.headerTitleContainer}>
@@ -501,12 +268,12 @@ const AddScreen = () => {
             {/* Modal Scrollable Body */}
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               <Text style={styles.previewTipText}>This is how your post will appear in the community feed:</Text>
-              
+
               {/* WYSIWYG Feed Card rendering */}
               <FeedCard
-                author="Ananda Das"
-                avatar="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150"
-                meta="Just now • Verified Sevak"
+                author={user?.name || 'Community Member'}
+                avatar={user?.profile?.profile_pic ? `${user.profile.profile_pic}` : 'https://randomuser.me/api/portraits/lego/1.jpg'}
+                meta={`Just now${user?.profile?.designation ? ` • ${user.profile.designation}` : ''}`}
                 text={caption.trim()}
                 images={images.map(img => img.uri)}
                 likes={0}
@@ -524,7 +291,7 @@ const AddScreen = () => {
               >
                 <Text style={styles.editBackBtnText}>Edit Content</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={styles.confirmPublishBtn}
                 onPress={handleConfirmPublish}
@@ -665,7 +432,7 @@ const styles = StyleSheet.create({
   },
   captionFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: "flex-end",
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: Colors.background,
@@ -686,100 +453,9 @@ const styles = StyleSheet.create({
   charCount: {
     fontSize: RFValue(10),
     color: Colors.gray,
+
   },
-  emojiPanel: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    marginTop: hp('1%'),
-    paddingTop: hp('1%'),
-    height: hp('22%'),
-  },
-  emojiTabs: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: hp('1%'),
-    borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
-    paddingBottom: hp('0.5%'),
-  },
-  emojiTab: {
-    paddingVertical: hp('0.4%'),
-    paddingHorizontal: wp('2.5%'),
-    borderRadius: wp('2%'),
-  },
-  emojiTabActive: {
-    backgroundColor: '#FFE5D9',
-  },
-  emojiTabText: {
-    fontSize: RFValue(11),
-    color: Colors.gray,
-    fontWeight: '600',
-  },
-  emojiTabTextActive: {
-    color: Colors.primary,
-    fontWeight: '700',
-  },
-  emojiGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingBottom: hp('2%'),
-  },
-  emojiGridCell: {
-    width: wp('10.5%'),
-    height: wp('10.5%'),
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: wp('0.5%'),
-  },
-  emojiGridText: {
-    fontSize: RFValue(20),
-  },
-  helperPanel: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    marginTop: hp('1%'),
-    paddingTop: hp('1%'),
-  },
-  helperPanelTitle: {
-    fontSize: RFValue(10.5),
-    fontWeight: '700',
-    color: Colors.gray,
-    marginBottom: hp('0.8%'),
-    paddingLeft: wp('1%'),
-  },
-  helperScroll: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: hp('0.5%'),
-  },
-  mentionChip: {
-    backgroundColor: '#E8F4FD',
-    borderRadius: wp('4%'),
-    paddingHorizontal: wp('3.5%'),
-    paddingVertical: hp('0.8%'),
-    marginRight: wp('2%'),
-    borderWidth: 1,
-    borderColor: '#D4E6F1',
-  },
-  mentionChipText: {
-    color: '#1DA1F2',
-    fontWeight: '700',
-    fontSize: RFValue(10.5),
-  },
-  hashtagChip: {
-    backgroundColor: '#E8F8F5',
-    borderRadius: wp('4%'),
-    paddingHorizontal: wp('3.5%'),
-    paddingVertical: hp('0.8%'),
-    marginRight: wp('2%'),
-    borderWidth: 1,
-    borderColor: '#D1F2EB',
-  },
-  hashtagChipText: {
-    color: '#16A085',
-    fontWeight: '700',
-    fontSize: RFValue(10.5),
-  },
+
   publishBtn: {
     marginTop: hp('1%'),
     marginBottom: hp('3%'),

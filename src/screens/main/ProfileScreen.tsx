@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,15 +6,17 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 
 import { PrimaryHeader } from '../../components/PrimaryHeader';
-import { EditProfileModal } from '../../components/EditProfileModal';
-import { usePosts } from '../../context/PostContext';
+import useHomeStore from '../../zustand/useHomeStore';
 
 // Extracted Sub-components with their own encapsulated styles
 import { ProfileHeader } from '../../components/ProfileHeader';
@@ -27,6 +29,8 @@ import { ContributionsTab } from '../../components/ContributionsTab';
 import { MembershipIdCardModal } from '../../components/MembershipIdCardModal';
 import { InstagramGrid } from '../../components/InstagramGrid';
 import { WelcomeNewUserCard } from '../../components/WelcomeNewUserCard';
+import useAuthStore from '../../zustand/useAuthStore';
+import { Colors } from '../../theme/colors';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -35,26 +39,91 @@ const ProfileScreen = () => {
   const [isNewUser, setIsNewUser] = useState(false);
 
   // Profile data states
-  const [profileName, setProfileName] = useState('Ananda Das');
-  const [profileEmail, setProfileEmail] = useState('anandadas@gmail.com');
-  const [profilePhone, setProfilePhone] = useState('+91 98765 43210');
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isIdCardModalVisible, setIsIdCardModalVisible] = useState(false);
+  const [profileData, setProfileData] = useState<any>(null);
+  const { user, updateProfile, getProfile } = useAuthStore();
+  const { getmypost, getContributionsStore } = useHomeStore();
 
-  const { posts, deletePost } = usePosts();
+  const [myPosts, setMyPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Memoize user's posts to avoid re-filtering on every render
-  const userPosts = useMemo(() => {
-    return posts.filter(post => post.userId === 'current_user');
-  }, [posts]);
+  const fetchMyPosts = useCallback(async () => {
+    try {
+      const response = await getmypost();
+console.log('mypost response', response)
+      if (response && response.posts && response.posts.data) {
+        const mappedPosts = response.posts.data.map((item: any) => {
+          let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
+          let additionalImages: string[] = [];
+          
+          if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+            additionalImages = item.images.map((img: any) => img.image);
+          } else if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
+            additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
+          }
+          
+          if (additionalImages.length === 0 && imageUrl) {
+            additionalImages = [imageUrl];
+          }
+          let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
 
+          let avatarUrl = '';
+          if (item.author?.profile_pic) {
+            avatarUrl = item.author.profile_pic;
+          } else if (item.user?.avatar) {
+            avatarUrl = item.user.avatar.startsWith('http') ? item.user.avatar : `https://gst.tambimotors.com/${item.user.avatar}`;
+          }
+
+          const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id 
+              ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
+              : item.is_liked || false;
+
+          return {
+            id: item.id?.toString(),
+            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+            avatar: avatarUrl,
+            meta: item.created_at || 'Just now',
+            text: item.description || '',
+            image: displayImage,
+            images: additionalImages,
+            likes: item.likes_count ?? item.likes ?? 0,
+            comments: item.comments_count || 0,
+            isLiked: isLikedByCurrentUser,
+            likedBy: item.liked_by || [],
+            userId: item.user_id?.toString() || item.admin_id?.toString(),
+            status: item.status,
+          };
+        });
+        setMyPosts(mappedPosts);
+      }
+    } catch (error) {
+      console.log('Error fetching my posts:', error);
+    } finally {
+      setLoadingPosts(false);
+      setRefreshing(false);
+    }
+  }, [getmypost]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchMyPosts();
+      }
+    }, [fetchMyPosts, user?.id])
+  );
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMyPosts();
+  }, [fetchMyPosts]);
   // Wrap callbacks in useCallback to prevent recreating them on every render
   const handleCameraPress = useCallback(() => {
-    setIsEditModalVisible(true);
-  }, []);
+    (navigation as any).navigate('EditProfileScreen');
+  }, [navigation]);
 
   const handleEmailPress = useCallback(() => {
-    setIsEditModalVisible(false);
+    // Navigate or handle email press
   }, []);
 
   const handlePhonePress = useCallback(() => {
@@ -66,91 +135,128 @@ const ProfileScreen = () => {
   }, [navigation]);
 
   const handlePostPress = useCallback((postId: string) => {
-    (navigation as any).navigate('PostDetailsScreen', { postId });
+    (navigation as any).navigate('PostDetailsScreen', { postId: postId });
   }, [navigation]);
 
   const handleCertificatePress = useCallback(() => {
-    (navigation as any).navigate('MembershipCertificateScreen');
-  }, [navigation]);
+    (navigation as any).navigate('MembershipCertificateScreen', { profileData });
+  }, [navigation, profileData]);
 
   const handleDemoTogglePress = useCallback(() => {
     setIsMember(prev => !prev);
   }, []);
 
 
-  const contributionsData = useMemo(() => [
-    {
-      id: 'c1',
-      title: 'Daily Grass Seva',
-      category: 'Feed Support',
-      amount: '₹1,100',
-      date: '08 Jun 2026',
-      status: 'Completed',
-      txnId: 'TXN83940174',
-    },
-    {
-      id: 'c2',
-      title: 'Emergency Medical Kit',
-      category: 'Medical Care',
-      amount: '₹2,500',
-      date: '28 May 2026',
-      status: 'Completed',
-      txnId: 'TXN83910543',
-    },
-    {
-      id: 'c3',
-      title: 'Calf Shelter Sponsorship',
-      category: 'Shelter Build',
-      amount: '₹10,000',
-      date: '15 May 2026',
-      status: 'Completed',
-      txnId: 'TXN83890212',
-    },
-    {
-      id: 'c4',
-      title: 'Monthly Gaushala Care',
-      category: 'Recurring Feed',
-      amount: '₹500',
-      date: '01 May 2026',
-      status: 'Active',
-      txnId: 'TXN83764923',
-    },
-  ], []);
+  const [contributionsData, setContributionsData] = useState<any[]>([]);
+
+  const fetchContributions = useCallback(async () => {
+    try {
+      const response = await getContributionsStore();
+      console.log('Contributions API Response:', response);
+      if (response && response.donations) {
+        const mappedData = response.donations.map((d: any) => ({
+          id: d.id?.toString() || Math.random().toString(),
+          title: d.plan?.plan_name || 'Donation',
+          category: d.plan?.duration 
+            ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1) 
+            : 'General',
+          amount: `₹${parseFloat(d.amount || 0).toLocaleString('en-IN')}`,
+          date: d.date || 'N/A',
+          status: d.payment_status?.toLowerCase() === 'paid' ? 'Completed' : 'Pending',
+          txnId: d.transaction_id || 'N/A',
+        }));
+        setContributionsData(mappedData);
+      }
+    } catch (error) {
+      console.log('Error fetching contributions:', error);
+    }
+  }, [getContributionsStore]);
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const response = await getProfile();
+      console.log('User Profile API Response:', response);
+      if (response?.data) {
+        setProfileData(response.data);
+      }
+    } catch (error) {
+      console.log('Error fetching user profile:', error);
+    }
+  }, [getProfile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user?.id) {
+        fetchContributions();
+        fetchProfile();
+      }
+    }, [fetchContributions, fetchProfile, user?.id])
+  );
+
+  const hasMembership = !!(profileData?.user?.membership || user?.membership);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <PrimaryHeader />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContainer}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
+        }
+      >
         {/* Profile Details Header Component */}
         <ProfileHeader
-          profileName={profileName}
-          profileEmail={profileEmail}
-          profilePhone={profilePhone}
+          profileName={profileData?.user?.name || user?.name || 'Loading...'}
+          profileEmail={profileData?.user?.email || user?.email || 'N/A'}
+          profilePhone={profileData?.user?.phone || user?.phone ? `+91 ${profileData?.user?.phone || user?.phone}` : 'N/A'}
+          uid={profileData?.user?.uid || user?.uid}
+          joinDate={profileData?.profile?.join_date || user?.profile?.join_date}
+          designation={profileData?.profile?.designation || user?.profile?.designation}
+          bio={profileData?.profile?.bio || user?.profile?.bio}
+          avatarUri={
+            profileData?.profile?.profile_pic 
+              ? `${profileData.profile.profile_pic}` 
+              : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
+          }
           onCameraPress={handleCameraPress}
           onEmailPress={handleEmailPress}
           onPhonePress={handlePhonePress}
+          membership={profileData?.user?.membership || user?.membership}
+          dob={profileData?.profile?.dob || user?.profile?.dob}
+          dom={profileData?.profile?.dom || user?.profile?.dom}  
+          profession={profileData?.profile?.profession || user?.profile?.profession}
+          referralCode={profileData?.profile?.referral_code || user?.profile?.referral_code}
+          country={profileData?.profile?.country || user?.profile?.country}
         />
 
         {/* Profile Statistics Component */}
         {isNewUser ? (
           <WelcomeNewUserCard onDonatePress={handleDonatePress} />
         ) : (
-          <ProfileStats postsCount={userPosts.length} />
+          <ProfileStats 
+            postsCount={profileData?.statistics?.posts_count || myPosts.length} 
+            referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
+            totalDonation={profileData?.statistics?.total_donation || 0}
+            likesCount={profileData?.statistics?.likes_count || 0}
+          />
         )}
 
         {/* Active Campaign Card Component */}
         <ActiveCampaignCard onDonatePress={handleDonatePress} />
 
         {/* Membership Section Component */}
-        <MembershipBenefits
-          isMember={isMember}
-          onCertificatePress={handleCertificatePress}
-          onIdCardPress={() => setIsIdCardModalVisible(true)}
-          onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
-          onDemoTogglePress={handleDemoTogglePress}
-        />
+        {hasMembership && (
+          <MembershipBenefits
+            isMember={true}
+            onCertificatePress={handleCertificatePress}
+            onIdCardPress={() => setIsIdCardModalVisible(true)}
+            onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
+            onDemoTogglePress={handleDemoTogglePress}
+          />
+        )}
 
         {/* Quote Section Component */}
         <QuoteCard />
@@ -161,8 +267,12 @@ const ProfileScreen = () => {
         {/* Tab Content rendering */}
         {activeTab === 'posts' && (
           <View style={styles.myPostsFeedList}>
-            {userPosts.length > 0 ? (
-              <InstagramGrid posts={userPosts} onPostPress={handlePostPress} />
+            {loadingPosts ? (
+              <View style={{ padding: 20 }}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+              </View>
+            ) : myPosts.length > 0 ? (
+              <InstagramGrid posts={myPosts} onPostPress={handlePostPress} />
             ) : (
               <View style={styles.emptyFeedContainer}>
                 <Text style={styles.emptyFeedText}>You haven't posted anything yet. Tap the '+' tab to create one!</Text>
@@ -172,29 +282,45 @@ const ProfileScreen = () => {
         )}
 
         {activeTab === 'contributions' && (
-          <ContributionsTab contributions={contributionsData} />
+          <View style={styles.myPostsFeedList}>
+            {contributionsData.length > 0 ? (
+              <ContributionsTab contributions={contributionsData} />
+            ) : (
+              <View style={styles.emptyFeedContainer}>
+                <Text style={styles.emptyFeedText}>You haven't made any contributions yet.</Text>
+                <TouchableOpacity 
+                  style={{ 
+                    marginTop: hp('2%'), 
+                    paddingVertical: hp('1.2%'), 
+                    paddingHorizontal: wp('6%'), 
+                    backgroundColor: Colors.primary, 
+                    borderRadius: wp('5%') 
+                  }}
+                  onPress={handleDonatePress}
+                >
+                  <Text style={{ color: '#FFF', fontSize: RFValue(11), fontWeight: '700' }}>Donate Now</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         )}
       </ScrollView>
-
-      {/* Edit Profile Modal */}
-      <EditProfileModal
-        visible={isEditModalVisible}
-        onClose={() => setIsEditModalVisible(false)}
-        currentName={profileName}
-        currentEmail={profileEmail}
-        currentPhone={profilePhone}
-        onUpdate={(newName, newEmail, newPhone) => {
-          setProfileName(newName);
-          setProfileEmail(newEmail);
-          setProfilePhone(newPhone);
-        }}
-      />
 
       {/* Membership ID Card Modal Component */}
       <MembershipIdCardModal
         visible={isIdCardModalVisible}
         onClose={() => setIsIdCardModalVisible(false)}
-        profileName={profileName}
+        profileName={profileData?.user?.name || user?.name || 'Unknown'}
+        avatarUri={
+          profileData?.profile?.profile_pic 
+            ? `${profileData.profile.profile_pic}` 
+            : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
+        }
+        memberId={profileData?.user?.uid || user?.uid || 'N/A'}
+        designation={(profileData?.user?.membership || user?.membership) ? 'Member' : 'N/A'}
+        since={profileData?.user?.start_date || user?.start_date 
+          ? new Date(profileData?.user?.start_date || user?.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) 
+          : 'N/A'}
       />
     </SafeAreaView>
   );

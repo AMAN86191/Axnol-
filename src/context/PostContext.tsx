@@ -34,11 +34,11 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=120',
       meta: '2 hours ago • Verified Sevak',
       text: "The new calf 'Nandi' is doing wonderfully! Thanks to the donor community for the specialized medical kit.",
-      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.png')).uri,
+      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.jpg')).uri,
       images: [
-        Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.png')).uri,
-        Image.resolveAssetSource(require('../../assets/images/feed/cow_medical_1781177084941.png')).uri,
-        Image.resolveAssetSource(require('../../assets/images/feed/cow_portrait_1781177072664.png')).uri
+        Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.jpg')).uri,
+        Image.resolveAssetSource(require('../../assets/images/feed/cow_medical_1781177084941.jpg')).uri,
+        Image.resolveAssetSource(require('../../assets/images/feed/cow_portrait_1781177072664.jpg')).uri
       ],
       likes: 124,
       comments: 18,
@@ -51,10 +51,10 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
       meta: '4 hours ago • Volunteer Coordinator',
       text: "Organized the weekend green grass distribution drive! Thank you to all the 15+ volunteers who joined us in cleaning and feeding.",
-      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_feeding_1781177046811.png')).uri,
+      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_feeding_1781177046811.jpg')).uri,
       images: [
-        Image.resolveAssetSource(require('../../assets/images/feed/cow_feeding_1781177046811.png')).uri,
-        Image.resolveAssetSource(require('../../assets/images/feed/cow_shelter_1781177059865.png')).uri
+        Image.resolveAssetSource(require('../../assets/images/feed/cow_feeding_1781177046811.jpg')).uri,
+        Image.resolveAssetSource(require('../../assets/images/feed/cow_shelter_1781177059865.jpg')).uri
       ],
       likes: 156,
       comments: 24,
@@ -67,9 +67,9 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150',
       meta: '5 hours ago • Verified Sevak',
       text: 'Visiting the Gaushala today was such a blessing. The cows are so peaceful and well-cared for.',
-      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_shelter_1781177059865.png')).uri,
+      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_shelter_1781177059865.jpg')).uri,
       images: [
-        Image.resolveAssetSource(require('../../assets/images/feed/cow_shelter_1781177059865.png')).uri
+        Image.resolveAssetSource(require('../../assets/images/feed/cow_shelter_1781177059865.jpg')).uri
       ],
       likes: 85,
       comments: 6,
@@ -82,8 +82,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
       meta: 'Yesterday • Donor',
       text: "Happy to contribute toward the dry fodder feed supply. Every small contribution feeds a soul 🙏 Let's continue working for Gau Seva.",
-      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_medical_1781177084941.png')).uri,
-      images: [Image.resolveAssetSource(require('../../assets/images/feed/cow_medical_1781177084941.png')).uri],
+      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_medical_1781177084941.jpg')).uri,
+      images: [Image.resolveAssetSource(require('../../assets/images/feed/cow_medical_1781177084941.jpg')).uri],
       likes: 98,
       comments: 11,
       isLiked: true,
@@ -95,8 +95,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({ children
       avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150',
       meta: '2 days ago • Verified Sevak',
       text: 'Contributing to the daily green fodder drive. Every small contribution feeds a soul 🙏',
-      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.png')).uri,
-      images: [Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.png')).uri],
+      image: Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.jpg')).uri,
+      images: [Image.resolveAssetSource(require('../../assets/images/feed/cow_calf_1781177033799.jpg')).uri],
       likes: 92,
       comments: 10,
       isLiked: true,

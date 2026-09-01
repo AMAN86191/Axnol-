@@ -22,6 +22,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { AuthInput } from '../../components/AuthInput';
 import { AuthButton } from '../../components/AuthButton';
 import { LoginHeroSection } from '../../components/LoginHeroSection';
+import useAuthStore from '../../zustand/useAuthStore';
 
 // Google SVG Icon
 const GoogleIcon = ({ size = 18 }: { size?: number }) => (
@@ -48,8 +49,10 @@ const LoginScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  const { login } = useAuthStore();
 
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneNumber) {
       setError('Mobile number is required');
@@ -61,13 +64,16 @@ const LoginScreen = () => {
     }
 
     setError('');
-    setLoading(true);
-
-    // Simulate OTP sending
-    setTimeout(() => {
+    
+    try {
+      setLoading(true);
+      await login({ phone: phoneNumber });
       setLoading(false);
       navigation.navigate('OtpVerificationScreen', { phoneNumber });
-    }, 1200);
+    } catch (err: any) {
+      setLoading(false);
+      setError(err?.response?.data?.message || err?.message || 'Failed to send OTP');
+    }
   };
 
   const handlePhoneChange = (text: string) => {
