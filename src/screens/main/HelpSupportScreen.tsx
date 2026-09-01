@@ -86,19 +86,19 @@ const HelpSupportScreen = () => {
   };
 
   const handleCall = () => {
-    Linking.openURL('tel:+919876543210').catch(() => {
+    Linking.openURL('tel:+919911157953').catch(() => {
       Alert.alert('Error', 'Unable to initiate call on this device');
     });
   };
 
   const handleEmail = () => {
-    Linking.openURL('mailto:support@gaumatatrust.org?subject=Support Request').catch(() => {
+    Linking.openURL('mailto:gaumatatrust2023@gmail.com?subject=Support Request').catch(() => {
       Alert.alert('Error', 'No email client found on this device');
     });
   };
 
   const handleOpenMap = () => {
-    const address = 'Gaumata Sanctuary, Vrindavan, Uttar Pradesh';
+    const address = 'Office-207, 2nd Floor, A J Chamber, Gali No. 4, Pyare Lal Road, Karol Bagh, New Delhi – 110005, India';
     const url = Platform.select({
       ios: `maps:0,0?q=${address}`,
       android: `geo:0,0?q=${address}`,
@@ -134,7 +134,7 @@ const HelpSupportScreen = () => {
                   <Phone size={RFValue(12)} color={Colors.primary} />
                 </View>
                 <Text style={styles.connectCardTitle}>Call Us</Text>
-                <Text style={styles.connectCardSubtitle}>+91 98765 43210</Text>
+                <Text style={styles.connectCardSubtitle}>+91 99111 57953</Text>
               </TouchableOpacity>
 
               {/* Email Support */}
@@ -143,7 +143,7 @@ const HelpSupportScreen = () => {
                   <Mail size={RFValue(12)} color="#27AE60" />
                 </View>
                 <Text style={styles.connectCardTitle}>Email Support</Text>
-                <Text style={styles.connectCardSubtitle}>support@gaumata.org</Text>
+                <Text style={styles.connectCardSubtitle}>gaumatatrust2023@gmail.com</Text>
               </TouchableOpacity>
             </View>
 
@@ -153,8 +153,8 @@ const HelpSupportScreen = () => {
                 <MapPin size={RFValue(12)} color="#8E44AD" />
               </View>
               <View style={styles.addressTextContainer}>
-                <Text style={styles.connectCardTitle}>Visit Gaushala</Text>
-                <Text style={styles.connectCardSubtitle}>Vrindavan Sanctuary, Mathura Road, UP</Text>
+                <Text style={styles.connectCardTitle}>Visit Trust Office</Text>
+                <Text style={styles.connectCardSubtitle}>Office-207, Karol Bagh, New Delhi</Text>
               </View>
             </TouchableOpacity>
           </View>

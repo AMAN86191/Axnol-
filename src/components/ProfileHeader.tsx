@@ -103,16 +103,19 @@ export const ProfileHeader = React.memo(({
               <VerifiedBadge />
             </View>
 
-            <Text style={styles.designationText}>{designation || 'Community Member'}</Text>
 
-            <View style={styles.statusRowBadgesHeader}>
-              <View style={styles.patronBadge}>
-                <Award size={RFValue(8)} color="#D97706" strokeWidth={2} />
-                <Text style={styles.patronBadgeText}>
-                  {membership ? membership.charAt(0).toUpperCase() + membership.slice(1) : 'Community Member'}
-                </Text>
+            <Text style={styles.designationText}>{designation || 'User'}</Text>
+
+            {membership ? (
+              <View style={styles.statusRowBadgesHeader}>
+                <View style={styles.patronBadge}>
+                  <Award size={RFValue(8)} color="#D97706" strokeWidth={2} />
+                  <Text style={styles.patronBadgeText}>
+                    {membership.charAt(0).toUpperCase() + membership.slice(1)}
+                  </Text>
+                </View>
               </View>
-            </View>
+            ) : null}
 
             <View style={styles.metaRow}>
               <Text style={styles.metaLabel}>ID: </Text>

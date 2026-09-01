@@ -39,70 +39,68 @@ export default function TermsScreen() {
             <Text style={styles.sectionTitle}>1. Acceptance of Terms</Text>
           </View>
           <Text style={styles.bodyText}>
-            By creating an account, donating, or participating in the community feed of Gaumata Trust, you acknowledge that you have read, understood, and agree to these Terms. If you do not agree, you must discontinue using our services.
+            By accessing or using the services of the Gaumata Sewa Trust, you agree to be bound by these terms.
           </Text>
         </View>
 
         {/* Section 2 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <HeartHandshake size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>2. Donations & Refunds</Text>
+            <FileText size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>2. Use of Information</Text>
           </View>
           <Text style={styles.bodyText}>
-            All financial contributions made to the trust are voluntary and will be utilized solely for feeding, sheltering, and medical treatment of cows.
+            Content is for general informational purposes only. The NGO reserves the right to modify or update information at any time without prior notice.
           </Text>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}><Text style={styles.bold}>Tax Exemption:</Text> Donations are eligible for tax exemption under Section 80G of the Income Tax Act. Receipts are generated automatically.</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}><Text style={styles.bold}>Refunds:</Text> As contributions are used directly for grass, medicine, and shelter construction, donations are strictly non-refundable.</Text>
-          </View>
         </View>
 
         {/* Section 3 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <FileText size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>3. User Content & Feed Guidelines</Text>
+            <HeartHandshake size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>3. Donations & Refunds</Text>
           </View>
           <Text style={styles.bodyText}>
-            When sharing posts or images on our Community Feed, users must maintain a peaceful, respectful, and constructive behavior:
+            All financial contributions made to the trust are voluntary. The trust reserves the right to allocate funds at its discretion to areas of greatest need.
           </Text>
           <View style={styles.bulletRow}>
             <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}>Only share content related to animal welfare, Gau Seva, and Vedic cultural heritage.</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}>URLs, promotional links, advertisement, or commercial posts are strictly prohibited.</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}>We reserve the right to review, edit, or delete any content that violates these guidelines or block abusive users.</Text>
+            <Text style={styles.bulletContent}><Text style={styles.bold}>Refund Policy:</Text> Contributions are considered final and are non-refundable. If an incorrect transaction occurs, donors are advised to contact the trust immediately for resolution.</Text>
           </View>
         </View>
-
-        {/* Highlight box */}
-        {/* <View style={styles.highlightBox}>
-          <Text style={styles.highlightTitle}>Section 80G Tax Exemption</Text>
-          <Text style={styles.highlightText}>
-            All contributions are certified 100% transparent. Your donation receipts are permanent records and can be downloaded from your Profile page at any time.
-          </Text>
-        </View> */}
 
         {/* Section 4 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <HelpCircle size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>4. Contact Us</Text>
+            <FileText size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>4. Intellectual Property</Text>
           </View>
           <Text style={styles.bodyText}>
-            For questions regarding these Terms, please reach out to our legal compliance cell at:
+            All content, including text, images, logos, and graphics, is the property of the NGO and is protected by copyright laws.
           </Text>
-          <Text style={styles.contactEmail}>legal@gaumatatrust.org</Text>
+        </View>
+
+        {/* Section 5 */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <ShieldCheck size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>5. User Conduct & Policies</Text>
+          </View>
+          <Text style={styles.bodyText}>
+            Users are expected to interact respectfully and refrain from activities that could harm the NGO or its reputation. The NGO is not responsible for the content or privacy practices of any external websites linked on their platform. The trust reserves the right to update or modify these terms at any time.
+          </Text>
+        </View>
+
+        {/* Section 6 */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <HelpCircle size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>6. Contact Us</Text>
+          </View>
+          <Text style={styles.bodyText}>
+            For questions regarding these Terms, please reach out to us at:
+          </Text>
+          <Text style={styles.contactEmail}>gaumatatrust2023@gmail.com</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

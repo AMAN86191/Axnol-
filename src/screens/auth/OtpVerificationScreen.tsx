@@ -23,6 +23,7 @@ import { LoginHeroSection } from '../../components/LoginHeroSection';
 import { RootStackParamList } from '../../navigation/types';
 import { ArrowRight, UserPlus, ShieldCheck } from 'lucide-react-native';
 import useAuthStore from '../../zustand/useAuthStore';
+import { getFCMToken } from '../../utils/notificationService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OtpVerificationScreen'>;
 type OtpScreenRouteProp = RouteProp<RootStackParamList, 'OtpVerificationScreen'>;
@@ -92,7 +93,8 @@ const OtpVerificationScreen = () => {
     setError('');
 
     try {
-      const res = await otpVerify({ phone: phoneNumber, otp: otpString });
+      const fcmToken = await getFCMToken();
+      const res = await otpVerify({ phone: phoneNumber, otp: otpString, fcm_token: fcmToken });
       setLoading(false);
       
       if (res?.token) {
@@ -175,6 +177,20 @@ const OtpVerificationScreen = () => {
                 />
               ))}
             </View>
+
+            {/* Testing OTP Autofill */}
+            <TouchableOpacity 
+              activeOpacity={0.7} 
+              onPress={() => {
+                setOtp(['1', '2', '3', '4']);
+                setError('');
+              }}
+              style={{ alignItems: 'center', marginBottom: hp('2%') }}
+            >
+              <Text style={{ color: Colors.primary, fontSize: RFValue(11), fontWeight: '600' }}>
+                Use Test OTP: 1234
+              </Text>
+            </TouchableOpacity>
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 

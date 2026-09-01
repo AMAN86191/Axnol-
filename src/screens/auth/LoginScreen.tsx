@@ -9,6 +9,7 @@ import {
   Platform,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -146,7 +147,7 @@ const LoginScreen = () => {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8} onPress={() => navigation.navigate('MainDrawer' as never)}>
+            <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8} onPress={() => Alert.alert('Coming Soon', 'Login with Google is coming soon!')}>
               <GoogleIcon />
               <Text style={styles.googleBtnText}>Continue with Google</Text>
             </TouchableOpacity>

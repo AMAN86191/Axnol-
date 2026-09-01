@@ -36,74 +36,64 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Database size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>1. Information We Collect</Text>
+            <Text style={styles.sectionTitle}>1. Collection of Information</Text>
           </View>
           <Text style={styles.bodyText}>
-            While supporting our Gaushalas, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you. This includes:
+            The trust collects personal information, including names, contact details, and donation history, to maintain donor records and facilitate communication.
           </Text>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}><Text style={styles.bold}>Identity Data:</Text> Full Name, Date of Birth, and Profile Avatar.</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}><Text style={styles.bold}>Contact Data:</Text> Email Address and Phone Number.</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}><Text style={styles.bold}>Financial Data:</Text> Transaction reference IDs for donations (payment credentials are encrypted by our gateway partners and never stored on our servers).</Text>
-          </View>
         </View>
 
         {/* Section 2 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Eye size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>2. How We Use Data</Text>
+            <Text style={styles.sectionTitle}>2. Use of Information</Text>
           </View>
           <Text style={styles.bodyText}>
-            We use the collected information to facilitate transparent operations, including:
+            Information is used solely for the purpose for which it was provided, such as processing donations, sending updates, and informing donors about NGO activities.
           </Text>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}>Generating official tax-exemption receipts (under Section 80G).</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}>Issuing digital membership certificates and active gold cards.</Text>
-          </View>
-          <View style={styles.bulletRow}>
-            <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}>Sharing updates about your sponsored cow or general Gaushala activities.</Text>
-          </View>
         </View>
 
         {/* Section 3 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Lock size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>3. Security of Data</Text>
+            <Shield size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>3. Data Sharing</Text>
           </View>
           <Text style={styles.bodyText}>
-            The security of your data is of paramount importance to us. We use industry-standard encryption protocols (SSL/TLS) to secure transaction details. We never sell, rent, or lease your personal information to third-party marketing services. Access to your personal data is restricted strictly to authorized trust administrators.
+            The trust states that it does not sell, trade, or rent personal information to third parties. Information may only be shared with trusted partners and service providers for specific tasks like processing donations.
           </Text>
         </View>
 
-        {/* Highlight box */}
-        {/* <View style={styles.highlightBox}>
-          <Text style={styles.highlightTitle}>Banking Grade Security</Text>
-          <Text style={styles.highlightText}>
-            Our payment processors conform to the Payment Card Industry Data Security Standards (PCI-DSS) to ensure your transactions are safe and secure.
-          </Text>
-        </View> */}
-
         {/* Section 4 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>4. Contact Us</Text>
+          <View style={styles.sectionHeader}>
+            <Lock size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>4. Security</Text>
+          </View>
+          <Text style={styles.bodyText}>
+            Reasonable security measures are employed to protect personal information from unauthorized access, disclosure, alteration, or destruction.
+          </Text>
+        </View>
+
+        {/* Section 5 */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Eye size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
+            <Text style={styles.sectionTitle}>5. Opt-Out & Policy Updates</Text>
+          </View>
+          <Text style={styles.bodyText}>
+            Users can opt out of receiving communications by following instructions in emails or by contacting the NGO directly. The trust reserves the right to modify its privacy policy, and continued use of their services implies acceptance of any updated terms.
+          </Text>
+        </View>
+
+        {/* Section 6 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>6. Contact Us</Text>
           <Text style={styles.bodyText}>
             If you have any questions or complaints about this Privacy Policy, please contact our support cell at:
           </Text>
-          <Text style={styles.contactEmail}>privacy@gaumatatrust.org</Text>
+          <Text style={styles.contactEmail}>gaumatatrust2023@gmail.com</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
