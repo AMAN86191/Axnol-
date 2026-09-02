@@ -30,6 +30,7 @@ import {
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { RootStackParamList } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'HelpSupportScreen'>;
 
@@ -40,35 +41,36 @@ interface FAQItem {
   category: string;
 }
 
-const FAQ_DATA: FAQItem[] = [
-  {
-    id: '1',
-    category: 'donation',
-    question: 'How do I download my 80G tax receipt?',
-    answer: 'All tax-exempt receipts are automatically emailed to your registered email address within 24 hours of donation. You can also view and download them directly from your Profile > Contribution History section.',
-  },
-  {
-    id: '2',
-    category: 'membership',
-    question: 'Can I cancel or change my membership plan?',
-    answer: 'Yes, you can upgrade, downgrade, or pause your membership anytime. Go to the Membership Tab in the drawer or send us a request here, and our support team will handle it within 24 hours.',
-  },
-  {
-    id: '3',
-    category: 'visit',
-    question: 'What are the visiting hours for the Gaushala?',
-    answer: 'We are open to visitors every day from 8:00 AM to 6:00 PM. Special guided tours and cow feeding sessions take place between 9:00 AM - 11:00 AM and 4:00 PM - 5:30 PM.',
-  },
-  {
-    id: '4',
-    category: 'general',
-    question: 'How do I sponsor feed for a specific cow?',
-    answer: 'You can select "Sponsor a Cow" from the home screen quick actions (feature coming soon) or submit a request in the contact form below with the name of the cow you wish to support.',
-  },
-];
-
 const HelpSupportScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
+
+  const FAQ_DATA: FAQItem[] = [
+    {
+      id: '1',
+      category: 'donation',
+      question: t('help.faq1Question'),
+      answer: t('help.faq1Answer'),
+    },
+    {
+      id: '2',
+      category: 'membership',
+      question: t('help.faq2Question'),
+      answer: t('help.faq2Answer'),
+    },
+    {
+      id: '3',
+      category: 'visit',
+      question: t('help.faq3Question'),
+      answer: t('help.faq3Answer'),
+    },
+    {
+      id: '4',
+      category: 'general',
+      question: t('help.faq4Question'),
+      answer: t('help.faq4Answer'),
+    },
+  ];
 
   // States
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,25 +89,25 @@ const HelpSupportScreen = () => {
 
   const handleCall = () => {
     Linking.openURL('tel:+919911157953').catch(() => {
-      Alert.alert('Error', 'Unable to initiate call on this device');
+      Alert.alert(t('common.error'), t('help.callError'));
     });
   };
 
   const handleEmail = () => {
     Linking.openURL('mailto:gaumatatrust2023@gmail.com?subject=Support Request').catch(() => {
-      Alert.alert('Error', 'No email client found on this device');
+      Alert.alert(t('common.error'), t('help.emailError'));
     });
   };
 
   const handleOpenMap = () => {
-    const address = 'Office-207, 2nd Floor, A J Chamber, Gali No. 4, Pyare Lal Road, Karol Bagh, New Delhi – 110005, India';
+    const address = t('help.fullAddress');
     const url = Platform.select({
       ios: `maps:0,0?q=${address}`,
       android: `geo:0,0?q=${address}`,
     });
     if (url) {
       Linking.openURL(url).catch(() => {
-        Alert.alert('Error', 'Unable to open maps');
+        Alert.alert(t('common.error'), t('help.mapError'));
       });
     }
   };
@@ -114,7 +116,7 @@ const HelpSupportScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      <CommonHeader title="Help & Support" onBackPress={() => navigation.goBack()} />
+      <CommonHeader title={t('help.title')} onBackPress={() => navigation.goBack()} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -126,15 +128,15 @@ const HelpSupportScreen = () => {
         >
           {/* Quick Connect Actions */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Quick Connect</Text>
+            <Text style={styles.sectionTitle}>{t('help.quickConnect')}</Text>
             <View style={styles.gridContainer}>
               {/* Call Support */}
               <TouchableOpacity style={styles.connectCard} onPress={handleCall} activeOpacity={0.8}>
                 <View style={[styles.iconBox, { backgroundColor: '#FFEBE0' }]}>
                   <Phone size={RFValue(12)} color={Colors.primary} />
                 </View>
-                <Text style={styles.connectCardTitle}>Call Us</Text>
-                <Text style={styles.connectCardSubtitle}>+91 99111 57953</Text>
+                <Text style={styles.connectCardTitle}>{t('help.callUs')}</Text>
+                <Text style={styles.connectCardSubtitle}>{t('help.phone')}</Text>
               </TouchableOpacity>
 
               {/* Email Support */}
@@ -142,8 +144,8 @@ const HelpSupportScreen = () => {
                 <View style={[styles.iconBox, { backgroundColor: '#E2F7E9' }]}>
                   <Mail size={RFValue(12)} color="#27AE60" />
                 </View>
-                <Text style={styles.connectCardTitle}>Email Support</Text>
-                <Text style={styles.connectCardSubtitle}>gaumatatrust2023@gmail.com</Text>
+                <Text style={styles.connectCardTitle}>{t('help.emailSupport')}</Text>
+                <Text style={styles.connectCardSubtitle}>{t('help.email')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -153,20 +155,20 @@ const HelpSupportScreen = () => {
                 <MapPin size={RFValue(12)} color="#8E44AD" />
               </View>
               <View style={styles.addressTextContainer}>
-                <Text style={styles.connectCardTitle}>Visit Trust Office</Text>
-                <Text style={styles.connectCardSubtitle}>Office-207, Karol Bagh, New Delhi</Text>
+                <Text style={styles.connectCardTitle}>{t('help.visitOffice')}</Text>
+                <Text style={styles.connectCardSubtitle}>{t('help.officeAddress')}</Text>
               </View>
             </TouchableOpacity>
           </View>
 
           {/* Search FAQ bar */}
           <View style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+            <Text style={styles.sectionTitle}>{t('help.faqs')}</Text>
             <View style={styles.searchBarWrapper}>
               <Search size={RFValue(11)} color={Colors.gray} style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search FAQs..."
+                placeholder={t('help.searchFaqs')}
                 placeholderTextColor={Colors.lightGray}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -202,7 +204,7 @@ const HelpSupportScreen = () => {
             ) : (
               <View style={styles.emptyContainer}>
                 <HelpCircle size={RFValue(14)} color={Colors.lightGray} />
-                <Text style={styles.emptyText}>No FAQs found for your search query.</Text>
+                <Text style={styles.emptyText}>{t('help.noFaqs')}</Text>
               </View>
             )}
           </View>

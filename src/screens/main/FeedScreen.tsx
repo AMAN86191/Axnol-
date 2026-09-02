@@ -10,6 +10,7 @@ import { FeedCard } from '../../components/FeedCard';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface PostItem {
   id: string;
@@ -29,6 +30,7 @@ interface PostItem {
 
 
 const FeedScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { getPosts, loading, toggleLikePost } = useHomeStore();
   const { user } = useAuthStore();
@@ -80,9 +82,9 @@ const FeedScreen = () => {
 
           return {
             id: item.id?.toString() || Math.random().toString(),
-            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
             avatar: avatarUrl,
-            meta: item.created_at || 'Just now',
+            meta: item.created_at || t('common.justNow'),
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
@@ -141,7 +143,7 @@ const FeedScreen = () => {
             if (user?.id && !newLikedBy.some(u => u.id === user.id)) {
               newLikedBy.unshift({
                 id: user.id,
-                name: user.name || 'You',
+                name: user.name || t('common.you'),
                 profile_pic: user.profile_pic || user.profile?.profile_pic,
                 designation: user.designation || user.profile?.designation,
               });
@@ -167,7 +169,7 @@ const FeedScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <CommonHeader title="Community Feed" />
+      <CommonHeader title={t('home.communityFeed')} />
 
       {initialLoading ? (
         <View style={styles.loaderContainer}>
@@ -204,7 +206,7 @@ const FeedScreen = () => {
               </View>
             ) : hasMore ? (
               <TouchableOpacity style={styles.loadMoreBtn} onPress={handleLoadMore}>
-                <Text style={styles.loadMoreText}>Load More</Text>
+                <Text style={styles.loadMoreText}>{t('feed.loadMore')}</Text>
               </TouchableOpacity>
             ) : null
           }

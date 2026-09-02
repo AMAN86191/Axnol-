@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Home, Heart, Plus, Crown, User as UserIcon } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 import HomeScreen from '../screens/main/HomeScreen';
@@ -17,6 +18,7 @@ const Tab = createBottomTabNavigator();
 
 const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   
   return (
     <View style={[
@@ -42,23 +44,23 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
         };
 
         let IconComponent = Home;
-        let label = 'Home';
+        let label = t('tabs.home');
 
         if (route.name === 'Home') {
           IconComponent = Home;
-          label = 'Home';
+          label = t('tabs.home');
         } else if (route.name === 'Donate') {
           IconComponent = Heart;
-          label = 'Donate';
+          label = t('tabs.donate');
         } else if (route.name === 'Add') {
           IconComponent = Plus;
-          label = 'Create';
+          label = t('tabs.create');
         } else if (route.name === 'Membership') {
           IconComponent = Crown;
-          label = 'Membership';
+          label = t('tabs.membership');
         } else if (route.name === 'Profile') {
           IconComponent = UserIcon;
-          label = 'Profile';
+          label = t('tabs.profile');
         }
 
         // Special render for Center Add/Create Button
@@ -138,8 +140,8 @@ const styles = StyleSheet.create({
     // paddingHorizontal: wp('2%'),
     position: 'absolute',
     bottom: hp('3%'),
-    left: wp('5%'),
-    right: wp('5%'),
+    left: wp('3%'),
+    right: wp('3%'),
     borderRadius: wp('5%'),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
@@ -180,13 +182,13 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: Colors.primary,
-    fontSize: RFValue(9),
+    fontSize: RFValue(8),
     fontWeight: '700',
     marginTop: hp('0.5%'),
   },
   inactiveTabText: {
     color: Colors.white,
-    fontSize: RFValue(8.5),
+    fontSize: RFValue(8),
     fontWeight: '600',
     marginTop: hp('0.5%'),
   },

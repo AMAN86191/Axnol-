@@ -24,8 +24,10 @@ import { InputField } from '../../components/InputField';
 import { CustomButton } from '../../components/CustomButton';
 import { CommonHeader } from '../../components/CommonHeader';
 import useAuthStore from '../../zustand/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 const EditProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { user, updateProfile } = useAuthStore();
 
@@ -128,11 +130,11 @@ const EditProfileScreen = () => {
       console.log('formData', formData)
       const res = await updateProfile(formData);
       console.log('update profile res', res)
-      Alert.alert('Success 🎉', 'Profile updated successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+      Alert.alert(t('common.success'), t('editProfile.profileUpdated'), [
+        { text: t('common.ok'), onPress: () => navigation.goBack() }
       ]);
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile.');
+      Alert.alert(t('common.error'), t('editProfile.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -140,11 +142,11 @@ const EditProfileScreen = () => {
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter your name');
+      Alert.alert(t('addPost.validationError'), t('editProfile.nameRequired'));
       return;
     }
     if (!phone.trim() || phone.length < 8) {
-      Alert.alert('Validation Error', 'Please enter a valid phone number');
+      Alert.alert(t('addPost.validationError'), t('editProfile.invalidPhone'));
       return;
     }
 
@@ -157,9 +159,9 @@ const EditProfileScreen = () => {
         setLoading(false);
         setShowOtpView(true);
         Alert.alert(
-          'Verification Code Sent 📱',
-          `An OTP code has been sent to ${phone}. Enter '123456' to verify.`,
-          [{ text: 'OK' }]
+          t('editProfile.otpSent'),
+          t('editProfile.otpSentMessage', { phone }),
+          [{ text: t('common.ok') }]
         );
       }, 1000);
     } else {
@@ -169,7 +171,7 @@ const EditProfileScreen = () => {
 
   const handleVerifyOtp = () => {
     if (otpCode !== '123456') {
-      Alert.alert('Verification Failed ❌', 'Invalid OTP code. Please enter the correct code: 123456');
+      Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
       return;
     }
 
@@ -181,7 +183,7 @@ const EditProfileScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
       <CommonHeader
-        title={showOtpView ? 'Verify OTP' : 'Edit Profile'}
+        title={showOtpView ? t('editProfile.verifyOtp') : t('editProfile.title')}
         onBackPress={() => navigation.goBack()}
       />
 
@@ -204,23 +206,23 @@ const EditProfileScreen = () => {
                   ) : (
                     <View style={styles.photoPlaceholder}>
                       <Camera size={24} color={Colors.gray} />
-                      <Text style={styles.photoText}>Add Photo</Text>
+                      <Text style={styles.photoText}>{t('editProfile.addPhoto')}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
               </View>
 
               <InputField
-                label="Display Name"
-                placeholder="Enter your name"
+                label={t('editProfile.displayName')}
+                placeholder={t('editProfile.namePlaceholder')}
                 value={name}
                 onChangeText={setName}
                 leftIcon={<User size={RFValue(12)} color={Colors.primary} />}
               />
 
               <InputField
-                label="Email Address"
-                placeholder="Enter your email"
+                label={t('editProfile.email')}
+                placeholder={t('editProfile.emailPlaceholder')}
                 keyboardType="email-address"
                 value={email}
                 onChangeText={setEmail}
@@ -229,8 +231,8 @@ const EditProfileScreen = () => {
               />
 
               <InputField
-                label="Phone Number"
-                placeholder="Enter your phone number"
+                label={t('editProfile.phone')}
+                placeholder={t('editProfile.phonePlaceholder')}
                 keyboardType="phone-pad"
                 value={phone}
                 onChangeText={setPhone}
@@ -240,16 +242,16 @@ const EditProfileScreen = () => {
            
 
               <InputField
-                label="Profession"
-                placeholder="Enter your profession"
+                label={t('editProfile.profession')}
+                placeholder={t('editProfile.professionPlaceholder')}
                 value={profession}
                 onChangeText={setProfession}
                 leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
               />
 
               <InputField
-                label="Country"
-                placeholder="Enter your country"
+                label={t('editProfile.country')}
+                placeholder={t('editProfile.countryPlaceholder')}
                 value={country}
                 onChangeText={setCountry}
                 leftIcon={<Info size={RFValue(12)} color={Colors.primary} />}
@@ -259,8 +261,8 @@ const EditProfileScreen = () => {
               <TouchableOpacity onPress={() => setShowDobPicker(true)} activeOpacity={1}>
                 <View pointerEvents="none">
                   <InputField
-                    label="Date of Birth"
-                    placeholder="YYYY-MM-DD"
+                    label={t('editProfile.dob')}
+                    placeholder={t('editProfile.dobPlaceholder')}
                     value={dob}
                     editable={false}
                     leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
@@ -282,8 +284,8 @@ const EditProfileScreen = () => {
                 <TouchableOpacity onPress={() => setShowDomPicker(true)} activeOpacity={1}>
                   <View pointerEvents="none">
                     <InputField
-                      label="Date of Marriage (Optional)"
-                      placeholder="YYYY-MM-DD"
+                      label={t('editProfile.dom')}
+                      placeholder={t('editProfile.dobPlaceholder')}
                       value={dom}
                       editable={false}
                       leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
@@ -295,7 +297,7 @@ const EditProfileScreen = () => {
                     onPress={() => setDom('')}
                     style={{ position: 'absolute', right: 0, top: -hp('0.2%'), paddingHorizontal: wp('2%'), paddingVertical: hp('0.5%'), zIndex: 10 }}
                   >
-                    <Text style={{ fontSize: RFValue(11), color: Colors.primary, fontWeight: '600' }}>Clear</Text>
+                    <Text style={{ fontSize: RFValue(11), color: Colors.primary, fontWeight: '600' }}>{t('editProfile.clear')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -310,19 +312,19 @@ const EditProfileScreen = () => {
               )}
 
               <InputField
-                label="Bio"
-                placeholder="Tell us about yourself"
+                label={t('editProfile.bio')}
+                placeholder={t('editProfile.bioPlaceholder')}
                 value={bio}
                 onChangeText={setBio}
                 leftIcon={<Info size={RFValue(12)} color={Colors.primary} />}
               />
 
               <Text style={styles.noteText}>
-                * Note: Changing your phone number will require entering a one-time password (OTP) to verify it.
+                {t('editProfile.phoneChangeNote')}
               </Text>
 
               <CustomButton
-                title="Save Changes"
+                title={t('editProfile.saveChanges')}
                 loading={loading}
                 onPress={handleSave}
                 style={styles.saveBtn}
@@ -331,12 +333,12 @@ const EditProfileScreen = () => {
           ) : (
             <View style={styles.otpContainer}>
               <Text style={styles.otpDescription}>
-                Please enter the 6-digit verification code sent to your new phone number <Text style={styles.boldText}>{phone}</Text>.
+                {t('editProfile.otpDescription')}<Text style={styles.boldText}>{phone}</Text>.
               </Text>
 
               <InputField
-                label="Verification Code (OTP)"
-                placeholder="Enter 6-digit OTP (123456)"
+                label={t('editProfile.otpLabel')}
+                placeholder={t('editProfile.otpPlaceholder')}
                 keyboardType="number-pad"
                 maxLength={6}
                 value={otpCode}
@@ -350,22 +352,22 @@ const EditProfileScreen = () => {
                   style={styles.backBtn}
                   disabled={loading}
                 >
-                  <Text style={styles.backBtnText}>Edit Details</Text>
+                  <Text style={styles.backBtnText}>{t('editProfile.editDetails')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   onPress={() => {
-                    Alert.alert('Resent 📱', 'Verification code has been resent.');
+                    Alert.alert(t('editProfile.resent'), t('editProfile.resentMessage'));
                   }}
                   style={styles.resendBtn}
                   disabled={loading}
                 >
-                  <Text style={styles.resendBtnText}>Resend Code</Text>
+                  <Text style={styles.resendBtnText}>{t('editProfile.resendCode')}</Text>
                 </TouchableOpacity>
               </View>
 
               <CustomButton
-                title="Verify & Update"
+                title={t('editProfile.verifyUpdate')}
                 loading={loading}
                 onPress={handleVerifyOtp}
                 style={styles.saveBtn}

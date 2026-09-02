@@ -28,6 +28,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { CommonHeader } from '../../components/CommonHeader';
 import { CustomButton } from '../../components/CustomButton';
 import useHomeStore from '../../zustand/useHomeStore';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlansScreen'>;
 
@@ -40,6 +41,7 @@ interface Plan {
 }
 
 export default function PlansScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { getPlansStore, purchasePlanStore } = useHomeStore();
 
@@ -93,11 +95,11 @@ console.log('payload', payload)
           date: new Date().toLocaleDateString()
         });
       } else {
-        Alert.alert('Error', response?.message || 'Failed to purchase plan.');
+        Alert.alert(t('common.error'), response?.message || t('membership.purchaseFailed'));
       }
     } catch (error) {
       console.log('Purchase error:', error);
-      Alert.alert('Error', 'An error occurred while purchasing the plan.');
+      Alert.alert(t('common.error'), t('membership.purchaseError'));
     } finally {
       setPurchasingId(null);
     }
@@ -109,7 +111,7 @@ console.log('payload', payload)
         {isPremium && (
           <View style={styles.premiumBadge}>
             <Star size={RFValue(10)} color="#FFF" fill="#FFF" />
-            <Text style={styles.premiumBadgeText}>RECOMMENDED</Text>
+            <Text style={styles.premiumBadgeText}>{t('membership.recommended')}</Text>
           </View>
         )}
         <View style={styles.planHeader}>
@@ -128,20 +130,20 @@ console.log('payload', payload)
         <View style={styles.featuresList}>
           <View style={styles.featureItem}>
             <CheckCircle size={RFValue(14)} color="#4CAF50" />
-            <Text style={styles.featureText}>Support Gau Mata Welfare</Text>
+            <Text style={styles.featureText}>{t('membership.supportWelfare')}</Text>
           </View>
           <View style={styles.featureItem}>
             <CheckCircle size={RFValue(14)} color="#4CAF50" />
-            <Text style={styles.featureText}>Exclusive Community Access</Text>
+            <Text style={styles.featureText}>{t('membership.communityAccess')}</Text>
           </View>
           <View style={styles.featureItem}>
             <CheckCircle size={RFValue(14)} color="#4CAF50" />
-            <Text style={styles.featureText}>Digital Membership Certificate</Text>
+            <Text style={styles.featureText}>{t('membership.digitalCertificate')}</Text>
           </View>
         </View>
 
         <CustomButton 
-          title="Select & Pay" 
+          title={t('membership.selectPay')} 
           onPress={() => handlePurchase(plan)}
           loading={purchasingId === plan.id}
           disabled={purchasingId !== null}
@@ -154,7 +156,7 @@ console.log('payload', payload)
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      <CommonHeader title="Membership Plans" onBackPress={() => navigation.goBack()} />
+      <CommonHeader title={t('membership.plans')} onBackPress={() => navigation.goBack()} />
 
       {loading && !refreshing ? (
         <View style={styles.loaderContainer}>
@@ -170,9 +172,9 @@ console.log('payload', payload)
         >
           <View style={styles.headerInfo}>
             <ShieldCheck size={RFValue(24)} color={Colors.primary} />
-            <Text style={styles.titleText}>Choose Your Plan</Text>
+            <Text style={styles.titleText}>{t('membership.choosePlan')}</Text>
             <Text style={styles.subtitleText}>
-              Become an official member of Gaumata Trust and help us provide care and shelter to cows.
+              {t('membership.choosePlanSubtitle')}
             </Text>
           </View>
 
@@ -185,7 +187,7 @@ console.log('payload', payload)
 
           {plans.length === 0 && (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No plans available at the moment.</Text>
+              <Text style={styles.emptyText}>{t('membership.noPlansAvailable')}</Text>
             </View>
           )}
 

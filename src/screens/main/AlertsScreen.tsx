@@ -14,6 +14,7 @@ import { HeartHandshake, Award, ShieldCheck, MessageSquare } from 'lucide-react-
 
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
+import { useTranslation } from 'react-i18next';
 
 interface AlertItem {
   id: string;
@@ -27,65 +28,67 @@ interface AlertItem {
   unread: boolean;
 }
 
-const INITIAL_ALERTS_DATA: AlertItem[] = [
-  {
-    id: '1',
-    type: 'donation',
-    icon: HeartHandshake,
-    iconColor: Colors.primary,
-    bgTint: '#FFF2EB',
-    title: 'Donation Received',
-    message: 'Amit Roy contributed ₹2,500 for the Biogas project.',
-    time: '10 mins ago',
-    unread: true,
-  },
-  {
-    id: '2',
-    type: 'event',
-    icon: Award,
-    iconColor: '#3498db',
-    bgTint: '#EAF2F8',
-    title: 'Upcoming Event',
-    message: 'Gopashtami Festival is scheduled for tomorrow at 8:00 AM.',
-    time: '2 hours ago',
-    unread: true,
-  },
-  {
-    id: '3',
-    type: 'social',
-    icon: MessageSquare,
-    iconColor: '#2ecc71',
-    bgTint: '#E8F8F5',
-    title: 'New Comment',
-    message: 'Rahul Sharma commented: "Great progress, Jai Sri Krishna!"',
-    time: '5 hours ago',
-    unread: false,
-  },
-  {
-    id: '4',
-    type: 'system',
-    icon: ShieldCheck,
-    iconColor: '#e67e22',
-    bgTint: '#FDEDEC',
-    title: 'Health Report Updated',
-    message: 'Vet updated medical records for Nandi: "Healthy and growing."',
-    time: '1 day ago',
-    unread: false,
-  },
-  {
-    id: '5',
-    type: 'donation',
-    icon: HeartHandshake,
-    iconColor: Colors.primary,
-    bgTint: '#FFF2EB',
-    title: 'Monthly Goal Reached',
-    message: 'Daily grass contribution goal achieved 100% for this month.',
-    time: '2 days ago',
-    unread: false,
-  }
-];
-
 const AlertsScreen = () => {
+  const { t } = useTranslation();
+
+  const INITIAL_ALERTS_DATA: AlertItem[] = [
+    {
+      id: '1',
+      type: 'donation',
+      icon: HeartHandshake,
+      iconColor: Colors.primary,
+      bgTint: '#FFF2EB',
+      title: t('alerts.donationReceived'),
+      message: t('alerts.donationMessage'),
+      time: t('alerts.tenMinsAgo'),
+      unread: true,
+    },
+    {
+      id: '2',
+      type: 'event',
+      icon: Award,
+      iconColor: '#3498db',
+      bgTint: '#EAF2F8',
+      title: t('alerts.upcomingEvent'),
+      message: t('alerts.eventMessage'),
+      time: t('alerts.twoHoursAgo'),
+      unread: true,
+    },
+    {
+      id: '3',
+      type: 'social',
+      icon: MessageSquare,
+      iconColor: '#2ecc71',
+      bgTint: '#E8F8F5',
+      title: t('alerts.newComment'),
+      message: t('alerts.commentMessage'),
+      time: t('alerts.fiveHoursAgo'),
+      unread: false,
+    },
+    {
+      id: '4',
+      type: 'system',
+      icon: ShieldCheck,
+      iconColor: '#e67e22',
+      bgTint: '#FDEDEC',
+      title: t('alerts.healthReport'),
+      message: t('alerts.healthMessage'),
+      time: t('alerts.oneDayAgo'),
+      unread: false,
+    },
+    {
+      id: '5',
+      type: 'donation',
+      icon: HeartHandshake,
+      iconColor: Colors.primary,
+      bgTint: '#FFF2EB',
+      title: t('alerts.monthlyGoal'),
+      message: t('alerts.goalMessage'),
+      time: t('alerts.twoDaysAgo'),
+      unread: false,
+    }
+  ];
+
   const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS_DATA);
 
   const markAllAsRead = () => {
@@ -96,11 +99,11 @@ const AlertsScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <CommonHeader
-        title="Notifications"
+        title={t('alerts.title')}
         rightElement={
           alerts.some(a => a.unread) ? (
             <TouchableOpacity onPress={markAllAsRead} activeOpacity={0.7}>
-              <Text style={styles.markReadText}>Mark Read</Text>
+              <Text style={styles.markReadText}>{t('alerts.markRead')}</Text>
             </TouchableOpacity>
           ) : undefined
         }

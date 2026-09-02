@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 
 interface AuthButtonProps extends TouchableOpacityProps {
@@ -17,9 +18,12 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
   leftIcon, 
   rightIcon, 
   loading, 
-  loadingText = 'Sending...', 
+  loadingText,
   ...props 
 }) => {
+  const { t } = useTranslation();
+  const displayLoadingText = loadingText || t('login.sending');
+
   return (
     <TouchableOpacity 
       style={styles.sendOtpBtn} 
@@ -28,7 +32,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({
       {...props}
     >
       {leftIcon}
-      <Text style={styles.sendOtpText}>{loading ? loadingText : title}</Text>
+      <Text style={styles.sendOtpText}>{loading ? displayLoadingText : title}</Text>
       {rightIcon}
     </TouchableOpacity>
   );

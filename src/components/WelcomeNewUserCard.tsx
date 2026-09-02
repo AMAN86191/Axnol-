@@ -3,25 +3,28 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Heart, Sparkles } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface WelcomeNewUserCardProps {
   onDonatePress: () => void;
 }
 
 export const WelcomeNewUserCard = React.memo(({ onDonatePress }: WelcomeNewUserCardProps) => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Sparkles size={RFValue(14)} color="#FF6F34" />
-          <Text style={styles.title}>Welcome to the Community!</Text>
+          <Text style={styles.title}>{t('welcome.title')}</Text>
         </View>
         <Text style={styles.description}>
-          Start your journey of Gau Seva today. Make your first contribution to see your impact grow here.
+          {t('welcome.subtitle')}
         </Text>
         <TouchableOpacity style={styles.button} onPress={onDonatePress} activeOpacity={0.8}>
           <Heart size={RFValue(12)} color="#FFF" style={styles.buttonIcon} />
-          <Text style={styles.buttonText}>Make First Donation</Text>
+          <Text style={styles.buttonText}>{t('welcome.makeFirstDonation')}</Text>
         </TouchableOpacity>
       </View>
     </View>

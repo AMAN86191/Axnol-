@@ -16,6 +16,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { Colors } from '../../theme/colors';
 import { AuthButton } from '../../components/AuthButton';
@@ -29,6 +30,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OtpVerifica
 type OtpScreenRouteProp = RouteProp<RootStackParamList, 'OtpVerificationScreen'>;
 
 const OtpVerificationScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OtpScreenRouteProp>();
   const phoneNumber = route.params?.phoneNumber || '9876543210';
@@ -85,7 +87,7 @@ const OtpVerificationScreen = () => {
   const handleVerify = async () => {
     const otpString = otp.join('');
     if (otpString.length < 4) {
-      setError('Please enter all 4 digits');
+      setError(t('otp.enterAllDigits'));
       return;
     }
     
@@ -105,7 +107,7 @@ const OtpVerificationScreen = () => {
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err?.response?.data?.message || err?.message || 'Invalid OTP');
+      setError(err?.response?.data?.message || err?.message || t('otp.invalidOtp'));
     }
   };
 
@@ -115,7 +117,7 @@ const OtpVerificationScreen = () => {
     setOtp(['', '', '', '']);
     setError('');
     inputRefs.current[0]?.focus();
-    Alert.alert('OTP Sent', `A new 4-digit OTP has been sent to +91 ${phoneNumber}.`);
+    Alert.alert(t('otp.otpSent'), t('otp.otpSentMessage', { phone: phoneNumber }));
   };
 
   return (
@@ -149,9 +151,9 @@ const OtpVerificationScreen = () => {
                 <ShieldCheck size={RFValue(15)} color={Colors.primary} />
               </View>
               <View style={styles.cardHeaderTextContent}>
-                <Text style={styles.cardTitle}>Verify Your Number</Text>
+                <Text style={styles.cardTitle}>{t('otp.verifyNumber')}</Text>
                 <Text style={styles.cardSubtitle}>
-                  Please enter the 4-digit code sent to{'\n'}
+                  {t('otp.enterCode')}{'\n'}
                   <Text style={styles.phoneText}>+91 {phoneNumber}</Text>
                 </Text>
               </View>
@@ -188,7 +190,7 @@ const OtpVerificationScreen = () => {
               style={{ alignItems: 'center', marginBottom: hp('2%') }}
             >
               <Text style={{ color: Colors.primary, fontSize: RFValue(11), fontWeight: '600' }}>
-                Use Test OTP: 1234
+                {t('otp.testOtp')}
               </Text>
             </TouchableOpacity>
 
@@ -196,7 +198,7 @@ const OtpVerificationScreen = () => {
 
             {/* Verify Button */}
             <AuthButton
-              title="Verify & Continue"
+              title={t('otp.verifyContinue')}
               loading={loading}
               onPress={handleVerify}
                 leftIcon={<UserPlus size={RFValue(14)} color={Colors.white} />}
@@ -207,13 +209,13 @@ const OtpVerificationScreen = () => {
             <View style={styles.footer}>
               {timer > 0 ? (
                 <Text style={styles.footerText}>
-                  Resend code in <Text style={styles.timerText}>{timer}s</Text>
+                  {t('otp.resendIn', { time: timer })}
                 </Text>
               ) : (
                 <>
-                  <Text style={styles.footerText}>Didn't receive the code? </Text>
+                  <Text style={styles.footerText}>{t('otp.didntReceive')}</Text>
                   <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
-                    <Text style={styles.resendText}>Resend</Text>
+                    <Text style={styles.resendText}>{t('otp.resend')}</Text>
                   </TouchableOpacity>
                 </>
               )}

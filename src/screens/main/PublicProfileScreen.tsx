@@ -15,6 +15,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 
 import { Colors } from '../../theme/colors';
+import { useTranslation } from 'react-i18next';
 import useHomeStore from '../../zustand/useHomeStore';
 import { ActivityIndicator } from 'react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -26,6 +27,7 @@ import useAuthStore from '../../zustand/useAuthStore';
 type PublicProfileScreenRouteProp = RouteProp<RootStackParamList, 'PublicProfileScreen'>;
 
 const PublicProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<PublicProfileScreenRouteProp>();
   const { userId } = route.params;
@@ -106,9 +108,9 @@ const PublicProfileScreen = () => {
 
           return {
             id: item.id?.toString() || Math.random().toString(),
-            author: userObj.name || 'Unknown',
+            author: userObj.name || t('common.unknown'),
             avatar: authorAvatar,
-            meta: item.created_at || 'Just now',
+            meta: item.created_at || t('common.justNow'),
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
@@ -151,7 +153,7 @@ const PublicProfileScreen = () => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-        <CommonHeader title="Loading..." onBackPress={handleBack} />
+        <CommonHeader title={t('common.loading')} onBackPress={handleBack} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -167,10 +169,10 @@ const PublicProfileScreen = () => {
 
   // Safe fallbacks to map dynamic API fields to component expectations
   const user = {
-    name: publicUser?.name || 'Community Member',
+    name: publicUser?.name || t('publicProfile.communityMember'),
     avatar: avatarStr,
     bio: publicUser?.profile?.bio || '',
-    badge: publicUser?.membership ? 'Member' : '',
+    badge: publicUser?.membership ? t('common.member') : '',
     hasMembership: !!publicUser?.membership,
     memberId: publicUser?.uid || '',
     designation: publicUser?.profile?.designation || '',
@@ -206,11 +208,11 @@ console.log('userPosts', userPosts)
           <View style={styles.statsContainer}>
             <View style={styles.statColumn}>
               <Text style={styles.statNumber}>{user.totalPosts}</Text>
-              <Text style={styles.statLabel}>Posts</Text>
+              <Text style={styles.statLabel}>{t('publicProfile.posts')}</Text>
             </View>
             <View style={styles.statColumn}>
               <Text style={styles.statNumber}>{user.totalLikes}</Text>
-              <Text style={styles.statLabel}>Likes</Text>
+              <Text style={styles.statLabel}>{t('publicProfile.likes')}</Text>
             </View>
           </View>
         </View>
@@ -244,7 +246,7 @@ console.log('userPosts', userPosts)
           {/* Member ID */}
           {user.memberId && (
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>ID: </Text>
+              <Text style={styles.metaLabel}>{t('drawer.id')}</Text>
               <Text style={styles.metaValue}>{user.memberId}</Text>
             </View>
           )}
@@ -288,7 +290,7 @@ console.log('userPosts', userPosts)
               </View>
             ) : (
               <View style={styles.emptyFeedContainer}>
-                <Text style={styles.emptyFeedText}>No posts shared yet by this member.</Text>
+                <Text style={styles.emptyFeedText}>{t('publicProfile.noPostsYet')}</Text>
               </View>
             )
           ) : (
@@ -316,7 +318,7 @@ console.log('userPosts', userPosts)
               </View>
             ) : (
               <View style={styles.emptyFeedContainer}>
-                <Text style={styles.emptyFeedText}>No posts shared yet by this member.</Text>
+                <Text style={styles.emptyFeedText}>{t('publicProfile.noPostsYet')}</Text>
               </View>
             )
           )}

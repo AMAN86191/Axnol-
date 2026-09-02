@@ -26,11 +26,13 @@ import { Comment } from '../../components/CommentsModal';
 import { RFValue } from 'react-native-responsive-fontsize';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 type PostDetailsScreenRouteProp = RouteProp<RootStackParamList, 'PostDetailsScreen'>;
 
 
 const PostDetailsScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<PostDetailsScreenRouteProp>();
   const { postId } = route.params;
@@ -75,9 +77,9 @@ const PostDetailsScreen = () => {
 
             setPost({
               id: item.id?.toString() || postId,
-              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
               avatar: avatarUrl,
-              meta: item.created_at || 'Just now',
+              meta: item.created_at || t('common.justNow'),
               text: item.description || '',
               image: displayImage,
               images: additionalImages,
@@ -115,10 +117,10 @@ const PostDetailsScreen = () => {
 
               return {
                 id: c.id?.toString() || Math.random().toString(),
-                author: c.user?.name || c.admin?.name || 'Unknown',
+                author: c.user?.name || c.admin?.name || t('common.unknown'),
                 avatar: avatarUrl,
                 text: c.comment || '',
-                time: c.created_at || 'Just now',
+                time: c.created_at || t('common.justNow'),
                 userId: c.user_id?.toString() || c.admin_id?.toString(),
               };
             });
@@ -153,7 +155,7 @@ const PostDetailsScreen = () => {
           if (user?.id && !newLikedBy.some(u => u.id === user.id)) {
             newLikedBy.unshift({
               id: user.id,
-              name: user.name || 'You',
+              name: user.name || t('common.you'),
               profile_pic: user.profile_pic || user.profile?.profile_pic,
               designation: user.designation || user.profile?.designation,
             });
@@ -184,21 +186,21 @@ const PostDetailsScreen = () => {
     if (!post) return;
 
     Alert.alert(
-      'Delete Post',
-      'Are you sure you want to delete this post?',
+      t('postDetails.deletePost'),
+      t('postDetails.deletePostConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deletePostStore(post.id);
-              Alert.alert('Success', 'Post deleted successfully.');
+              Alert.alert(t('common.success'), t('postDetails.postDeleted'));
               navigation.goBack();
             } catch (error) {
               console.log('Failed to delete post:', error);
-              Alert.alert('Error', 'Failed to delete the post from the server.');
+              Alert.alert(t('common.error'), t('postDetails.deleteFailed'));
             }
           },
         },
@@ -225,10 +227,10 @@ const PostDetailsScreen = () => {
 
     const newComment: Comment = {
       id: tempId,
-      author: user?.name || 'You',
+      author: user?.name || t('common.you'),
       avatar: currentUserAvatar,
       text: commentText,
-      time: 'Just now',
+      time: t('common.justNow'),
       userId: user?.id?.toString(),
     };
 
@@ -243,15 +245,15 @@ const PostDetailsScreen = () => {
       console.log('Error posting comment:', error);
       setCommentsList(prev => prev.filter(c => c.id !== tempId));
       setPost((prev: any) => ({ ...prev, comments: prev.comments - 1 }));
-      Alert.alert('Error', 'Failed to post comment.');
+      Alert.alert(t('common.error'), t('postDetails.commentFailed'));
     }
   }, [newCommentText, postId, commentPost, user]);
 
   const handleDeleteComment = useCallback((commentId: string) => {
-    Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('postDetails.deleteComment'), t('postDetails.deleteCommentConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('common.delete'),
         style: 'destructive',
         onPress: async () => {
           setCommentsList(prev => prev.filter(c => c.id !== commentId));
@@ -262,7 +264,7 @@ const PostDetailsScreen = () => {
             console.log('Inline comment deleted successfully');
           } catch (error) {
             console.log('Failed to delete inline comment:', error);
-            Alert.alert('Error', 'Failed to delete comment from server.');
+            Alert.alert(t('common.error'), t('postDetails.commentDeleteFailed'));
           }
         }
       }
@@ -272,7 +274,7 @@ const PostDetailsScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <CommonHeader title="Post Details" onBackPress={handleBack} />
+        <CommonHeader title={t('postDetails.title')} onBackPress={handleBack} />
         <View style={[styles.errorContainer, { justifyContent: 'center' }]}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -283,9 +285,9 @@ const PostDetailsScreen = () => {
   if (!post) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <CommonHeader title="Post Details" onBackPress={handleBack} />
+        <CommonHeader title={t('postDetails.title')} onBackPress={handleBack} />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Post not found or has been deleted.</Text>
+          <Text style={styles.errorText}>{t('postDetails.notFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -293,7 +295,7 @@ const PostDetailsScreen = () => {
   console.log('post', post)
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CommonHeader title="Post Details" onBackPress={handleBack} />
+      <CommonHeader title={t('postDetails.title')} onBackPress={handleBack} />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
@@ -327,7 +329,7 @@ const PostDetailsScreen = () => {
 
           {/* Comments Section Title */}
           <View style={styles.commentsSectionHeader}>
-            <Text style={styles.commentsTitle}>Comments ({post.comments})</Text>
+            <Text style={styles.commentsTitle}>{t('postDetails.comments', { count: post.comments })}</Text>
           </View>
 
           {/* Comments List rendering */}
@@ -387,7 +389,7 @@ const PostDetailsScreen = () => {
           <TextInput
             ref={commentInputRef}
             style={styles.commentInput}
-            placeholder="Write a comment..."
+            placeholder={t('postDetails.writeComment')}
             placeholderTextColor={Colors.gray}
             value={newCommentText}
             onChangeText={setNewCommentText}
@@ -404,7 +406,7 @@ const PostDetailsScreen = () => {
                 newCommentText.trim() ? styles.postButtonTextActive : {},
               ]}
             >
-              Post
+              {t('common.post')}
             </Text>
           </TouchableOpacity>
         </View>

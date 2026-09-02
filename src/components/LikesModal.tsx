@@ -12,6 +12,7 @@ import {
 import { X } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 
 export interface LikedUser {
@@ -33,6 +34,7 @@ export const LikesModal = ({
   onClose,
   likedBy,
 }: LikesModalProps) => {
+  const { t } = useTranslation();
 
   const renderItem = ({ item }: { item: LikedUser }) => {
     let avatarUrl = '';
@@ -80,7 +82,7 @@ export const LikesModal = ({
           {/* Header / Drag Handle */}
           <View style={styles.modalHeader}>
             <View style={styles.dragHandle} />
-            <Text style={styles.modalTitle}>Likes</Text>
+            <Text style={styles.modalTitle}>{t('likes.title')}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <X size={20} color={Colors.dark} />
             </TouchableOpacity>
@@ -95,7 +97,7 @@ export const LikesModal = ({
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No likes yet.</Text>
+                <Text style={styles.emptyText}>{t('comments.noLikes')}</Text>
               </View>
             }
           />

@@ -14,6 +14,7 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import { Mail, ArrowLeft } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { Colors } from '../../theme/colors';
 import { InputField } from '../../components/InputField';
@@ -23,6 +24,7 @@ import { RootStackParamList } from '../../navigation/types';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ForgotPasswordScreen'>;
 
 const ForgotPasswordScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,13 +52,13 @@ const ForgotPasswordScreen = () => {
             <ArrowLeft size={24} color={Colors.dark} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Forgot Password</Text>
-          <Text style={styles.subtitle}>Enter your email address to receive a password reset link.</Text>
+          <Text style={styles.title}>{t('forgotPassword.title')}</Text>
+          <Text style={styles.subtitle}>{t('forgotPassword.subtitle')}</Text>
 
           <View style={styles.formContainer}>
             <InputField
-              label="Email Address"
-              placeholder="name@gaushala.org"
+              label={t('forgotPassword.email')}
+              placeholder={t('forgotPassword.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -65,7 +67,7 @@ const ForgotPasswordScreen = () => {
             />
 
             <CustomButton
-              title="Send Reset Link"
+              title={t('forgotPassword.sendResetLink')}
               onPress={handleReset}
               loading={loading}
               style={styles.submitBtn}

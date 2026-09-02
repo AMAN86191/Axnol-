@@ -12,6 +12,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Download, Award, ShieldCheck, Calendar, User, Hash, Check, Share2 } from 'lucide-react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { generateAndDownloadPDF } from '../utils/pdfGenerator';
 
 interface MembershipCertificateCardProps {
@@ -29,6 +30,7 @@ interface MembershipCertificateCardProps {
 }
 
 export const MembershipCertificateCard = ({ memberDetails, onShare }: MembershipCertificateCardProps) => {
+  const { t } = useTranslation();
   const handleDownload = () => {
     const htmlContent = `
       <html>
@@ -184,28 +186,28 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                       <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
                     </svg>
                   </div>
-                  <div class="title">GAU MATA SEWA TRUST</div>
-                  <div class="subtitle">CERTIFICATE OF ${memberDetails.tier} MEMBERSHIP</div>
+                  <div class="title">${t('certificate.trustName')}</div>
+                  <div class="subtitle">${t('certificate.certificateOf', { tier: memberDetails.tier })}</div>
                 </div>
                 
                 <div class="body-section">
-                  <div class="presented-text">This certificate is proudly presented to</div>
+                  <div class="presented-text">${t('certificate.presentedTo')}</div>
                   <div class="member-name-container">
                     <div class="member-name">${memberDetails.name}</div>
                     <div class="name-underline"></div>
                   </div>
                   <div class="description">
-                    in recognition of their noble support, generous contributions, and dedicated service as a verified Gau Sevak. Your commitment directly aids the feeding, shelter, and medical protection of indigenous cows.
+                    ${t('certificate.description')}
                   </div>
                 </div>
                 
                 <div class="meta-container">
                   <div class="meta-column">
-                    <div class="meta-label">MEMBER ID</div>
+                    <div class="meta-label">${t('certificate.memberId')}</div>
                     <div class="meta-value">${memberDetails.memberId}</div>
                   </div>
                   <div class="meta-column">
-                    <div class="meta-label">DATE OF ISSUANCE</div>
+                    <div class="meta-label">${t('certificate.dateOfIssuance')}</div>
                     <div class="meta-value">${memberDetails.joinedDate}</div>
                   </div>
                 </div>
@@ -214,7 +216,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                   <div class="signature-col">
                     <div class="handwritten">Swami Anand</div>
                     <div class="sig-line"></div>
-                    <div class="sig-title">President, Trustee</div>
+                    <div class="sig-title">${t('certificate.president')}</div>
                   </div>
                   
                   <div class="seal">
@@ -228,7 +230,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                   <div class="signature-col">
                     <div class="handwritten">R. K. Sharma</div>
                     <div class="sig-line"></div>
-                    <div class="sig-title">General Secretary</div>
+                    <div class="sig-title">${t('certificate.generalSecretary')}</div>
                   </div>
                 </div>
                 
@@ -244,7 +246,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
   const defaultShare = async () => {
     try {
       await Share.share({
-        message: `I am proud to be a verified ${memberDetails.tier} of Gau Mata Sewa Trust! Join me in protecting and feeding our indigenous cows. My Member ID: ${memberDetails.memberId}. www.gaumatatrust.org`,
+        message: t('certificate.shareMessage', { tier: memberDetails.tier, memberId: memberDetails.memberId }),
       });
     } catch (error) {
       console.log(error);
@@ -262,27 +264,27 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
             {/* Trust Badge Header */}
             <View style={styles.certHeader}>
               <Award size={RFValue(24)} color="#D97706" style={styles.certBadgeIcon} />
-              <Text style={styles.certTrustName}>GAU MATA SEWA TRUST</Text>
-              <Text style={styles.certSubHeader}>CERTIFICATE OF {memberDetails.tier} MEMBERSHIP</Text>
+              <Text style={styles.certTrustName}>{t('certificate.trustName')}</Text>
+              <Text style={styles.certSubHeader}>{t('certificate.certificateOf', { tier: memberDetails.tier })}</Text>
             </View>
 
             {/* Presented To */}
             <View style={styles.certBody}>
-              <Text style={styles.certPresentedText}>This certificate is proudly presented to</Text>
+              <Text style={styles.certPresentedText}>{t('certificate.presentedTo')}</Text>
               <Text style={styles.certMemberName}>{memberDetails.name}</Text>
               <Text style={styles.certDescription}>
-                in recognition of their noble support, generous contributions, and dedicated service as a verified Gau Sevak. Your commitment directly aids the feeding, shelter, and medical protection of indigenous cows.
+                {t('certificate.description')}
               </Text>
             </View>
 
             {/* Certificate Metadata */}
             <View style={styles.certMetaContainer}>
               <View style={styles.certMetaColumn}>
-                <Text style={styles.certMetaLabel}>MEMBER ID</Text>
+                <Text style={styles.certMetaLabel}>{t('certificate.memberId')}</Text>
                 <Text style={styles.certMetaValue}>{memberDetails.memberId}</Text>
               </View>
               <View style={styles.certMetaColumn}>
-                <Text style={styles.certMetaLabel}>DATE OF ISSUANCE</Text>
+                <Text style={styles.certMetaLabel}>{t('certificate.dateOfIssuance')}</Text>
                 <Text style={styles.certMetaValue}>{memberDetails.joinedDate}</Text>
               </View>
             </View>
@@ -292,7 +294,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <View style={styles.signatureCol}>
                 <Text style={styles.handwrittenSig}>Swami Anand</Text>
                 <View style={styles.sigLine} />
-                <Text style={styles.sigTitle}>President, Trustee</Text>
+                <Text style={styles.sigTitle}>{t('certificate.president')}</Text>
               </View>
 
               {/* Gold Seal Svg */}
@@ -307,7 +309,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <View style={styles.signatureCol}>
                 <Text style={styles.handwrittenSig}>R. K. Sharma</Text>
                 <View style={styles.sigLine} />
-                <Text style={styles.sigTitle}>General Secretary</Text>
+                <Text style={styles.sigTitle}>{t('certificate.generalSecretary')}</Text>
               </View>
             </View>
 
@@ -319,18 +321,18 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
       <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.downloadBtn} onPress={handleDownload} activeOpacity={0.85}>
           <Download size={RFValue(12)} color="#FFF" style={{ marginRight: wp('1.5%') }} />
-          <Text style={styles.downloadBtnText}>Download PDF</Text>
+          <Text style={styles.downloadBtnText}>{t('certificate.downloadPdf')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.85}>
           <Share2 size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
-          <Text style={styles.shareBtnText}>Share</Text>
+          <Text style={styles.shareBtnText}>{t('common.share')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Membership Details Card */}
       <View style={styles.detailsCard}>
-        <Text style={styles.detailsTitle}>Membership Details</Text>
+        <Text style={styles.detailsTitle}>{t('certificate.membershipDetails')}</Text>
         
         {/* Detail Item Row 1 */}
         <View style={styles.detailRow}>
@@ -339,7 +341,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <User size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Name</Text>
+              <Text style={styles.detailLabel}>{t('certificate.name')}</Text>
               <Text style={styles.detailValue}>{memberDetails.name}</Text>
             </View>
           </View>
@@ -348,7 +350,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Hash size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Member ID</Text>
+              <Text style={styles.detailLabel}>{t('certificate.memberId')}</Text>
               <Text style={styles.detailValue}>{memberDetails.memberId}</Text>
             </View>
           </View>
@@ -361,7 +363,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Award size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Membership Tier</Text>
+              <Text style={styles.detailLabel}>{t('certificate.membershipTier')}</Text>
               <Text style={styles.detailValue}>{memberDetails.tier}</Text>
             </View>
           </View>
@@ -370,7 +372,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Calendar size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Member Since</Text>
+              <Text style={styles.detailLabel}>{t('certificate.memberSince')}</Text>
               <Text style={styles.detailValue}>{memberDetails.joinedDate}</Text>
             </View>
           </View>
@@ -383,7 +385,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Calendar size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Valid Till</Text>
+              <Text style={styles.detailLabel}>{t('certificate.validTill')}</Text>
               <Text style={styles.detailValue}>{memberDetails.endDate}</Text>
             </View>
           </View>
@@ -392,7 +394,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <ShieldCheck size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Status</Text>
+              <Text style={styles.detailLabel}>{t('certificate.status')}</Text>
               <Text style={styles.detailValue}>{memberDetails.status}</Text>
             </View>
           </View>
@@ -402,11 +404,11 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
         <View style={styles.statusDetailsContainer}>
           <View style={styles.statusTagItem}>
             <Check size={RFValue(9)} color="#065F46" strokeWidth={3} style={{ marginRight: wp('0.5%') }} />
-            <Text style={styles.statusTagTextGreen}>Verified Account Status</Text>
+            <Text style={styles.statusTagTextGreen}>{t('certificate.verifiedAccount')}</Text>
           </View>
           <View style={styles.statusTagItem}>
             <ShieldCheck size={RFValue(9)} color="#065F46" style={{ marginRight: wp('0.5%') }} />
-            <Text style={styles.statusTagTextGreen}>Active Community Member</Text>
+            <Text style={styles.statusTagTextGreen}>{t('certificate.activeCommunity')}</Text>
           </View>
         </View>
       </View>

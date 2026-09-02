@@ -1,6 +1,7 @@
 import { generatePDF } from 'react-native-html-to-pdf';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import { Alert, Platform } from 'react-native';
+import i18n from '../i18n';
 
 export const generateAndDownloadPDF = async (htmlContent: string, fileName: string = 'Document') => {
   try {
@@ -36,6 +37,6 @@ export const generateAndDownloadPDF = async (htmlContent: string, fileName: stri
     }
   } catch (error) {
     console.log('Error generating PDF:', error);
-    Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+    Alert.alert(i18n.t('common.error'), 'Failed to generate PDF. Please try again.');
   }
 };

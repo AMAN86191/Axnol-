@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Image, TouchableOpacity, Share } from 'react-na
 import { Pencil, Award, Check, Mail, Phone, BadgeCheck } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import { Share2 } from 'lucide-react-native';
 
@@ -51,6 +52,8 @@ export const ProfileHeader = React.memo(({
   referralCode,
   country,
 }: ProfileHeaderProps) => {
+  const { t } = useTranslation();
+
   const handleShareReferral = async (code: string) => {
     try {
       await Share.share({
@@ -104,7 +107,7 @@ export const ProfileHeader = React.memo(({
             </View>
 
 
-            <Text style={styles.designationText}>{designation || 'User'}</Text>
+            <Text style={styles.designationText}>{designation || t('common.user')}</Text>
 
             {membership ? (
               <View style={styles.statusRowBadgesHeader}>
@@ -118,11 +121,11 @@ export const ProfileHeader = React.memo(({
             ) : null}
 
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>ID: </Text>
-              <Text style={styles.metaValue}>{uid || 'N/A'}</Text>
+              <Text style={styles.metaLabel}>{t('drawer.id')}: </Text>
+              <Text style={styles.metaValue}>{uid || t('common.na')}</Text>
               <View style={styles.metaDot} />
-              <Text style={styles.metaLabel}>Since: </Text>
-              <Text style={styles.metaValue}>{joinDate ? new Date(joinDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'N/A'}</Text>
+              <Text style={styles.metaLabel}>{t('drawer.since')}: </Text>
+              <Text style={styles.metaValue}>{joinDate ? new Date(joinDate).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : t('common.na')}</Text>
             </View>
 
             <Text style={[styles.bioText, { marginTop: hp('0.6%') }]}>

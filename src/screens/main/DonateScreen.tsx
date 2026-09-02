@@ -37,22 +37,25 @@ import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { InputField } from '../../components/InputField';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DonateScreen'>;
 
-const PRESET_AMOUNTS: Array<{ amount: number | 'custom', desc: string }> = [
-  { amount: 100, desc: 'Feed for 1 day' },
-  { amount: 500, desc: 'Feed 1 cow for 1 week' },
-  { amount: 1000, desc: 'Medical care' },
-  { amount: 2000, desc: 'Feed 4 cows / week' },
-  { amount: 5000, desc: 'Shelter support' },
-  { amount: 'custom', desc: 'Enter custom amount' },
-];
-
 export default function DonateScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { purchasePlanStore } = useHomeStore();
   const { user } = useAuthStore();
+
+  const PRESET_AMOUNTS: Array<{ amount: number | 'custom', desc: string }> = [
+    { amount: 100, desc: t('donate.feedDay') },
+    { amount: 500, desc: t('donate.feedWeek') },
+    { amount: 1000, desc: t('donate.medicalCare') },
+    { amount: 2000, desc: t('donate.feedCowsWeek') },
+    { amount: 5000, desc: t('donate.shelterSupport') },
+    { amount: 'custom', desc: t('donate.customAmount') },
+  ];
+
   const [donationType, setDonationType] = useState<'one-time' | 'monthly' | 'occasion'>('one-time');
   const [selectedAmount, setSelectedAmount] = useState<number | 'custom'>(500);
   const [customAmount, setCustomAmount] = useState('');
@@ -76,7 +79,7 @@ export default function DonateScreen() {
   const handleDonate = async () => {
     const finalAmount = selectedAmount === 'custom' ? parseInt(customAmount, 10) : selectedAmount;
     if (!finalAmount || finalAmount <= 0) {
-      Alert.alert('Validation', 'Please select or enter a valid donation amount');
+      Alert.alert(t('donate.validation'), t('donate.validationMessage'));
       return;
     }
     const dateStr = new Date().toLocaleString('en-US', {
@@ -105,7 +108,7 @@ export default function DonateScreen() {
         date: dateStr,
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to process donation. Please try again.');
+      Alert.alert(t('common.error'), t('donate.donationFailed'));
     }
   };
 
@@ -131,7 +134,7 @@ export default function DonateScreen() {
 
           {/* 1. Choose Donation Type */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>1. Choose Donation Type</Text>
+            <Text style={styles.sectionTitle}>{t('donate.chooseType')}</Text>
             <View style={styles.typeCardsRow}>
               <TouchableOpacity
                 style={[styles.typeCard, donationType === 'monthly' && styles.typeCardActive]}
@@ -141,8 +144,8 @@ export default function DonateScreen() {
                 <View style={[styles.iconCircle, { backgroundColor: '#F0FDF4' }]}>
                   <RefreshCw size={RFValue(16)} color="#22C55E" />
                 </View>
-                <Text style={[styles.typeCardTitle, donationType === 'monthly' && styles.textOrange]}>Monthly Support</Text>
-                <Text style={styles.typeCardDesc}>Give every month & make a lasting impact</Text>
+                <Text style={[styles.typeCardTitle, donationType === 'monthly' && styles.textOrange]}>{t('donate.monthlySupport')}</Text>
+                <Text style={styles.typeCardDesc}>{t('donate.monthlyDesc')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.typeCard, donationType === 'one-time' && styles.typeCardActive]}
@@ -152,8 +155,8 @@ export default function DonateScreen() {
                 <View style={[styles.iconCircle, { backgroundColor: '#FFF5F0' }]}>
                   <Heart size={RFValue(16)} color={Colors.primary} fill={Colors.primary} />
                 </View>
-                <Text style={[styles.typeCardTitle, donationType === 'one-time' && styles.textOrange]}>One-time</Text>
-                <Text style={styles.typeCardDesc}>Make a one-time contribution</Text>
+                <Text style={[styles.typeCardTitle, donationType === 'one-time' && styles.textOrange]}>{t('donate.oneTime')}</Text>
+                <Text style={styles.typeCardDesc}>{t('donate.oneTimeDesc')}</Text>
               </TouchableOpacity>
 
 
@@ -166,8 +169,8 @@ export default function DonateScreen() {
                 <View style={[styles.iconCircle, { backgroundColor: '#F5F3FF' }]}>
                   <Gift size={RFValue(16)} color="#8B5CF6" />
                 </View>
-                <Text style={[styles.typeCardTitle, donationType === 'occasion' && styles.textOrange]}>Occasion Donation</Text>
-                <Text style={styles.typeCardDesc}>Donate on birthdays, anniversaries & more</Text>
+                <Text style={[styles.typeCardTitle, donationType === 'occasion' && styles.textOrange]}>{t('donate.occasionDonation')}</Text>
+                <Text style={styles.typeCardDesc}>{t('donate.occasionDesc')}</Text>
               </TouchableOpacity>
 
             </View>
@@ -176,10 +179,10 @@ export default function DonateScreen() {
           {/* 2. Choose Amount */}
           <View style={styles.section}>
             <View style={styles.sectionTitleRow}>
-              <Text style={styles.sectionTitle}>2. Choose Amount</Text>
+              <Text style={styles.sectionTitle}>{t('donate.chooseAmount')}</Text>
               <View style={styles.securePayment}>
                 <ShieldCheck size={RFValue(10)} color={Colors.gray} />
-                <Text style={styles.securePaymentText}>100% Secure Payment</Text>
+                <Text style={styles.securePaymentText}>{t('donate.securePayment')}</Text>
               </View>
             </View>
 
@@ -199,7 +202,7 @@ export default function DonateScreen() {
                       </View>
                     )}
                     {item.amount === 'custom' ? (
-                      <Text style={[styles.amountValue, isActive && styles.textOrange, { fontSize: RFValue(11) }]}>Other Amount</Text>
+                      <Text style={[styles.amountValue, isActive && styles.textOrange, { fontSize: RFValue(11) }]}>{t('donate.otherAmount')}</Text>
                     ) : (
                       <Text style={[styles.amountValue, isActive && styles.textOrange]}>₹{item.amount}</Text>
                     )}
@@ -214,7 +217,7 @@ export default function DonateScreen() {
                 <Text style={styles.currencySymbol}>₹</Text>
                 <TextInput
                   style={styles.customAmountInput}
-                  placeholder="Enter custom amount"
+                  placeholder={t('donate.customAmount')}
                   placeholderTextColor={Colors.gray}
                   keyboardType="numeric"
                   value={customAmount}
@@ -230,7 +233,7 @@ export default function DonateScreen() {
                 style={styles.impactImage}
               />
               <View style={styles.impactContent}>
-                <Text style={styles.impactTitle}>Your Impact</Text>
+                <Text style={styles.impactTitle}>{t('donate.yourImpact')}</Text>
                 <Text style={styles.impactText}>{getImpactText()}</Text>
               </View>
               <Heart size={RFValue(16)} color="#A7F3D0" fill="#D1FAE5" style={styles.impactHeart} />
@@ -239,16 +242,16 @@ export default function DonateScreen() {
 
           {/* 3. Donation Summary */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>3. Donation Summary</Text>
+            <Text style={styles.sectionTitle}>{t('donate.donationSummary')}</Text>
             <View style={styles.summaryCard}>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Donation Type</Text>
+                <Text style={styles.summaryLabel}>{t('donate.donationType')}</Text>
                 <Text style={styles.summaryValueOrange}>
-                  {donationType === 'one-time' ? 'One-time' : donationType === 'monthly' ? 'Monthly' : 'Occasion'}
+                  {donationType === 'one-time' ? t('donate.oneTime') : donationType === 'monthly' ? t('donate.monthly') : t('donate.occasion')}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Amount</Text>
+                <Text style={styles.summaryLabel}>{t('donate.amount')}</Text>
                 <Text style={styles.summaryValueOrange}>{getDisplayAmount()}</Text>
               </View>
 
@@ -257,23 +260,23 @@ export default function DonateScreen() {
               </View>
 
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryTotalLabel}>Total</Text>
+                <Text style={styles.summaryTotalLabel}>{t('donate.total')}</Text>
                 <Text style={styles.summaryTotalValue}>{getDisplayAmount()}</Text>
               </View>
-              <InputField label="Message/Remark" placeholder="Enter your message or remark" value={remark} onChangeText={setRemark} />
+              <InputField label={t('donate.messageRemark')} placeholder={t('donate.messagePlaceholder')} value={remark} onChangeText={setRemark} />
             </View>
           </View>
 
           {/* Donate Button */}
           <TouchableOpacity style={styles.donateBtn} onPress={handleDonate} activeOpacity={0.9}>
             <Lock size={RFValue(12)} color={Colors.white} style={styles.btnIcon} />
-            <Text style={styles.donateBtnText}>Donate {getDisplayAmount()} Now</Text>
+            <Text style={styles.donateBtnText}>{t('donate.donateNow', { amount: getDisplayAmount() })}</Text>
             <ChevronRight size={RFValue(12)} color={Colors.white} style={styles.btnChevron} />
           </TouchableOpacity>
 
           <View style={styles.secureMsgRow}>
             <CheckCircle2 size={RFValue(10)} color="#10B981" />
-            <Text style={styles.secureMsgText}>Your donation is secure and will directly help cows in need.</Text>
+            <Text style={styles.secureMsgText}>{t('donate.secureMessage')}</Text>
           </View>
 
           {/* Trust Badges */}
@@ -282,39 +285,39 @@ export default function DonateScreen() {
               <View style={[styles.trustIconWrapper, { backgroundColor: '#ECFDF5' }]}>
                 <Shield size={RFValue(12)} color="#10B981" />
               </View>
-              <Text style={styles.trustBadgeTitle}>Secure Payment</Text>
-              <Text style={styles.trustBadgeDesc}>256-bit SSL</Text>
+              <Text style={styles.trustBadgeTitle}>{t('donate.securePaymentBadge')}</Text>
+              <Text style={styles.trustBadgeDesc}>{t('donate.ssl256')}</Text>
             </View>
 
             <View style={styles.trustBadgeItem}>
               <View style={[styles.trustIconWrapper, { backgroundColor: '#FFF7ED' }]}>
                 <FileText size={RFValue(12)} color="#F97316" />
               </View>
-              <Text style={styles.trustBadgeTitle}>80G Tax Benefit</Text>
-              <Text style={styles.trustBadgeDesc}>Available</Text>
+              <Text style={styles.trustBadgeTitle}>{t('donate.taxBenefit')}</Text>
+              <Text style={styles.trustBadgeDesc}>{t('donate.available')}</Text>
             </View>
 
             <View style={styles.trustBadgeItem}>
               <View style={[styles.trustIconWrapper, { backgroundColor: '#F5F3FF' }]}>
                 <Users size={RFValue(12)} color="#8B5CF6" />
               </View>
-              <Text style={styles.trustBadgeTitle}>10,000+</Text>
-              <Text style={styles.trustBadgeDesc}>Happy Donors</Text>
+              <Text style={styles.trustBadgeTitle}>{t('donate.donors10k')}</Text>
+              <Text style={styles.trustBadgeDesc}>{t('donate.happyDonors')}</Text>
             </View>
 
             <View style={styles.trustBadgeItem}>
               <View style={[styles.trustIconWrapper, { backgroundColor: '#FDF2F8' }]}>
                 <Heart size={RFValue(12)} color="#EC4899" />
               </View>
-              <Text style={styles.trustBadgeTitle}>100% Impact</Text>
-              <Text style={styles.trustBadgeDesc}>Transparency</Text>
+              <Text style={styles.trustBadgeTitle}>{t('donate.impact100')}</Text>
+              <Text style={styles.trustBadgeDesc}>{t('donate.transparency')}</Text>
             </View>
           </View>
 
           {/* Footer Text */}
           <View style={styles.footerRow}>
             <Leaf size={RFValue(10)} color="#22C55E" />
-            <Text style={styles.footerText}>We never share your information with anyone.</Text>
+            <Text style={styles.footerText}>{t('donate.privacyMessage')}</Text>
           </View>
 
         </ScrollView>

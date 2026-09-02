@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Award, User as UserIcon, Check } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface MembershipBenefitsProps {
   isMember: boolean;
@@ -19,16 +20,18 @@ export const MembershipBenefits = React.memo(({
   onBecomeMemberPress,
   onDemoTogglePress,
 }: MembershipBenefitsProps) => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.membershipCardContainer}>
-      <Text style={styles.membershipSectionTitle}>Membership Benefits</Text>
+      <Text style={styles.membershipSectionTitle}>{t('membership.membershipBenefits')}</Text>
 
       {isMember ? (
         <View style={styles.memberAccessCard}>
           <View style={styles.memberAccessHeader}>
             <View style={styles.statusBadgeGreen}>
               <Check size={RFValue(7.5)} color="#065F46" strokeWidth={4} style={{ marginRight: wp('1%') }} />
-              <Text style={styles.statusBadgeTextGreen}>Community Member</Text>
+              <Text style={styles.statusBadgeTextGreen}>{t('membership.communityMember')}</Text>
             </View>
             {/* <TouchableOpacity onPress={onDemoTogglePress} style={styles.toggleMemberBtn}>
               <Text style={styles.toggleMemberText}>Demo Non-Member</Text>
@@ -36,7 +39,7 @@ export const MembershipBenefits = React.memo(({
           </View>
 
           <Text style={styles.memberAccessDesc}>
-            Thank you for being a Gold Patron. You have unlimited access to your digital certificate and membership ID card.
+            {t('membership.thankYouMember')}
           </Text>
 
           <View style={styles.memberActionsRow}>
@@ -46,7 +49,7 @@ export const MembershipBenefits = React.memo(({
               activeOpacity={0.8}
             >
               <Award size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
-              <Text style={styles.memberActionBtnText}>View Certificate</Text>
+              <Text style={styles.memberActionBtnText}>{t('membership.viewCertificate')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -55,27 +58,27 @@ export const MembershipBenefits = React.memo(({
               activeOpacity={0.8}
             >
               <UserIcon size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
-              <Text style={[styles.memberActionBtnText, styles.memberActionBtnTextOutline]}>View ID Card</Text>
+              <Text style={[styles.memberActionBtnText, styles.memberActionBtnTextOutline]}>{t('membership.viewIdCard')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       ) : (
         <View style={styles.nonMemberCard}>
           <View style={styles.nonMemberHeader}>
-            <Text style={styles.nonMemberTitle}>Support as a Member</Text>
+            <Text style={styles.nonMemberTitle}>{t('membership.supportAsMember')}</Text>
             <TouchableOpacity onPress={onDemoTogglePress} style={styles.toggleMemberBtn}>
               <Text style={styles.toggleMemberText}>Demo Member</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.nonMemberDesc}>
-            Join the Gaumata Sewa Trust membership to receive regular updates, an official membership certificate, tax benefits, and priority invitations to gaushala events.
+            {t('membership.joinDescription')}
           </Text>
           <TouchableOpacity
             style={styles.becomeMemberBtn}
             onPress={onBecomeMemberPress}
             activeOpacity={0.85}
           >
-            <Text style={styles.becomeMemberBtnText}>Become a Member</Text>
+            <Text style={styles.becomeMemberBtnText}>{t('membership.becomeMember')}</Text>
           </TouchableOpacity>
         </View>
       )}

@@ -7,37 +7,38 @@ import { Bell } from 'lucide-react-native';
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
 import { useNavigation } from '@react-navigation/native';
-const initialNotifications = [
-  {
-    id: '1',
-    title: 'New Event Added',
-    description: 'A new Gau Seva event has been added near your area.',
-    time: '2 hours ago',
-    type: 'info',
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Donation Received',
-    description: 'Thank you for your generous donation. Receipt has been sent.',
-    time: 'Yesterday',
-    type: 'success',
-    read: true,
-  },
-  {
-    id: '3',
-    title: 'Membership Expiring',
-    description: 'Your yearly membership will expire in 7 days.',
-    time: '3 days ago',
-    type: 'warning',
-    read: true,
-  },
-];
+import { useTranslation } from 'react-i18next';
 
 const NotificationScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const [filter, setFilter] = useState<'All' | 'Unread' | 'Read'>('All');
-  const [notificationsData, setNotificationsData] = useState(initialNotifications);
+  const [notificationsData, setNotificationsData] = useState([
+    {
+      id: '1',
+      title: t('notifications.newEvent'),
+      description: t('notifications.newEventMessage'),
+      time: t('notifications.twoHoursAgo'),
+      type: 'info',
+      read: false,
+    },
+    {
+      id: '2',
+      title: t('notifications.donationReceived'),
+      description: t('notifications.donationReceivedMessage'),
+      time: t('notifications.yesterday'),
+      type: 'success',
+      read: true,
+    },
+    {
+      id: '3',
+      title: t('notifications.membershipExpiring'),
+      description: t('notifications.membershipExpiringMessage'),
+      time: t('notifications.threeDaysAgo'),
+      type: 'warning',
+      read: true,
+    },
+  ]);
 
   const markAllAsRead = useCallback(() => {
     setNotificationsData((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -69,7 +70,7 @@ const NotificationScreen = () => {
   }, [navigation]);
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CommonHeader title="Notifications" onBackPress={handleBack} />
+      <CommonHeader title={t('notifications.title')} onBackPress={handleBack} />
 
       <View style={styles.filterContainer}>
         <View style={styles.filterTabsWrapper}>
@@ -81,13 +82,13 @@ const NotificationScreen = () => {
               activeOpacity={0.7}
             >
               <Text style={[styles.filterText, filter === type && styles.activeFilterText]}>
-                {type}
+                {t(type === 'All' ? 'common.all' : type === 'Unread' ? 'notifications.unread' : 'notifications.read')}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
         <TouchableOpacity style={styles.readAllButton} onPress={markAllAsRead} activeOpacity={0.7}>
-          <Text style={styles.readAllText}>Read All</Text>
+          <Text style={styles.readAllText}>{t('notifications.readAll')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -100,7 +101,7 @@ const NotificationScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Bell size={RFValue(40)} color={Colors.gray} style={{ opacity: 0.5 }} />
-            <Text style={styles.emptyText}>No {filter.toLowerCase()} notifications</Text>
+            <Text style={styles.emptyText}>{t('notifications.noNotifications', { filter: filter.toLowerCase() })}</Text>
           </View>
         }
       />

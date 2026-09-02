@@ -4,6 +4,7 @@ import { Award } from 'lucide-react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface MembershipIdCardModalProps {
   visible: boolean;
@@ -21,9 +22,12 @@ export const MembershipIdCardModal = React.memo(({
   profileName,
   avatarUri = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300',
   memberId = 'GMT-8394-2026',
-  designation = 'Gold Patron Member',
+  designation,
   since = 'Jan 2026',
 }: MembershipIdCardModalProps) => {
+  const { t } = useTranslation();
+  const designationLabel = designation || t('idCard.goldPatron');
+
   return (
     <Modal
       visible={visible}
@@ -39,8 +43,8 @@ export const MembershipIdCardModal = React.memo(({
             <View style={styles.idCardHeader}>
               <Award size={RFValue(16)} color="#FF6F34" style={{ marginRight: wp('2%') }} />
               <View style={styles.idCardHeaderTitleCol}>
-                <Text style={styles.idCardTrustName}>GAU MATA SEWA TRUST</Text>
-                <Text style={styles.idCardSubHeader}>OFFICIAL MEMBERSHIP CARD</Text>
+                <Text style={styles.idCardTrustName}>{t('idCard.trustName')}</Text>
+                <Text style={styles.idCardSubHeader}>{t('idCard.officialCard')}</Text>
               </View>
             </View>
 
@@ -53,29 +57,29 @@ export const MembershipIdCardModal = React.memo(({
                   style={styles.idCardAvatar}
                 />
                 <View style={styles.idCardStatusBadge}>
-                  <Text style={styles.idCardStatusText}>ACTIVE</Text>
+                  <Text style={styles.idCardStatusText}>{t('idCard.active')}</Text>
                 </View>
               </View>
 
               {/* Details Col */}
               <View style={styles.idCardDetails}>
-                <Text style={styles.idCardLabel}>MEMBER NAME</Text>
+                <Text style={styles.idCardLabel}>{t('idCard.memberName')}</Text>
                 <Text style={styles.idCardName} numberOfLines={1}>{profileName}</Text>
 
-                <Text style={styles.idCardLabel}>MEMBERSHIP ID</Text>
+                <Text style={styles.idCardLabel}>{t('idCard.membershipId')}</Text>
                 <Text style={styles.idCardValue}>{memberId}</Text>
 
-                <Text style={styles.idCardLabel}>DESIGNATION</Text>
-                <Text style={styles.idCardValue}>{designation}</Text>
+                <Text style={styles.idCardLabel}>{t('idCard.designation')}</Text>
+                <Text style={styles.idCardValue}>{designationLabel}</Text>
 
                 <View style={styles.idCardRow}>
                   <View style={{ marginRight: wp('4%') }}>
-                    <Text style={styles.idCardLabel}>SINCE</Text>
+                    <Text style={styles.idCardLabel}>{t('idCard.since')}</Text>
                     <Text style={styles.idCardValue}>{since}</Text>
                   </View>
                   <View>
-                    <Text style={styles.idCardLabel}>VERIFIED</Text>
-                    <Text style={[styles.idCardValue, { color: '#10B981', fontWeight: 'bold' }]}>YES ✓</Text>
+                    <Text style={styles.idCardLabel}>{t('idCard.verified')}</Text>
+                    <Text style={[styles.idCardValue, { color: '#10B981', fontWeight: 'bold' }]}>{t('idCard.yes')}</Text>
                   </View>
                 </View>
               </View>
@@ -131,7 +135,7 @@ export const MembershipIdCardModal = React.memo(({
               onPress={onClose}
               activeOpacity={0.8}
             >
-              <Text style={styles.idCardCloseBtnText}>Close Card</Text>
+              <Text style={styles.idCardCloseBtnText}>{t('idCard.closeCard')}</Text>
             </TouchableOpacity>
           </View>
         </View>

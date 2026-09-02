@@ -1,6 +1,8 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useState, useRef } from 'react'
 import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal} from 'react-native'
+import { useTranslation } from 'react-i18next'
+import './src/i18n'
 import Allroute from './src/navigation/AllRoute'
 import { PostProvider } from './src/context/PostContext'
 import { withStallion, useStallionUpdate, restart, addEventListener } from 'react-native-stallion'
@@ -9,11 +11,19 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize'
 import { Colors } from './src/theme/colors'
 import { initializeNotifications } from './src/utils/notificationService'
+import useLanguageStore from './src/zustand/useLanguageStore'
 
 const App = () => {
+  const { t } = useTranslation()
+  const { loadLanguage } = useLanguageStore()
   const { isRestartRequired, newReleaseBundle } = useStallionUpdate()
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [isDownloading, setIsDownloading] = useState(false)
+  useEffect(() => {
+    loadLanguage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   useEffect(() => {
     const subscription: any = addEventListener((event: any) => {
       if (event.type === 'DOWNLOAD_STARTED') {
@@ -86,7 +96,7 @@ const App = () => {
         <View style={styles.downloadBanner}>
           <View style={styles.bannerContent}>
             <ActivityIndicator size="small" color={Colors.primary} style={styles.spinner} />
-            <Text style={styles.bannerText}>Downloading Update: {downloadProgress}%</Text>
+            <Text style={styles.bannerText}>{t('update.downloading', { progress: downloadProgress })}</Text>
           </View>
           <View style={styles.progressBarBackground}>
             <View style={[styles.progressBar, { width: `${downloadProgress}%` }]} />
@@ -113,14 +123,14 @@ const App = () => {
             </LinearGradient>
 
             <View style={styles.modalBody}>
-              <Text style={styles.modalTitle}>Update Ready</Text>
+              <Text style={styles.modalTitle}>{t('update.title')}</Text>
               <Text style={styles.modalDescription}>
-                A new version of the app is ready to install. Restart now to get the latest features and fixes.
+                {t('update.description')}
               </Text>
 
               {newReleaseBundle?.releaseNote && (
                 <View style={styles.releaseNotesContainer}>
-                  <Text style={styles.releaseNotesTitle}>What's New:</Text>
+                  <Text style={styles.releaseNotesTitle}>{t('update.whatsNew')}</Text>
                   <Text style={styles.releaseNotesContent}>{newReleaseBundle.releaseNote}</Text>
                 </View>
               )}
@@ -132,7 +142,7 @@ const App = () => {
                   end={{ x: 1, y: 0 }}
                   style={styles.restartButton}
                 >
-                  <Text style={styles.buttonText}>Restart Now</Text>
+                  <Text style={styles.buttonText}>{t('update.restartNow')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>

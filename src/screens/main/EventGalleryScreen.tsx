@@ -21,10 +21,12 @@ import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { RootStackParamList } from '../../navigation/types';
 import useHomeStore from '../../zustand/useHomeStore';
+import { useTranslation } from 'react-i18next';
 
 type EventGalleryScreenRouteProp = RouteProp<RootStackParamList, 'EventGalleryScreen'>;
 
 export default function EventGalleryScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<EventGalleryScreenRouteProp>();
   const insets = useSafeAreaInsets();
@@ -48,7 +50,7 @@ export default function EventGalleryScreen() {
 
   const handleShare = useCallback(async (photo: any) => {
     try {
-      const shareMsg = `Check out this beautiful photo from "${event?.name}" event organized by Gau Mata Trust. Join our mission!`;
+      const shareMsg = t('gallery.shareMessage', { event: event?.name });
       await Share.share({
         message: shareMsg,
         url: photo.image,
@@ -59,7 +61,7 @@ export default function EventGalleryScreen() {
   }, [event]);
 
   const handleDownload = useCallback((photo: any) => {
-    Alert.alert('Download Started', `Downloading photo to your device gallery.`);
+    Alert.alert(t('gallery.downloadStarted'), t('gallery.downloadingPhoto'));
   }, []);
 
   const renderPhotoItem = ({ item, index }: { item: any; index: number }) => (
@@ -75,9 +77,9 @@ export default function EventGalleryScreen() {
   if (!event) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <CommonHeader title="Error" onBackPress={() => navigation.goBack()} />
+        <CommonHeader title={t('common.error')} onBackPress={() => navigation.goBack()} />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Event not found</Text>
+          <Text style={styles.errorText}>{t('gallery.eventNotFound')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -85,7 +87,7 @@ export default function EventGalleryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <CommonHeader title="Event Photos" onBackPress={() => navigation.goBack()} />
+      <CommonHeader title={t('gallery.eventPhotos')} onBackPress={() => navigation.goBack()} />
 
       <FlatList
         data={parsedGallery}
@@ -98,7 +100,7 @@ export default function EventGalleryScreen() {
           <View style={styles.eventInfoCard}>
             <View style={styles.eventHeaderRow}>
               <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>EVENT</Text>
+                <Text style={styles.categoryText}>{t('gallery.event')}</Text>
               </View>
             </View>
 
@@ -120,7 +122,7 @@ export default function EventGalleryScreen() {
 
             <View style={styles.sectionHeader}>
               <ImageIcon size={RFValue(12)} color={Colors.dark} style={{ marginRight: wp('2%') }} />
-              <Text style={styles.sectionTitle}>PHOTOS ({parsedGallery.length})</Text>
+              <Text style={styles.sectionTitle}>{t('gallery.photosCount', { count: parsedGallery.length })}</Text>
             </View>
           </View>
         }
@@ -181,7 +183,7 @@ export default function EventGalleryScreen() {
                         activeOpacity={0.8}
                       >
                         <Share2 size={RFValue(12)} color={Colors.white} style={{ marginRight: wp('2%') }} />
-                        <Text style={styles.previewActionBtnText}>Share</Text>
+                        <Text style={styles.previewActionBtnText}>{t('common.share')}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.previewActionBtn, { backgroundColor: '#374151' }]}
@@ -189,7 +191,7 @@ export default function EventGalleryScreen() {
                         activeOpacity={0.8}
                       >
                         <Download size={RFValue(12)} color={Colors.white} style={{ marginRight: wp('2%') }} />
-                        <Text style={styles.previewActionBtnText}>Download</Text>
+                        <Text style={styles.previewActionBtnText}>{t('common.download')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>

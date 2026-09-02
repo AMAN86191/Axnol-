@@ -23,10 +23,12 @@ import {
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
 import useAuthStore from '../../zustand/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 
 
 export default function ReferralScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { user, getProfile } = useAuthStore();
 
@@ -56,7 +58,7 @@ export default function ReferralScreen() {
   const referralLink = `https://gaumata.org/invite/${referralCode}`;
   const totalReferrals = user?.statistics?.referrals_count || 0;
 
-  const shareMessage = `Join me in supporting Gau Seva and protecting our indigenous cows! Use my Referral Code *${referralCode}* on SignUp to help us grow. Invite link: ${referralLink}`;
+  const shareMessage = t('referral.shareMessage', { code: referralCode, link: referralLink });
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -90,14 +92,14 @@ export default function ReferralScreen() {
   }, [shareMessage]);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('common.na');
     const date = new Date(dateString);
     return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CommonHeader title="Refer a Friend" onBackPress={handleBack} />
+      <CommonHeader title={t('referral.referFriend')} onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Banner Card */}
@@ -105,26 +107,26 @@ export default function ReferralScreen() {
           <View style={styles.bannerIconCircle}>
             <Gift size={RFValue(24)} color={Colors.dark} strokeWidth={1.8} />
           </View>
-          <Text style={styles.bannerTitle}>Refer & Earn Blessings 🤝</Text>
+          <Text style={styles.bannerTitle}>{t('referral.referTitle')}</Text>
           <Text style={styles.bannerSubtitle}>
-            Share the Gau Seva mission with your friends & family. Help us protect and feed our Gau Matas.
+            {t('referral.referSubtitle')}
           </Text>
         </View>
 
         {/* Code Box Card */}
         <View style={styles.codeCard}>
-          <Text style={styles.cardLabel}>YOUR REFERRAL CODE</Text>
+          <Text style={styles.cardLabel}>{t('referral.yourCode')}</Text>
           <View style={styles.codeRow}>
             <Text style={styles.codeText}>{referralCode}</Text>
             <TouchableOpacity style={styles.copyBtn} onPress={handleCopyLink} activeOpacity={0.7}>
               <Copy size={RFValue(12)} color={Colors.primary} />
-              <Text style={styles.copyBtnText}>{copied ? 'Copied' : 'Copy'}</Text>
+              <Text style={styles.copyBtnText}>{copied ? t('common.copied') : t('common.copy')}</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.linkText} numberOfLines={1}>{referralLink}</Text>
           <TouchableOpacity style={styles.shareButton} onPress={handleShareLink} activeOpacity={0.7}>
             <Share2 size={RFValue(14)} color={Colors.primary} />
-            <Text style={styles.shareButtonText}>Share</Text>
+            <Text style={styles.shareButtonText}>{t('common.share')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -135,8 +137,8 @@ export default function ReferralScreen() {
               <Users size={RFValue(16)} color="#10B981" />
             </View>
             <View>
-              <Text style={styles.statsLabel}>Total Referrals</Text>
-              <Text style={styles.statsDesc}>Friends who joined Gaumata Community</Text>
+              <Text style={styles.statsLabel}>{t('referral.totalReferrals')}</Text>
+              <Text style={styles.statsDesc}>{t('referral.friendsJoined')}</Text>
             </View>
           </View>
           <Text style={styles.statsNumber}>{totalReferrals}</Text>
@@ -144,19 +146,19 @@ export default function ReferralScreen() {
 
 
         {/* Referred Friends History */}
-        <Text style={styles.sectionTitle}>RECENT REFERRALS</Text>
+        <Text style={styles.sectionTitle}>{t('referral.recentReferrals')}</Text>
         {loading ? (
           <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: hp('2%') }} />
         ) : (
           <View style={styles.historyContainer}>
             {referredFriends.length === 0 ? (
-              <Text style={{ textAlign: 'center', padding: hp('2%'), color: Colors.gray }}>No referrals yet.</Text>
+              <Text style={{ textAlign: 'center', padding: hp('2%'), color: Colors.gray }}>{t('referral.noReferrals')}</Text>
             ) : (
               referredFriends.map((friend) => {
                 const isActive = friend.status === 'active';
                 const statusColor = isActive ? '#10B981' : '#9CA3AF';
-                const statusText = isActive ? 'Active' : 'Inactive';
-                const name = friend.name || 'Unknown';
+                const statusText = isActive ? t('common.active') : t('common.inactive');
+                const name = friend.name || t('common.unknown');
                 const designation = friend.profile?.designation;
                 
                 return (
@@ -167,7 +169,7 @@ export default function ReferralScreen() {
                       </View>
                       <View>
                         <Text style={styles.friendName}>{name}</Text>
-                        <Text style={styles.friendJoined}>Joined {formatDate(friend.created_at)}</Text>
+                        <Text style={styles.friendJoined}>{t('referral.joined')}{formatDate(friend.created_at)}</Text>
                         {designation ? (
                           <Text style={styles.friendDesignation}>{designation}</Text>
                         ) : null}

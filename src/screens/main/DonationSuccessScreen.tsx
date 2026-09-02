@@ -32,11 +32,13 @@ import {
 
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DonationSuccessScreen'>;
 type SuccessScreenRouteProp = RouteProp<RootStackParamList, 'DonationSuccessScreen'>;
 
 export default function DonationSuccessScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SuccessScreenRouteProp>();
 
@@ -55,9 +57,9 @@ export default function DonationSuccessScreen() {
               <Check color="#FFFFFF" size={RFValue(40)} strokeWidth={3} />
             </View>
           </View>
-          <Text style={styles.titleText}>Donation Successful!</Text>
+          <Text style={styles.titleText}>{t('donationSuccess.title')}</Text>
           <Text style={styles.subtitleText}>
-            Thank you for supporting Gau Seva.{'\n'}Your contribution makes a meaningful impact.
+            {t('donationSuccess.subtitle', { newline: '\n' })}
           </Text>
         </View>
 
@@ -71,7 +73,7 @@ export default function DonationSuccessScreen() {
               <Text style={styles.amountText}>₹ {amount.toLocaleString('en-IN')}</Text>
               <View style={styles.badgeContainer}>
                 <Heart color="#2E6B34" size={RFValue(10)} fill="#2E6B34" />
-                <Text style={styles.badgeText}>One-Time Contribution</Text>
+                <Text style={styles.badgeText}>{t('donationSuccess.oneTimeContribution')}</Text>
               </View>
             </View>
           </View>
@@ -88,7 +90,7 @@ export default function DonationSuccessScreen() {
             <View style={styles.iconBoxDark}>
               <FileText color="#FFFFFF" size={RFValue(14)} />
             </View>
-            <Text style={styles.detailsTitle}>Transaction Details</Text>
+            <Text style={styles.detailsTitle}>{t('donationSuccess.transactionDetails')}</Text>
           </View>
 
           <View style={styles.row}>
@@ -96,7 +98,7 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <IndianRupee color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Amount</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.amount')}</Text>
             </View>
             <Text style={styles.rowValueDark}>₹ {amount.toLocaleString('en-IN')}</Text>
           </View>
@@ -108,7 +110,7 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <Calendar color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Date & Time</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.dateTime')}</Text>
             </View>
             <Text style={styles.rowValueLight}>{date}</Text>
           </View>
@@ -120,7 +122,7 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <Hash color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Transaction ID</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.transactionId')}</Text>
             </View>
             <Text style={styles.rowValueLight}>{transactionId}</Text>
           </View>
@@ -132,9 +134,9 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <CreditCard color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Payment Mode</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.paymentMode')}</Text>
             </View>
-            <Text style={styles.rowValueLight}>UPI</Text>
+            <Text style={styles.rowValueLight}>{t('donationSuccess.upi')}</Text>
           </View>
         </View>
 
@@ -150,21 +152,21 @@ export default function DonationSuccessScreen() {
             </View>
           </View>
           <View style={styles.impactCardRight}>
-            <Text style={styles.impactTitleHorizontal}>Your Contribution Helps</Text>
+            <Text style={styles.impactTitleHorizontal}>{t('donationSuccess.yourContributionHelps')}</Text>
             <View style={styles.impactRowHorizontal}>
               <View style={styles.impactColHorizontal}>
                 <Wheat color="#2E6B34" size={RFValue(18)} />
-                <Text style={styles.impactTextHorizontal}>Cow Feeding</Text>
+                <Text style={styles.impactTextHorizontal}>{t('donationSuccess.cowFeeding')}</Text>
               </View>
               <View style={styles.impactDividerHorizontal} />
               <View style={styles.impactColHorizontal}>
                 <PlusCircle color="#2E6B34" size={RFValue(18)} />
-                <Text style={styles.impactTextHorizontal}>Medical Support</Text>
+                <Text style={styles.impactTextHorizontal}>{t('donationSuccess.medicalSupport')}</Text>
               </View>
               <View style={styles.impactDividerHorizontal} />
               <View style={styles.impactColHorizontal}>
                 <Home color="#2E6B34" size={RFValue(18)} />
-                <Text style={styles.impactTextHorizontal}>Shelter Maint...</Text>
+                <Text style={styles.impactTextHorizontal}>{t('donationSuccess.shelterMaintenance')}</Text>
               </View>
             </View>
           </View>
@@ -173,14 +175,14 @@ export default function DonationSuccessScreen() {
         {/* Security Message */}
         <View style={styles.securityRow}>
           <ShieldCheck color="#2E6B34" size={RFValue(14)} />
-          <Text style={styles.securityText}>Your donation is safe and securely processed.</Text>
+          <Text style={styles.securityText}>{t('donationSuccess.safeMessage')}</Text>
         </View>
 
         {/* Buttons */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
             <Download color="#FFFFFF" size={RFValue(16)} />
-            <Text style={styles.primaryButtonText}>Download Receipt</Text>
+            <Text style={styles.primaryButtonText}>{t('donationSuccess.downloadReceipt')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -189,7 +191,7 @@ export default function DonationSuccessScreen() {
             onPress={() => navigation.navigate('MainDrawer')}
           >
             <HomeIcon color="#E85D04" size={RFValue(16)} />
-            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+            <Text style={styles.secondaryButtonText}>{t('donationSuccess.backToHome')}</Text>
           </TouchableOpacity>
         </View>
 

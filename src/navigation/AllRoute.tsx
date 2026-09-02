@@ -1,4 +1,5 @@
 import React from 'react';
+import { LinkingOptions } from '@react-navigation/native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -30,10 +31,25 @@ import PlansScreen from '../screens/main/PlansScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// ─── Deep Linking Config ─────────────────────────────────────────────────────
+// Shared post links look like: https://gst.tambimotors.com/post/{postId}
+// (WhatsApp/telegram ke liye https link clickable rehta hai, nahi ki custom scheme)
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: [
+    'https://gst.tambimotors.com',
+    'gaumatatrust://',
+  ],
+  config: {
+    screens: {
+      PostDetailsScreen: 'post/:postId',
+    },
+  },
+};
+
 // ─── Main Navigator ──────────────────────────────────────────────────────────
 const Allroute = () => {
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator
         initialRouteName="SplashScreen"
         screenOptions={{

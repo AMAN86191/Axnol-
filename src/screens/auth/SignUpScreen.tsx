@@ -18,6 +18,7 @@ import { Mail, User, Phone, Code2, ArrowRight, UserPlus, Calendar, FileText } fr
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../theme/colors';
 import { AuthInput } from '../../components/AuthInput';
 import { AuthButton } from '../../components/AuthButton';
@@ -28,6 +29,7 @@ import useAuthStore from '../../zustand/useAuthStore';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUpScreen'>;
 
 const SignUpScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -73,11 +75,11 @@ const SignUpScreen = () => {
       navigation.navigate('OtpVerificationScreen', { phoneNumber: phone });
     } catch (err: any) {
       setLoading(false);
-      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to register';
+      const errorMessage = err?.response?.data?.message || err?.message || t('signup.registerFailed');
       if (Platform.OS === 'android') {
         ToastAndroid.show(errorMessage, ToastAndroid.LONG);
       } else {
-        Alert.alert('Registration Failed', errorMessage);
+        Alert.alert(t('signup.registrationFailed'), errorMessage);
       }
     }
   };
@@ -120,16 +122,16 @@ const SignUpScreen = () => {
                 <UserPlus size={RFValue(15)} color={Colors.primary} />
               </View>
               <View style={styles.cardHeaderTextContent}>
-                <Text style={styles.cardTitle}>Join Our Community</Text>
-                <Text style={styles.cardSubtitle}>Fill in the details to create an account</Text>
+                <Text style={styles.cardTitle}>{t('signup.title')}</Text>
+                <Text style={styles.cardSubtitle}>{t('signup.subtitle')}</Text>
               </View>
             </View>
 
             {/* Name Field */}
             <AuthInput
-              label="Full Name"
+              label={t('signup.fullName')}
               icon={<User size={RFValue(14)} color="#E85D04" />}
-              placeholder="John Doe"
+              placeholder={t('signup.namePlaceholder')}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -137,9 +139,9 @@ const SignUpScreen = () => {
 
             {/* Email Field */}
             <AuthInput
-              label="Email Address"
+              label={t('signup.email')}
               icon={<Mail size={RFValue(14)} color="#E85D04" />}
-              placeholder="name@gaushala.org"
+              placeholder={t('signup.emailPlaceholder')}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -148,9 +150,9 @@ const SignUpScreen = () => {
 
             {/* Phone Number Field */}
             <AuthInput
-              label="Phone Number"
+              label={t('signup.phone')}
               icon={<Phone size={RFValue(14)} color="#E85D04" />}
-              placeholder="+91 98765 43210"
+              placeholder={t('signup.phonePlaceholder')}
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -160,9 +162,9 @@ const SignUpScreen = () => {
             <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={1}>
               <View pointerEvents="none">
                 <AuthInput
-                  label="Date of Birth"
+                  label={t('signup.dob')}
                   icon={<Calendar size={RFValue(14)} color="#E85D04" />}
-                  placeholder="DD/MM/YYYY"
+                  placeholder={t('signup.dobPlaceholder')}
                   value={dob}
                   editable={false}
                 />
@@ -181,18 +183,18 @@ const SignUpScreen = () => {
 
             {/* Description/Bio Field */}
             <AuthInput
-              label="Description / Bio"
+              label={t('signup.bio')}
               icon={<FileText size={RFValue(14)} color="#E85D04" />}
-              placeholder="Tell us about yourself"
+              placeholder={t('signup.bioPlaceholder')}
               value={bio}
               onChangeText={setBio}
             />
 
             {/* Reference Code Field */}
             <AuthInput
-              label="Referral Code"
+              label={t('signup.referralCode')}
               icon={<Code2 size={RFValue(14)} color="#E85D04" />}
-              placeholder="1234567890"
+              placeholder={t('signup.referralPlaceholder')}
               value={reff}
               onChangeText={setReff}
               keyboardType="numeric"
@@ -200,19 +202,19 @@ const SignUpScreen = () => {
 
             {/* Sign Up Button */}
             <AuthButton
-              title="Sign Up"
+              title={t('signup.signUp')}
               leftIcon={<UserPlus size={RFValue(14)} color={Colors.white} />}
               rightIcon={<ArrowRight size={RFValue(14)} color={Colors.white} />}
               onPress={handleSignUp}
               loading={loading}
-              loadingText="Creating..."
+              loadingText={t('signup.creating')}
             />
 
             {/* Footer Text */}
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text style={styles.footerText}>{t('signup.hasAccount')}</Text>
               <TouchableOpacity onPress={() => navigation.navigate('LoginScreen')} activeOpacity={0.7}>
-                <Text style={styles.signUpText}>Login</Text>
+                <Text style={styles.signUpText}>{t('signup.login')}</Text>
               </TouchableOpacity>
             </View>
 

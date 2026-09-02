@@ -36,6 +36,7 @@ import { CustomButton } from '../../components/CustomButton';
 import useAuthStore from '../../zustand/useAuthStore';
 import useHomeStore from '../../zustand/useHomeStore';
 import { MembershipCertificateCard } from '../../components/MembershipCertificateCard';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'JoinMembershipScreen'>;
 
@@ -48,6 +49,7 @@ interface Plan {
 }
 
 const JoinMembershipScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user, updateProfile } = useAuthStore();
   const { getPlansStore, purchasePlanStore  } = useHomeStore();
@@ -134,10 +136,10 @@ const JoinMembershipScreen = () => {
           date: new Date().toLocaleDateString()
         });
       } else {
-        Alert.alert('Error', response?.message || 'Failed to purchase plan.');
+        Alert.alert(t('common.error'), response?.message || t('membership.purchaseFailed'));
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while purchasing the plan.');
+      Alert.alert(t('common.error'), t('membership.purchaseError'));
     } finally {
       setPurchasingId(null);
     }
@@ -169,7 +171,7 @@ const JoinMembershipScreen = () => {
 
   const handleJoinMembership = async () => {
     if (!agree) {
-      Alert.alert('Agreement Required', 'Please agree to the Terms & Conditions.');
+      Alert.alert(t('membership.agreementRequired'), t('membership.agreeTerms'));
       return;
     }
     setLoading(true);
@@ -200,7 +202,7 @@ const JoinMembershipScreen = () => {
       setModalVisible(true);
       fetchPlans();
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert(t('common.error'), t('membership.profileUpdateFailed'));
     } finally {
       setLoading(false);
     }
@@ -208,14 +210,14 @@ const JoinMembershipScreen = () => {
 
   // Dynamic Member Data for Certificate
   const memberDetails = {
-    name: user?.name || 'Member Name',
-    memberId: user?.uid || 'N/A',
-    tier: user?.membership ? user.membership.charAt(0).toUpperCase() + user.membership.slice(1) : 'Community',
-    joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
-    endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
-    status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active',
-    verified: 'Verified Sevak',
-    impact: `₹0 Contributed`,
+    name: user?.name || t('profile.memberName'),
+    memberId: user?.uid || t('common.na'),
+    tier: user?.membership ? user.membership.charAt(0).toUpperCase() + user.membership.slice(1) : t('membership.communityMember'),
+    joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
+    endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
+    status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : t('common.active'),
+    verified: t('membership.verifiedSevak'),
+    impact: t('membership.contributed', { amount: 0 }),
   };
 
   const renderPlanCard = (plan: Plan, isPremium: boolean) => {
@@ -224,7 +226,7 @@ const JoinMembershipScreen = () => {
         {isPremium && (
           <View style={styles.premiumBadge}>
             <Star size={RFValue(8)} color="#FFF" fill="#FFF" />
-            <Text style={styles.premiumBadgeText}>RECOMMENDED</Text>
+            <Text style={styles.premiumBadgeText}>{t('membership.recommended')}</Text>
           </View>
         )}
         <View style={styles.planHeader}>
@@ -241,7 +243,7 @@ const JoinMembershipScreen = () => {
         </View>
 
         <CustomButton
-          title="Select & Pay"
+          title={t('membership.selectPay')}
           onPress={() => handlePurchase(plan)}
           loading={purchasingId === plan.id}
           disabled={purchasingId !== null}
@@ -269,8 +271,8 @@ const JoinMembershipScreen = () => {
               <MembershipCertificateCard memberDetails={memberDetails} />
               
               <View style={{ marginTop: hp('3%'), paddingHorizontal: wp('2%'), marginBottom: hp('2%') }}>
-                <Text style={{ fontSize: RFValue(14), fontWeight: '700', color: Colors.dark, marginBottom: hp('0.5%') }}>Upgrade Membership</Text>
-                <Text style={{ fontSize: RFValue(10), color: Colors.gray, marginBottom: hp('2%') }}>Choose a higher tier to increase your impact and benefits.</Text>
+                <Text style={{ fontSize: RFValue(14), fontWeight: '700', color: Colors.dark, marginBottom: hp('0.5%') }}>{t('membership.upgradeTitle')}</Text>
+                <Text style={{ fontSize: RFValue(10), color: Colors.gray, marginBottom: hp('2%') }}>{t('membership.upgradeSubtitle')}</Text>
 
                 {fetchingPlans ? (
                   <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('3%') }} />
@@ -288,7 +290,7 @@ const JoinMembershipScreen = () => {
                       plan.duration.toLowerCase() !== user?.membership?.toLowerCase()
                     ).length === 0 && !fetchingPlans && (
                       <Text style={{ textAlign: 'center', color: Colors.gray, marginTop: hp('2%') }}>
-                        No upgrade plans available at the moment.
+                        {t('membership.noUpgradePlans')}
                       </Text>
                     )}
                   </View>
@@ -299,8 +301,8 @@ const JoinMembershipScreen = () => {
             <>
               {/* Main Card */}
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Join the Mission</Text>
-                <Text style={styles.cardSubtitle}>Create your member account to get started.</Text>
+                <Text style={styles.cardTitle}>{t('membership.joinMission')}</Text>
+                <Text style={styles.cardSubtitle}>{t('membership.joinSubtitle')}</Text>
 
                 {/* Profile Photo */}
                 <View style={styles.photoContainer}>
@@ -310,7 +312,7 @@ const JoinMembershipScreen = () => {
                     ) : (
                       <View style={styles.photoPlaceholder}>
                         <Camera size={24} color={Colors.gray} />
-                        <Text style={styles.photoText}>Add Photo</Text>
+                        <Text style={styles.photoText}>{t('membership.addPhoto')}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -318,8 +320,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Full Name */}
                 <InputField
-                  label="Full Name"
-                  placeholder="Full Name"
+                  label={t('membership.fullName')}
+                  placeholder={t('membership.fullName')}
                   value={fullName}
                   onChangeText={setFullName}
                   leftIcon={<User size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -327,8 +329,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Email Address */}
                 <InputField
-                  label="Email Address"
-                  placeholder="Email Address"
+                  label={t('membership.email')}
+                  placeholder={t('membership.email')}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -338,8 +340,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Mobile Number */}
                 <InputField
-                  label="Mobile Number"
-                  placeholder="Mobile Number"
+                  label={t('membership.mobileNumber')}
+                  placeholder={t('membership.mobileNumber')}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -352,8 +354,8 @@ const JoinMembershipScreen = () => {
                 <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={1}>
                   <View pointerEvents="none">
                     <InputField
-                      label="Date of Birth"
-                      placeholder="YYYY-MM-DD"
+                      label={t('membership.dob')}
+                      placeholder={t('editProfile.dobPlaceholder')}
                       value={dob}
                       editable={false}
                       leftIcon={<Calendar size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -373,16 +375,16 @@ const JoinMembershipScreen = () => {
 
                 {/* Description / Bio */}
                 <InputField
-                  label="Description / Bio"
-                  placeholder="Tell us about yourself"
+                  label={t('membership.bio')}
+                  placeholder={t('membership.bioPlaceholder')}
                   value={bio}
                   onChangeText={setBio}
                   leftIcon={<FileText size={18} color={Colors.gray} strokeWidth={1.5} />}
                 />
                 {/* profession */}
                 <InputField
-                  label="Profession"
-                  placeholder="Profession"
+                  label={t('membership.profession')}
+                  placeholder={t('membership.profession')}
                   value={profession}
                   onChangeText={setProfession}
                   leftIcon={<Briefcase size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -390,8 +392,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Address */}
                 <InputField
-                  label="Address"
-                  placeholder="Full Address"
+                  label={t('membership.address')}
+                  placeholder={t('membership.addressPlaceholder')}
                   value={address}
                   onChangeText={setAddress}
                   leftIcon={<Home size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -399,8 +401,8 @@ const JoinMembershipScreen = () => {
                 <View style={styles.rowContainer}>
                   <View style={styles.halfWidth}>
                     <InputField
-                      label="City"
-                      placeholder="City"
+                      label={t('membership.city')}
+                      placeholder={t('membership.city')}
                       value={city}
                       onChangeText={setCity}
                       leftIcon={<Building size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -408,7 +410,7 @@ const JoinMembershipScreen = () => {
                   </View>
                   <View style={styles.halfWidth}>
                     <InputField
-                      label="Pincode"
+                      label={t('membership.pincode')}
                       placeholder="000000"
                       value={pincode}
                       onChangeText={setPincode}
@@ -424,8 +426,8 @@ const JoinMembershipScreen = () => {
                 <View style={styles.rowContainer}>
                   <View style={styles.halfWidth}>
                     <InputField
-                      label="State"
-                      placeholder="State"
+                      label={t('membership.state')}
+                      placeholder={t('membership.state')}
                       value={state}
                       onChangeText={setState}
                       leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -433,7 +435,7 @@ const JoinMembershipScreen = () => {
                   </View>
                   <View style={styles.halfWidth}>
                     <InputField
-                      label='Country'
+                      label={t('membership.country')}
                       value={country}
                       onChangeText={setCountry}
                       leftIcon={<Globe size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -451,14 +453,14 @@ const JoinMembershipScreen = () => {
                     {agree && <View style={styles.checkboxTick} />}
                   </View>
                   <Text style={styles.checkboxText}>
-                    I agree to the <Text style={styles.highlightText}>Terms & Conditions</Text>{' '}
-                    and <Text style={styles.highlightText}>Privacy Policy</Text>
+                    {t('membership.agreeTo')} <Text style={styles.highlightText}>{t('membership.termsLink')}</Text>{' '}
+                    and <Text style={styles.highlightText}>{t('membership.privacyLink')}</Text>
                   </Text>
                 </TouchableOpacity>
 
                 {/* Action Button */}
                 <CustomButton
-                  title="Submit & View Plans"
+                  title={t('membership.submitViewPlans')}
                   onPress={handleJoinMembership}
                   loading={loading}
                 />
@@ -468,15 +470,15 @@ const JoinMembershipScreen = () => {
               <View style={styles.trustRow}>
                 <View style={styles.trustItem}>
                   <ShieldCheck size={22} color={Colors.gray} strokeWidth={1.5} />
-                  <Text style={styles.trustLabel}>SECURED</Text>
+                  <Text style={styles.trustLabel}>{t('membership.secured')}</Text>
                 </View>
                 <View style={styles.trustItem}>
                   <CheckCircle size={22} color={Colors.gray} strokeWidth={1.5} />
-                  <Text style={styles.trustLabel}>CERTIFIED</Text>
+                  <Text style={styles.trustLabel}>{t('membership.certified')}</Text>
                 </View>
                 <View style={styles.trustItem}>
                   <Leaf size={22} color={Colors.gray} strokeWidth={1.5} />
-                  <Text style={styles.trustLabel}>ORGANIC</Text>
+                  <Text style={styles.trustLabel}>{t('membership.organic')}</Text>
                 </View>
               </View>
             </>
@@ -500,7 +502,7 @@ const JoinMembershipScreen = () => {
               <X size={24} color={Colors.gray} />
             </TouchableOpacity>
 
-            <Text style={styles.modalTitle}>Choose Your Plan</Text>
+            <Text style={styles.modalTitle}>{t('membership.choosePlan')}</Text>
 
             {fetchingPlans ? (
               <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('5%') }} />
@@ -510,7 +512,7 @@ const JoinMembershipScreen = () => {
 
                 {plans.length === 0 && (
                   <View style={{ alignItems: 'center', padding: hp('3%') }}>
-                    <Text style={{ color: Colors.gray }}>No plans available right now.</Text>
+                    <Text style={{ color: Colors.gray }}>{t('membership.noPlans')}</Text>
                   </View>
                 )}
               </ScrollView>

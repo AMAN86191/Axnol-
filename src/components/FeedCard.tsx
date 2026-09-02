@@ -13,6 +13,7 @@ import {
 import { Heart, MessageSquare, Share2, Pencil, Trash2 } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import { CommentsModal, Comment } from './CommentsModal';
 import { LikesModal, LikedUser } from './LikesModal';
@@ -85,6 +86,7 @@ export const FeedCard = ({
   const [localComments, setLocalComments] = useState<Comment[]>([]);
   const { getComments, commentPost, toggleLikePost, deleteComment } = useHomeStore();
   const { user } = useAuthStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isCommentsVisible && postId) {
@@ -111,10 +113,10 @@ export const FeedCard = ({
 
           return {
             id: c.id?.toString() || Math.random().toString(),
-            author: c.user?.name || c.admin?.name || 'Unknown',
+            author: c.user?.name || c.admin?.name || t('common.unknown'),
             avatar: avatarUrl,
             text: c.comment || '',
-            time: c.created_at || 'Just now',
+            time: c.created_at || t('common.justNow'),
             userId: c.user_id?.toString() || c.admin_id?.toString(),
           };
         });
@@ -143,7 +145,7 @@ export const FeedCard = ({
         if (user?.id && !prevLikedBy.some(u => u.id === user.id)) {
           const currentUserLike = {
             id: user.id,
-            name: user.name || 'You',
+            name: user.name || t('common.you'),
             profile_pic: user.profile_pic || user.profile?.profile_pic,
             designation: user.designation || user.profile?.designation,
           };
@@ -175,11 +177,25 @@ export const FeedCard = ({
       return;
     }
     try {
+      const postLink = postId ? `https://gst.tambimotors.com/post/${postId}` : '';
+      const shareMessage = t('feed.shareMessage', {
+        author,
+        text: (text || '').slice(0, 120) + (text && text.length > 120 ? '...' : ''),
+        link: postLink,
+      });
+      if (!postLink) {
+        await Share.share({ message: shareMessage });
+        return;
+      }
       await Share.share({
-        message: `Check out this post from ${author} on Gaushala Community:\n\n"${text}"`,
+        message: shareMessage,
+        title: author,
+        url: postLink,
       });
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      if (error?.message !== 'User did not share') {
+        Alert.alert(t('common.error'), error.message);
+      }
     }
   };
 
@@ -201,10 +217,10 @@ export const FeedCard = ({
 
     const newComment: Comment = {
       id: tempId,
-      author: user?.name || 'You',
+      author: user?.name || t('common.you'),
       avatar: currentUserAvatar,
       text: commentText,
-      time: 'Just now',
+      time: t('common.justNow'),
       userId: user?.id?.toString(),
     };
 
@@ -222,7 +238,7 @@ export const FeedCard = ({
         // Rollback optimistic update
         setLocalComments(prev => prev.filter(c => c.id !== tempId));
         setCommentsCount(prev => prev - 1);
-        Alert.alert('Error', 'Failed to post comment.');
+        Alert.alert(t('common.error'), t('postDetails.commentFailed'));
       }
     }
   };
@@ -340,10 +356,10 @@ export const FeedCard = ({
             </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.feedActionItem} onPress={handleCommentButtonPress} activeOpacity={0.7}>
+        {/* <TouchableOpacity style={styles.feedActionItem} onPress={handleCommentButtonPress} activeOpacity={0.7}>
           <MessageSquare size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
           <Text style={styles.feedActionText}>{commentsCount}</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity style={styles.feedActionItem} onPress={handleShare} activeOpacity={0.7}>
           <Share2 size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
         </TouchableOpacity>
@@ -357,10 +373,10 @@ export const FeedCard = ({
         onAddComment={handleAddComment}
         currentUserId={user?.id?.toString()}
         onDeleteComment={(commentId) => {
-          Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
-            { text: 'Cancel', style: 'cancel' },
+          Alert.alert(t('postDetails.deleteComment'), t('postDetails.deleteCommentConfirm'), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-              text: 'Delete',
+              text: t('common.delete'),
               style: 'destructive',
               onPress: async () => {
                 // Remove optimistically
@@ -373,7 +389,7 @@ export const FeedCard = ({
                   console.log('Comment deleted successfully');
                 } catch (error) {
                   console.log('Failed to delete comment from server', error);
-                  Alert.alert('Error', 'Failed to delete comment from server.');
+                  Alert.alert(t('common.error'), t('postDetails.commentDeleteFailed'));
                 }
               }
             }
