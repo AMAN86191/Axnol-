@@ -28,7 +28,6 @@ import { ProfileTabs } from '../../components/ProfileTabs';
 import { ContributionsTab } from '../../components/ContributionsTab';
 import { MembershipIdCardModal } from '../../components/MembershipIdCardModal';
 import { InstagramGrid } from '../../components/InstagramGrid';
-import { WelcomeNewUserCard } from '../../components/WelcomeNewUserCard';
 import useAuthStore from '../../zustand/useAuthStore';
 import { Colors } from '../../theme/colors';
 import { useTranslation } from 'react-i18next';
@@ -37,8 +36,6 @@ const ProfileScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'posts' | 'contributions'>('posts');
-  const [isMember, setIsMember] = useState(true);
-  const [isNewUser, setIsNewUser] = useState(false);
 
   // Profile data states
   const [isIdCardModalVisible, setIsIdCardModalVisible] = useState(false);
@@ -144,10 +141,6 @@ console.log('mypost response', response)
     (navigation as any).navigate('MembershipCertificateScreen', { profileData });
   }, [navigation, profileData]);
 
-  const handleDemoTogglePress = useCallback(() => {
-    setIsMember(prev => !prev);
-  }, []);
-
 
   const [contributionsData, setContributionsData] = useState<any[]>([]);
 
@@ -235,15 +228,11 @@ console.log('mypost response', response)
         />
 
         {/* Profile Statistics Component */}
-        {isNewUser ? (
-          <WelcomeNewUserCard onDonatePress={handleDonatePress} />
-        ) : (
-          <ProfileStats 
-            postsCount={profileData?.statistics?.posts_count || myPosts.length} 
-            referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
-            likesCount={profileData?.statistics?.likes_count || 0}
-          />
-        )}
+        <ProfileStats 
+          postsCount={profileData?.statistics?.posts_count || myPosts.length} 
+          referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
+          likesCount={profileData?.statistics?.likes_count || 0}
+        />
 
         {/* Active Campaign Card Component */}
         <ActiveCampaignCard onDonatePress={handleDonatePress} />
@@ -251,11 +240,10 @@ console.log('mypost response', response)
         {/* Membership Section Component */}
         {hasMembership && (
           <MembershipBenefits
-            isMember={true}
+            isMember={hasMembership}
             onCertificatePress={handleCertificatePress}
             onIdCardPress={() => setIsIdCardModalVisible(true)}
             onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
-            onDemoTogglePress={handleDemoTogglePress}
           />
         )}
 

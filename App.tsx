@@ -4,7 +4,6 @@ import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Modal} fro
 import { useTranslation } from 'react-i18next'
 import './src/i18n'
 import Allroute from './src/navigation/AllRoute'
-import { PostProvider } from './src/context/PostContext'
 import { withStallion, useStallionUpdate, restart, addEventListener } from 'react-native-stallion'
 import LinearGradient from 'react-native-linear-gradient'
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen'
@@ -87,9 +86,7 @@ const App = () => {
   return (
     <View style={styles.container}>
       {/* <StatusBar barStyle="dark-content"  /> */}
-      <PostProvider>
-        <Allroute />
-      </PostProvider>
+      <Allroute />
 
       {/* Downloading Banner */}
       {isDownloading && (

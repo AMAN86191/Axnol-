@@ -26,6 +26,7 @@ import {
   Bell,
   List,
   Languages,
+  Users,
 } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -83,7 +84,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
 
   const joinWhatsApp = () => {
-    Linking.openURL('https://chat.whatsapp.com/GaumataTrustCommunityPlaceholder').catch(() => {
+    Linking.openURL(t('drawer.whatsappLink')).catch(() => {
       Alert.alert(t('drawer.whatsappCommunity'), t('drawer.whatsappMessage'));
     });
   };
@@ -289,6 +290,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {renderDrawerItem(t('drawer.gallery'), ImageIcon, 'GalleryScreen')}
         {renderDrawerItem(t('drawer.contactUs'), Phone, 'HelpSupportScreen')}
         {renderDrawerItem(t('drawer.aboutTrust'), Info, 'AboutTrustScreen')}
+        {renderDrawerItem(t('drawer.communityMembers'), Users, 'CommunityMembersScreen')}
 
         <View style={styles.divider} />
 

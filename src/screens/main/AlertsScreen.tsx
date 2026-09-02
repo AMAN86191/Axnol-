@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { HeartHandshake, Award, ShieldCheck, MessageSquare } from 'lucide-react-native';
+import { BellOff } from 'lucide-react-native';
 
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
@@ -31,65 +31,7 @@ interface AlertItem {
 const AlertsScreen = () => {
   const { t } = useTranslation();
 
-  const INITIAL_ALERTS_DATA: AlertItem[] = [
-    {
-      id: '1',
-      type: 'donation',
-      icon: HeartHandshake,
-      iconColor: Colors.primary,
-      bgTint: '#FFF2EB',
-      title: t('alerts.donationReceived'),
-      message: t('alerts.donationMessage'),
-      time: t('alerts.tenMinsAgo'),
-      unread: true,
-    },
-    {
-      id: '2',
-      type: 'event',
-      icon: Award,
-      iconColor: '#3498db',
-      bgTint: '#EAF2F8',
-      title: t('alerts.upcomingEvent'),
-      message: t('alerts.eventMessage'),
-      time: t('alerts.twoHoursAgo'),
-      unread: true,
-    },
-    {
-      id: '3',
-      type: 'social',
-      icon: MessageSquare,
-      iconColor: '#2ecc71',
-      bgTint: '#E8F8F5',
-      title: t('alerts.newComment'),
-      message: t('alerts.commentMessage'),
-      time: t('alerts.fiveHoursAgo'),
-      unread: false,
-    },
-    {
-      id: '4',
-      type: 'system',
-      icon: ShieldCheck,
-      iconColor: '#e67e22',
-      bgTint: '#FDEDEC',
-      title: t('alerts.healthReport'),
-      message: t('alerts.healthMessage'),
-      time: t('alerts.oneDayAgo'),
-      unread: false,
-    },
-    {
-      id: '5',
-      type: 'donation',
-      icon: HeartHandshake,
-      iconColor: Colors.primary,
-      bgTint: '#FFF2EB',
-      title: t('alerts.monthlyGoal'),
-      message: t('alerts.goalMessage'),
-      time: t('alerts.twoDaysAgo'),
-      unread: false,
-    }
-  ];
-
-  const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS_DATA);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
   const markAllAsRead = () => {
     setAlerts(prev => prev.map(alert => ({ ...alert, unread: false })));
@@ -113,7 +55,16 @@ const AlertsScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
       >
-        {alerts.map(item => {
+        {alerts.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconCircle}>
+              <BellOff size={RFValue(28)} color={Colors.primary} strokeWidth={1.6} />
+            </View>
+            <Text style={styles.emptyTitle}>{t('alerts.emptyTitle')}</Text>
+            <Text style={styles.emptySubtitle}>{t('alerts.emptySubtitle')}</Text>
+          </View>
+        ) : (
+        alerts.map(item => {
           const IconComponent = item.icon;
           return (
             <View
@@ -141,7 +92,8 @@ const AlertsScreen = () => {
               {item.unread && <View style={styles.unreadDot} />}
             </View>
           );
-        })}
+        })
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,6 +113,32 @@ const styles = StyleSheet.create({
     fontSize: RFValue(11),
     fontWeight: '700',
     color: Colors.primary,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: hp('12%'),
+  },
+  emptyIconCircle: {
+    width: wp('20%'),
+    height: wp('20%'),
+    borderRadius: wp('10%'),
+    backgroundColor: '#FFF1E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('2%'),
+  },
+  emptyTitle: {
+    fontSize: RFValue(14),
+    fontWeight: '700',
+    color: Colors.dark,
+    marginBottom: hp('0.5%'),
+  },
+  emptySubtitle: {
+    fontSize: RFValue(11),
+    color: Colors.gray,
+    textAlign: 'center',
+    paddingHorizontal: wp('8%'),
   },
   alertCard: {
     flexDirection: 'row',

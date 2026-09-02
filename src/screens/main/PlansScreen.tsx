@@ -78,11 +78,12 @@ export default function PlansScreen() {
   const handlePurchase = async (plan: Plan) => {
     setPurchasingId(plan.id);
     try {
+      const transactionId = `TXN${Date.now()}${plan.id}`;
       const payload = {
         plan_id: plan.id,
         amount: parseFloat(plan.price),
         payment_status: "paid",
-        transaction_id: "2345746"
+        transaction_id: transactionId
       };
 console.log('payload', payload)
       
@@ -91,7 +92,7 @@ console.log('payload', payload)
       if (response && response.status) {
         navigation.navigate('DonationSuccessScreen', {
           amount: parseFloat(plan.price),
-          transactionId: '2345746',
+          transactionId: transactionId,
           date: new Date().toLocaleDateString()
         });
       } else {

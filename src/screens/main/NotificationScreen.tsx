@@ -3,42 +3,26 @@ import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { Bell } from 'lucide-react-native';
+import { BellRing } from 'lucide-react-native';
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 
+interface NotificationItem {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  type: 'info' | 'success' | 'warning';
+  read: boolean;
+}
+
 const NotificationScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const [filter, setFilter] = useState<'All' | 'Unread' | 'Read'>('All');
-  const [notificationsData, setNotificationsData] = useState([
-    {
-      id: '1',
-      title: t('notifications.newEvent'),
-      description: t('notifications.newEventMessage'),
-      time: t('notifications.twoHoursAgo'),
-      type: 'info',
-      read: false,
-    },
-    {
-      id: '2',
-      title: t('notifications.donationReceived'),
-      description: t('notifications.donationReceivedMessage'),
-      time: t('notifications.yesterday'),
-      type: 'success',
-      read: true,
-    },
-    {
-      id: '3',
-      title: t('notifications.membershipExpiring'),
-      description: t('notifications.membershipExpiringMessage'),
-      time: t('notifications.threeDaysAgo'),
-      type: 'warning',
-      read: true,
-    },
-  ]);
+  const [notificationsData, setNotificationsData] = useState<NotificationItem[]>([]);
 
   const markAllAsRead = useCallback(() => {
     setNotificationsData((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -100,7 +84,7 @@ const NotificationScreen = () => {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Bell size={RFValue(40)} color={Colors.gray} style={{ opacity: 0.5 }} />
+            <BellRing size={RFValue(40)} color={Colors.gray} style={{ opacity: 0.5 }} />
             <Text style={styles.emptyText}>{t('notifications.noNotifications', { filter: filter.toLowerCase() })}</Text>
           </View>
         }

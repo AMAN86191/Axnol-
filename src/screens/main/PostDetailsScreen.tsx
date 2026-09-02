@@ -19,7 +19,6 @@ import { Trash2 } from 'lucide-react-native';
 
 import { CommonHeader } from '../../components/CommonHeader';
 import { FeedCard } from '../../components/FeedCard';
-import { usePosts } from '../../context/PostContext';
 import { RootStackParamList } from '../../navigation/types';
 import { Colors } from '../../theme/colors';
 import { Comment } from '../../components/CommentsModal';

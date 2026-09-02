@@ -214,7 +214,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                 
                 <div class="footer">
                   <div class="signature-col">
-                    <div class="handwritten">Swami Anand</div>
+                    <div class="handwritten">${t('certificate.presidentName')}</div>
                     <div class="sig-line"></div>
                     <div class="sig-title">${t('certificate.president')}</div>
                   </div>
@@ -228,7 +228,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                   </div>
                   
                   <div class="signature-col">
-                    <div class="handwritten">R. K. Sharma</div>
+                    <div class="handwritten">${t('certificate.generalSecretaryName')}</div>
                     <div class="sig-line"></div>
                     <div class="sig-title">${t('certificate.generalSecretary')}</div>
                   </div>
@@ -292,7 +292,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
             {/* Signatures & Seal */}
             <View style={styles.certFooter}>
               <View style={styles.signatureCol}>
-                <Text style={styles.handwrittenSig}>Swami Anand</Text>
+                <Text style={styles.handwrittenSig}>{t('certificate.presidentName')}</Text>
                 <View style={styles.sigLine} />
                 <Text style={styles.sigTitle}>{t('certificate.president')}</Text>
               </View>
@@ -307,7 +307,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               </View>
 
               <View style={styles.signatureCol}>
-                <Text style={styles.handwrittenSig}>R. K. Sharma</Text>
+                <Text style={styles.handwrittenSig}>{t('certificate.generalSecretaryName')}</Text>
                 <View style={styles.sigLine} />
                 <Text style={styles.sigTitle}>{t('certificate.generalSecretary')}</Text>
               </View>

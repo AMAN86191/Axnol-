@@ -22,6 +22,7 @@ import TermsScreen from '../screens/main/TermsScreen';
 import PublicProfileScreen from '../screens/main/PublicProfileScreen';
 import NotificationScreen from '../screens/main/NotificationScreen';
 import AboutTrustScreen from '../screens/main/AboutTrustScreen';
+import CommunityMembersScreen from '../screens/main/CommunityMembersScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
 import UpcomingEventsScreen from '../screens/main/UpcomingEventsScreen';
 import { RootStackParamList } from './types';
@@ -137,6 +138,10 @@ const Allroute = () => {
         <Stack.Screen
           name="AboutTrustScreen"
           component={AboutTrustScreen}
+        />
+        <Stack.Screen
+          name="CommunityMembersScreen"
+          component={CommunityMembersScreen}
         />
         <Stack.Screen
           name="FeedScreen"

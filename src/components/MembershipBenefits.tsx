@@ -10,7 +10,6 @@ interface MembershipBenefitsProps {
   onCertificatePress: () => void;
   onIdCardPress: () => void;
   onBecomeMemberPress: () => void;
-  onDemoTogglePress: () => void;
 }
 
 export const MembershipBenefits = React.memo(({
@@ -18,7 +17,6 @@ export const MembershipBenefits = React.memo(({
   onCertificatePress,
   onIdCardPress,
   onBecomeMemberPress,
-  onDemoTogglePress,
 }: MembershipBenefitsProps) => {
   const { t } = useTranslation();
 
@@ -33,9 +31,6 @@ export const MembershipBenefits = React.memo(({
               <Check size={RFValue(7.5)} color="#065F46" strokeWidth={4} style={{ marginRight: wp('1%') }} />
               <Text style={styles.statusBadgeTextGreen}>{t('membership.communityMember')}</Text>
             </View>
-            {/* <TouchableOpacity onPress={onDemoTogglePress} style={styles.toggleMemberBtn}>
-              <Text style={styles.toggleMemberText}>Demo Non-Member</Text>
-            </TouchableOpacity> */}
           </View>
 
           <Text style={styles.memberAccessDesc}>
@@ -66,9 +61,6 @@ export const MembershipBenefits = React.memo(({
         <View style={styles.nonMemberCard}>
           <View style={styles.nonMemberHeader}>
             <Text style={styles.nonMemberTitle}>{t('membership.supportAsMember')}</Text>
-            <TouchableOpacity onPress={onDemoTogglePress} style={styles.toggleMemberBtn}>
-              <Text style={styles.toggleMemberText}>Demo Member</Text>
-            </TouchableOpacity>
           </View>
           <Text style={styles.nonMemberDesc}>
             {t('membership.joinDescription')}
@@ -211,19 +203,6 @@ const styles = StyleSheet.create({
   becomeMemberBtnText: {
     color: '#FFFFFF',
     fontSize: RFValue(10.5),
-    fontWeight: '700',
-  },
-  toggleMemberBtn: {
-    paddingVertical: hp('0.2%'),
-    paddingHorizontal: wp('2%'),
-    borderRadius: wp('1%'),
-    borderWidth: 1,
-    borderColor: '#FF6F34',
-    borderStyle: 'dashed',
-  },
-  toggleMemberText: {
-    fontSize: RFValue(7.2),
-    color: '#FF6F34',
     fontWeight: '700',
   },
 });

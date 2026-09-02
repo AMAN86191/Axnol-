@@ -20,13 +20,14 @@ export const MembershipIdCardModal = React.memo(({
   visible,
   onClose,
   profileName,
-  avatarUri = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300',
-  memberId = 'GMT-8394-2026',
+  avatarUri,
+  memberId,
   designation,
-  since = 'Jan 2026',
+  since,
 }: MembershipIdCardModalProps) => {
   const { t } = useTranslation();
   const designationLabel = designation || t('idCard.goldPatron');
+  const initials = (profileName || 'M').trim().charAt(0).toUpperCase();
 
   return (
     <Modal
@@ -52,10 +53,16 @@ export const MembershipIdCardModal = React.memo(({
             <View style={styles.idCardBody}>
               {/* Photo Col */}
               <View style={styles.idCardPhotoContainer}>
-                <Image
-                  source={{ uri: avatarUri }}
-                  style={styles.idCardAvatar}
-                />
+                {avatarUri ? (
+                  <Image
+                    source={{ uri: avatarUri }}
+                    style={styles.idCardAvatar}
+                  />
+                ) : (
+                  <View style={[styles.idCardAvatar, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={{ fontSize: RFValue(16), fontWeight: '800', color: '#FF6F34' }}>{initials}</Text>
+                  </View>
+                )}
                 <View style={styles.idCardStatusBadge}>
                   <Text style={styles.idCardStatusText}>{t('idCard.active')}</Text>
                 </View>

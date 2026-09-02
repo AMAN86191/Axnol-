@@ -392,7 +392,7 @@ const AddScreen = () => {
               {/* WYSIWYG Feed Card rendering */}
               <FeedCard
                 author={user?.name || t('addPost.communityMember')}
-                avatar={user?.profile?.profile_pic ? `${user.profile.profile_pic}` : 'https://randomuser.me/api/portraits/lego/1.jpg'}
+                avatar={user?.profile?.profile_pic ? `${user.profile.profile_pic}` : ''}
                 meta={`${t('common.justNow')}${user?.profile?.designation ? ` • ${user.profile.designation}` : ''}`}
                 text={caption.trim()}
                 images={images.map(img => img.uri)}

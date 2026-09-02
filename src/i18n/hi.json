@@ -125,10 +125,12 @@
     "donationHistory": "दान इतिहास",
     "referralFriends": "रेफरल मित्र",
     "whatsappCommunity": "व्हाट्सएप समुदाय",
+    "whatsappLink": "https://chat.whatsapp.com/GaumataTrustCommunityPlaceholder",
     "aboutGallery": "जानकारी और गैलरी",
     "gallery": "गैलरी",
     "contactUs": "संपर्क करें",
     "aboutTrust": "ट्रस्ट के बारे में",
+    "communityMembers": "समुदाय के सदस्य",
     "legal": "कानूनी",
     "privacyPolicy": "गोपनीयता नीति",
     "termsConditions": "नियम और शर्तें",
@@ -385,6 +387,8 @@
     "dateOfIssuance": "जारी करने की तिथि",
     "president": "अध्यक्ष, ट्रस्टी",
     "generalSecretary": "महासचिव",
+    "presidentName": "स्वामी आनंद",
+    "generalSecretaryName": "आर. के. शर्मा",
     "downloadPdf": "PDF डाउनलोड करें",
     "membershipDetails": "सदस्यता विवरण",
     "name": "नाम",
@@ -481,7 +485,14 @@
     "goalMessage": "इस महीने के लिए दैनिक घास योगदान लक्ष्य 100% प्राप्त।",
     "twoDaysAgo": "2 दिन पहले",
     "title": "सूचनाएं",
-    "markRead": "पठित चिन्हित करें"
+    "markRead": "पठित चिन्हित करें",
+    "emptyTitle": "अभी कोई अलर्ट नहीं",
+    "emptySubtitle": "दान, कार्यक्रम या अपने समुदाय से गतिविधि होने पर यहां दिखाई देगी।"
+  },
+  "communityMembers": {
+    "title": "समुदाय के सदस्य",
+    "subtitle": "हमारे समर्पित सदस्य जो पूरे देश से सेवा में सहयोग और योगदान देते हैं।",
+    "memberCount": "{{count}} सदस्य"
   },
   "referral": {
     "referFriend": "मित्र को रेफर करें",

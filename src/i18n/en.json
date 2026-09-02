@@ -125,10 +125,12 @@
     "donationHistory": "Donation History",
     "referralFriends": "Referral Friends",
     "whatsappCommunity": "WhatsApp Community",
+    "whatsappLink": "https://chat.whatsapp.com/GaumataTrustCommunityPlaceholder",
     "aboutGallery": "ABOUT & GALLERY",
     "gallery": "Gallery",
     "contactUs": "Contact Us",
     "aboutTrust": "About Trust",
+    "communityMembers": "Community Members",
     "legal": "LEGAL",
     "privacyPolicy": "Privacy Policy",
     "termsConditions": "Terms & Conditions",
@@ -385,6 +387,8 @@
     "dateOfIssuance": "DATE OF ISSUANCE",
     "president": "President, Trustee",
     "generalSecretary": "General Secretary",
+    "presidentName": "Swami Anand",
+    "generalSecretaryName": "R. K. Sharma",
     "downloadPdf": "Download PDF",
     "membershipDetails": "Membership Details",
     "name": "Name",
@@ -481,7 +485,14 @@
     "goalMessage": "Daily grass contribution goal achieved 100% for this month.",
     "twoDaysAgo": "2 days ago",
     "title": "Notifications",
-    "markRead": "Mark Read"
+    "markRead": "Mark Read",
+    "emptyTitle": "No alerts yet",
+    "emptySubtitle": "When there's activity from donations, events or your community, it will show up here."
+  },
+  "communityMembers": {
+    "title": "Community Members",
+    "subtitle": "Our dedicated members from across the country who support and contribute to Gau Seva.",
+    "memberCount": "{{count}} members"
   },
   "referral": {
     "referFriend": "Refer a Friend",
