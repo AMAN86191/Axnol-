@@ -29,6 +29,7 @@ import { CommonHeader } from '../../components/CommonHeader';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import useHomeStore from '../../zustand/useHomeStore';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'GalleryScreen'>;
 
@@ -64,6 +65,7 @@ const getDaysUntil = (dateStr: string) => {
 };
 
 export default function GalleryScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const events = useHomeStore(state => state.events);
@@ -99,7 +101,7 @@ export default function GalleryScreen() {
         {/* Badge */}
         <View style={styles.upcomingBadge}>
           <Calendar size={RFValue(9)} color="#166534" style={{ marginRight: wp('1%') }} />
-          <Text style={styles.upcomingBadgeText}>UPCOMING</Text>
+          <Text style={styles.upcomingBadgeText}>{t('gallery.upcoming')}</Text>
         </View>
 
         {/* Event Name */}
@@ -110,7 +112,7 @@ export default function GalleryScreen() {
           <Text style={styles.upcomingDescription} numberOfLines={2}>{item.description}</Text>
         ) : (
           <Text style={styles.upcomingDescription} numberOfLines={2}>
-            Don't miss this upcoming event by Gau Mata Trust.
+            {t('gallery.upcomingEventDesc')}
           </Text>
         )}
 
@@ -127,7 +129,7 @@ export default function GalleryScreen() {
         <View style={styles.upcomingMetaRow}>
           <MapPin size={RFValue(12)} color="#166534" />
           <View style={{ marginLeft: wp('2%') }}>
-            <Text style={styles.upcomingMetaTitle}>{item.address || 'TBD'}</Text>
+            <Text style={styles.upcomingMetaTitle}>{item.address || t('gallery.tbd')}</Text>
           </View>
         </View>
 
@@ -136,8 +138,8 @@ export default function GalleryScreen() {
           <View style={styles.startsInContainer}>
             <Clock size={RFValue(12)} color="#166534" style={{ marginRight: wp('1.5%') }} />
             <View>
-              <Text style={styles.startsInLabel}>Starts in</Text>
-              <Text style={styles.startsInValue}>{daysUntil > 0 ? `${daysUntil} Days` : 'Today'}</Text>
+              <Text style={styles.startsInLabel}>{t('gallery.startsIn')}</Text>
+              <Text style={styles.startsInValue}>{daysUntil > 0 ? t('gallery.days', { days: daysUntil }) : t('gallery.today')}</Text>
             </View>
           </View>
 
@@ -193,7 +195,7 @@ export default function GalleryScreen() {
           {/* Completed badge */}
           <View style={styles.completedBadge}>
             <CheckCircle size={RFValue(9)} color="#166534" style={{ marginRight: wp('1%') }} />
-            <Text style={styles.completedBadgeText}>COMPLETED</Text>
+            <Text style={styles.completedBadgeText}>{t('gallery.completed')}</Text>
           </View>
 
           <Text style={styles.pastTitle} numberOfLines={2}>{item.name}</Text>
@@ -205,7 +207,7 @@ export default function GalleryScreen() {
 
           <View style={styles.pastMetaRow}>
             <MapPin size={RFValue(10)} color="#6B7280" />
-            <Text style={styles.pastMetaText} numberOfLines={1}>{item.address || 'N/A'}</Text>
+            <Text style={styles.pastMetaText} numberOfLines={1}>{item.address || t('common.na')}</Text>
           </View>
 
           {/* Stats row */}
@@ -213,7 +215,7 @@ export default function GalleryScreen() {
             <View style={styles.pastStatItem}>
               <ImageIcon size={RFValue(10)} color="#6B7280" style={{ marginRight: wp('1%') }} />
               <Text style={styles.pastStatValue}>{photoCount}</Text>
-              <Text style={styles.pastStatLabel}>Photos</Text>
+              <Text style={styles.pastStatLabel}>{t('gallery.photos')}</Text>
             </View>
           </View>
 
@@ -239,8 +241,8 @@ export default function GalleryScreen() {
             <View style={styles.sectionHeaderLeft}>
               <Calendar size={RFValue(14)} color="#166534" style={{ marginRight: wp('2%') }} />
               <View>
-                <Text style={styles.sectionTitle}>Upcoming Event</Text>
-                <Text style={styles.sectionSubtitle}>Don't miss our next big event</Text>
+                <Text style={styles.sectionTitle}>{t('gallery.upcomingEvent')}</Text>
+                <Text style={styles.sectionSubtitle}>{t('gallery.upcomingEventDesc')}</Text>
               </View>
             </View>
           </View>
@@ -250,8 +252,8 @@ export default function GalleryScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Calendar size={RFValue(30)} color="#D1D5DB" />
-              <Text style={styles.emptyTitle}>No Upcoming Events</Text>
-              <Text style={styles.emptySubtitle}>Check back soon for new events!</Text>
+              <Text style={styles.emptyTitle}>{t('gallery.noUpcomingEvents')}</Text>
+              <Text style={styles.emptySubtitle}>{t('gallery.checkBackSoon')}</Text>
             </View>
           )}
         </ScrollView>
@@ -269,8 +271,8 @@ export default function GalleryScreen() {
           <View style={styles.sectionHeaderLeft}>
             <CheckCircle size={RFValue(14)} color="#166534" style={{ marginRight: wp('2%') }} />
             <View>
-              <Text style={styles.sectionTitle}>Past Events</Text>
-              <Text style={styles.sectionSubtitle}>Moments we are proud of</Text>
+              <Text style={styles.sectionTitle}>{t('gallery.pastEvents')}</Text>
+              <Text style={styles.sectionSubtitle}>{t('gallery.pastEventsSubtitle')}</Text>
             </View>
           </View>
         </View>
@@ -280,8 +282,8 @@ export default function GalleryScreen() {
         ) : (
           <View style={styles.emptyState}>
             <ImageIcon size={RFValue(30)} color="#D1D5DB" />
-            <Text style={styles.emptyTitle}>No Past Events</Text>
-            <Text style={styles.emptySubtitle}>Events will appear here after they're completed.</Text>
+            <Text style={styles.emptyTitle}>{t('gallery.noPastEvents')}</Text>
+            <Text style={styles.emptySubtitle}>{t('gallery.eventsAppear')}</Text>
           </View>
         )}
       </ScrollView>
@@ -290,7 +292,7 @@ export default function GalleryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <CommonHeader title="Events" onBackPress={() => navigation.goBack()} />
+      <CommonHeader title={t('gallery.eventsTitle')} onBackPress={() => navigation.goBack()} />
 
       {/* Tab Bar */}
       <View style={styles.tabBar}>
@@ -300,7 +302,7 @@ export default function GalleryScreen() {
           activeOpacity={0.8}
         >
           <Text style={[styles.tabText, activeTab === 'upcoming' && styles.tabTextActive]}>
-            Upcoming Events ({upcomingEvents.length})
+            {t('gallery.upcomingEventsCount', { count: upcomingEvents.length })}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -309,7 +311,7 @@ export default function GalleryScreen() {
           activeOpacity={0.8}
         >
           <Text style={[styles.tabText, activeTab === 'past' && styles.tabTextActive]}>
-            Past Events ({pastEvents.length})
+            {t('gallery.pastEventsCount', { count: pastEvents.length })}
           </Text>
         </TouchableOpacity>
       </View>
@@ -323,11 +325,11 @@ export default function GalleryScreen() {
             <Heart size={RFValue(18)} color="#EA580C" />
           </View>
           <View style={styles.bannerTextGroup}>
-            <Text style={styles.bannerTitle}>Be a Part of Our Seva</Text>
-            <Text style={styles.bannerSubtitle}>Your support helps us continue{'\n'}our mission of Gau Seva.</Text>
+            <Text style={styles.bannerTitle}>{t('gallery.bePartOfSeva')}</Text>
+            <Text style={styles.bannerSubtitle}>{t('gallery.sevaSubtitle')}</Text>
           </View>
           <TouchableOpacity style={styles.donateBtn} onPress={() => navigation.navigate('DonateScreen')}>
-            <Text style={styles.donateBtnText}>Donate Now</Text>
+            <Text style={styles.donateBtnText}>{t('drawer.donateNow')}</Text>
             <Heart size={RFValue(9)} color="#FFF" fill="#FFF" style={{ marginLeft: wp('1.5%') }} />
           </TouchableOpacity>
         </View>

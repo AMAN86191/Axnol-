@@ -8,8 +8,10 @@ import { Shield, Lock, Eye, Database } from 'lucide-react-native';
 
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
+import { useTranslation } from 'react-i18next';
 
 export default function PrivacyPolicyScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
   const handleBack = useCallback(() => {
@@ -18,28 +20,28 @@ export default function PrivacyPolicyScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CommonHeader title="Privacy Policy" onBackPress={handleBack} />
+      <CommonHeader title={t('privacy.title')} onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Intro Banner */}
         <View style={styles.banner}>
           <Shield size={RFValue(28)} color={Colors.primary} strokeWidth={1.5} />
-          <Text style={styles.bannerTitle}>Your Privacy Matters</Text>
-          <Text style={styles.bannerSubtitle}>Last updated: June 2026</Text>
+          <Text style={styles.bannerTitle}>{t('privacy.subtitle')}</Text>
+          <Text style={styles.bannerSubtitle}>{t('privacy.lastUpdated')}</Text>
         </View>
 
         <Text style={styles.introText}>
-          Gau Mata Sewa Trust ("we", "us", or "our") operates the Gaumata Trust mobile application. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you support our cow protection and welfare missions.
+          {t('privacy.intro')}
         </Text>
 
         {/* Section 1 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Database size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>1. Collection of Information</Text>
+            <Text style={styles.sectionTitle}>{t('privacy.section1Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            The trust collects personal information, including names, contact details, and donation history, to maintain donor records and facilitate communication.
+            {t('privacy.section1Content')}
           </Text>
         </View>
 
@@ -47,10 +49,10 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Eye size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>2. Use of Information</Text>
+            <Text style={styles.sectionTitle}>{t('privacy.section2Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            Information is used solely for the purpose for which it was provided, such as processing donations, sending updates, and informing donors about NGO activities.
+            {t('privacy.section2Content')}
           </Text>
         </View>
 
@@ -58,10 +60,10 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Shield size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>3. Data Sharing</Text>
+            <Text style={styles.sectionTitle}>{t('privacy.section3Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            The trust states that it does not sell, trade, or rent personal information to third parties. Information may only be shared with trusted partners and service providers for specific tasks like processing donations.
+            {t('privacy.section3Content')}
           </Text>
         </View>
 
@@ -69,10 +71,10 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Lock size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>4. Security</Text>
+            <Text style={styles.sectionTitle}>{t('privacy.section4Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            Reasonable security measures are employed to protect personal information from unauthorized access, disclosure, alteration, or destruction.
+            {t('privacy.section4Content')}
           </Text>
         </View>
 
@@ -80,20 +82,20 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Eye size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>5. Opt-Out & Policy Updates</Text>
+            <Text style={styles.sectionTitle}>{t('privacy.section5Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            Users can opt out of receiving communications by following instructions in emails or by contacting the NGO directly. The trust reserves the right to modify its privacy policy, and continued use of their services implies acceptance of any updated terms.
+            {t('privacy.section5Content')}
           </Text>
         </View>
 
         {/* Section 6 */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>6. Contact Us</Text>
+          <Text style={styles.sectionTitle}>{t('privacy.section6Title')}</Text>
           <Text style={styles.bodyText}>
-            If you have any questions or complaints about this Privacy Policy, please contact our support cell at:
+            {t('privacy.section6Content')}
           </Text>
-          <Text style={styles.contactEmail}>gaumatatrust2023@gmail.com</Text>
+          <Text style={styles.contactEmail}>{t('help.email')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

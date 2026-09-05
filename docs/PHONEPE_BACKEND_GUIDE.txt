@@ -1,0 +1,407 @@
+================================================================================
+ PHONEPE PAYMENT GATEWAY - LARAVEL BACKEND IMPLEMENTATION GUIDE
+ Gau Mata Trust App (React Native) + gst.tambimotors.com (Laravel)
+================================================================================
+Ye file Laravel backend team ke liye hai. RN app ka payment flow ab new hai aur
+backend se sirf 1 paid order create karta hai. Niche step-by-step bata raha hoon
+ki Laravel (superadmin backend) mein implement karna hai.
+
+--------------------------------------------------------------------------------
+ 1) PURI FLOW KI SAMJH (kya ho raha hai)
+--------------------------------------------------------------------------------
+RN App (Android)  ──  Laravel Backend  ──  PhonePe API
+        │                 │                      │
+        │ 1. POST /api/    │                      │
+        │ payment/create-  │                      │
+        │ order  {amount}  │                      │
+        │────────────────>│                       │
+        │                 │ 2. checksum banata    │
+        │                 │    hai (saltKey se)   │
+        │                 │ 3. POST /pg/v1/pay    │
+        │                 │──────────────────────>│
+        │                 │ 4. { orderId, token } │
+        │                 │<──────────────────────│
+        │                 │                       │
+        │ 5. { status:1,  │                       │
+        │    orderId,     │                       │
+        │    token }      │                       │
+        │<────────────────│                       │
+        │                 │                       │
+        │ 6. PhonePe SDK  │                       │
+        │    startTransaction(requestJson)        │
+        │    PhonePe app khulta hai              │
+        │                 │                       │
+        │ 7. Payment ho gaya (SDK returns         │
+        │    SUCCESS/FAILURE/INTERRUPTED)         │
+        │                 │                       │
+        │ 8. Backend ko status verify/            │
+        │    webhook se confirm karo aur          │
+        │    membership/donation activate karo    │
+--------------------------------------------------------------------------------
+
+Frontend ka expectation (PhonePePaymentService.ts):
+  • `createOrder(amount)`  -> POST /payment/create-order   body: {"amount": <INR>}
+  • RESPONSE CHAHIYE:      { "status": true, "orderId": "GMT...", "token": "..." }
+  • amount frontend RUPEES mein bhejta hai. Backend ko PAISE (rupees*100) mein
+    PhonePe ko bhejna hai.
+
+  Frontend endpoint URL jab aapka Laravel base /api/ hai:
+    https://gst.tambimotors.com/api/payment/create-order
+
+
+--------------------------------------------------------------------------------
+ 2) PRODUCTION CREDENTIALS (aapki website pay.php se)
+--------------------------------------------------------------------------------
+  MERCHANT_ID  = GAUMATATRUSTONLINE
+  API_KEY      = 7f561441-86ee-402d-adcd-365e04e30084   <- PhonePe ka SALT KEY
+  SALT_INDEX   = 1
+  ENV          = PRODUCTION
+  PHONEPE_URL  = https://api.phonepe.com/apis/hermes/pg/v1/pay      (pay/order)
+  STATUS_URL   = https://api.phonepe.com/apis/hermes/pg/v1/status/{merchantId}/{merchantTransactionId}
+  CALLBACK_URL = https://gaumatatrust.com/thank-you.php   (aapka redirect/callback)
+
+  IMPORTANT: API_KEY (salt key) sirf SERVER side rakhna hai. Kabhi frontend mein
+  mat bhejo. Backend hi checksum banata hai.
+
+
+--------------------------------------------------------------------------------
+ 3) DESIGN DECISION (SDK vs WEB)
+--------------------------------------------------------------------------------
+RN app react-native-phonepe-pg (Mobile SDK) use karti hai, isliye:
+  - Backend ko redirect URL KHUD redirect nahi karna.
+  - Backend ko SIRF { orderId, token } return karna hai.
+  - PhonePe token ke saath SDK launcher kholta hai (PAY_PAGE sheet / PhonePe app).
+
+Aapke purane pay.php mein WEB redirect (instrumentResponse.redirectInfo.url) tha.
+WO ab RN ke liye use NAHI hoga — token wala return chahiye.
+
+(Reference: C:\Users\DELL\Downloads\create_order_sdk.php — yeh already aapki
+ pay.php logic + token return ke liye ready hai. Usse chalu karo.)
+
+
+--------------------------------------------------------------------------------
+ 4) LARAVEL SETUP - STEP BY STEP
+--------------------------------------------------------------------------------
+
+ --- 4a) .env mein credentials add karo -------------------------------------
+PHONEPE_MERCHANT_ID=GAUMATATRUSTONLINE
+PHONEPE_SALT_KEY=7f561441-86ee-402d-adcd-365e04e30084
+PHONEPE_SALT_INDEX=1
+PHONEPE_ENV=PRODUCTION
+PHONEPE_BASE_URL=https://api.phonepe.com/apis/hermes
+PHONEPE_REDIRECT_URL=https://gaumatatrust.com/thank-you.php
+
+ --- 4b) config/phonepe.php (config file) -----------------------------------
+<?php
+return [
+    'merchant_id'  => env('PHONEPE_MERCHANT_ID'),
+    'salt_key'     => env('PHONEPE_SALT_KEY'),
+    'salt_index'   => env('PHONEPE_SALT_INDEX', 1),
+    'base_url'     => env('PHONEPE_BASE_URL', 'https://api.phonepe.com/apis/hermes'),
+    'redirect_url' => env('PHONEPE_REDIRECT_URL', 'https://gaumatatrust.com/thank-you.php'),
+];
+
+ --- 4c) routes/api.php mein routes ------------------------------------------
+Route::post('payment/create-order', [PaymentController::class, 'createOrder']);
+Route::post('payment/callback',    [PaymentController::class, 'callback']);
+Route::get('payment/status/{orderId}', [PaymentController::class, 'status']);
+// (agar dono cookie/session flow chahiye toh middleware laga do, warna open rakh)
+
+
+ --- 4d) DB Migration: payments table ---------------------------------------
+php artisan make:migration create_payments_table
+
+Schema (reference):
+  id (bigint auto)
+  user_id (nullable, foreign => users)
+  order_id / merchant_transaction_id (string, unique)
+  plan_id (nullable)
+  donation_type (nullable: one-time|monthly|occasion)
+  amount (int, paise)  // ya decimal(10,2) rupees, consistent rakho
+  status (string: PENDING|SUCCESS|FAILED)
+  phonepe_transaction_id (string, nullable)  // PhonePe ka actual txn id
+  remark (text, nullable)
+  response_payload (json, nullable)  // raw webhook response
+  timestamps
+
+./artisan migrate
+
+
+ --- 4e) Model Payment --------------------------------------------------------
+php artisan make:model Payment
+class Payment extends Model {
+    protected $fillable = [
+        'user_id','order_id','plan_id','donation_type','amount',
+        'status','phonepe_transaction_id','remark','response_payload'
+    ];
+}
+
+
+ --- 4f) PaymentController - createOrder (sabse important) -------------------
+app/Http/Controllers/PaymentController.php
+
+<?php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use App\Models\Payment;
+
+class PaymentController extends Controller
+{
+    private function generateOrderId(): string {
+        return 'GMT' . rand(10,100) . date('Ymd') . rand(100,1000) . time();
+    }
+
+    public function createOrder(Request $request)
+    {
+        $amount = (float) $request->input('amount'); // INR
+        if ($amount <= 0) {
+            return response()->json(['status' => false, 'message' => 'Invalid amount'], 400);
+        }
+
+        $merchantId  = config('phonepe.merchant_id');
+        $saltKey     = config('phonepe.salt_key');
+        $saltIndex   = config('phonepe.salt_index');
+        $baseUrl     = config('phonepe.base_url');
+        $redirectUrl = config('phonepe.redirect_url');
+
+        $orderId = $this->generateOrderId();
+        $userId  = $request->user()->id ?? 'GUEST';
+
+        $payload = [
+            'merchantId'            => $merchantId,
+            'merchantTransactionId' => $orderId,
+            'merchantUserId'        => 'MUID' . $userId,
+            'amount'                => (int) round($amount * 100), // PAISE
+            'redirectUrl'           => $redirectUrl,
+            'redirectMode'          => 'POST',
+            'callbackUrl'           => $redirectUrl,
+            'merchantOrderId'       => $orderId,
+            'mobileNumber'          => $request->input('mobile', '9999999999'),
+            'message'               => 'Payment for Gaumata Sewa Trust',
+            'paymentInstrument'     => ['type' => 'PAY_PAGE'],
+        ];
+
+        $base64Payload = base64_encode(json_encode($payload));
+
+        // checksum: base64payload + "/pg/v1/pay" + saltKey  -> sha256 ### saltIndex
+        $checksum = hash('sha256', $base64Payload . '/pg/v1/pay' . $saltKey) . '###' . $saltIndex;
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'X-VERIFY'     => $checksum,
+            'accept'       => 'application/json',
+        ])->post($baseUrl . '/pg/v1/pay', ['request' => $base64Payload]);
+
+        $data = $response->json();
+
+        if (($data['success'] ?? false) == '1' && !empty($data['data']['token'])) {
+            // DB mein pending order record save kar lo
+            Payment::create([
+                'user_id' => is_numeric($userId) ? $userId : null,
+                'order_id' => $orderId,
+                'amount'   => (int) round($amount * 100),
+                'status'   => 'PENDING',
+            ]);
+
+            return response()->json([
+                'status'  => true,
+                'orderId' => $orderId,
+                'token'   => $data['data']['token'],
+            ]);
+        }
+
+        return response()->json([
+            'status'  => false,
+            'message' => $data['message'] ?? 'Order creation failed',
+            'code'    => $data['code'] ?? null,
+        ], 500);
+    }
+
+    // comment: sandbox test ke liye URL change karo:
+    // https://api-preprod.phonepe.com/apis/pg-sandbox
+}
+
+
+ --- 4g) PaymentController - callback (webhook, authoritative confirm) --------
+    public function callback(Request $request)
+    {
+        // Step A: X-VERIFY header se confirm karo ki request PhonePe se hai
+        $saltKey   = config('phonepe.salt_key');
+        $saltIndex = config('phonepe.salt_index');
+        $incoming  = $request->header('X-VERIFY');
+        $body      = $request->getContent();
+
+        $expected = hash('sha256', $body . $saltKey) . '###' . $saltIndex;
+        if ($incoming !== $expected) {
+            return response()->json(['status' => false], 401);
+        }
+
+        // Step B: response parse karo
+        $payload = $request->json('response');
+        $orderId = $payload['merchantTransactionId'] ?? null;
+        $state   = $payload['state'] ?? 'PENDING';   // COMPLETED | FAILED | PENDING
+        $ppTxn   = $payload['transactionId'] ?? null;
+
+        $payment = Payment::where('order_id', $orderId)->first();
+        if (!$payment) {
+            return response()->json(['status' => false], 404);
+        }
+
+        if ($state === 'COMPLETED') {
+            $payment->status = 'SUCCESS';
+            $payment->phonepe_transaction_id = $ppTxn;
+            $payment->response_payload = $payload;
+            $payment->save();
+
+            // YAHAN activation logic likho:
+            //  - agar plan purchase hai -> user ko membership/plan assign karo
+            //  - agar donation hai       -> donation record banao
+            //  - user ko SUCCESS receipt/navigate
+        } elseif ($state === 'FAILED') {
+            $payment->status = 'FAILED';
+            $payment->response_payload = $payload;
+            $payment->save();
+        }
+
+        return response()->json(['status' => true]);
+    }
+
+
+ --- 4h) PaymentController - status verify ------------------------------------
+    // Frontend SDK jab SUCCESS return karta hai, toh bhi backend se confirm
+    // karna best practice hai (webhook general aata hai). Ye endpoint optional hai.
+    public function status($orderId)
+    {
+        $merchantId = config('phonepe.merchant_id');
+        $saltKey    = config('phonepe.salt_key');
+        $saltIndex  = config('phonepe.salt_index');
+        $baseUrl    = config('phonepe.base_url');
+
+        $path = '/pg/v1/status/' . $merchantId . '/' . $orderId;
+        $checksum = hash('sha256', $path . $saltKey) . '###' . $saltIndex;
+
+        $response = Http::withHeaders([
+            'Content-Type'   => 'application/json',
+            'X-VERIFY'       => $checksum,
+            'X-MERCHANT-ID'  => $merchantId,
+        ])->get($baseUrl . $path);
+
+        $data = $response->json()['data'] ?? null;
+        return response()->json([
+            'status' => true,
+            'payment_status' => $data['state'] ?? 'UNKNOWN',
+            'transaction_id' => $data['transactionId'] ?? null,
+            'response'       => $data,
+        ]);
+    }
+}
+
+
+--------------------------------------------------------------------------------
+ 5) BACKEND AKELA TEST KAISE KARE (curl) - Laravel shuru hone se pehle
+--------------------------------------------------------------------------------
+Frontend deploy se pehle backend independently verify karo:
+
+# 5a) Order create (rupees mein amount bhejo, backend paise convert karega)
+curl -X POST https://gst.tambimotors.com/api/payment/create-order \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <YOUR_USER_TOKEN>" \
+  -d '{"amount": 100}'
+
+# Expected response:
+# {"status":true,"orderId":"GMT1234...","token":"<long-token-string>"}
+
+# 5b) Agar token mila toh SDK flow chalega. Agar error:
+#   - "Invalid amount"          -> amount 0/negative hai
+#   - "Order creation failed"   -> PhonePe ne reject kiya (message/code dekho)
+#   - 401 Unauthorized          -> token/auth issue
+
+Try karo ki token kaafi lamba hai (PhonePe sandbox+prod combined). Token milta hai
+matlab backend + credentials + checksum RIGHT hain.
+
+
+--------------------------------------------------------------------------------
+ 6) FRONTEND SE CONNECT HONE PAR KE HAIN HARDCODED CHECKS
+--------------------------------------------------------------------------------
+Frontend PhonePePaymentService.createOrder body:
+    { "amount": <INR number> }        <- yeh hi bhej raha hai
+Frontend ko response se required:
+    { "status": true, "orderId": "...", "token": "..." }
+
+Agar backend response shape match nahi karta (e.g. order_data/txn_token), toh
+createOrder mein "Invalid create-order response" error aayega. Shape match karo:
+  orderId + token top-level pe.
+
+Frontend API base URL fixed hai: https://gst.tambimotors.com/api/
+Toh route banega:      /payment/create-order   (POST)
+jab jab aapka Laravel /api/ prefix wrapper use karta hai sab thik hai.
+
+
+--------------------------------------------------------------------------------
+ 7) SANDBOX TEST KARNA (optional, production se pehle)
+--------------------------------------------------------------------------------
+Sandbox credentials (agar chaho to):
+  MERCHANT_ID = PGTESTPAYUAT
+  API_KEY     = 099eb0cd-02cf-4e2a-8aca-3e6c6aff0399
+  BASE_URL    = https://api-preprod.phonepe.com/apis/pg-sandbox
+
+.env change karo:
+  PHONEPE_MERCHANT_ID=PGTESTPAYUAT
+  PHONEPE_SALT_KEY=099eb0cd-02cf-4e2a-8aca-3e6c6aff0399
+  PHONEPE_BASE_URL=https://api-preprod.phonepe.com/apis/pg-sandbox
+
+RN frontend mein bhi paymentConfig.ts:
+  export const PAYMENT_ENV = 'SANDBOX';
+  export const MERCHANT_ID = 'PGTESTPAYUAT';
+
+(NOTE: phonepe.php / pay.php purani files mein jo prod credentials hain wo live
+ hai. Sandbox test ke baad wapas PRODUCTION env + MERCHANT_ID VAAPIS KARNA
+ mat bhoolna.)
+
+
+--------------------------------------------------------------------------------
+ 8) TROUBLESHOOTING (common issues)
+--------------------------------------------------------------------------------
+[1] init error "expected argument count: 4"
+    -> RN side fixed hai (positional args). Backend se farak nahi padta.
+
+[2] createOrder error / "Order creation failed"
+    -> Backend ka PhonePe call reject. Response code/message dekho.
+       Most common: wrong API_KEY / wrong URL / amount format.
+
+[3] SDK SUCCESS milta hai par payment actually fail
+    -> SDK ka SUCCESS matlab PhonePe app flow complete. AUTHORITATIVE confirm
+       webhook (callback) / status API se hai. Donation tabhi activate karo jab
+       callback COMPLETED aaye. (Don't trust only SDK status for real money.)
+
+[4] Currency/amount mismatch
+    -> Frontend RUPEES bhejta hai (e.g. 100). Backend PAISE bhejta hai (10000).
+       Phir bhi koi confusion ho toh request payload check karo.
+
+[5] Webhook 401 Unauthorized
+    -> X-VERIFY mismatch. Salt key/salt index .env wise confirm karo. Same salt
+       index jo order create mein use hua.
+
+[6] Token empty / null
+    -> PhonePe ne pay rejected. Response ka code+message dekho. (e.g. 8101 =
+       transaction already exists, 8070 = session expired etc.)
+
+
+--------------------------------------------------------------------------------
+ 9) CHECKLIST (implementation done samajhne ke liye)
+--------------------------------------------------------------------------------
+[ ] config/phonepe.php + .env credentials (sab prod ya sab sandbox)
+[ ] payments table migration + Payment model
+[ ] POST /payment/create-order -> returns {status, orderId, token}
+[ ] POST /payment/callback      -> X-VERIFY verified, status save karta hai
+[ ] (optional) GET /payment/status/{orderId}
+[ ] Backend curl test se token mila
+[ ] Frontend BACKEND_READY=true already set
+[ ] membership/donation activation logic callback mein wired
+[ ] paymentConfig.ts PAYMENT_ENV + MERCHANT_ID backend env se MATCH
+================================================================================
+END OF GUIDE
+================================================================================

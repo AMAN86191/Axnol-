@@ -22,8 +22,10 @@ import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { UpcomingEventsSection } from '../../components/UpcomingEventsSection';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 const HomeScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { getPosts, getEvents } = useHomeStore();
   const [homePosts, setHomePosts] = useState<any[]>([]);
@@ -74,11 +76,15 @@ const HomeScreen = () => {
                 ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
                 : item.is_liked || false;
 
+            const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && user?.id 
+                ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === user.id)
+                : item.is_disliked || false;
+
             return {
               id: item.id?.toString(),
-              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
               avatar: avatarUrl,
-              meta: item.created_at || 'Just now',
+              meta: item.created_at || t('common.justNow'),
               text: item.description || '',
               image: displayImage,
               images: additionalImages,
@@ -86,6 +92,9 @@ const HomeScreen = () => {
               comments: item.comments_count || 0,
               isLiked: isLikedByCurrentUser,
               likedBy: item.liked_by || [],
+              dislikes: item.dislikes_count ?? item.dislikes ?? 0,
+              isDisliked: isDislikedByCurrentUser,
+              dislikedBy: item.disliked_by || [],
               userId: item.user_id?.toString() || item.admin_id?.toString(),
               status: item.status,
             };
@@ -136,13 +145,13 @@ const HomeScreen = () => {
 
         {/* Feed Section Header */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Community Feed</Text>
+          <Text style={styles.sectionTitle}>{t('home.communityFeed')}</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => navigation.navigate('FeedScreen' as never)}
             style={{ flexDirection: 'row', alignItems: 'center' }}
           >
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
             <ChevronRight size={RFValue(12)} color={Colors.primary} style={{ marginLeft: wp('1%'), marginTop: hp('0.2%') }} />
           </TouchableOpacity>
         </View>
@@ -167,6 +176,9 @@ const HomeScreen = () => {
               comments={item.comments}
               isLiked={item.isLiked}
               likedBy={item.likedBy}
+              dislikes={item.dislikes}
+              isDisliked={item.isDisliked}
+              dislikedBy={item.dislikedBy}
               isOwnPost={false}
               onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: item.id })}
               onProfilePress={() => {
@@ -180,7 +192,7 @@ const HomeScreen = () => {
           ))
         ) : (
           <View style={styles.emptyFeedContainer}>
-            <Text style={styles.emptyFeedText}>No posts yet. Be the first to share something!</Text>
+            <Text style={styles.emptyFeedText}>{t('home.noPosts')}</Text>
           </View>
         )}
       </ScrollView>
@@ -197,7 +209,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: wp('2%'),
     paddingTop: hp('1%'),
-    paddingBottom: hp('7%'),
+    paddingBottom: hp('10%'),
   },
   sectionHeader: {
     flexDirection: 'row',

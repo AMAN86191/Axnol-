@@ -10,6 +10,7 @@ import { FeedCard } from '../../components/FeedCard';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface PostItem {
   id: string;
@@ -29,6 +30,7 @@ interface PostItem {
 
 
 const FeedScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { getPosts, loading, toggleLikePost } = useHomeStore();
   const { user } = useAuthStore();
@@ -78,11 +80,15 @@ const FeedScreen = () => {
               ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
               : item.is_liked || false;
 
+          const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && user?.id 
+              ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === user.id)
+              : item.is_disliked || false;
+
           return {
             id: item.id?.toString() || Math.random().toString(),
-            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
             avatar: avatarUrl,
-            meta: item.created_at || 'Just now',
+            meta: item.created_at || t('common.justNow'),
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
@@ -90,6 +96,9 @@ const FeedScreen = () => {
             comments: item.comments_count || 0,
             isLiked: isLikedByCurrentUser,
             likedBy: item.liked_by || [],
+            dislikes: item.dislikes_count ?? item.dislikes ?? 0,
+            isDisliked: isDislikedByCurrentUser,
+            dislikedBy: item.disliked_by || [],
             userId: item.user_id?.toString() || item.admin_id?.toString(),
             status: item.status,
           };
@@ -141,7 +150,7 @@ const FeedScreen = () => {
             if (user?.id && !newLikedBy.some(u => u.id === user.id)) {
               newLikedBy.unshift({
                 id: user.id,
-                name: user.name || 'You',
+                name: user.name || t('common.you'),
                 profile_pic: user.profile_pic || user.profile?.profile_pic,
                 designation: user.designation || user.profile?.designation,
               });
@@ -167,7 +176,7 @@ const FeedScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <CommonHeader title="Community Feed" />
+      <CommonHeader title={t('home.communityFeed')} />
 
       {initialLoading ? (
         <View style={styles.loaderContainer}>
@@ -191,6 +200,9 @@ const FeedScreen = () => {
               comments={post.comments}
               isLiked={post.isLiked}
               likedBy={post.likedBy}
+              dislikes={post.dislikes}
+              isDisliked={post.isDisliked}
+              dislikedBy={post.dislikedBy}
               onLikePress={() => toggleLike(post.id)}
               onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: post.id })}
             />
@@ -204,7 +216,7 @@ const FeedScreen = () => {
               </View>
             ) : hasMore ? (
               <TouchableOpacity style={styles.loadMoreBtn} onPress={handleLoadMore}>
-                <Text style={styles.loadMoreText}>Load More</Text>
+                <Text style={styles.loadMoreText}>{t('feed.loadMore')}</Text>
               </TouchableOpacity>
             ) : null
           }

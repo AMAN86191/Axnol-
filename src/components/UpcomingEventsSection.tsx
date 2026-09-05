@@ -4,12 +4,14 @@ import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { ChevronRight, MapPin } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import useHomeStore from '../zustand/useHomeStore';
 
 export const UpcomingEventsSection = () => {
   const navigation = useNavigation();
   const { events } = useHomeStore();
+  const { t } = useTranslation();
   
   if (!events || events.length === 0) {
     return null;
@@ -18,12 +20,12 @@ export const UpcomingEventsSection = () => {
   const event = events[0];
 
   // Extract dynamic event data
-  const eventTitle = event.title || event.event_title || event.name || 'Gau Seva Event';
-  const eventDate = event.date || event.event_date || event.created_at || 'Upcoming';
-  const eventAddress = event.address || event.location || event.event_location || 'Gaushala';
+  const eventTitle = event.title || event.event_title || event.name || t('events.gauSevaEvent');
+  const eventDate = event.date || event.event_date || event.created_at || t('events.upcoming');
+  const eventAddress = event.address || event.location || event.event_location || t('events.gaushala');
   
   // Extract day/month for badge if possible
-  let dateBadge = 'Soon';
+  let dateBadge = t('common.soon');
   if (eventDate.includes(',')) {
      dateBadge = eventDate.split(',')[0].trim();
   } else if (eventDate.includes(' ')) {
@@ -39,13 +41,13 @@ export const UpcomingEventsSection = () => {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>Upcoming Event</Text>
+        <Text style={styles.sectionTitle}>{t('upcomingSection.title')}</Text>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => navigation.navigate('UpcomingEventsScreen' as never)}
           style={styles.viewAllBtn}
         >
-          <Text style={styles.viewAllText}>View All</Text>
+          <Text style={styles.viewAllText}>{t('common.viewAll')}</Text>
           <ChevronRight size={RFValue(12)} color={Colors.primary} style={styles.chevron} />
         </TouchableOpacity>
       </View>

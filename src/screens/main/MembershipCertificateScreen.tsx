@@ -19,8 +19,10 @@ import { Share2, Download, Award, ShieldCheck, Calendar, User, Hash, Check } fro
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { MembershipCertificateCard } from '../../components/MembershipCertificateCard';
+import { useTranslation } from 'react-i18next';
 
 const MembershipCertificateScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { user } = useAuthStore();
@@ -32,20 +34,20 @@ const MembershipCertificateScreen = () => {
 console.log(profileData);
   // Dynamic Member Data
   const memberDetails = {
-    name: activeUser?.name || 'Member Name',
-    memberId: activeUser?.uid || 'N/A',
-    tier: activeUser?.membership ? activeUser.membership.charAt(0).toUpperCase() + activeUser.membership.slice(1) : 'Community',
-    joinedDate: activeUser?.start_date ? new Date(activeUser.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
-    endDate: activeUser?.end_date ? new Date(activeUser.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
-    status: activeUser?.status ? activeUser.status.charAt(0).toUpperCase() + activeUser.status.slice(1) : 'Active',
-    verified: 'Verified Sevak',
-    impact: `₹${profileData?.statistics?.total_donation || 0} Contributed`,
+    name: activeUser?.name || t('profile.memberName'),
+    memberId: activeUser?.uid || t('common.na'),
+    tier: activeUser?.membership ? activeUser.membership.charAt(0).toUpperCase() + activeUser.membership.slice(1) : t('membership.communityMember'),
+    joinedDate: activeUser?.start_date ? new Date(activeUser.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
+    endDate: activeUser?.end_date ? new Date(activeUser.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
+    status: activeUser?.status ? activeUser.status.charAt(0).toUpperCase() + activeUser.status.slice(1) : t('common.active'),
+    verified: t('membership.verifiedSevak'),
+    impact: t('membership.contributed', { amount: profileData?.statistics?.total_donation || 0 }),
   };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `I am proud to be a verified ${memberDetails.tier} of Gau Mata Sewa Trust! Join me in protecting and feeding our indigenous cows. My Member ID: ${memberDetails.memberId}. www.gaumatatrust.org`,
+        message: t('certificate.shareMessage', { tier: memberDetails.tier, memberId: memberDetails.memberId }),
       });
     } catch (error) {
       console.log(error);
@@ -54,9 +56,9 @@ console.log(profileData);
 
   const handleDownload = () => {
     Alert.alert(
-      'Download Certificate 📥',
-      'The high-resolution PDF certificate is being compiled and downloaded to your device downloads folder.',
-      [{ text: 'OK' }]
+      t('certificate.downloadAlertTitle'),
+      t('certificate.downloadAlertMessage'),
+      [{ text: t('common.ok') }]
     );
   };
 
@@ -64,7 +66,7 @@ console.log(profileData);
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <CommonHeader 
-        title="Membership Certificate" 
+        title={t('certificate.title')} 
         onBackPress={() => navigation.goBack()}
         rightElement={
           <TouchableOpacity onPress={handleShare} activeOpacity={0.7} style={styles.headerShareBtn}>

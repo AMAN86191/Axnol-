@@ -15,6 +15,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 
 import { Colors } from '../../theme/colors';
+import { useTranslation } from 'react-i18next';
 import useHomeStore from '../../zustand/useHomeStore';
 import { ActivityIndicator } from 'react-native';
 import { RootStackParamList } from '../../navigation/types';
@@ -26,6 +27,7 @@ import useAuthStore from '../../zustand/useAuthStore';
 type PublicProfileScreenRouteProp = RouteProp<RootStackParamList, 'PublicProfileScreen'>;
 
 const PublicProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute<PublicProfileScreenRouteProp>();
   const { userId } = route.params;
@@ -44,6 +46,9 @@ const PublicProfileScreen = () => {
       if (post.id === postId) {
         const willBeLiked = !post.isLiked;
         let newLikedBy = [...(post.likedBy || [])];
+        let newDislikedBy = [...(post.dislikedBy || [])];
+        let newDislikes = post.dislikes;
+        let newIsDisliked = post.isDisliked;
         
         if (willBeLiked) {
           if (currentUser?.id && !newLikedBy.some((u: any) => u.id === currentUser.id)) {
@@ -53,6 +58,11 @@ const PublicProfileScreen = () => {
               profile_pic: currentUser.profile_pic || currentUser.profile?.profile_pic,
               designation: currentUser.designation || currentUser.profile?.designation,
             });
+          }
+          if (post.isDisliked && currentUser?.id) {
+            newDislikedBy = newDislikedBy.filter((u: any) => u.id !== currentUser.id);
+            newDislikes = post.dislikes - 1;
+            newIsDisliked = false;
           }
         } else {
           if (currentUser?.id) {
@@ -64,6 +74,52 @@ const PublicProfileScreen = () => {
           ...post,
           isLiked: willBeLiked,
           likes: willBeLiked ? post.likes + 1 : post.likes - 1,
+          likedBy: newLikedBy,
+          isDisliked: newIsDisliked,
+          dislikes: newDislikes,
+          dislikedBy: newDislikedBy,
+        };
+      }
+      return post;
+    }));
+  }, [currentUser]);
+
+  const handleDislike = useCallback((postId: string) => {
+    setPublicPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        const willBeDisliked = !post.isDisliked;
+        let newDislikedBy = [...(post.dislikedBy || [])];
+        let newLikedBy = [...(post.likedBy || [])];
+        let newLikes = post.likes;
+        let newIsLiked = post.isLiked;
+        
+        if (willBeDisliked) {
+          if (currentUser?.id && !newDislikedBy.some((u: any) => u.id === currentUser.id)) {
+            newDislikedBy.unshift({
+              id: currentUser.id,
+              name: currentUser.name || 'You',
+              profile_pic: currentUser.profile_pic || currentUser.profile?.profile_pic,
+              designation: currentUser.designation || currentUser.profile?.designation,
+            });
+          }
+          if (post.isLiked && currentUser?.id) {
+            newLikedBy = newLikedBy.filter((u: any) => u.id !== currentUser.id);
+            newLikes = post.likes - 1;
+            newIsLiked = false;
+          }
+        } else {
+          if (currentUser?.id) {
+            newDislikedBy = newDislikedBy.filter((u: any) => u.id !== currentUser.id);
+          }
+        }
+
+        return {
+          ...post,
+          isDisliked: willBeDisliked,
+          dislikes: willBeDisliked ? post.dislikes + 1 : post.dislikes - 1,
+          dislikedBy: newDislikedBy,
+          isLiked: newIsLiked,
+          likes: newLikes,
           likedBy: newLikedBy,
         };
       }
@@ -104,11 +160,15 @@ const PublicProfileScreen = () => {
               ? item.liked_by.some((likedUser: any) => likedUser.id === currentUser.id)
               : item.is_liked || false;
 
+          const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && currentUser?.id 
+              ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === currentUser.id)
+              : item.is_disliked || false;
+
           return {
             id: item.id?.toString() || Math.random().toString(),
-            author: userObj.name || 'Unknown',
+            author: userObj.name || t('common.unknown'),
             avatar: authorAvatar,
-            meta: item.created_at || 'Just now',
+            meta: item.created_at || t('common.justNow'),
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
@@ -116,6 +176,9 @@ const PublicProfileScreen = () => {
             comments: item.comments_count || 0,
             isLiked: isLikedByCurrentUser,
             likedBy: item.liked_by || [],
+            dislikes: item.dislikes_count ?? item.dislikes ?? 0,
+            isDisliked: isDislikedByCurrentUser,
+            dislikedBy: item.disliked_by || [],
             userId: userObj.id,
           };
         }) : [];
@@ -151,7 +214,7 @@ const PublicProfileScreen = () => {
     return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-        <CommonHeader title="Loading..." onBackPress={handleBack} />
+        <CommonHeader title={t('common.loading')} onBackPress={handleBack} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -167,10 +230,10 @@ const PublicProfileScreen = () => {
 
   // Safe fallbacks to map dynamic API fields to component expectations
   const user = {
-    name: publicUser?.name || 'Community Member',
+    name: publicUser?.name || t('publicProfile.communityMember'),
     avatar: avatarStr,
     bio: publicUser?.profile?.bio || '',
-    badge: publicUser?.membership ? 'Member' : '',
+    badge: publicUser?.membership ? t('common.member') : '',
     hasMembership: !!publicUser?.membership,
     memberId: publicUser?.uid || '',
     designation: publicUser?.profile?.designation || '',
@@ -206,11 +269,11 @@ console.log('userPosts', userPosts)
           <View style={styles.statsContainer}>
             <View style={styles.statColumn}>
               <Text style={styles.statNumber}>{user.totalPosts}</Text>
-              <Text style={styles.statLabel}>Posts</Text>
+              <Text style={styles.statLabel}>{t('publicProfile.posts')}</Text>
             </View>
             <View style={styles.statColumn}>
               <Text style={styles.statNumber}>{user.totalLikes}</Text>
-              <Text style={styles.statLabel}>Likes</Text>
+              <Text style={styles.statLabel}>{t('publicProfile.likes')}</Text>
             </View>
           </View>
         </View>
@@ -244,7 +307,7 @@ console.log('userPosts', userPosts)
           {/* Member ID */}
           {user.memberId && (
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>ID: </Text>
+              <Text style={styles.metaLabel}>{t('drawer.id')}</Text>
               <Text style={styles.metaValue}>{user.memberId}</Text>
             </View>
           )}
@@ -288,7 +351,7 @@ console.log('userPosts', userPosts)
               </View>
             ) : (
               <View style={styles.emptyFeedContainer}>
-                <Text style={styles.emptyFeedText}>No posts shared yet by this member.</Text>
+                <Text style={styles.emptyFeedText}>{t('publicProfile.noPostsYet')}</Text>
               </View>
             )
           ) : (
@@ -308,15 +371,19 @@ console.log('userPosts', userPosts)
                     comments={post.comments}
                     isLiked={post.isLiked}
                     likedBy={post.likedBy}
+                    dislikes={post.dislikes}
+                    isDisliked={post.isDisliked}
+                    dislikedBy={post.dislikedBy}
                     isOwnPost={false}
                     onLikePress={() => handleLike(post.id)}
+                    onDislikePress={() => handleDislike(post.id)}
                     onPostPress={() => handlePostPress(post.id)}
                   />
                 ))}
               </View>
             ) : (
               <View style={styles.emptyFeedContainer}>
-                <Text style={styles.emptyFeedText}>No posts shared yet by this member.</Text>
+                <Text style={styles.emptyFeedText}>{t('publicProfile.noPostsYet')}</Text>
               </View>
             )
           )}

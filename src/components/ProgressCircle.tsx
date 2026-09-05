@@ -3,12 +3,14 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface ProgressCircleProps {
   percent: number;
 }
 
 export const ProgressCircle = React.memo(({ percent }: ProgressCircleProps) => {
+  const { t } = useTranslation();
   const size = wp('14%');
   const strokeWidth = 3.5;
   const radius = (size - strokeWidth) / 2;
@@ -43,7 +45,7 @@ export const ProgressCircle = React.memo(({ percent }: ProgressCircleProps) => {
       </Svg>
       <View style={styles.progressTextContainer}>
         <Text style={styles.progressPercentText}>{percent}%</Text>
-        <Text style={styles.progressSubtext}>Goal</Text>
+        <Text style={styles.progressSubtext}>{t('campaign.goal')}</Text>
       </View>
     </View>
   );

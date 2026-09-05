@@ -13,6 +13,7 @@ import {
   Alert,
   Modal,
   ToastAndroid,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -24,15 +25,17 @@ import {
   Eye,
   CheckCircle,
 } from 'lucide-react-native';
-import { launchImageLibrary } from 'react-native-image-picker';
+import ImageCropPicker from 'react-native-image-crop-picker';
 import { Colors } from '../../theme/colors';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { CustomButton } from '../../components/CustomButton';
 import { FeedCard } from '../../components/FeedCard';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
+import { useTranslation } from 'react-i18next';
 
 const AddScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { createPost, loading: isCreatingPost } = useHomeStore();
   const { user } = useAuthStore();
@@ -40,6 +43,11 @@ const AddScreen = () => {
   const [images, setImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+
+  // Instagram-style: original picked images (crop karne ke liye base)
+  const [rawImages, setRawImages] = useState<any[]>([]);
+  const [selectedAspect, setSelectedAspect] = useState<'original' | 'square' | 'portrait' | 'landscape'>('original');
+  const [isCropping, setIsCropping] = useState(false);
 
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const captionInputRef = useRef<TextInput>(null);
@@ -52,56 +60,121 @@ const AddScreen = () => {
 
   const pickImages = async () => {
     if (images.length >= 5) {
-      Alert.alert('Limit Reached', 'You can upload a maximum of 5 images per post.');
+      Alert.alert(t('addPost.limitReached'), t('addPost.limitMessage'));
       return;
     }
 
     try {
-      launchImageLibrary(
-        {
+      const maxCount = 5 - images.length;
+
+      // Step 1: Gallery se multiple images select karo (original, bina crop)
+      const picked = await ImageCropPicker.openPicker({
+        mediaType: 'photo',
+        multiple: true,
+        maxFiles: maxCount,
+      });
+
+      if (!picked || picked.length === 0) return;
+
+      // Raw images store karo (crop ka base) aur immediately preview dikhao
+      const selectedRaw = picked.map((img: any) => ({
+        uri: img.path,
+        type: img.mime || 'image/jpeg',
+        fileName: img.filename || img.path.split('/').pop() || 'image.jpg',
+        path: img.path,
+      }));
+
+      let nextRaw = [...rawImages, ...selectedRaw].slice(0, 5);
+      setRawImages(nextRaw);
+
+      // Pehle original mein dikhao
+      setSelectedAspect('original');
+      setImages(nextRaw.map((img: any) => ({
+        uri: img.path,
+        type: img.mime || 'image/jpeg',
+        fileName: img.filename || img.path.split('/').pop() || 'image.jpg',
+      })));
+    } catch (error: any) {
+      // User cancelled — koi problem nahi
+      if (error?.code !== 'E_PICKER_CANCELLED' && error?.message !== 'User cancelled image selection') {
+        console.log('Error selecting images:', error);
+        Alert.alert(t('common.error'), t('addPost.selectImageFailed'));
+      }
+    }
+  };
+
+  // Instagram-style: aspect ratio select karne par sab images us frame mein crop
+  const applyAspectRatio = async (aspect: 'original' | 'square' | 'portrait' | 'landscape') => {
+    setSelectedAspect(aspect);
+
+    if (rawImages.length === 0) return;
+
+    // Original — koi crop nahi
+    if (aspect === 'original') {
+      setImages(rawImages.map((img: any) => ({
+        uri: img.path,
+        type: img.mime || 'image/jpeg',
+        fileName: img.filename || img.path.split('/').pop() || 'image.jpg',
+      })));
+      return;
+    }
+
+    const dims: Record<string, { width: number; height: number }> = {
+      square: { width: 1080, height: 1080 },
+      portrait: { width: 1080, height: 1350 },   // 4:5
+      landscape: { width: 1920, height: 1080 },  // 16:9
+    };
+    const target = dims[aspect];
+
+    setIsCropping(true);
+    try {
+      const cropped: any[] = [];
+      for (let i = 0; i < rawImages.length; i++) {
+        const raw = rawImages[i];
+        const result = await ImageCropPicker.openCropper({
+          path: raw.path,
           mediaType: 'photo',
-          selectionLimit: 5 - images.length, // Let them select up to remaining empty slots
-          quality: 0.8,
-          maxWidth: 1080,
-          maxHeight: 1080,
-        },
-        response => {
-          if (response.didCancel) return;
-          if (response.errorCode) {
-            Alert.alert('Error', response.errorMessage || 'Failed to select image');
-            return;
-          }
+          width: target.width,
+          height: target.height,
+          cropperActiveWidgetColor: Colors.primary,
+          cropperToolbarColor: '#FFFFFF',
+          cropperToolbarTitle: t('addPost.cropTitle', { current: i + 1, total: rawImages.length }),
+          cropperStatusBarLight: true,
+          cropperTintColor: Colors.primary,
+          cropperCancelText: t('addPost.cropCancel'),
+          cropperChooseText: t('addPost.cropChoose'),
+        });
 
-          if (response.assets) {
-            const validAssets = response.assets.filter(asset => {
-              const type = asset.type || '';
-              const fileName = asset.fileName || '';
-              return /image\/(jpe?g|png)/i.test(type) || /\.(jpe?g|png)$/i.test(fileName);
-            });
+        if (result?.path) {
+          cropped.push({
+            uri: result.path,
+            type: result.mime || 'image/jpeg',
+            fileName: result.filename || result.path.split('/').pop() || 'image.jpg',
+          });
+        }
+      }
 
-            if (validAssets.length < response.assets.length) {
-              Alert.alert('Invalid Format', 'Only JPG, JPEG, and PNG images are supported. Other formats were skipped.');
-            }
-
-            setImages(prev => {
-              const updated = [...prev, ...validAssets];
-              return updated.slice(0, 5); // strict ceiling of 5
-            });
-          }
-        },
-      );
-    } catch (error) {
-      console.log(error);
+      if (cropped.length > 0) {
+        setImages(cropped);
+      }
+    } catch (error: any) {
+      if (error?.code !== 'E_PICKER_CANCELLED' && error?.message !== 'User cancelled image selection') {
+        console.log('Crop error:', error);
+        Alert.alert(t('common.error'), t('addPost.selectImageFailed'));
+      }
+    } finally {
+      setIsCropping(false);
     }
   };
 
   const removeImage = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
+    setRawImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const validateInputs = (): boolean => {
     if (images.length === 0 && !caption.trim()) {
-      Alert.alert('Validation Error ⚠️', 'Please provide either a photo or a caption for your post.');
+      Alert.alert(t('addPost.validationError'), t('addPost.validationMessage'));
       return false;
     }
 
@@ -134,19 +207,19 @@ const AddScreen = () => {
       console.log('post create response', response);
       if (response?.status || response?.status === true || response?.status_code === 201) {
 
-        ToastAndroid.show('your post is under review', ToastAndroid.LONG);
+        ToastAndroid.show(t('addPost.underReview'), ToastAndroid.LONG);
         // Reset
         setCaption('');
         setImages([]);
         // Redirect to feed
         navigation.navigate('FeedScreen' as never);
       } else {
-        Alert.alert('Error', response?.message || 'Failed to publish post.');
+        Alert.alert(t('common.error'), response?.message || t('addPost.publishFailed'));
       }
     } catch (error: any) {
       console.log('Post error:', error);
-      const errorMsg = error.response?.data?.message || error.message || 'An unexpected error occurred.';
-      Alert.alert('Error', errorMsg);
+      const errorMsg = error.response?.data?.message || error.message || t('addPost.unexpectedError');
+      Alert.alert(t('common.error'), errorMsg);
     } finally {
       setLoading(false);
     }
@@ -167,7 +240,7 @@ const AddScreen = () => {
 
           {/* Selected Photos Header */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Photos</Text>
+            <Text style={styles.sectionTitle}>{t('addPost.photos')}</Text>
             <Text style={styles.sectionSubtitle}>{images.length} / 5</Text>
           </View>
 
@@ -176,8 +249,8 @@ const AddScreen = () => {
             {images.length === 0 ? (
               <TouchableOpacity style={styles.addPhotosBox} onPress={pickImages} activeOpacity={0.7}>
                 <ImageIcon size={34} color={Colors.primary} strokeWidth={1.5} />
-                <Text style={styles.addPhotosTitle}>Upload Photos (Up to 5)</Text>
-                <Text style={styles.addPhotosSubtitle}>Tap to choose JPG, JPEG or PNG files</Text>
+                <Text style={styles.addPhotosTitle}>{t('addPost.uploadPhotos')}</Text>
+                <Text style={styles.addPhotosSubtitle}>{t('addPost.uploadSubtitle')}</Text>
               </TouchableOpacity>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photosScrollList}>
@@ -197,19 +270,66 @@ const AddScreen = () => {
                 {images.length < 5 && (
                   <TouchableOpacity style={styles.addMoreCardBtn} onPress={pickImages} activeOpacity={0.7}>
                     <ImageIcon size={20} color={Colors.primary} strokeWidth={1.8} />
-                    <Text style={styles.addMoreCardBtnText}>Add More</Text>
+                    <Text style={styles.addMoreCardBtnText}>{t('addPost.addMore')}</Text>
                   </TouchableOpacity>
                 )}
               </ScrollView>
             )}
           </View>
 
+          {/* Instagram-style Aspect Ratio Selector */}
+          {images.length > 0 && (
+            <View style={styles.aspectSection}>
+              <Text style={styles.aspectTitle}>{t('addPost.aspectTitle')}</Text>
+              <View style={styles.aspectRow}>
+                {(
+                  [
+                    // { key: 'original', label: t('addPost.aspectOriginal') },
+                    { key: 'square', label: t('addPost.aspectSquare') },
+                    { key: 'portrait', label: t('addPost.aspectPortrait') },
+                    { key: 'landscape', label: t('addPost.aspectLandscape') },
+                  ] as const
+                ).map(opt => (
+                  <TouchableOpacity
+                    key={opt.key}
+                    style={[
+                      styles.aspectChip,
+                      selectedAspect === opt.key && styles.aspectChipActive,
+                    ]}
+                    activeOpacity={0.7}
+                    disabled={isCropping}
+                    onPress={() => applyAspectRatio(opt.key)}
+                  >
+                    {/* Mini shape icon */}
+                    <View
+                      style={[
+                        styles.aspectShape,
+                        { aspectRatio: opt.key === 'square' ? 1 : opt.key === 'portrait' ? 4 / 5 : opt.key === 'landscape' ? 16 / 9 : 1 },
+                        // opt.key === 'original' && { width: 10, height: 10 },
+                        selectedAspect === opt.key && styles.aspectShapeActive,
+                      ]}
+                    />
+                    <Text style={[styles.aspectChipText, selectedAspect === opt.key && styles.aspectChipTextActive]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {isCropping && (
+                <View style={styles.croppingIndicator}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.croppingText}>{t('addPost.cropping')}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
           {/* Caption Box */}
           <View style={styles.captionBox}>
             <TextInput
               ref={captionInputRef}
               style={styles.captionInput}
-              placeholder="Share updates, activities, or devotional thoughts..."
+              placeholder={t('addPost.captionPlaceholder')}
               placeholderTextColor="#999"
               multiline
               value={caption}
@@ -232,7 +352,7 @@ const AddScreen = () => {
 
           {/* Trigger Button: Shows Preview first */}
           <CustomButton
-            title="Publish Post"
+            title={t('addPost.publishPost')}
             loading={loading}
             onPress={handlePublishClick}
             style={styles.publishBtn}
@@ -254,7 +374,7 @@ const AddScreen = () => {
             <View style={styles.modalHeader}>
               <View style={styles.headerTitleContainer}>
                 <Eye size={RFValue(14)} color={Colors.primary} style={{ marginRight: wp('1.5%') }} />
-                <Text style={styles.modalTitleText}>Post Preview</Text>
+                <Text style={styles.modalTitleText}>{t('addPost.postPreview')}</Text>
               </View>
               <TouchableOpacity
                 onPress={() => setIsPreviewVisible(false)}
@@ -267,18 +387,20 @@ const AddScreen = () => {
 
             {/* Modal Scrollable Body */}
             <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <Text style={styles.previewTipText}>This is how your post will appear in the community feed:</Text>
+              <Text style={styles.previewTipText}>{t('addPost.previewTip')}</Text>
 
               {/* WYSIWYG Feed Card rendering */}
               <FeedCard
-                author={user?.name || 'Community Member'}
-                avatar={user?.profile?.profile_pic ? `${user.profile.profile_pic}` : 'https://randomuser.me/api/portraits/lego/1.jpg'}
-                meta={`Just now${user?.profile?.designation ? ` • ${user.profile.designation}` : ''}`}
+                author={user?.name || t('addPost.communityMember')}
+                avatar={user?.profile?.profile_pic ? `${user.profile.profile_pic}` : ''}
+                meta={`${t('common.justNow')}${user?.profile?.designation ? ` • ${user.profile.designation}` : ''}`}
                 text={caption.trim()}
                 images={images.map(img => img.uri)}
                 likes={0}
                 comments={0}
                 isLiked={false}
+                dislikes={0}
+                isDisliked={false}
               />
             </ScrollView>
 
@@ -289,7 +411,7 @@ const AddScreen = () => {
                 onPress={() => setIsPreviewVisible(false)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.editBackBtnText}>Edit Content</Text>
+                <Text style={styles.editBackBtnText}>{t('addPost.editContent')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -298,7 +420,7 @@ const AddScreen = () => {
                 activeOpacity={0.85}
               >
                 <CheckCircle size={RFValue(11)} color="#FFF" style={{ marginRight: wp('1.5%') }} />
-                <Text style={styles.confirmPublishBtnText}>Publish Now</Text>
+                <Text style={styles.confirmPublishBtnText}>{t('addPost.publishNow')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -414,6 +536,71 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primary,
     marginTop: hp('0.5%'),
+  },
+  /* --- Aspect Ratio Selector Styling --- */
+  aspectSection: {
+    backgroundColor: Colors.white,
+    borderRadius: wp('3%'),
+    borderWidth: 1,
+    borderColor: '#FFE0D0',
+    padding: wp('3.5%'),
+    marginBottom: hp('2.5%'),
+  },
+  aspectTitle: {
+    fontSize: RFValue(11.5),
+    fontWeight: '700',
+    color: Colors.dark,
+    marginBottom: hp('1.2%'),
+  },
+  aspectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: wp('2.5%'),
+  },
+  aspectChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('0.9%'),
+    borderRadius: wp('5%'),
+    borderWidth: 1.2,
+    borderColor: '#E7E7E7',
+    backgroundColor: '#FFFBF9',
+  },
+  aspectChipActive: {
+    borderColor: Colors.primary,
+    backgroundColor: '#FFF0E8',
+  },
+  aspectShape: {
+    width: 13,
+    height: 13,
+    borderRadius: 2,
+    marginRight: wp('1.2%'),
+    borderWidth: 1.5,
+    borderColor: '#B9B9B9',
+  },
+  aspectShapeActive: {
+    borderColor: Colors.primary,
+  },
+  aspectChipText: {
+    fontSize: RFValue(10),
+    fontWeight: '600',
+    color: Colors.gray,
+  },
+  aspectChipTextActive: {
+    color: Colors.primary,
+  },
+  croppingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: hp('1.2%'),
+  },
+  croppingText: {
+    fontSize: RFValue(10.5),
+    color: Colors.gray,
+    marginLeft: wp('1.5%'),
+    fontWeight: '500',
   },
   captionBox: {
     backgroundColor: Colors.white,

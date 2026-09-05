@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { ArrowRight } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { ProgressCircle } from './ProgressCircle';
 
 interface ActiveCampaignCardProps {
@@ -10,20 +11,22 @@ interface ActiveCampaignCardProps {
 }
 
 export const ActiveCampaignCard = React.memo(({ onDonatePress }: ActiveCampaignCardProps) => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.campaignCard}>
       <View style={styles.campaignLeftContainer}>
-        <Text style={styles.campaignTag}>Active Campaign</Text>
-        <Text style={styles.campaignTitle}>Feed 100 Cows</Text>
+        <Text style={styles.campaignTag}>{t('campaign.activeCampaign')}</Text>
+        <Text style={styles.campaignTitle}>{t('campaign.feedCows')}</Text>
         <Text style={styles.campaignDesc}>
-          Help us provide food to 100 cows this week and make a difference.
+          {t('campaign.feedDesc')}
         </Text>
         <TouchableOpacity
           style={styles.donateAgainBtn}
           onPress={onDonatePress}
           activeOpacity={0.85}
         >
-          <Text style={styles.donateAgainText}>Make Donation</Text>
+          <Text style={styles.donateAgainText}>{t('campaign.makeDonation')}</Text>
           <ArrowRight size={RFValue(9.5)} color="#FFF" strokeWidth={2.5} style={{ marginLeft: wp('1%') }} />
         </TouchableOpacity>
       </View>

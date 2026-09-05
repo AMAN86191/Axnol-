@@ -8,8 +8,10 @@ import { FileText, ShieldCheck, HeartHandshake, HelpCircle } from 'lucide-react-
 
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
+import { useTranslation } from 'react-i18next';
 
 export default function TermsScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
   const handleBack = useCallback(() => {
@@ -18,28 +20,28 @@ export default function TermsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <CommonHeader title="Terms & Conditions" onBackPress={handleBack} />
+      <CommonHeader title={t('terms.title')} onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Intro Banner */}
         <View style={styles.banner}>
           <FileText size={RFValue(28)} color={Colors.primary} strokeWidth={1.5} />
-          <Text style={styles.bannerTitle}>Terms & Conditions</Text>
-          <Text style={styles.bannerSubtitle}>Last updated: June 2026</Text>
+          <Text style={styles.bannerTitle}>{t('terms.title')}</Text>
+          <Text style={styles.bannerSubtitle}>{t('terms.lastUpdated')}</Text>
         </View>
 
         <Text style={styles.introText}>
-          Please read these Terms & Conditions ("Terms") carefully before using the Gaumata Trust mobile application. By accessing or using our services, you agree to comply with and be bound by these Terms.
+          {t('terms.intro')}
         </Text>
 
         {/* Section 1 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <ShieldCheck size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>1. Acceptance of Terms</Text>
+            <Text style={styles.sectionTitle}>{t('terms.section1Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            By accessing or using the services of the Gaumata Sewa Trust, you agree to be bound by these terms.
+            {t('terms.section1Content')}
           </Text>
         </View>
 
@@ -47,10 +49,10 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <FileText size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>2. Use of Information</Text>
+            <Text style={styles.sectionTitle}>{t('terms.section2Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            Content is for general informational purposes only. The NGO reserves the right to modify or update information at any time without prior notice.
+            {t('terms.section2Content')}
           </Text>
         </View>
 
@@ -58,14 +60,14 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <HeartHandshake size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>3. Donations & Refunds</Text>
+            <Text style={styles.sectionTitle}>{t('terms.section3Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            All financial contributions made to the trust are voluntary. The trust reserves the right to allocate funds at its discretion to areas of greatest need.
+            {t('terms.section3Content')}
           </Text>
           <View style={styles.bulletRow}>
             <Text style={styles.bullet}>•</Text>
-            <Text style={styles.bulletContent}><Text style={styles.bold}>Refund Policy:</Text> Contributions are considered final and are non-refundable. If an incorrect transaction occurs, donors are advised to contact the trust immediately for resolution.</Text>
+            <Text style={styles.bulletContent}><Text style={styles.bold}>{t('terms.refundPolicy')}</Text> {t('terms.refundContent')}</Text>
           </View>
         </View>
 
@@ -73,10 +75,10 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <FileText size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>4. Intellectual Property</Text>
+            <Text style={styles.sectionTitle}>{t('terms.section4Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            All content, including text, images, logos, and graphics, is the property of the NGO and is protected by copyright laws.
+            {t('terms.section4Content')}
           </Text>
         </View>
 
@@ -84,10 +86,10 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <ShieldCheck size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>5. User Conduct & Policies</Text>
+            <Text style={styles.sectionTitle}>{t('terms.section5Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            Users are expected to interact respectfully and refrain from activities that could harm the NGO or its reputation. The NGO is not responsible for the content or privacy practices of any external websites linked on their platform. The trust reserves the right to update or modify these terms at any time.
+            {t('terms.section5Content')}
           </Text>
         </View>
 
@@ -95,12 +97,12 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <HelpCircle size={RFValue(12)} color={Colors.primary} style={styles.sectionIcon} />
-            <Text style={styles.sectionTitle}>6. Contact Us</Text>
+            <Text style={styles.sectionTitle}>{t('terms.section6Title')}</Text>
           </View>
           <Text style={styles.bodyText}>
-            For questions regarding these Terms, please reach out to us at:
+            {t('terms.section6Content')}
           </Text>
-          <Text style={styles.contactEmail}>gaumatatrust2023@gmail.com</Text>
+          <Text style={styles.contactEmail}>{t('help.email')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

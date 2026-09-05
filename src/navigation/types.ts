@@ -20,6 +20,7 @@ export type RootStackParamList = {
   PublicProfileScreen: { userId: string };
   NotificationScreen: undefined;
   AboutTrustScreen: undefined;
+  CommunityMembersScreen: undefined;
   FeedScreen: undefined;
   DonationSuccessScreen: { amount: number; transactionId: string; date: string };
   PlansScreen: undefined;

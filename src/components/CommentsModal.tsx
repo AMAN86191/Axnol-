@@ -15,6 +15,7 @@ import { X, Trash2 } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import useAuthStore from '../zustand/useAuthStore';
 
@@ -48,6 +49,7 @@ export const CommentsModal = ({
   const navigation = useNavigation();
   const [newCommentText, setNewCommentText] = useState('');
   const { user } = useAuthStore();
+  const { t } = useTranslation();
 
   const handleAddComment = () => {
     if (!newCommentText.trim()) return;
@@ -75,7 +77,7 @@ export const CommentsModal = ({
           {/* Header / Drag Handle */}
           <View style={styles.modalHeader}>
             <View style={styles.dragHandle} />
-            <Text style={styles.modalTitle}>Comments</Text>
+            <Text style={styles.modalTitle}>{t('comments.title')}</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <X size={20} color={Colors.dark} />
             </TouchableOpacity>
@@ -135,7 +137,7 @@ export const CommentsModal = ({
             })()}
             <TextInput
               style={styles.commentInput}
-              placeholder={`Comment as ${user?.name || 'User'}...`}
+              placeholder={t('comments.commentAs', { name: user?.name || 'User' })}
               placeholderTextColor={Colors.gray}
               value={newCommentText}
               onChangeText={setNewCommentText}
@@ -152,7 +154,7 @@ export const CommentsModal = ({
                   newCommentText.trim() && styles.postButtonTextActive,
                 ]}
               >
-                Post
+                {t('common.post')}
               </Text>
             </TouchableOpacity>
           </View>

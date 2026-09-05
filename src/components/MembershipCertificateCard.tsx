@@ -1,18 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
-  Alert,
   Platform,
-  Share,
+  Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Download, Award, ShieldCheck, Calendar, User, Hash, Check, Share2 } from 'lucide-react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { generateAndDownloadPDF } from '../utils/pdfGenerator';
+import ReactNativeBlobUtil from 'react-native-blob-util';
+import { useTranslation } from 'react-i18next';
+import Share from 'react-native-share';
+import { generateAndDownloadPDF, generatePdfFile } from '../utils/pdfGenerator';
 
 interface MembershipCertificateCardProps {
   memberDetails: {
@@ -28,8 +32,35 @@ interface MembershipCertificateCardProps {
   onShare?: () => void;
 }
 
+const loadLogoDataUri = async (): Promise<string> => {
+  const logoSource = Image.resolveAssetSource(require('../../assets/images/logo/logo.png'));
+  try {
+    const uri = logoSource.uri;
+    if (uri.startsWith('file://')) {
+      const logoBase64 = await ReactNativeBlobUtil.fs.readFile(uri.replace('file://', ''), 'base64');
+      return `data:image/png;base64,${logoBase64}`;
+    }
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      const res = await fetch(uri);
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+  } catch (error) {
+    console.log('Error loading logo for PDF:', error);
+  }
+  return '';
+};
+
 export const MembershipCertificateCard = ({ memberDetails, onShare }: MembershipCertificateCardProps) => {
-  const handleDownload = () => {
+  const { t } = useTranslation();
+  const [sharing, setSharing] = useState(false);
+  const buildCertificateHtml = async () => {
+    const logoDataUri = await loadLogoDataUri();
     const htmlContent = `
       <html>
         <head>
@@ -71,7 +102,8 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               box-sizing: border-box; 
             }
             .header { text-align: center; margin-bottom: 30px; }
-            .award-icon { margin-bottom: 15px; }
+            .award-icon { margin-bottom: 15px; display: flex; justify-content: center; }
+            .header-logo { width: 70px; height: 70px; object-fit: contain; }
             .title { 
               font-size: 26px; 
               font-weight: 800; 
@@ -179,42 +211,44 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                 
                 <div class="header">
                   <div class="award-icon">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="8" r="6"></circle>
-                      <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
-                    </svg>
+                    ${logoDataUri
+                      ? `<img class="header-logo" src="${logoDataUri}" alt="logo" />`
+                      : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="6"></circle>
+                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+                      </svg>`}
                   </div>
-                  <div class="title">GAU MATA SEWA TRUST</div>
-                  <div class="subtitle">CERTIFICATE OF ${memberDetails.tier} MEMBERSHIP</div>
+                  <div class="title">${t('certificate.trustName')}</div>
+                  <div class="subtitle">${t('certificate.certificateOf', { tier: memberDetails.tier })}</div>
                 </div>
                 
                 <div class="body-section">
-                  <div class="presented-text">This certificate is proudly presented to</div>
+                  <div class="presented-text">${t('certificate.presentedTo')}</div>
                   <div class="member-name-container">
                     <div class="member-name">${memberDetails.name}</div>
                     <div class="name-underline"></div>
                   </div>
                   <div class="description">
-                    in recognition of their noble support, generous contributions, and dedicated service as a verified Gau Sevak. Your commitment directly aids the feeding, shelter, and medical protection of indigenous cows.
+                    ${t('certificate.description')}
                   </div>
                 </div>
                 
                 <div class="meta-container">
                   <div class="meta-column">
-                    <div class="meta-label">MEMBER ID</div>
+                    <div class="meta-label">${t('certificate.memberId')}</div>
                     <div class="meta-value">${memberDetails.memberId}</div>
                   </div>
                   <div class="meta-column">
-                    <div class="meta-label">DATE OF ISSUANCE</div>
+                    <div class="meta-label">${t('certificate.dateOfIssuance')}</div>
                     <div class="meta-value">${memberDetails.joinedDate}</div>
                   </div>
                 </div>
                 
                 <div class="footer">
                   <div class="signature-col">
-                    <div class="handwritten">Swami Anand</div>
+                    <div class="handwritten">${t('certificate.presidentName')}</div>
                     <div class="sig-line"></div>
-                    <div class="sig-title">President, Trustee</div>
+                    <div class="sig-title">${t('certificate.president')}</div>
                   </div>
                   
                   <div class="seal">
@@ -226,9 +260,9 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                   </div>
                   
                   <div class="signature-col">
-                    <div class="handwritten">R. K. Sharma</div>
+                    <div class="handwritten">${t('certificate.generalSecretaryName')}</div>
                     <div class="sig-line"></div>
-                    <div class="sig-title">General Secretary</div>
+                    <div class="sig-title">${t('certificate.generalSecretary')}</div>
                   </div>
                 </div>
                 
@@ -238,16 +272,47 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
         </body>
       </html>
     `;
+    return htmlContent;
+  };
+
+  const handleDownload = async () => {
+    const htmlContent = await buildCertificateHtml();
     generateAndDownloadPDF(htmlContent, `Membership_Certificate_${memberDetails.memberId}`);
   };
 
   const defaultShare = async () => {
     try {
-      await Share.share({
-        message: `I am proud to be a verified ${memberDetails.tier} of Gau Mata Sewa Trust! Join me in protecting and feeding our indigenous cows. My Member ID: ${memberDetails.memberId}. www.gaumatatrust.org`,
+      setSharing(true);
+      const htmlContent = await buildCertificateHtml();
+      const fileName = `Membership_Certificate_${memberDetails.memberId}`;
+      const generatedPath = await generatePdfFile(htmlContent, fileName);
+
+      let sharePath = generatedPath;
+
+      // react-native-share's Android FileProvider only exposes the app cache dir.
+      // Copy the PDF from internal Documents into the cache dir so it can be shared.
+      if (Platform.OS === 'android') {
+        const cacheDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
+        const cachedPath = `${cacheDir}/${fileName}_${Date.now()}.pdf`;
+        await ReactNativeBlobUtil.fs.cp(generatedPath, cachedPath);
+        sharePath = cachedPath;
+      }
+
+      await Share.open({
+        url: `file://${sharePath}`,
+        type: 'application/pdf',
+        title: t('common.share'),
+        failOnCancel: false,
       });
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      if (error?.message && error.message.toLowerCase().includes('cancel')) {
+        // User dismissed the share sheet - not an error
+        return;
+      }
+      console.log('Share error:', error);
+      Alert.alert(t('common.error'), t('certificate.shareFailed'));
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -261,28 +326,32 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
           <View style={styles.certificateInnerBorder}>
             {/* Trust Badge Header */}
             <View style={styles.certHeader}>
-              <Award size={RFValue(24)} color="#D97706" style={styles.certBadgeIcon} />
-              <Text style={styles.certTrustName}>GAU MATA SEWA TRUST</Text>
-              <Text style={styles.certSubHeader}>CERTIFICATE OF {memberDetails.tier} MEMBERSHIP</Text>
+              <Image
+                source={require('../../assets/images/logo/logo.png')}
+                style={styles.certBadgeLogo}
+                resizeMode="contain"
+              />
+              <Text style={styles.certTrustName}>{t('certificate.trustName')}</Text>
+              <Text style={styles.certSubHeader}>{t('certificate.certificateOf', { tier: memberDetails.tier })}</Text>
             </View>
 
             {/* Presented To */}
             <View style={styles.certBody}>
-              <Text style={styles.certPresentedText}>This certificate is proudly presented to</Text>
+              <Text style={styles.certPresentedText}>{t('certificate.presentedTo')}</Text>
               <Text style={styles.certMemberName}>{memberDetails.name}</Text>
               <Text style={styles.certDescription}>
-                in recognition of their noble support, generous contributions, and dedicated service as a verified Gau Sevak. Your commitment directly aids the feeding, shelter, and medical protection of indigenous cows.
+                {t('certificate.description')}
               </Text>
             </View>
 
             {/* Certificate Metadata */}
             <View style={styles.certMetaContainer}>
               <View style={styles.certMetaColumn}>
-                <Text style={styles.certMetaLabel}>MEMBER ID</Text>
+                <Text style={styles.certMetaLabel}>{t('certificate.memberId')}</Text>
                 <Text style={styles.certMetaValue}>{memberDetails.memberId}</Text>
               </View>
               <View style={styles.certMetaColumn}>
-                <Text style={styles.certMetaLabel}>DATE OF ISSUANCE</Text>
+                <Text style={styles.certMetaLabel}>{t('certificate.dateOfIssuance')}</Text>
                 <Text style={styles.certMetaValue}>{memberDetails.joinedDate}</Text>
               </View>
             </View>
@@ -290,9 +359,9 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
             {/* Signatures & Seal */}
             <View style={styles.certFooter}>
               <View style={styles.signatureCol}>
-                <Text style={styles.handwrittenSig}>Swami Anand</Text>
+                <Text style={styles.handwrittenSig}>{t('certificate.presidentName')}</Text>
                 <View style={styles.sigLine} />
-                <Text style={styles.sigTitle}>President, Trustee</Text>
+                <Text style={styles.sigTitle}>{t('certificate.president')}</Text>
               </View>
 
               {/* Gold Seal Svg */}
@@ -305,9 +374,9 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               </View>
 
               <View style={styles.signatureCol}>
-                <Text style={styles.handwrittenSig}>R. K. Sharma</Text>
+                <Text style={styles.handwrittenSig}>{t('certificate.generalSecretaryName')}</Text>
                 <View style={styles.sigLine} />
-                <Text style={styles.sigTitle}>General Secretary</Text>
+                <Text style={styles.sigTitle}>{t('certificate.generalSecretary')}</Text>
               </View>
             </View>
 
@@ -319,18 +388,22 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
       <View style={styles.actionsContainer}>
         <TouchableOpacity style={styles.downloadBtn} onPress={handleDownload} activeOpacity={0.85}>
           <Download size={RFValue(12)} color="#FFF" style={{ marginRight: wp('1.5%') }} />
-          <Text style={styles.downloadBtnText}>Download PDF</Text>
+          <Text style={styles.downloadBtnText}>{t('certificate.downloadPdf')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.85}>
-          <Share2 size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
-          <Text style={styles.shareBtnText}>Share</Text>
+        <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.85} disabled={sharing}>
+          {sharing ? (
+            <ActivityIndicator size="small" color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
+          ) : (
+            <Share2 size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
+          )}
+          <Text style={styles.shareBtnText}>{sharing ? t('certificate.preparingPdf') : t('common.share')}</Text>
         </TouchableOpacity>
       </View>
 
       {/* Membership Details Card */}
       <View style={styles.detailsCard}>
-        <Text style={styles.detailsTitle}>Membership Details</Text>
+        <Text style={styles.detailsTitle}>{t('certificate.membershipDetails')}</Text>
         
         {/* Detail Item Row 1 */}
         <View style={styles.detailRow}>
@@ -339,7 +412,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <User size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Name</Text>
+              <Text style={styles.detailLabel}>{t('certificate.name')}</Text>
               <Text style={styles.detailValue}>{memberDetails.name}</Text>
             </View>
           </View>
@@ -348,7 +421,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Hash size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Member ID</Text>
+              <Text style={styles.detailLabel}>{t('certificate.memberId')}</Text>
               <Text style={styles.detailValue}>{memberDetails.memberId}</Text>
             </View>
           </View>
@@ -361,7 +434,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Award size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Membership Tier</Text>
+              <Text style={styles.detailLabel}>{t('certificate.membershipTier')}</Text>
               <Text style={styles.detailValue}>{memberDetails.tier}</Text>
             </View>
           </View>
@@ -370,7 +443,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Calendar size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Member Since</Text>
+              <Text style={styles.detailLabel}>{t('certificate.memberSince')}</Text>
               <Text style={styles.detailValue}>{memberDetails.joinedDate}</Text>
             </View>
           </View>
@@ -383,7 +456,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Calendar size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Valid Till</Text>
+              <Text style={styles.detailLabel}>{t('certificate.validTill')}</Text>
               <Text style={styles.detailValue}>{memberDetails.endDate}</Text>
             </View>
           </View>
@@ -392,7 +465,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <ShieldCheck size={RFValue(10.5)} color="#FF6F34" />
             </View>
             <View>
-              <Text style={styles.detailLabel}>Status</Text>
+              <Text style={styles.detailLabel}>{t('certificate.status')}</Text>
               <Text style={styles.detailValue}>{memberDetails.status}</Text>
             </View>
           </View>
@@ -402,11 +475,11 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
         <View style={styles.statusDetailsContainer}>
           <View style={styles.statusTagItem}>
             <Check size={RFValue(9)} color="#065F46" strokeWidth={3} style={{ marginRight: wp('0.5%') }} />
-            <Text style={styles.statusTagTextGreen}>Verified Account Status</Text>
+            <Text style={styles.statusTagTextGreen}>{t('certificate.verifiedAccount')}</Text>
           </View>
           <View style={styles.statusTagItem}>
             <ShieldCheck size={RFValue(9)} color="#065F46" style={{ marginRight: wp('0.5%') }} />
-            <Text style={styles.statusTagTextGreen}>Active Community Member</Text>
+            <Text style={styles.statusTagTextGreen}>{t('certificate.activeCommunity')}</Text>
           </View>
         </View>
       </View>
@@ -450,7 +523,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: hp('2%'),
   },
-  certBadgeIcon: {
+  certBadgeLogo: {
+    width: wp('16%'),
+    height: wp('16%'),
     marginBottom: hp('0.5%'),
   },
   certTrustName: {

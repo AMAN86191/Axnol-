@@ -10,9 +10,10 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { Heart, MessageSquare, Share2, Pencil, Trash2 } from 'lucide-react-native';
+import { Heart, MessageSquare, Share2, Pencil, Trash2, ThumbsDown, ThumbsUp } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import { CommentsModal, Comment } from './CommentsModal';
 import { LikesModal, LikedUser } from './LikesModal';
@@ -32,9 +33,13 @@ interface FeedCardProps {
   comments: number;
   isLiked?: boolean;
   likedBy?: any[];
+  dislikes?: number;
+  isDisliked?: boolean;
+  dislikedBy?: any[];
   isOwnPost?: boolean;
   status?: string;
   onLikePress?: () => void;
+  onDislikePress?: () => void;
   onCommentPress?: () => void;
   onSharePress?: () => void;
   onEditPress?: () => void;
@@ -57,9 +62,13 @@ export const FeedCard = ({
   comments,
   isLiked,
   likedBy = EMPTY_ARRAY,
+  dislikes = 0,
+  isDisliked,
+  dislikedBy = EMPTY_ARRAY,
   isOwnPost,
   status,
   onLikePress,
+  onDislikePress,
   onCommentPress,
   onSharePress,
   onEditPress,
@@ -74,17 +83,24 @@ export const FeedCard = ({
   const [localLikes, setLocalLikes] = useState(likes);
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikedBy, setLocalLikedBy] = useState<any[]>(likedBy);
+  const [localDislikes, setLocalDislikes] = useState(dislikes);
+  const [localIsDisliked, setLocalIsDisliked] = useState(isDisliked);
+  const [localDislikedBy, setLocalDislikedBy] = useState<any[]>(dislikedBy);
 
   useEffect(() => {
     setCommentsCount(comments);
     setLocalLikes(likes);
     setLocalIsLiked(isLiked);
     setLocalLikedBy(likedBy);
-  }, [comments, likes, isLiked, likedBy]);
+    setLocalDislikes(dislikes);
+    setLocalIsDisliked(isDisliked);
+    setLocalDislikedBy(dislikedBy);
+  }, [comments, likes, isLiked, likedBy, dislikes, isDisliked, dislikedBy]);
 
   const [localComments, setLocalComments] = useState<Comment[]>([]);
-  const { getComments, commentPost, toggleLikePost, deleteComment } = useHomeStore();
+  const { getComments, commentPost, toggleLikePost, toggleDislikePost, deleteComment } = useHomeStore();
   const { user } = useAuthStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (isCommentsVisible && postId) {
@@ -111,10 +127,10 @@ export const FeedCard = ({
 
           return {
             id: c.id?.toString() || Math.random().toString(),
-            author: c.user?.name || c.admin?.name || 'Unknown',
+            author: c.user?.name || c.admin?.name || t('common.unknown'),
             avatar: avatarUrl,
             text: c.comment || '',
-            time: c.created_at || 'Just now',
+            time: c.created_at || t('common.justNow'),
             userId: c.user_id?.toString() || c.admin_id?.toString(),
           };
         });
@@ -133,6 +149,7 @@ export const FeedCard = ({
     if (!postId) return;
 
     const previousLikedBy = [...localLikedBy];
+    const previousDislikedBy = [...localDislikedBy];
     const willBeLiked = !localIsLiked;
 
     setLocalIsLiked(willBeLiked);
@@ -143,7 +160,7 @@ export const FeedCard = ({
         if (user?.id && !prevLikedBy.some(u => u.id === user.id)) {
           const currentUserLike = {
             id: user.id,
-            name: user.name || 'You',
+            name: user.name || t('common.you'),
             profile_pic: user.profile_pic || user.profile?.profile_pic,
             designation: user.designation || user.profile?.designation,
           };
@@ -158,6 +175,12 @@ export const FeedCard = ({
       }
     });
 
+    if (willBeLiked && localIsDisliked) {
+      setLocalIsDisliked(false);
+      setLocalDislikes(prev => prev - 1);
+      setLocalDislikedBy(prev => user?.id ? prev.filter(u => u.id !== user.id) : prev);
+    }
+
     try {
       const res = await toggleLikePost(postId);
       console.log('FeedCard local like response:', res);
@@ -166,6 +189,67 @@ export const FeedCard = ({
       setLocalIsLiked(!willBeLiked);
       setLocalLikes(prev => !willBeLiked ? prev + 1 : prev - 1);
       setLocalLikedBy(previousLikedBy);
+      if (willBeLiked && localIsDisliked) {
+        setLocalIsDisliked(true);
+        setLocalDislikes(prev => prev + 1);
+        setLocalDislikedBy(previousDislikedBy);
+      }
+    }
+  };
+
+  const handleDislikeButtonPress = async () => {
+    if (onDislikePress) {
+      onDislikePress();
+    }
+
+    if (!postId) return;
+
+    const previousDislikedBy = [...localDislikedBy];
+    const previousLikedBy = [...localLikedBy];
+    const willBeDisliked = !localIsDisliked;
+
+    setLocalIsDisliked(willBeDisliked);
+    setLocalDislikes(prev => willBeDisliked ? prev + 1 : prev - 1);
+
+    setLocalDislikedBy(prevDislikedBy => {
+      if (willBeDisliked) {
+        if (user?.id && !prevDislikedBy.some(u => u.id === user.id)) {
+          const currentUserDislike = {
+            id: user.id,
+            name: user.name || t('common.you'),
+            profile_pic: user.profile_pic || user.profile?.profile_pic,
+            designation: user.designation || user.profile?.designation,
+          };
+          return [currentUserDislike, ...prevDislikedBy];
+        }
+        return prevDislikedBy;
+      } else {
+        if (user?.id) {
+          return prevDislikedBy.filter(u => u.id !== user.id);
+        }
+        return prevDislikedBy;
+      }
+    });
+
+    if (willBeDisliked && localIsLiked) {
+      setLocalIsLiked(false);
+      setLocalLikes(prev => prev - 1);
+      setLocalLikedBy(prev => user?.id ? prev.filter(u => u.id !== user.id) : prev);
+    }
+
+    try {
+      const res = await toggleDislikePost(postId);
+      console.log('FeedCard local dislike response:', res);
+    } catch (error) {
+      console.log('Error toggling dislike:', error);
+      setLocalIsDisliked(!willBeDisliked);
+      setLocalDislikes(prev => !willBeDisliked ? prev + 1 : prev - 1);
+      setLocalDislikedBy(previousDislikedBy);
+      if (willBeDisliked && localIsLiked) {
+        setLocalIsLiked(true);
+        setLocalLikes(prev => prev + 1);
+        setLocalLikedBy(previousLikedBy);
+      }
     }
   };
 
@@ -175,11 +259,25 @@ export const FeedCard = ({
       return;
     }
     try {
+      const postLink = postId ? `https://gst.tambimotors.com/post/${postId}` : '';
+      const shareMessage = t('feed.shareMessage', {
+        author,
+        text: (text || '').slice(0, 120) + (text && text.length > 120 ? '...' : ''),
+        link: postLink,
+      });
+      if (!postLink) {
+        await Share.share({ message: shareMessage });
+        return;
+      }
       await Share.share({
-        message: `Check out this post from ${author} on Gaushala Community:\n\n"${text}"`,
+        message: shareMessage,
+        title: author,
+        url: postLink,
       });
     } catch (error: any) {
-      Alert.alert('Error', error.message);
+      if (error?.message !== 'User did not share') {
+        Alert.alert(t('common.error'), error.message);
+      }
     }
   };
 
@@ -201,10 +299,10 @@ export const FeedCard = ({
 
     const newComment: Comment = {
       id: tempId,
-      author: user?.name || 'You',
+      author: user?.name || t('common.you'),
       avatar: currentUserAvatar,
       text: commentText,
-      time: 'Just now',
+      time: t('common.justNow'),
       userId: user?.id?.toString(),
     };
 
@@ -222,7 +320,7 @@ export const FeedCard = ({
         // Rollback optimistic update
         setLocalComments(prev => prev.filter(c => c.id !== tempId));
         setCommentsCount(prev => prev - 1);
-        Alert.alert('Error', 'Failed to post comment.');
+        Alert.alert(t('common.error'), t('postDetails.commentFailed'));
       }
     }
   };
@@ -326,25 +424,40 @@ export const FeedCard = ({
       {/* Card Actions */}
       <View style={styles.feedActions}>
         <View style={styles.feedActionItem}>
-          <TouchableOpacity onPress={handleLikeButtonPress} activeOpacity={0.7} style={{ padding: wp('1%'), marginLeft: -wp('1%') }}>
-            <Heart
+          <TouchableOpacity onPress={handleLikeButtonPress} activeOpacity={0.7} style={styles.actionIconBtn}>
+            <ThumbsUp
               size={RFValue(14)}
               color={localIsLiked ? Colors.primary : Colors.gray}
               fill={localIsLiked ? Colors.primary : 'none'}
               strokeWidth={1.5}
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setIsLikesModalVisible(true)} activeOpacity={0.7} style={{ padding: wp('1%') }}>
-            <Text style={[styles.feedActionText, localIsLiked && styles.activeActionText, { marginLeft: 0 }]}>
+          <TouchableOpacity onPress={() => setIsLikesModalVisible(true)} activeOpacity={0.7}>
+            <Text style={[styles.feedActionText, localIsLiked && styles.activeActionText]}>
               {localLikes}
             </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.feedActionItem} onPress={handleCommentButtonPress} activeOpacity={0.7}>
-          <MessageSquare size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
+        <View style={styles.feedActionItem}>
+          <TouchableOpacity onPress={handleDislikeButtonPress} activeOpacity={0.7} style={styles.actionIconBtn}>
+            <ThumbsDown
+              size={RFValue(14)}
+              color={localIsDisliked ? '#EF4444' : Colors.gray}
+              fill={localIsDisliked ? '#EF4444' : 'none'}
+              strokeWidth={1.5}
+            />
+          </TouchableOpacity>
+          <Text style={[styles.feedActionText, localIsDisliked && { color: '#EF4444' }]}>
+            {localDislikes}
+          </Text>
+        </View>
+        {/* <View style={styles.feedActionItem}>
+          <TouchableOpacity onPress={handleCommentButtonPress} activeOpacity={0.7} style={styles.actionIconBtn}>
+            <MessageSquare size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
+          </TouchableOpacity>
           <Text style={styles.feedActionText}>{commentsCount}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.feedActionItem} onPress={handleShare} activeOpacity={0.7}>
+        </View> */}
+        <TouchableOpacity style={styles.actionIconBtn} onPress={handleShare} activeOpacity={0.7}>
           <Share2 size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
         </TouchableOpacity>
       </View>
@@ -357,10 +470,10 @@ export const FeedCard = ({
         onAddComment={handleAddComment}
         currentUserId={user?.id?.toString()}
         onDeleteComment={(commentId) => {
-          Alert.alert('Delete Comment', 'Are you sure you want to delete this comment?', [
-            { text: 'Cancel', style: 'cancel' },
+          Alert.alert(t('postDetails.deleteComment'), t('postDetails.deleteCommentConfirm'), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-              text: 'Delete',
+              text: t('common.delete'),
               style: 'destructive',
               onPress: async () => {
                 // Remove optimistically
@@ -373,7 +486,7 @@ export const FeedCard = ({
                   console.log('Comment deleted successfully');
                 } catch (error) {
                   console.log('Failed to delete comment from server', error);
-                  Alert.alert('Error', 'Failed to delete comment from server.');
+                  Alert.alert(t('common.error'), t('postDetails.commentDeleteFailed'));
                 }
               }
             }
@@ -479,11 +592,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#F2F2F2',
     paddingTop: hp('1.2%'),
+    gap: wp('4%'),
   },
   feedActionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: wp('6%'),
+  },
+  actionIconBtn: {
+    padding: wp('1%'),
   },
   feedActionText: {
     fontSize: RFValue(10.5),

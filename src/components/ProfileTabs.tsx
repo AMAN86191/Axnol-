@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { LayoutGrid, HeartHandshake } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 interface ProfileTabsProps {
   activeTab: 'posts' | 'contributions';
@@ -10,6 +11,8 @@ interface ProfileTabsProps {
 }
 
 export const ProfileTabs = React.memo(({ activeTab, onTabPress }: ProfileTabsProps) => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.tabsContainer}>
       <TouchableOpacity
@@ -18,7 +21,7 @@ export const ProfileTabs = React.memo(({ activeTab, onTabPress }: ProfileTabsPro
         activeOpacity={0.7}
       >
         <LayoutGrid size={RFValue(11.5)} color={activeTab === 'posts' ? '#FF6F34' : '#6B7280'} strokeWidth={2.2} />
-        <Text style={[styles.tabButtonText, activeTab === 'posts' && styles.activeTabButtonText]}>My Posts</Text>
+        <Text style={[styles.tabButtonText, activeTab === 'posts' && styles.activeTabButtonText]}>{t('profile.myPosts')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -27,7 +30,7 @@ export const ProfileTabs = React.memo(({ activeTab, onTabPress }: ProfileTabsPro
         activeOpacity={0.7}
       >
         <HeartHandshake size={RFValue(11.5)} color={activeTab === 'contributions' ? '#FF6F34' : '#6B7280'} strokeWidth={2.2} />
-        <Text style={[styles.tabButtonText, activeTab === 'contributions' && styles.activeTabButtonText]}>Contributions</Text>
+        <Text style={[styles.tabButtonText, activeTab === 'contributions' && styles.activeTabButtonText]}>{t('profile.contributions')}</Text>
       </TouchableOpacity>
     </View>
   );

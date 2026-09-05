@@ -28,15 +28,14 @@ import { ProfileTabs } from '../../components/ProfileTabs';
 import { ContributionsTab } from '../../components/ContributionsTab';
 import { MembershipIdCardModal } from '../../components/MembershipIdCardModal';
 import { InstagramGrid } from '../../components/InstagramGrid';
-import { WelcomeNewUserCard } from '../../components/WelcomeNewUserCard';
 import useAuthStore from '../../zustand/useAuthStore';
 import { Colors } from '../../theme/colors';
+import { useTranslation } from 'react-i18next';
 
 const ProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'posts' | 'contributions'>('posts');
-  const [isMember, setIsMember] = useState(true);
-  const [isNewUser, setIsNewUser] = useState(false);
 
   // Profile data states
   const [isIdCardModalVisible, setIsIdCardModalVisible] = useState(false);
@@ -81,9 +80,9 @@ console.log('mypost response', response)
 
           return {
             id: item.id?.toString(),
-            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || 'Unknown',
+            author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
             avatar: avatarUrl,
-            meta: item.created_at || 'Just now',
+            meta: item.created_at || t('common.justNow'),
             text: item.description || '',
             image: displayImage,
             images: additionalImages,
@@ -142,10 +141,6 @@ console.log('mypost response', response)
     (navigation as any).navigate('MembershipCertificateScreen', { profileData });
   }, [navigation, profileData]);
 
-  const handleDemoTogglePress = useCallback(() => {
-    setIsMember(prev => !prev);
-  }, []);
-
 
   const [contributionsData, setContributionsData] = useState<any[]>([]);
 
@@ -156,14 +151,14 @@ console.log('mypost response', response)
       if (response && response.donations) {
         const mappedData = response.donations.map((d: any) => ({
           id: d.id?.toString() || Math.random().toString(),
-          title: d.plan?.plan_name || 'Donation',
+          title: d.plan?.plan_name || t('profile.donation'),
           category: d.plan?.duration 
             ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1) 
-            : 'General',
+            : t('profile.general'),
           amount: `₹${parseFloat(d.amount || 0).toLocaleString('en-IN')}`,
-          date: d.date || 'N/A',
-          status: d.payment_status?.toLowerCase() === 'paid' ? 'Completed' : 'Pending',
-          txnId: d.transaction_id || 'N/A',
+          date: d.date || t('common.na'),
+          status: d.payment_status?.toLowerCase() === 'paid' ? t('common.completed') : t('common.pending'),
+          txnId: d.transaction_id || t('common.na'),
         }));
         setContributionsData(mappedData);
       }
@@ -209,9 +204,9 @@ console.log('mypost response', response)
       >
         {/* Profile Details Header Component */}
         <ProfileHeader
-          profileName={profileData?.user?.name || user?.name || 'Loading...'}
-          profileEmail={profileData?.user?.email || user?.email || 'N/A'}
-          profilePhone={profileData?.user?.phone || user?.phone ? `+91 ${profileData?.user?.phone || user?.phone}` : 'N/A'}
+          profileName={profileData?.user?.name || user?.name || t('profile.loading')}
+          profileEmail={profileData?.user?.email || user?.email || t('common.na')}
+          profilePhone={profileData?.user?.phone || user?.phone ? `+91 ${profileData?.user?.phone || user?.phone}` : t('common.na')}
           uid={profileData?.user?.uid || user?.uid}
           joinDate={profileData?.profile?.join_date || user?.profile?.join_date}
           designation={profileData?.profile?.designation || user?.profile?.designation}
@@ -230,19 +225,18 @@ console.log('mypost response', response)
           profession={profileData?.profile?.profession || user?.profile?.profession}
           referralCode={profileData?.profile?.referral_code || user?.profile?.referral_code}
           country={profileData?.profile?.country || user?.profile?.country}
+          city={profileData?.profile?.city || user?.profile?.city}
+          state={profileData?.profile?.state || user?.profile?.state}
+          pincode={profileData?.profile?.pincode || user?.profile?.pincode}
+          address={profileData?.profile?.address || user?.profile?.address}
         />
 
         {/* Profile Statistics Component */}
-        {isNewUser ? (
-          <WelcomeNewUserCard onDonatePress={handleDonatePress} />
-        ) : (
-          <ProfileStats 
-            postsCount={profileData?.statistics?.posts_count || myPosts.length} 
-            referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
-            totalDonation={profileData?.statistics?.total_donation || 0}
-            likesCount={profileData?.statistics?.likes_count || 0}
-          />
-        )}
+        <ProfileStats 
+          postsCount={profileData?.statistics?.posts_count || myPosts.length} 
+          referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
+          likesCount={profileData?.statistics?.likes_count || 0}
+        />
 
         {/* Active Campaign Card Component */}
         <ActiveCampaignCard onDonatePress={handleDonatePress} />
@@ -250,11 +244,10 @@ console.log('mypost response', response)
         {/* Membership Section Component */}
         {hasMembership && (
           <MembershipBenefits
-            isMember={true}
+            isMember={hasMembership}
             onCertificatePress={handleCertificatePress}
             onIdCardPress={() => setIsIdCardModalVisible(true)}
             onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
-            onDemoTogglePress={handleDemoTogglePress}
           />
         )}
 
@@ -275,7 +268,7 @@ console.log('mypost response', response)
               <InstagramGrid posts={myPosts} onPostPress={handlePostPress} />
             ) : (
               <View style={styles.emptyFeedContainer}>
-                <Text style={styles.emptyFeedText}>You haven't posted anything yet. Tap the '+' tab to create one!</Text>
+                <Text style={styles.emptyFeedText}>{t('profile.noPostsYet')}</Text>
               </View>
             )}
           </View>
@@ -287,7 +280,7 @@ console.log('mypost response', response)
               <ContributionsTab contributions={contributionsData} />
             ) : (
               <View style={styles.emptyFeedContainer}>
-                <Text style={styles.emptyFeedText}>You haven't made any contributions yet.</Text>
+                <Text style={styles.emptyFeedText}>{t('profile.noContributionsYet')}</Text>
                 <TouchableOpacity 
                   style={{ 
                     marginTop: hp('2%'), 
@@ -298,7 +291,7 @@ console.log('mypost response', response)
                   }}
                   onPress={handleDonatePress}
                 >
-                  <Text style={{ color: '#FFF', fontSize: RFValue(11), fontWeight: '700' }}>Donate Now</Text>
+                  <Text style={{ color: '#FFF', fontSize: RFValue(11), fontWeight: '700' }}>{t('drawer.donateNow')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -310,17 +303,17 @@ console.log('mypost response', response)
       <MembershipIdCardModal
         visible={isIdCardModalVisible}
         onClose={() => setIsIdCardModalVisible(false)}
-        profileName={profileData?.user?.name || user?.name || 'Unknown'}
+        profileName={profileData?.user?.name || user?.name || t('common.unknown')}
         avatarUri={
           profileData?.profile?.profile_pic 
             ? `${profileData.profile.profile_pic}` 
             : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
         }
-        memberId={profileData?.user?.uid || user?.uid || 'N/A'}
-        designation={(profileData?.user?.membership || user?.membership) ? 'Member' : 'N/A'}
+        memberId={profileData?.user?.uid || user?.uid || t('common.na')}
+        designation={(profileData?.user?.membership || user?.membership) ? t('profile.memberDesignation') : t('common.na')}
         since={profileData?.user?.start_date || user?.start_date 
           ? new Date(profileData?.user?.start_date || user?.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) 
-          : 'N/A'}
+          : t('common.na')}
       />
     </SafeAreaView>
   );

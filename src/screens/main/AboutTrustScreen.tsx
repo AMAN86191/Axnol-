@@ -8,6 +8,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { ArrowLeft, Heart, Users, Target, Eye, BriefcaseMedical, MapPin, ShieldCheck, ArrowRight, Home, Soup } from 'lucide-react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../theme/colors';
 
 const CowIcon = ({ size = 24, color = "#EA580C" }: { size?: number; color?: string }) => (
@@ -49,6 +50,7 @@ const CowIcon = ({ size = 24, color = "#EA580C" }: { size?: number; color?: stri
 );
 
 export default function AboutTrustScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
 
@@ -62,7 +64,7 @@ export default function AboutTrustScreen() {
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.headerLeftBtn}>
           <ArrowLeft size={RFValue(15)} color={Colors.dark} />
-          <Text style={styles.headerTitle}>About Us</Text>
+          <Text style={styles.headerTitle}>{t('about.title')}</Text>
         </TouchableOpacity>
         <Image source={require('../../../assets/images/logo/logo.png')} style={styles.headerLogo} />
       </View>
@@ -84,17 +86,17 @@ export default function AboutTrustScreen() {
             />
             <View style={styles.heroContent}>
               <View style={styles.heroTextGroup}>
-                <Text style={styles.heroTitleWhite}>गौसेवा ही</Text>
-                <Text style={styles.heroTitleOrange}>सच्ची सेवा</Text>
+                <Text style={styles.heroTitleWhite}>{t('about.gauSevaTrue')}</Text>
+                <Text style={styles.heroTitleOrange}>{t('about.sacchiSeva')}</Text>
               </View>
               <Text style={styles.heroSubtitle}>
-                हम समर्पित हैं गौमाता की सेवा,{'\n'}सुरक्षा और कल्याण के लिए।
+                {t('about.hindiMission')}
               </Text>
 
               <View style={styles.heroButtonsRow}>
                 <TouchableOpacity style={styles.donateBtn} onPress={() => navigation.navigate('DonateScreen' as never)}>
                   <Heart size={RFValue(10)} color="#FFF" fill="#FFF" />
-                  <Text style={styles.donateBtnText}>Donate Now</Text>
+                  <Text style={styles.donateBtnText}>{t('about.donateNow')}</Text>
                 </TouchableOpacity>
                 {/* <TouchableOpacity style={styles.volunteerBtn}>
                   <Users size={RFValue(10)} color="#FFF" />
@@ -113,12 +115,12 @@ export default function AboutTrustScreen() {
                 <CowIcon size={RFValue(12)} color="#EA580C" />
               </View>
               <View>
-                <Text style={styles.whoTagText}>Who We Are</Text>
-                <Text style={styles.whoTitle}>Gaumata Sewa Trust</Text>
+                <Text style={styles.whoTagText}>{t('about.whoWeAre')}</Text>
+                <Text style={styles.whoTitle}>{t('about.trustName')}</Text>
               </View>
             </View>
             <Text style={styles.whoDescription}>
-              Gaumata Sewa Trust is an inclusive platform that empowers individuals and groups to contribute their fair share of kindness towards the welfare of cows.
+              {t('about.trustDescription')}
             </Text>
           </View>
           <Image source={require('../../../assets/images/gaushala.png')} style={styles.whoRightImage} />
@@ -131,8 +133,8 @@ export default function AboutTrustScreen() {
               <Target size={RFValue(14)} color="#FFF" />
             </View>
             <View style={styles.mvTextGroup}>
-              <Text style={styles.mvTitle}>Our Mission</Text>
-              <Text style={styles.mvDesc}>To provide food, shelter, medical care and lifelong protection to cows in need.</Text>
+              <Text style={styles.mvTitle}>{t('about.ourMission')}</Text>
+              <Text style={styles.mvDesc}>{t('about.missionDescription')}</Text>
             </View>
           </View>
           <View style={[styles.mvCard, { backgroundColor: '#FFF7ED' }]}>
@@ -140,8 +142,8 @@ export default function AboutTrustScreen() {
               <Eye size={RFValue(14)} color="#FFF" />
             </View>
             <View style={styles.mvTextGroup}>
-              <Text style={styles.mvTitle}>Our Vision</Text>
-              <Text style={styles.mvDesc}>To build a compassionate society where every cow lives with dignity and care.</Text>
+              <Text style={styles.mvTitle}>{t('about.ourVision')}</Text>
+              <Text style={styles.mvDesc}>{t('about.visionDescription')}</Text>
             </View>
           </View>
         </View>
@@ -152,57 +154,57 @@ export default function AboutTrustScreen() {
             <CowIcon size={wp('45%')} color="rgba(255,255,255,0.06)" />
           </View>
 
-          <Text style={styles.impactTitle}>Our Impact</Text>
+          <Text style={styles.impactTitle}>{t('about.ourImpact')}</Text>
           <View style={styles.impactGrid}>
             <View style={styles.impactCol}>
               <View style={styles.impactIconCircle}><CowIcon size={RFValue(12)} color="#FFF" /></View>
               <Text style={styles.impactStat}>450+</Text>
-              <Text style={styles.impactLabel}>Cows Under Care</Text>
+              <Text style={styles.impactLabel}>{t('about.cowsUnderCare')}</Text>
             </View>
             <View style={styles.impactDivider} />
             <View style={styles.impactCol}>
               <View style={styles.impactIconCircle}><Users size={RFValue(12)} color="#FFF" /></View>
               <Text style={styles.impactStat}>12,000+</Text>
-              <Text style={styles.impactLabel}>Supporters</Text>
+              <Text style={styles.impactLabel}>{t('about.supporters')}</Text>
             </View>
             <View style={styles.impactDivider} />
             <View style={styles.impactCol}>
               <View style={styles.impactIconCircle}><BriefcaseMedical size={RFValue(12)} color="#FFF" /></View>
-              <Text style={styles.impactStat}>Daily</Text>
-              <Text style={styles.impactLabel}>Medical Assistance</Text>
+              <Text style={styles.impactStat}>{t('about.daily')}</Text>
+              <Text style={styles.impactLabel}>{t('about.medicalAssistance')}</Text>
             </View>
             <View style={styles.impactDivider} />
             <View style={styles.impactCol}>
               <View style={styles.impactIconCircle}><MapPin size={RFValue(12)} color="#FFF" /></View>
-              <Text style={styles.impactStat}>Delhi</Text>
-              <Text style={styles.impactLabel}>Community Driven</Text>
+              <Text style={styles.impactStat}>{t('about.delhi')}</Text>
+              <Text style={styles.impactLabel}>{t('about.communityDriven')}</Text>
             </View>
           </View>
         </View>
 
         {/* WHY CHOOSE US */}
         <View style={styles.whySection}>
-          <Text style={styles.whyTitle}>Why Choose Us</Text>
+          <Text style={styles.whyTitle}>{t('about.whyChooseUs')}</Text>
           <View style={styles.whyGrid}>
             <View style={styles.whyCard}>
               <View style={[styles.whyIconCircle, { backgroundColor: '#2C5A35' }]}><Home size={RFValue(12)} color="#FFF" /></View>
-              <Text style={styles.whyCardTitle}>Shelter</Text>
-              <Text style={styles.whyCardDesc}>Safe and comfortable{'\n'}homes for cows.</Text>
+              <Text style={styles.whyCardTitle}>{t('about.shelter')}</Text>
+              <Text style={styles.whyCardDesc}>{t('about.shelterDesc')}</Text>
             </View>
             <View style={styles.whyCard}>
               <View style={[styles.whyIconCircle, { backgroundColor: '#F97316' }]}><Soup size={RFValue(12)} color="#FFF" /></View>
-              <Text style={styles.whyCardTitle}>Healthy Food</Text>
-              <Text style={styles.whyCardDesc}>Nutritious food for{'\n'}their well-being.</Text>
+              <Text style={styles.whyCardTitle}>{t('about.healthyFood')}</Text>
+              <Text style={styles.whyCardDesc}>{t('about.foodDesc')}</Text>
             </View>
             <View style={styles.whyCard}>
               <View style={[styles.whyIconCircle, { backgroundColor: '#2C5A35' }]}><BriefcaseMedical size={RFValue(12)} color="#FFF" /></View>
-              <Text style={styles.whyCardTitle}>Medical Care</Text>
-              <Text style={styles.whyCardDesc}>Vaccination &{'\n'}treatment for health.</Text>
+              <Text style={styles.whyCardTitle}>{t('about.medicalCare')}</Text>
+              <Text style={styles.whyCardDesc}>{t('about.medicalDesc')}</Text>
             </View>
             <View style={styles.whyCard}>
               <View style={[styles.whyIconCircle, { backgroundColor: '#F97316' }]}><ShieldCheck size={RFValue(12)} color="#FFF" /></View>
-              <Text style={styles.whyCardTitle}>Transparency</Text>
-              <Text style={styles.whyCardDesc}>Regular updates{'\n'}and transparent use{'\n'}of donations.</Text>
+              <Text style={styles.whyCardTitle}>{t('about.transparency')}</Text>
+              <Text style={styles.whyCardDesc}>{t('about.transparencyDesc')}</Text>
             </View>
           </View>
         </View>
@@ -220,10 +222,10 @@ export default function AboutTrustScreen() {
             <Heart size={RFValue(160)} color="rgba(255,255,255,0.06)" fill="rgba(255,255,255,0.06)" strokeWidth={1} />
           </View>
           <View style={styles.joinContentWrapperFull}>
-            <Text style={styles.joinTitle}>Be a Part of the Change</Text>
-            <Text style={styles.joinDesc}>Your small contribution can bring a{'\n'}big change in their lives.</Text>
+            <Text style={styles.joinTitle}>{t('about.bePartOfChange')}</Text>
+            <Text style={styles.joinDesc}>{t('about.changeDesc')}</Text>
             <TouchableOpacity style={styles.joinBtn} onPress={()=>navigation.navigate('JoinMembershipScreen' as never)}>
-              <Text style={styles.joinBtnText}>Join Us Now</Text>
+              <Text style={styles.joinBtnText}>{t('about.joinUsNow')}</Text>
               <ArrowRight size={RFValue(10)} color="#F97316" style={{ marginLeft: wp('1%') }} />
             </TouchableOpacity>
           </View>

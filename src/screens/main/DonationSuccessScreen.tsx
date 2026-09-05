@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -26,21 +27,25 @@ import {
   ShieldCheck,
   Download,
   Home as HomeIcon,
-  HandHeart,
   Wheat,
 } from 'lucide-react-native';
 
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DonationSuccessScreen'>;
 type SuccessScreenRouteProp = RouteProp<RootStackParamList, 'DonationSuccessScreen'>;
 
 export default function DonationSuccessScreen() {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SuccessScreenRouteProp>();
+  const { width: windowWidth } = useWindowDimensions();
 
   const { amount, transactionId, date } = route.params;
+
+  const isSmallScreen = windowWidth < 360;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -55,9 +60,9 @@ export default function DonationSuccessScreen() {
               <Check color="#FFFFFF" size={RFValue(40)} strokeWidth={3} />
             </View>
           </View>
-          <Text style={styles.titleText}>Donation Successful!</Text>
+          <Text style={styles.titleText}>{t('donationSuccess.title')}</Text>
           <Text style={styles.subtitleText}>
-            Thank you for supporting Gau Seva.{'\n'}Your contribution makes a meaningful impact.
+            {t('donationSuccess.subtitle', { newline: '\n' })}
           </Text>
         </View>
 
@@ -71,13 +76,16 @@ export default function DonationSuccessScreen() {
               <Text style={styles.amountText}>₹ {amount.toLocaleString('en-IN')}</Text>
               <View style={styles.badgeContainer}>
                 <Heart color="#2E6B34" size={RFValue(10)} fill="#2E6B34" />
-                <Text style={styles.badgeText}>One-Time Contribution</Text>
+                <Text style={styles.badgeText}>{t('donationSuccess.oneTimeContribution')}</Text>
               </View>
             </View>
           </View>
           <Image
             source={require('../../../assets/images/cow_transplant.png')}
-            style={styles.calfImage}
+            style={[
+              styles.calfImage,
+              isSmallScreen && styles.calfImageSmall,
+            ]}
             resizeMode="contain"
           />
         </View>
@@ -88,7 +96,7 @@ export default function DonationSuccessScreen() {
             <View style={styles.iconBoxDark}>
               <FileText color="#FFFFFF" size={RFValue(14)} />
             </View>
-            <Text style={styles.detailsTitle}>Transaction Details</Text>
+            <Text style={styles.detailsTitle}>{t('donationSuccess.transactionDetails')}</Text>
           </View>
 
           <View style={styles.row}>
@@ -96,7 +104,7 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <IndianRupee color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Amount</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.amount')}</Text>
             </View>
             <Text style={styles.rowValueDark}>₹ {amount.toLocaleString('en-IN')}</Text>
           </View>
@@ -108,7 +116,7 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <Calendar color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Date & Time</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.dateTime')}</Text>
             </View>
             <Text style={styles.rowValueLight}>{date}</Text>
           </View>
@@ -120,9 +128,9 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <Hash color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Transaction ID</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.transactionId')}</Text>
             </View>
-            <Text style={styles.rowValueLight}>{transactionId}</Text>
+            <Text style={styles.rowValueLight} numberOfLines={1}>{transactionId}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -132,9 +140,9 @@ export default function DonationSuccessScreen() {
               <View style={styles.iconBoxLight}>
                 <CreditCard color="#2E6B34" size={RFValue(12)} />
               </View>
-              <Text style={styles.rowLabel}>Payment Mode</Text>
+              <Text style={styles.rowLabel}>{t('donationSuccess.paymentMode')}</Text>
             </View>
-            <Text style={styles.rowValueLight}>UPI</Text>
+            <Text style={styles.rowValueLight}>{t('donationSuccess.upi')}</Text>
           </View>
         </View>
 
@@ -144,27 +152,29 @@ export default function DonationSuccessScreen() {
             <View style={styles.impactLargeIconCircle}>
               <Image
                 source={require('../../../assets/images/hand.png')}
-                style={styles.impactImageLogo}
+                style={[styles.impactImageLogo, isSmallScreen && styles.impactImageLogoSmall]}
                 resizeMode="contain"
               />
             </View>
           </View>
           <View style={styles.impactCardRight}>
-            <Text style={styles.impactTitleHorizontal}>Your Contribution Helps</Text>
+            <Text style={styles.impactTitleHorizontal}>{t('donationSuccess.yourContributionHelps')}</Text>
             <View style={styles.impactRowHorizontal}>
               <View style={styles.impactColHorizontal}>
-                <Wheat color="#2E6B34" size={RFValue(18)} />
-                <Text style={styles.impactTextHorizontal}>Cow Feeding</Text>
+                <Wheat color="#2E6B34" size={RFValue(16)} />
+                <Text style={styles.impactTextHorizontal}>{t('donationSuccess.cowFeeding')}</Text>
+              </View>
+            </View>
+            <View style={styles.impactSpacer} />
+            <View style={styles.impactRowHorizontal}>
+              <View style={styles.impactColHorizontal}>
+                <PlusCircle color="#2E6B34" size={RFValue(16)} />
+                <Text style={styles.impactTextHorizontal}>{t('donationSuccess.medicalSupport')}</Text>
               </View>
               <View style={styles.impactDividerHorizontal} />
               <View style={styles.impactColHorizontal}>
-                <PlusCircle color="#2E6B34" size={RFValue(18)} />
-                <Text style={styles.impactTextHorizontal}>Medical Support</Text>
-              </View>
-              <View style={styles.impactDividerHorizontal} />
-              <View style={styles.impactColHorizontal}>
-                <Home color="#2E6B34" size={RFValue(18)} />
-                <Text style={styles.impactTextHorizontal}>Shelter Maint...</Text>
+                <Home color="#2E6B34" size={RFValue(16)} />
+                <Text style={styles.impactTextHorizontal}>{t('donationSuccess.shelterMaintenance')}</Text>
               </View>
             </View>
           </View>
@@ -173,15 +183,15 @@ export default function DonationSuccessScreen() {
         {/* Security Message */}
         <View style={styles.securityRow}>
           <ShieldCheck color="#2E6B34" size={RFValue(14)} />
-          <Text style={styles.securityText}>Your donation is safe and securely processed.</Text>
+          <Text style={styles.securityText}>{t('donationSuccess.safeMessage')}</Text>
         </View>
 
         {/* Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+          {/* <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
             <Download color="#FFFFFF" size={RFValue(16)} />
-            <Text style={styles.primaryButtonText}>Download Receipt</Text>
-          </TouchableOpacity>
+            <Text style={styles.primaryButtonText}>{t('donationSuccess.downloadReceipt')}</Text>
+          </TouchableOpacity> */}
 
           <TouchableOpacity 
             style={styles.secondaryButton} 
@@ -189,7 +199,7 @@ export default function DonationSuccessScreen() {
             onPress={() => navigation.navigate('MainDrawer')}
           >
             <HomeIcon color="#E85D04" size={RFValue(16)} />
-            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+            <Text style={styles.secondaryButtonText}>{t('donationSuccess.backToHome')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -264,6 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    paddingRight: wp('30%'),
   },
   rupeeIconContainer: {
     width: wp('12%'),
@@ -296,11 +307,16 @@ const styles = StyleSheet.create({
     marginLeft: wp('1%'),
   },
   calfImage: {
-    width: wp('35%'),
-    height: wp('30%'),
+    width: wp('32%'),
+    height: wp('27%'),
     position: 'absolute',
     right: wp('1%'),
-    // bottom: hp('1%'),
+    bottom: wp('2%'),
+  },
+  calfImageSmall: {
+    width: wp('26%'),
+    height: wp('22%'),
+    right: wp('0.5%'),
   },
   detailsCard: {
     width: '100%',
@@ -368,6 +384,9 @@ const styles = StyleSheet.create({
     fontSize: RFValue(10),
     color: '#666666',
     fontWeight: '500',
+    flexShrink: 1,
+    textAlign: 'right',
+    paddingLeft: wp('2%'),
   },
   divider: {
     height: 1,
@@ -399,8 +418,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   impactImageLogo: {
-    width: wp('35%'),
-    height: wp('35%'),
+    width: wp('34%'),
+    height: wp('34%'),
+  },
+  impactImageLogoSmall: {
+    width: wp('30%'),
+    height: wp('30%'),
   },
   impactCardRight: {
     flex: 1,
@@ -424,17 +447,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   impactTextHorizontal: {
-    fontSize: RFValue(8),
+    fontSize: RFValue(7.5),
     color: '#1E1E1E',
     textAlign: 'center',
     marginTop: hp('0.5%'),
     fontWeight: '500',
+    flexShrink: 1,
+    paddingHorizontal: wp('1%'),
   },
   impactDividerHorizontal: {
     width: 1,
     height: hp('3%'),
     backgroundColor: '#D0E3CD',
-    // marginHorizontal: wp('1%'),
+    alignSelf: 'center',
+  },
+  impactSpacer: {
+    height: hp('0.5%'),
   },
   securityRow: {
     flexDirection: 'row',
@@ -456,8 +484,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: hp('1.2%'),
+    paddingVertical: hp('1.7%'),
     borderRadius: wp('3%'),
+    minHeight: hp('6%'),
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -470,10 +499,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: hp('1.2%'),
+    paddingVertical: hp('1.7%'),
     borderRadius: wp('3%'),
     borderWidth: 1,
     borderColor: '#E85D04',
+    minHeight: hp('6%'),
   },
   secondaryButtonText: {
     color: '#E85D04',

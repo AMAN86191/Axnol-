@@ -13,6 +13,7 @@ import {
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { X, User, Mail, Phone, KeyRound, Briefcase, Calendar, Info, Image as ImageIcon } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import { InputField } from './InputField';
 import { CustomButton } from './CustomButton';
@@ -55,6 +56,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [profession, setProfession] = useState(currentProfession);
   const [bio, setBio] = useState(currentBio);
   const [profilePic, setProfilePic] = useState(currentProfilePic);
+  const { t } = useTranslation();
 
   // States to track flow
   const [showOtpView, setShowOtpView] = useState(false);
@@ -81,11 +83,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter your name');
+      Alert.alert(t('addPost.validationError'), t('editProfile.nameRequired'));
       return;
     }
     if (!phone.trim() || phone.length < 8) {
-      Alert.alert('Validation Error', 'Please enter a valid phone number');
+      Alert.alert(t('addPost.validationError'), t('editProfile.invalidPhone'));
       return;
     }
 
@@ -111,9 +113,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         setLoading(false);
         setShowOtpView(true);
         Alert.alert(
-          'Verification Code Sent 📱',
-          `An OTP code has been sent to ${phone}. Enter '123456' to verify.`,
-          [{ text: 'OK' }]
+          t('editProfile.otpSent'),
+          t('editProfile.otpSentMessage', { phone }),
+          [{ text: t('common.ok') }]
         );
       }, 1000);
     } else {
@@ -124,7 +126,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   const handleVerifyOtp = () => {
     if (otpCode !== '123456') {
-      Alert.alert('Verification Failed ❌', 'Invalid OTP code. Please enter the correct code: 123456');
+      Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
       return;
     }
 
@@ -144,8 +146,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       };
       onUpdate(payload);
       Alert.alert(
-        'Verified Successfully! ✅',
-        'Your phone number has been verified and profile updated.',
+        t('editProfile.verifyUpdate'),
+        t('editProfile.profileUpdated'),
       );
     }, 1200);
   };
@@ -166,7 +168,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {showOtpView ? 'Verify OTP' : 'Edit Profile'}
+                {showOtpView ? t('editProfile.verifyOtp') : t('editProfile.title')}
               </Text>
               <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={styles.closeBtn}>
                 <X size={RFValue(14)} color={Colors.dark} />
@@ -177,16 +179,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {!showOtpView ? (
               <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: hp('2%') }}>
                 <InputField
-                  label="Display Name"
-                  placeholder="Enter your name"
+                  label={t('editProfile.displayName')}
+                  placeholder={t('editProfile.namePlaceholder')}
                   value={name}
                   onChangeText={setName}
                   leftIcon={<User size={RFValue(12)} color={Colors.primary} />}
                 />
 
                 <InputField
-                  label="Email Address"
-                  placeholder="Enter your email"
+                  label={t('editProfile.email')}
+                  placeholder={t('editProfile.emailPlaceholder')}
                   keyboardType="email-address"
                   value={email}
                   onChangeText={setEmail}
@@ -195,8 +197,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
 
                 <InputField
-                  label="Phone Number"
-                  placeholder="Enter your phone number"
+                  label={t('editProfile.phone')}
+                  placeholder={t('editProfile.phonePlaceholder')}
                   keyboardType="phone-pad"
                   value={phone}
                   onChangeText={setPhone}
@@ -212,32 +214,32 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
 
                 <InputField
-                  label="Profession"
-                  placeholder="Enter your profession"
+                  label={t('editProfile.profession')}
+                  placeholder={t('editProfile.professionPlaceholder')}
                   value={profession}
                   onChangeText={setProfession}
                   leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
                 />
 
                 <InputField
-                  label="Date of Birth"
-                  placeholder="YYYY-MM-DD"
+                  label={t('editProfile.dob')}
+                  placeholder={t('editProfile.dobPlaceholder')}
                   value={dob}
                   onChangeText={setDob}
                   leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
                 />
 
                 <InputField
-                  label="Date of Marriage"
-                  placeholder="YYYY-MM-DD (Optional)"
+                  label={t('editProfile.dom')}
+                  placeholder={t('editProfile.dom')}
                   value={dom}
                   onChangeText={setDom}
                   leftIcon={<Calendar size={RFValue(12)} color={Colors.primary} />}
                 />
 
                 <InputField
-                  label="Bio"
-                  placeholder="Tell us about yourself"
+                  label={t('editProfile.bio')}
+                  placeholder={t('editProfile.bioPlaceholder')}
                   value={bio}
                   onChangeText={setBio}
                   leftIcon={<Info size={RFValue(12)} color={Colors.primary} />}
@@ -252,11 +254,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
 
                 <Text style={styles.noteText}>
-                  * Note: Changing your phone number will require entering a one-time password (OTP) to verify it.
+                  {t('editProfile.phoneChangeNote')}
                 </Text>
 
                 <CustomButton
-                  title="Save Changes"
+                  title={t('editProfile.saveChanges')}
                   loading={loading}
                   onPress={handleSave}
                   style={styles.saveBtn}
@@ -265,12 +267,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             ) : (
               <View style={styles.modalBody}>
                 <Text style={styles.otpDescription}>
-                  Please enter the 6-digit verification code sent to your new phone number <Text style={styles.boldText}>{phone}</Text>.
+                  {t('editProfile.otpDescription')} <Text style={styles.boldText}>{phone}</Text>.
                 </Text>
 
                 <InputField
-                  label="Verification Code (OTP)"
-                  placeholder="Enter 6-digit OTP (123456)"
+                  label={t('editProfile.otpLabel')}
+                  placeholder={t('editProfile.otpPlaceholder')}
                   keyboardType="number-pad"
                   maxLength={6}
                   value={otpCode}
@@ -284,22 +286,22 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     style={styles.backBtn}
                     disabled={loading}
                   >
-                    <Text style={styles.backBtnText}>Edit Details</Text>
+                    <Text style={styles.backBtnText}>{t('editProfile.editDetails')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     onPress={() => {
-                      Alert.alert('Resent 📱', 'Verification code has been resent.');
+                      Alert.alert(t('editProfile.resent'), t('editProfile.resentMessage'));
                     }}
                     style={styles.resendBtn}
                     disabled={loading}
                   >
-                    <Text style={styles.resendBtnText}>Resend Code</Text>
+                    <Text style={styles.resendBtnText}>{t('editProfile.resendCode')}</Text>
                   </TouchableOpacity>
                 </View>
 
                 <CustomButton
-                  title="Verify & Update"
+                  title={t('editProfile.verifyUpdate')}
                   loading={loading}
                   onPress={handleVerifyOtp}
                   style={styles.saveBtn}

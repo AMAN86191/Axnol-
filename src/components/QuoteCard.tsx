@@ -2,15 +2,18 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { useTranslation } from 'react-i18next';
 
 export const QuoteCard = React.memo(() => {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.quoteCard}>
       <Text style={styles.quoteIcon}>“</Text>
       <Text style={styles.quoteText}>
-        गावो विश्वस्य मातरः | Cows are the mothers of the universe. Serving them brings peace, harmony, and prosperity to our lives.
+        {t('quote.sanskrit')} | {t('quote.english')}
       </Text>
-      <Text style={styles.quoteAuthor}>— Rigveda</Text>
+      <Text style={styles.quoteAuthor}>{t('quote.author')}</Text>
     </View>
   );
 });

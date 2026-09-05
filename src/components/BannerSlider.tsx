@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,6 +10,7 @@ import {
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 
 export interface SlideItem {
@@ -22,27 +23,6 @@ export interface SlideItem {
   targetScreen?: string;
 }
 
-const SLIDES: SlideItem[] = [
-  {
-    id: '1',
-    title: 'Together, we create\na kinder tomorrow',
-    subtitle: 'Support cows. Support life.',
-    image: require('../../assets/images/banner_1.png'),
-    badge: '',
-    buttonText: 'Donate Now',
-    targetScreen: 'DonateScreen',
-  },
-  {
-    id: '2',
-    title: 'Daily Grass Contribution',
-    subtitle: 'Support feed for 450+ cows in the sanctuary.',
-    image: require('../../assets/images/banner_2.png'),
-    badge: '',
-    buttonText: 'Contribute',
-    targetScreen: 'DonateScreen',
-  }
-];
-
 interface BannerSliderProps {
   onPressBanner?: (item: SlideItem) => void;
 }
@@ -51,6 +31,28 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
   const flatListRef = useRef<FlatList>(null);
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
   const navigation = useNavigation<any>();
+  const { t } = useTranslation();
+
+  const SLIDES: SlideItem[] = useMemo(() => [
+    {
+      id: '1',
+      title: `${t('banner.slide1Title1')}\n${t('banner.slide1Title2')}`,
+      subtitle: t('banner.slide1Subtitle'),
+      image: require('../../assets/images/banner_1.png'),
+      badge: '',
+      buttonText: t('banner.slide1Button'),
+      targetScreen: 'DonateScreen',
+    },
+    {
+      id: '2',
+      title: t('banner.slide2Title'),
+      subtitle: t('banner.slide2Subtitle'),
+      image: require('../../assets/images/banner_2.png'),
+      badge: '',
+      buttonText: t('banner.slide2Button'),
+      targetScreen: 'DonateScreen',
+    }
+  ], [t]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -102,8 +104,8 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
           <View style={styles.textContainer}>
             {item.id === '1' ? (
               <View style={styles.bannerTextContainer}>
-                <Text style={styles.eventTitleNormal}>Together, we create</Text>
-                <Text style={styles.eventTitleItalic}>a kinder tomorrow</Text>
+                <Text style={styles.eventTitleNormal}>{t('banner.slide1Title1')}</Text>
+                <Text style={styles.eventTitleItalic}>{t('banner.slide1Title2')}</Text>
               </View>
             ) : (
               <Text style={styles.eventTitle}>{item.title}</Text>

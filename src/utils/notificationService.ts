@@ -10,6 +10,7 @@ import {
 } from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance, AndroidStyle, EventType } from '@notifee/react-native';
 import { Platform, PermissionsAndroid, Alert, Linking } from 'react-native';
+import i18n from '../i18n';
 import { zustandStorage } from './asyncstorage';
 
 /**
@@ -106,11 +107,11 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
           return true;
         } else if (result === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
           Alert.alert(
-            'Notifications Disabled',
-            'Please enable notifications from app settings to stay updated.',
+            i18n.t('notificationsDisabled.title'),
+            i18n.t('notificationsDisabled.message'),
             [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+              { text: i18n.t('common.cancel'), style: 'cancel' },
+              { text: i18n.t('notificationsDisabled.openSettings'), onPress: () => Linking.openSettings() },
             ],
           );
           return false;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Linking } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   createDrawerNavigator,
   DrawerContentComponentProps,
@@ -24,6 +25,8 @@ import {
   Edit3,
   Bell,
   List,
+  Languages,
+  Users,
 } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -33,6 +36,7 @@ import MainTabNavigator from './MainTabNavigator';
 import { Colors } from '../theme/colors';
 import Svg, { Path } from 'react-native-svg';
 import useAuthStore from '../zustand/useAuthStore';
+import useLanguageStore from '../zustand/useLanguageStore';
 
 const Drawer = createDrawerNavigator();
 
@@ -48,17 +52,19 @@ const WhatsAppIcon = ({ size, color }: { size: number; color: string }) => (
 // Custom Drawer Sidebar Component
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const { state, navigation } = props;
   const { user, logout } = useAuthStore();
+  const { language, setLanguage } = useLanguageStore();
 
   const handleLogout = () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to logout from Gaushala Community?',
+      t('drawer.logout'),
+      t('drawer.logoutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Logout',
+          text: t('drawer.logout'),
           style: 'destructive',
           onPress: async () => {
             navigation.closeDrawer();
@@ -78,8 +84,8 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
 
 
   const joinWhatsApp = () => {
-    Linking.openURL('https://chat.whatsapp.com/GaumataTrustCommunityPlaceholder').catch(() => {
-      Alert.alert('WhatsApp Community', 'Please join our WhatsApp group via chat link: chat.whatsapp.com/gaumata-sewa-trust');
+    Linking.openURL(t('drawer.whatsappLink')).catch(() => {
+      Alert.alert(t('drawer.whatsappCommunity'), t('drawer.whatsappMessage'));
     });
   };
   // Custom Drawer Item
@@ -150,7 +156,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       <View style={[styles.profileHeader, { paddingTop: insets.top + hp('1.5%') }]}>
         {/* Top bar with Close button */}
         <View style={styles.headerTopBar}>
-          <Text style={styles.appName}>Gaumata Sewa Trust</Text>
+          <Text style={styles.appName}>{t('drawer.gaumataTrust')}</Text>
           <TouchableOpacity
             style={styles.closeBtn}
             onPress={() => navigation.closeDrawer()}
@@ -178,14 +184,14 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name || 'Guest User'}</Text>
+            <Text style={styles.profileName}>{user?.name || t('drawer.guestUser')}</Text>
             <Text style={styles.userEmailText} numberOfLines={1}>{user?.email || ''}</Text>
           </View>
         </View>
 
         {/* Badges and Membership Details Card */}
         <View style={styles.membershipDetailsCard}>
-          <Text style={styles.designationText}>{user?.profile?.designation || 'User'}</Text>
+          <Text style={styles.designationText}>{user?.profile?.designation || t('common.user')}</Text>
 
           {user?.membership ? (
             <View style={styles.statusRowBadgesHeader}>
@@ -198,9 +204,9 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             </View>
           ) : null}
           <View style={styles.memberMetaRow}>
-            <Text style={styles.memberMetaText}>ID: {user?.uid || 'N/A'}</Text>
+            <Text style={styles.memberMetaText}>{t('drawer.id')}: {user?.uid || t('common.na')}</Text>
             <View style={styles.metaDivider} />
-            <Text style={styles.memberMetaText}>Since: {user?.profile?.join_date ? new Date(user.profile.join_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</Text>
+            <Text style={styles.memberMetaText}>{t('drawer.since')}: {user?.profile?.join_date ? new Date(user.profile.join_date).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { month: 'short', year: 'numeric' }) : t('common.na')}</Text>
           </View>
         </View>
       </View>
@@ -239,25 +245,25 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
               <Text style={styles.sponsorEmoji}>🐄</Text>
             </View>
             <View style={styles.sponsorTextContainer}>
-              <Text style={styles.sponsorTitle}>Sponsor a Cow</Text>
-              <Text style={styles.sponsorSubtitle}>Provide food & shelter for a Gau Mata</Text>
+              <Text style={styles.sponsorTitle}>{t('drawer.sponsorCow')}</Text>
+              <Text style={styles.sponsorSubtitle}>{t('drawer.sponsorSubtitle')}</Text>
             </View>
           </View>
           <View style={styles.sponsorActionBtn}>
-            <Text style={styles.sponsorActionText}>Donate Now</Text>
+            <Text style={styles.sponsorActionText}>{t('drawer.donateNow')}</Text>
             <ChevronRight size={RFValue(10)} color={Colors.white} />
           </View>
         </TouchableOpacity>
         <View style={styles.divider} />
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>NAVIGATION</Text>
+          <Text style={styles.sectionTitle}>{t('drawer.navigation')}</Text>
         </View>
 
-        {renderDrawerItem('Home', Home, 'MainTabs', 'Home')}
-        {renderDrawerItem('My Profile', User, 'MainTabs', 'Profile')}
-        {renderDrawerItem('My Posts', Edit3, 'MainTabs', 'Profile', undefined, false)}
-        {/* {renderDrawerItem('Notifications', Bell, 'NotificationScreen')} */}
-        {renderDrawerItem('Become a Member', CreditCard, 'MainTabs', 'Membership')}
+        {renderDrawerItem(t('drawer.home'), Home, 'MainTabs', 'Home')}
+        {renderDrawerItem(t('drawer.myProfile'), User, 'MainTabs', 'Profile')}
+        {renderDrawerItem(t('drawer.myPosts'), Edit3, 'MainTabs', 'Profile', undefined, false)}
+        {renderDrawerItem(t('drawer.notifications'), Bell, 'NotificationScreen')}
+        {renderDrawerItem(t('drawer.becomeMember'), CreditCard, 'MainTabs', 'Membership')}
 
 
 
@@ -266,36 +272,57 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         <View style={styles.divider} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>MEMBERSHIP & CONTRIBUTIONS</Text>
+          <Text style={styles.sectionTitle}>{t('drawer.membershipContributions')}</Text>
         </View>
 
-        {renderDrawerItem('Membership Certificate', Award, 'MembershipCertificateScreen')}
-        {renderDrawerItem('Donation History', History, 'MainTabs', 'Profile', undefined, false)}
+        {renderDrawerItem(t('drawer.membershipCertificate'), Award, 'MembershipCertificateScreen')}
+        {renderDrawerItem(t('drawer.donationHistory'), History, 'MainTabs', 'Profile', undefined, false)}
         {/* {renderDrawerItem('Membership ', List, 'PlansScreen')} */}
-        {renderDrawerItem('Referral Friends', Share2, 'ReferralScreen')}
-        {renderDrawerItem('WhatsApp Community', WhatsAppIcon, undefined, undefined, joinWhatsApp)}
+        {renderDrawerItem(t('drawer.referralFriends'), Share2, 'ReferralScreen')}
+        {renderDrawerItem(t('drawer.whatsappCommunity'), WhatsAppIcon, undefined, undefined, joinWhatsApp)}
 
         <View style={styles.divider} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>ABOUT & GALLERY</Text>
+          <Text style={styles.sectionTitle}>{t('drawer.aboutGallery')}</Text>
         </View>
 
-        {renderDrawerItem('Gallery', ImageIcon, 'GalleryScreen')}
-        {renderDrawerItem('Contact Us', Phone, 'HelpSupportScreen')}
-        {renderDrawerItem('About Trust', Info, 'AboutTrustScreen')}
+        {renderDrawerItem(t('drawer.gallery'), ImageIcon, 'GalleryScreen')}
+        {renderDrawerItem(t('drawer.contactUs'), Phone, 'HelpSupportScreen')}
+        {renderDrawerItem(t('drawer.aboutTrust'), Info, 'AboutTrustScreen')}
+        {renderDrawerItem(t('drawer.communityMembers'), Users, 'CommunityMembersScreen')}
 
         <View style={styles.divider} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>LEGAL</Text>
+          <Text style={styles.sectionTitle}>{t('drawer.legal')}</Text>
         </View>
 
-        {renderDrawerItem('Privacy Policy', Shield, 'PrivacyPolicyScreen')}
-        {renderDrawerItem('Terms & Conditions', FileCheck, 'TermsScreen')}
+        {renderDrawerItem(t('drawer.privacyPolicy'), Shield, 'PrivacyPolicyScreen')}
+        {renderDrawerItem(t('drawer.termsConditions'), FileCheck, 'TermsScreen')}
 
         <View style={styles.divider} />
-        {renderDrawerItem('Logout', LogOut, undefined, undefined, handleLogout)}
+
+        {/* Language Toggle */}
+        <TouchableOpacity
+          style={styles.drawerItem}
+          onPress={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.drawerItemLeft}>
+            <View style={[styles.iconContainer, styles.activeIconContainer]}>
+              <Languages size={RFValue(13)} color={Colors.white} />
+            </View>
+            <Text style={[styles.drawerItemLabel, styles.activeDrawerItemLabel]}>
+              {t('drawer.language')}
+            </Text>
+          </View>
+          <Text style={styles.languageValue}>
+            {language === 'en' ? 'हिन्दी' : 'English'}
+          </Text>
+        </TouchableOpacity>
+
+        {renderDrawerItem(t('drawer.logout'), LogOut, undefined, undefined, handleLogout, false)}
       </DrawerContentScrollView>
     </View>
   );
@@ -527,6 +554,11 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F5F5F5',
     marginVertical: hp('0.8%'),
+  },
+  languageValue: {
+    fontSize: RFValue(11),
+    fontWeight: '700',
+    color: Colors.primary,
   },
   sponsorCard: {
     backgroundColor: '#FFF1EB', // Soft primary tint

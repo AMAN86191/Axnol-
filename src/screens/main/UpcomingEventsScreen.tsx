@@ -16,19 +16,21 @@ import { Calendar, MapPin, Clock, ArrowLeft } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import useHomeStore from '../../zustand/useHomeStore';
+import { useTranslation } from 'react-i18next';
 
 const UpcomingEventsScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const { events } = useHomeStore();
 
   const renderEventCard = ({ item }: { item: any }) => {
-    const eventTitle = item.title || item.event_title || item.name || 'Gau Seva Event';
-    const eventDate = item.date || item.event_date || item.created_at || 'Upcoming';
-    const eventAddress = item.address || item.location || item.event_location || 'Gaushala';
-    const eventTime = item.time || item.event_time || '10:00 AM';
-    const eventDescription = item.description || item.event_description || 'Join us for this wonderful event.';
+    const eventTitle = item.title || item.event_title || item.name || t('events.gauSevaEvent');
+    const eventDate = item.date || item.event_date || item.created_at || t('events.upcoming');
+    const eventAddress = item.address || item.location || item.event_location || t('events.gaushala');
+    const eventTime = item.time || item.event_time || t('events.time');
+    const eventDescription = item.description || item.event_description || t('events.joinUs');
 
-    let dateBadge = 'Soon';
+    let dateBadge = t('common.soon');
     if (eventDate.includes(',')) {
        dateBadge = eventDate.split(',')[0].trim();
     } else if (eventDate.includes(' ')) {
@@ -72,7 +74,7 @@ const UpcomingEventsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
-      <CommonHeader title="Upcoming Events" onBackPress={() => navigation.goBack()} />
+      <CommonHeader title={t('events.upcomingEvents')} onBackPress={() => navigation.goBack()} />
 
       <FlatList
         data={events}

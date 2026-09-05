@@ -18,6 +18,7 @@ import { Phone, Heart, ShieldCheck, ArrowRight, Shield, Award, Smartphone } from
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
 import { AuthInput } from '../../components/AuthInput';
@@ -37,14 +38,15 @@ const GoogleIcon = ({ size = 18 }: { size?: number }) => (
 
 // Trust Badges Data
 const TRUST_BADGES = [
-  { id: 1, title: 'Secure & Safe', subtitle: 'Your data is protected', Icon: Shield, color: '#E85D04' },
-  { id: 2, title: 'Trusted Platform', subtitle: 'Used by thousands', Icon: Award, color: '#E85D04' },
-  { id: 3, title: 'For a Better Cause', subtitle: 'Support Gaushala', Icon: Heart, color: '#E85D04' },
+  { id: 1, titleKey: 'hero.secureSafe', subtitleKey: 'hero.dataProtected', Icon: Shield, color: '#E85D04' },
+  { id: 2, titleKey: 'hero.trustedPlatform', subtitleKey: 'hero.usedByThousands', Icon: Award, color: '#E85D04' },
+  { id: 3, titleKey: 'hero.betterCause', subtitleKey: 'hero.supportGaushala', Icon: Heart, color: '#E85D04' },
 ];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'LoginScreen'>;
 
 const LoginScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const insets = useSafeAreaInsets();
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -56,11 +58,11 @@ const LoginScreen = () => {
   const handleSendOTP = async () => {
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneNumber) {
-      setError('Mobile number is required');
+      setError(t('login.mobileRequired'));
       return;
     }
     if (!phoneRegex.test(phoneNumber)) {
-      setError('Please enter a valid 10-digit mobile number');
+      setError(t('login.invalidMobile'));
       return;
     }
 
@@ -73,7 +75,7 @@ const LoginScreen = () => {
       navigation.navigate('OtpVerificationScreen', { phoneNumber });
     } catch (err: any) {
       setLoading(false);
-      setError(err?.response?.data?.message || err?.message || 'Failed to send OTP');
+      setError(err?.response?.data?.message || err?.message || t('login.otpFailed'));
     }
   };
 
@@ -116,15 +118,15 @@ const LoginScreen = () => {
                 <Smartphone size={RFValue(15)} color={Colors.primary} />
               </View>
               <View style={styles.cardHeaderTextContent}>
-                <Text style={styles.cardTitle}>Sign In to Your Account</Text>
-                <Text style={styles.cardSubtitle}>Enter your mobile number to continue</Text>
+                <Text style={styles.cardTitle}>{t('login.title')}</Text>
+                <Text style={styles.cardSubtitle}>{t('login.subtitle')}</Text>
               </View>
             </View>
 
             <AuthInput
-              label="Mobile Number"
+              label={t('login.mobileNumber')}
               icon={<Phone size={RFValue(14)} color="#E85D04" />}
-              placeholder="Enter 10-digit mobile number"
+              placeholder={t('login.mobilePlaceholder')}
               keyboardType="phone-pad"
               maxLength={10}
               value={phoneNumber}
@@ -133,23 +135,23 @@ const LoginScreen = () => {
             />
 
             <AuthButton
-              title="Send OTP"
+              title={t('login.sendOtp')}
               leftIcon={<ShieldCheck size={RFValue(14)} color={Colors.white} />}
               rightIcon={<ArrowRight size={RFValue(14)} color={Colors.white} />}
               onPress={handleSendOTP}
               loading={loading}
-              loadingText="Sending..."
+              loadingText={t('login.sending')}
             />
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
+              <Text style={styles.dividerText}>{t('login.or')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8} onPress={() => Alert.alert('Coming Soon', 'Login with Google is coming soon!')}>
+            <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8} onPress={() => Alert.alert(t('login.googleComingSoon'), t('login.googleMessage'))}>
               <GoogleIcon />
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
+              <Text style={styles.googleBtnText}>{t('login.continueWithGoogle')}</Text>
             </TouchableOpacity>
 
           </View>
@@ -161,8 +163,8 @@ const LoginScreen = () => {
               return (
                 <View key={badge.id} style={styles.trustBadgeItem}>
                   <IconComp size={RFValue(16)} color={badge.color} style={{ marginBottom: hp('0.5%') }} />
-                  <Text style={styles.trustBadgeTitle}>{badge.title}</Text>
-                  <Text style={styles.trustBadgeSubtitle}>{badge.subtitle}</Text>
+                  <Text style={styles.trustBadgeTitle}>{t(badge.titleKey)}</Text>
+                  <Text style={styles.trustBadgeSubtitle}>{t(badge.subtitleKey)}</Text>
                 </View>
               );
             })}
@@ -170,9 +172,9 @@ const LoginScreen = () => {
 
           {/* Sign Up Link */}
           <View style={styles.signUpRow}>
-            <Text style={styles.dontHaveText}>Don't have an account? </Text>
+            <Text style={styles.dontHaveText}>{t('login.noAccount')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('SignUpScreen')} activeOpacity={0.7}>
-              <Text style={styles.signUpBtnText}>Sign Up →</Text>
+              <Text style={styles.signUpBtnText}>{t('login.signUp')}</Text>
             </TouchableOpacity>
           </View>
 

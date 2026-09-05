@@ -12,6 +12,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -35,7 +36,9 @@ import { InputField } from '../../components/InputField';
 import { CustomButton } from '../../components/CustomButton';
 import useAuthStore from '../../zustand/useAuthStore';
 import useHomeStore from '../../zustand/useHomeStore';
+import { startPhonePeTransaction } from '../../services/PhonePePaymentService';
 import { MembershipCertificateCard } from '../../components/MembershipCertificateCard';
+import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'JoinMembershipScreen'>;
 
@@ -48,11 +51,12 @@ interface Plan {
 }
 
 const JoinMembershipScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const { user, updateProfile } = useAuthStore();
-  const { getPlansStore, purchasePlanStore  } = useHomeStore();
+  const { getPlansStore, purchasePlanStore } = useHomeStore();
   const { getProfile } = useAuthStore();
- console.log('user', user)
+  console.log('user', user)
   const hasMembership = !!user?.membership;
 
   const [fullName, setFullName] = useState('');
@@ -67,7 +71,14 @@ const JoinMembershipScreen = () => {
   const [dob, setDob] = useState('');
   const [bio, setBio] = useState('');
   const [profession, setProfession] = useState('');
+  const [selectedProfession, setSelectedProfession] = useState('');
+  const [customProfession, setCustomProfession] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+
+  const professionOptions = ['Student', 'Housewife', 'Salaried', 'Businessman', 'Other'];
+  const presetProfessions = ['Student', 'Housewife', 'Salaried', 'Businessman'];
+
+  const [pincodeFetching, setPincodeFetching] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,16 +98,51 @@ const JoinMembershipScreen = () => {
       setPhone(user.phone || '');
       setDob(user.profile?.dob || '');
       setBio(user.profile?.bio || '');
-      setProfession(user.profile?.profession || '');
+      const savedProfession = user.profile?.profession || '';
+      setProfession(savedProfession);
+      setCustomProfession(savedProfession);
+      setSelectedProfession(
+        presetProfessions.includes(savedProfession) ? savedProfession : (savedProfession ? 'Other' : '')
+      );
       setCountry(user.profile?.country || '');
       setProfilePhoto(user.profile?.profile_pic ? `${user.profile.profile_pic}` : null);
     }
   }, [user]);
 
+  const handlePincodeChange = async (text: string) => {
+    setPincode(text);
+    const normalized = text.replace(/\D/g, '');
+    if (normalized.length === 6) {
+      setPincodeFetching(true);
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${normalized}`);
+        const data = await response.json();
+        console.log('response :', data);
+        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const postOffice = data[0].PostOffice[0];
+          setCity(postOffice.District || '');
+          setState(postOffice.State || '');
+          setCountry(postOffice.Country || '');
+        } else {
+          setCity('');
+          setState('');
+          setCountry('');
+        }
+      } catch (error) {
+        console.log('Error fetching pincode:', error);
+        setCity('');
+        setState('');
+      } finally {
+        setPincodeFetching(false);
+      }
+    }
+  };
+
   const fetchPlans = async () => {
     setFetchingPlans(true);
     try {
       const response = await getPlansStore();
+      console.log('Plans response:', response);
       if (response && response.status && response.plans) {
         setPlans(response.plans);
       }
@@ -116,11 +162,21 @@ const JoinMembershipScreen = () => {
   const handlePurchase = async (plan: Plan) => {
     setPurchasingId(plan.id);
     try {
+      const payment = await startPhonePeTransaction(
+        parseFloat(plan.price),
+        `membership_${plan.id}`
+      );
+
+      if (payment.status !== 'SUCCESS') {
+        Alert.alert(t('common.error'), payment.error || t('payment.failed'));
+        return;
+      }
+
       const payload = {
         plan_id: plan.id,
         amount: parseFloat(plan.price),
         payment_status: "paid",
-        transaction_id: "2345746"
+        transaction_id: payment.transactionId
       };
 
       const response = await purchasePlanStore(payload);
@@ -130,14 +186,14 @@ const JoinMembershipScreen = () => {
         await getProfile();
         navigation.navigate('DonationSuccessScreen', {
           amount: parseFloat(plan.price),
-          transactionId: '2345746',
+          transactionId: payment.transactionId,
           date: new Date().toLocaleDateString()
         });
       } else {
-        Alert.alert('Error', response?.message || 'Failed to purchase plan.');
+        Alert.alert(t('common.error'), response?.message || t('membership.purchaseFailed'));
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while purchasing the plan.');
+      Alert.alert(t('common.error'), t('membership.purchaseError'));
     } finally {
       setPurchasingId(null);
     }
@@ -169,7 +225,7 @@ const JoinMembershipScreen = () => {
 
   const handleJoinMembership = async () => {
     if (!agree) {
-      Alert.alert('Agreement Required', 'Please agree to the Terms & Conditions.');
+      Alert.alert(t('membership.agreementRequired'), t('membership.agreeTerms'));
       return;
     }
     setLoading(true);
@@ -200,7 +256,7 @@ const JoinMembershipScreen = () => {
       setModalVisible(true);
       fetchPlans();
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile. Please try again.');
+      Alert.alert(t('common.error'), t('membership.profileUpdateFailed'));
     } finally {
       setLoading(false);
     }
@@ -208,14 +264,14 @@ const JoinMembershipScreen = () => {
 
   // Dynamic Member Data for Certificate
   const memberDetails = {
-    name: user?.name || 'Member Name',
-    memberId: user?.uid || 'N/A',
-    tier: user?.membership ? user.membership.charAt(0).toUpperCase() + user.membership.slice(1) : 'Community',
-    joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
-    endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A',
-    status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Active',
-    verified: 'Verified Sevak',
-    impact: `₹0 Contributed`,
+    name: user?.name || t('profile.memberName'),
+    memberId: user?.uid || t('common.na'),
+    tier: user?.profile?.designation ? user.profile.designation.toUpperCase() : t('common.na'),
+    joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
+    endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
+    status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : t('common.active'),
+    verified: t('membership.verifiedSevak'),
+    impact: t('membership.contributed', { amount: 0 }),
   };
 
   const renderPlanCard = (plan: Plan, isPremium: boolean) => {
@@ -224,7 +280,7 @@ const JoinMembershipScreen = () => {
         {isPremium && (
           <View style={styles.premiumBadge}>
             <Star size={RFValue(8)} color="#FFF" fill="#FFF" />
-            <Text style={styles.premiumBadgeText}>RECOMMENDED</Text>
+            <Text style={styles.premiumBadgeText}>{t('membership.recommended')}</Text>
           </View>
         )}
         <View style={styles.planHeader}>
@@ -241,7 +297,7 @@ const JoinMembershipScreen = () => {
         </View>
 
         <CustomButton
-          title="Select & Pay"
+          title={t('membership.selectPay')}
           onPress={() => handlePurchase(plan)}
           loading={purchasingId === plan.id}
           disabled={purchasingId !== null}
@@ -267,30 +323,35 @@ const JoinMembershipScreen = () => {
           {hasMembership ? (
             <View>
               <MembershipCertificateCard memberDetails={memberDetails} />
-              
+
               <View style={{ marginTop: hp('3%'), paddingHorizontal: wp('2%'), marginBottom: hp('2%') }}>
-                <Text style={{ fontSize: RFValue(14), fontWeight: '700', color: Colors.dark, marginBottom: hp('0.5%') }}>Upgrade Membership</Text>
-                <Text style={{ fontSize: RFValue(10), color: Colors.gray, marginBottom: hp('2%') }}>Choose a higher tier to increase your impact and benefits.</Text>
+                <Text style={{ fontSize: RFValue(14), fontWeight: '700', color: Colors.dark, marginBottom: hp('0.5%') }}>{t('membership.upgradeTitle')}</Text>
+                <Text style={{ fontSize: RFValue(10), color: Colors.gray, marginBottom: hp('2%') }}>{t('membership.upgradeSubtitle')}</Text>
 
                 {fetchingPlans ? (
                   <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('3%') }} />
                 ) : (
                   <View>
-                    {plans
-                      .filter(plan => 
-                        plan.plan_name.toLowerCase() !== user?.membership?.toLowerCase() &&
-                        plan.duration.toLowerCase() !== user?.membership?.toLowerCase()
-                      )
-                      .map((plan) => renderPlanCard(plan, plan.duration.toLowerCase() === 'lifetime'))
-                    }
-                    {plans.filter(plan => 
-                      plan.plan_name.toLowerCase() !== user?.membership?.toLowerCase() &&
-                      plan.duration.toLowerCase() !== user?.membership?.toLowerCase()
-                    ).length === 0 && !fetchingPlans && (
-                      <Text style={{ textAlign: 'center', color: Colors.gray, marginTop: hp('2%') }}>
-                        No upgrade plans available at the moment.
-                      </Text>
-                    )}
+                    {(() => {
+                      const currentDesignation = (user?.profile?.designation || '').toLowerCase().trim();
+                      const upgradePlans = plans.filter(plan =>
+                        !(
+                          plan.plan_name.toLowerCase().trim() === currentDesignation ||
+                          (currentDesignation && plan.plan_name.toLowerCase().includes(currentDesignation)) ||
+                          (currentDesignation && currentDesignation.includes(plan.plan_name.toLowerCase().trim()))
+                        )
+                      );
+                      return (
+                        <>
+                          {upgradePlans.map((plan) => renderPlanCard(plan, plan.duration.toLowerCase() === 'lifetime'))}
+                          {upgradePlans.length === 0 && (
+                            <Text style={{ textAlign: 'center', color: Colors.gray, marginTop: hp('2%') }}>
+                              {t('membership.noUpgradePlans')}
+                            </Text>
+                          )}
+                        </>
+                      );
+                    })()}
                   </View>
                 )}
               </View>
@@ -299,8 +360,8 @@ const JoinMembershipScreen = () => {
             <>
               {/* Main Card */}
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Join the Mission</Text>
-                <Text style={styles.cardSubtitle}>Create your member account to get started.</Text>
+                <Text style={styles.cardTitle}>{t('membership.joinMission')}</Text>
+                <Text style={styles.cardSubtitle}>{t('membership.joinSubtitle')}</Text>
 
                 {/* Profile Photo */}
                 <View style={styles.photoContainer}>
@@ -310,7 +371,7 @@ const JoinMembershipScreen = () => {
                     ) : (
                       <View style={styles.photoPlaceholder}>
                         <Camera size={24} color={Colors.gray} />
-                        <Text style={styles.photoText}>Add Photo</Text>
+                        <Text style={styles.photoText}>{t('membership.addPhoto')}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -318,8 +379,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Full Name */}
                 <InputField
-                  label="Full Name"
-                  placeholder="Full Name"
+                  label={t('membership.fullName')}
+                  placeholder={t('membership.fullName')}
                   value={fullName}
                   onChangeText={setFullName}
                   leftIcon={<User size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -327,8 +388,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Email Address */}
                 <InputField
-                  label="Email Address"
-                  placeholder="Email Address"
+                  label={t('membership.email')}
+                  placeholder={t('membership.email')}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -338,8 +399,8 @@ const JoinMembershipScreen = () => {
 
                 {/* Mobile Number */}
                 <InputField
-                  label="Mobile Number"
-                  placeholder="Mobile Number"
+                  label={t('membership.mobileNumber')}
+                  placeholder={t('membership.mobileNumber')}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -352,8 +413,8 @@ const JoinMembershipScreen = () => {
                 <TouchableOpacity onPress={() => setShowDatePicker(true)} activeOpacity={1}>
                   <View pointerEvents="none">
                     <InputField
-                      label="Date of Birth"
-                      placeholder="YYYY-MM-DD"
+                      label={t('membership.dob')}
+                      placeholder={t('editProfile.dobPlaceholder')}
                       value={dob}
                       editable={false}
                       leftIcon={<Calendar size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -373,59 +434,89 @@ const JoinMembershipScreen = () => {
 
                 {/* Description / Bio */}
                 <InputField
-                  label="Description / Bio"
-                  placeholder="Tell us about yourself"
+                  label={t('membership.bio')}
+                  placeholder={t('membership.bioPlaceholder')}
                   value={bio}
                   onChangeText={setBio}
                   leftIcon={<FileText size={18} color={Colors.gray} strokeWidth={1.5} />}
                 />
                 {/* profession */}
-                <InputField
-                  label="Profession"
-                  placeholder="Profession"
-                  value={profession}
-                  onChangeText={setProfession}
-                  leftIcon={<Briefcase size={18} color={Colors.gray} strokeWidth={1.5} />}
-                />
+                <Text style={styles.fieldLabel}>{t('membership.profession')}</Text>
+                <View style={styles.professionChips}>
+                  {professionOptions.map((option) => {
+                    const isSelected = selectedProfession === option;
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[styles.professionChip, isSelected && styles.professionChipSelected]}
+                        onPress={() => {
+                          setSelectedProfession(option);
+                          setProfession(option);
+                          setCustomProfession('');
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.professionChipText, isSelected && styles.professionChipTextSelected]}>
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {selectedProfession === 'Other' && (
+                  <InputField
+                    label={t('membership.customProfession')}
+                    placeholder={t('membership.customProfessionPlaceholder')}
+                    value={customProfession}
+                    onChangeText={(text) => {
+                      setCustomProfession(text);
+                      setProfession(text);
+                    }}
+                    leftIcon={<Briefcase size={18} color={Colors.gray} strokeWidth={1.5} />}
+                  />
+                )}
 
                 {/* Address */}
                 <InputField
-                  label="Address"
-                  placeholder="Full Address"
+                  label={t('membership.address')}
+                  placeholder={t('membership.addressPlaceholder')}
                   value={address}
                   onChangeText={setAddress}
                   leftIcon={<Home size={18} color={Colors.gray} strokeWidth={1.5} />}
                 />
                 <View style={styles.rowContainer}>
                   <View style={styles.halfWidth}>
+
                     <InputField
-                      label="City"
-                      placeholder="City"
+                      label={t('membership.pincode')}
+                      placeholder="000000"
+                      value={pincode}
+                      onChangeText={handlePincodeChange}
+                      keyboardType="numeric"
+                      maxLength={6}
+                      leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
+                      rightIcon={pincodeFetching ? <ActivityIndicator size="small" color={Colors.primary} /> : undefined}
+                    />
+                  </View>
+                  <View style={styles.halfWidth}>
+                    <InputField
+                      label={t('membership.city')}
+                      placeholder={t('membership.city')}
                       value={city}
                       onChangeText={setCity}
                       leftIcon={<Building size={18} color={Colors.gray} strokeWidth={1.5} />}
                     />
                   </View>
-                  <View style={styles.halfWidth}>
-                    <InputField
-                      label="Pincode"
-                      placeholder="000000"
-                      value={pincode}
-                      onChangeText={setPincode}
-                      keyboardType="numeric"
-                      leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
-                    />
-                  </View>
                 </View>
-     
+
 
 
                 {/* State & Pincode Row */}
                 <View style={styles.rowContainer}>
                   <View style={styles.halfWidth}>
                     <InputField
-                      label="State"
-                      placeholder="State"
+                      label={t('membership.state')}
+                      placeholder={t('membership.state')}
                       value={state}
                       onChangeText={setState}
                       leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -433,7 +524,8 @@ const JoinMembershipScreen = () => {
                   </View>
                   <View style={styles.halfWidth}>
                     <InputField
-                      label='Country'
+                      label={t('membership.country')}
+                      placeholder={t('membership.country')}
                       value={country}
                       onChangeText={setCountry}
                       leftIcon={<Globe size={18} color={Colors.gray} strokeWidth={1.5} />}
@@ -451,14 +543,14 @@ const JoinMembershipScreen = () => {
                     {agree && <View style={styles.checkboxTick} />}
                   </View>
                   <Text style={styles.checkboxText}>
-                    I agree to the <Text style={styles.highlightText}>Terms & Conditions</Text>{' '}
-                    and <Text style={styles.highlightText}>Privacy Policy</Text>
+                    {t('membership.agreeTo')} <Text style={styles.highlightText}>{t('membership.termsLink')}</Text>{' '}
+                    and <Text style={styles.highlightText}>{t('membership.privacyLink')}</Text>
                   </Text>
                 </TouchableOpacity>
 
                 {/* Action Button */}
                 <CustomButton
-                  title="Submit & View Plans"
+                  title={t('membership.submitViewPlans')}
                   onPress={handleJoinMembership}
                   loading={loading}
                 />
@@ -468,15 +560,15 @@ const JoinMembershipScreen = () => {
               <View style={styles.trustRow}>
                 <View style={styles.trustItem}>
                   <ShieldCheck size={22} color={Colors.gray} strokeWidth={1.5} />
-                  <Text style={styles.trustLabel}>SECURED</Text>
+                  <Text style={styles.trustLabel}>{t('membership.secured')}</Text>
                 </View>
                 <View style={styles.trustItem}>
                   <CheckCircle size={22} color={Colors.gray} strokeWidth={1.5} />
-                  <Text style={styles.trustLabel}>CERTIFIED</Text>
+                  <Text style={styles.trustLabel}>{t('membership.certified')}</Text>
                 </View>
                 <View style={styles.trustItem}>
                   <Leaf size={22} color={Colors.gray} strokeWidth={1.5} />
-                  <Text style={styles.trustLabel}>ORGANIC</Text>
+                  <Text style={styles.trustLabel}>{t('membership.organic')}</Text>
                 </View>
               </View>
             </>
@@ -500,7 +592,7 @@ const JoinMembershipScreen = () => {
               <X size={24} color={Colors.gray} />
             </TouchableOpacity>
 
-            <Text style={styles.modalTitle}>Choose Your Plan</Text>
+            <Text style={styles.modalTitle}>{t('membership.choosePlan')}</Text>
 
             {fetchingPlans ? (
               <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('5%') }} />
@@ -510,7 +602,7 @@ const JoinMembershipScreen = () => {
 
                 {plans.length === 0 && (
                   <View style={{ alignItems: 'center', padding: hp('3%') }}>
-                    <Text style={{ color: Colors.gray }}>No plans available right now.</Text>
+                    <Text style={{ color: Colors.gray }}>{t('membership.noPlans')}</Text>
                   </View>
                 )}
               </ScrollView>
@@ -604,6 +696,39 @@ const styles = StyleSheet.create({
   highlightText: {
     color: '#A03000',
     fontWeight: '700',
+  },
+  fieldLabel: {
+    fontSize: RFValue(11),
+    fontWeight: '500',
+    color: Colors.dark,
+    marginBottom: hp('0.8%'),
+  },
+  professionChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: hp('1.5%'),
+  },
+  professionChip: {
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('1%'),
+    borderRadius: wp('5%'),
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    marginRight: wp('2%'),
+    marginBottom: hp('1%'),
+  },
+  professionChipSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  professionChipText: {
+    fontSize: RFValue(10),
+    fontWeight: '600',
+    color: Colors.gray,
+  },
+  professionChipTextSelected: {
+    color: Colors.white,
   },
   trustRow: {
     flexDirection: 'row',

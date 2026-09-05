@@ -12,6 +12,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTranslation } from 'react-i18next';
 
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
@@ -20,6 +21,7 @@ import useAuthStore from '../../zustand/useAuthStore';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'LoginScreen'>;
 
 const SplashScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
   const scaleValue = useRef(new Animated.Value(0.95)).current;
@@ -121,12 +123,12 @@ const SplashScreen = () => {
 
               <View style={styles.taglineContainer}>
                 <View style={styles.decorativeLine} />
-                <Text style={styles.subtitle}>Heritage & Compassion</Text>
+                <Text style={styles.subtitle}>{t('splash.heritage')}</Text>
                 <View style={styles.decorativeLine} />
               </View>
 
               {/* Sanskrit Mantra */}
-              <Text style={styles.sanskritText}>गो सेवा महासेवा</Text>
+              <Text style={styles.sanskritText}>{t('splash.gauSeva')}</Text>
             </Animated.View>
 
             {/* Decorative Divider */}
