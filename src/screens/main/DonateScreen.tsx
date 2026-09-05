@@ -37,6 +37,7 @@ import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { InputField } from '../../components/InputField';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
+import { startPhonePeTransaction } from '../../services/PhonePePaymentService';
 import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'DonateScreen'>;
@@ -91,12 +92,23 @@ export default function DonateScreen() {
     });
 
     try {
+      const payment = await startPhonePeTransaction(
+        finalAmount,
+        `donate_${donationType}`
+      );
+
+      if (payment.status !== 'SUCCESS') {
+        Alert.alert(t('common.error'), payment.error || t('payment.failed'));
+        return;
+      }
+
       const payload = {
         donation_type: donationType,
         user_id: user?.id,
         amount: finalAmount,
         payment_status: "paid",
         remark: remark,
+        transaction_id: payment.transactionId,
       };
       console.log('Donation api payload', payload)
       const res = await purchasePlanStore(payload as any);
@@ -104,7 +116,7 @@ export default function DonateScreen() {
 
       navigation.navigate('DonationSuccessScreen', {
         amount: finalAmount,
-        transactionId: `TXN${Math.floor(Math.random() * 10000000000)}`,
+        transactionId: payment.transactionId,
         date: dateStr,
       });
     } catch (error) {

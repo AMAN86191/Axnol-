@@ -80,6 +80,10 @@ const FeedScreen = () => {
               ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
               : item.is_liked || false;
 
+          const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && user?.id 
+              ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === user.id)
+              : item.is_disliked || false;
+
           return {
             id: item.id?.toString() || Math.random().toString(),
             author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
@@ -92,6 +96,9 @@ const FeedScreen = () => {
             comments: item.comments_count || 0,
             isLiked: isLikedByCurrentUser,
             likedBy: item.liked_by || [],
+            dislikes: item.dislikes_count ?? item.dislikes ?? 0,
+            isDisliked: isDislikedByCurrentUser,
+            dislikedBy: item.disliked_by || [],
             userId: item.user_id?.toString() || item.admin_id?.toString(),
             status: item.status,
           };
@@ -193,6 +200,9 @@ const FeedScreen = () => {
               comments={post.comments}
               isLiked={post.isLiked}
               likedBy={post.likedBy}
+              dislikes={post.dislikes}
+              isDisliked={post.isDisliked}
+              dislikedBy={post.dislikedBy}
               onLikePress={() => toggleLike(post.id)}
               onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: post.id })}
             />

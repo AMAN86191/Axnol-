@@ -225,6 +225,10 @@ console.log('mypost response', response)
           profession={profileData?.profile?.profession || user?.profile?.profession}
           referralCode={profileData?.profile?.referral_code || user?.profile?.referral_code}
           country={profileData?.profile?.country || user?.profile?.country}
+          city={profileData?.profile?.city || user?.profile?.city}
+          state={profileData?.profile?.state || user?.profile?.state}
+          pincode={profileData?.profile?.pincode || user?.profile?.pincode}
+          address={profileData?.profile?.address || user?.profile?.address}
         />
 
         {/* Profile Statistics Component */}

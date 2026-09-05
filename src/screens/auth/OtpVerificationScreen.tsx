@@ -44,6 +44,9 @@ const OtpVerificationScreen = () => {
   
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
+  // Minimum OTP box size so digits never get clipped on small screens / high font scales.
+  const otpBoxSize = Math.max(wp('11%'), 46);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (timer > 0) {
@@ -167,6 +170,7 @@ const OtpVerificationScreen = () => {
                   ref={(ref) => { inputRefs.current[index] = ref; }}
                   style={[
                     styles.otpInput,
+                    { width: otpBoxSize, height: otpBoxSize },
                     digit !== '' && styles.otpInputActive
                   ]}
                   value={digit}
@@ -175,6 +179,7 @@ const OtpVerificationScreen = () => {
                   keyboardType="number-pad"
                   maxLength={1}
                   textAlign="center"
+                  textAlignVertical="center"
                   selectTextOnFocus
                 />
               ))}
@@ -305,8 +310,6 @@ const styles = StyleSheet.create({
     marginBottom: hp('3%'),
   },
   otpInput: {
-    width: wp('11%'),
-    height: wp('11%'),
     borderRadius: wp('2%'),
     borderWidth: 1.5,
     backgroundColor: '#FAFAFA',
@@ -314,6 +317,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.dark,
     borderColor: '#EAEAEA',
+    padding: 0,
+    fontVariant: ['tabular-nums'],
   },
   otpInputActive: {
     borderColor: Colors.primary,

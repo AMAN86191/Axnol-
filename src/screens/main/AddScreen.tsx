@@ -399,6 +399,8 @@ const AddScreen = () => {
                 likes={0}
                 comments={0}
                 isLiked={false}
+                dislikes={0}
+                isDisliked={false}
               />
             </ScrollView>
 

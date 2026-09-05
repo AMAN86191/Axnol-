@@ -10,12 +10,13 @@ import {
   ScrollView,
   Image,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation } from '@react-navigation/native';
-import { User, Mail, Phone, KeyRound, Briefcase, Calendar, Info, Camera } from 'lucide-react-native';
+import { User, Mail, Phone, KeyRound, Briefcase, Calendar, Info, Camera, MapPin, Building, Home, Globe } from 'lucide-react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -37,7 +38,17 @@ const EditProfileScreen = () => {
   const [profession, setProfession] = useState('');
   const [bio, setBio] = useState('');
   const [country, setCountry] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [pincode, setPincode] = useState('');
+  const [address, setAddress] = useState('');
   const [profilePic, setProfilePic] = useState<string | null>(null);
+  const [selectedProfession, setSelectedProfession] = useState('');
+  const [customProfession, setCustomProfession] = useState('');
+  const [pincodeFetching, setPincodeFetching] = useState(false);
+
+  const professionOptions = ['Student', 'Housewife', 'Salaried', 'Businessman', 'Other'];
+  const presetProfessions = ['Student', 'Housewife', 'Salaried', 'Businessman'];
 
   // Date States
   const [dob, setDob] = useState('');
@@ -60,9 +71,18 @@ const EditProfileScreen = () => {
 
       setDob(user.profile?.dob || '');
       setDom(user.profile?.dom || '');
-      setProfession(user.profile?.profession || '');
+      const savedProfession = user.profile?.profession || '';
+      setProfession(savedProfession);
+      setCustomProfession(savedProfession);
+      setSelectedProfession(
+        presetProfessions.includes(savedProfession) ? savedProfession : (savedProfession ? 'Other' : '')
+      );
       setBio(user.profile?.bio || '');
       setCountry(user.profile?.country || '');
+      setCity(user.profile?.city || '');
+      setState(user.profile?.state || '');
+      setPincode(user.profile?.pincode || '');
+      setAddress(user.profile?.address || '');
       setProfilePic(user.profile?.profile_pic ? `${user.profile.profile_pic}` : null);
     }
   }, [user]);
@@ -106,6 +126,35 @@ const EditProfileScreen = () => {
     }
   };
 
+  const handlePincodeChange = async (text: string) => {
+    setPincode(text);
+    const normalized = text.replace(/\D/g, '');
+    if (normalized.length === 6) {
+      setPincodeFetching(true);
+      try {
+        const response = await fetch(`https://api.postalpincode.in/pincode/${normalized}`);
+        const data = await response.json();
+        if (data && data[0] && data[0].Status === 'Success' && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const postOffice = data[0].PostOffice[0];
+          setCity(postOffice.District || '');
+          setState(postOffice.State || '');
+          setCountry(postOffice.Country || '');
+        } else {
+          setCity('');
+          setState('');
+          setCountry('');
+        }
+      } catch (error) {
+        console.log('Error fetching pincode:', error);
+        setCity('');
+        setState('');
+        setCountry('');
+      } finally {
+        setPincodeFetching(false);
+      }
+    }
+  };
+
   const performUpdate = async () => {
     setLoading(true);
     try {
@@ -119,6 +168,10 @@ const EditProfileScreen = () => {
       formData.append('profession', profession);
       formData.append('bio', bio);
       formData.append('country', country);
+      formData.append('city', city);
+      formData.append('state', state);
+      formData.append('pincode', pincode);
+      formData.append('address', address);
 
       if (profilePic && !profilePic.startsWith('http')) {
         formData.append('profile_pic', {
@@ -239,23 +292,52 @@ const EditProfileScreen = () => {
                 leftIcon={<Phone size={RFValue(12)} color={Colors.primary} />}
               />
 
-           
+
+
+              <Text style={styles.fieldLabel}>{t('editProfile.profession')}</Text>
+              <View style={styles.professionChips}>
+                {professionOptions.map((option) => {
+                  const isSelected = selectedProfession === option;
+                  return (
+                    <TouchableOpacity
+                      key={option}
+                      style={[styles.professionChip, isSelected && styles.professionChipSelected]}
+                      onPress={() => {
+                        setSelectedProfession(option);
+                        setProfession(option);
+                        setCustomProfession('');
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.professionChipText, isSelected && styles.professionChipTextSelected]}>
+                        {option}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {selectedProfession === 'Other' && (
+                <InputField
+                  label={t('editProfile.customProfession')}
+                  placeholder={t('editProfile.customProfessionPlaceholder')}
+                  value={customProfession}
+                  onChangeText={(text) => {
+                    setCustomProfession(text);
+                    setProfession(text);
+                  }}
+                  leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
+                />
+              )}
 
               <InputField
-                label={t('editProfile.profession')}
-                placeholder={t('editProfile.professionPlaceholder')}
-                value={profession}
-                onChangeText={setProfession}
-                leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
+                label={t('editProfile.address')}
+                placeholder={t('editProfile.addressPlaceholder')}
+                value={address}
+                onChangeText={setAddress}
+                leftIcon={<Home size={RFValue(12)} color={Colors.primary} />}
               />
 
-              <InputField
-                label={t('editProfile.country')}
-                placeholder={t('editProfile.countryPlaceholder')}
-                value={country}
-                onChangeText={setCountry}
-                leftIcon={<Info size={RFValue(12)} color={Colors.primary} />}
-              />
+
 
               {/* Date of Birth Picker */}
               <TouchableOpacity onPress={() => setShowDobPicker(true)} activeOpacity={1}>
@@ -293,7 +375,7 @@ const EditProfileScreen = () => {
                   </View>
                 </TouchableOpacity>
                 {!!dom && (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     onPress={() => setDom('')}
                     style={{ position: 'absolute', right: 0, top: -hp('0.2%'), paddingHorizontal: wp('2%'), paddingVertical: hp('0.5%'), zIndex: 10 }}
                   >
@@ -318,7 +400,50 @@ const EditProfileScreen = () => {
                 onChangeText={setBio}
                 leftIcon={<Info size={RFValue(12)} color={Colors.primary} />}
               />
+              <View style={styles.rowContainer}>
+                <View style={styles.halfWidth}>
+                  <InputField
+                    label={t('editProfile.city')}
+                    placeholder={t('editProfile.cityPlaceholder')}
+                    value={city}
+                    onChangeText={setCity}
+                    leftIcon={<Building size={RFValue(12)} color={Colors.primary} />}
+                  />
+                </View>
+                <View style={styles.halfWidth}>
+                  <InputField
+                    label={t('editProfile.pincode')}
+                    placeholder={t('editProfile.pincodePlaceholder')}
+                    value={pincode}
+                    onChangeText={handlePincodeChange}
+                    keyboardType="numeric"
+                    maxLength={6}
+                    leftIcon={<MapPin size={RFValue(12)} color={Colors.primary} />}
+                    rightIcon={pincodeFetching ? <ActivityIndicator size="small" color={Colors.primary} /> : undefined}
+                  />
+                </View>
+              </View>
 
+              <View style={styles.rowContainer}>
+                <View style={styles.halfWidth}>
+                  <InputField
+                    label={t('editProfile.state')}
+                    placeholder={t('editProfile.statePlaceholder')}
+                    value={state}
+                    onChangeText={setState}
+                    leftIcon={<MapPin size={RFValue(12)} color={Colors.primary} />}
+                  />
+                </View>
+                <View style={styles.halfWidth}>
+                  <InputField
+                    label={t('editProfile.country')}
+                    placeholder={t('editProfile.countryPlaceholder')}
+                    value={country}
+                    onChangeText={setCountry}
+                    leftIcon={<Globe size={RFValue(12)} color={Colors.primary} />}
+                  />
+                </View>
+              </View>
               <Text style={styles.noteText}>
                 {t('editProfile.phoneChangeNote')}
               </Text>
@@ -435,6 +560,48 @@ const styles = StyleSheet.create({
   saveBtn: {
     marginTop: hp('1%'),
     width: '100%',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  halfWidth: {
+    flex: 1,
+    marginHorizontal: wp('1%'),
+  },
+  fieldLabel: {
+    fontSize: RFValue(11),
+    fontWeight: '500',
+    color: Colors.dark,
+    marginBottom: hp('0.8%'),
+  },
+  professionChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: hp('1.5%'),
+  },
+  professionChip: {
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('1%'),
+    borderRadius: wp('5%'),
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    marginRight: wp('2%'),
+    marginBottom: hp('1%'),
+  },
+  professionChipSelected: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  professionChipText: {
+    fontSize: RFValue(10),
+    fontWeight: '600',
+    color: Colors.gray,
+  },
+  professionChipTextSelected: {
+    color: Colors.white,
   },
   otpContainer: {
     marginTop: hp('2%'),

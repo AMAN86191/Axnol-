@@ -31,6 +31,13 @@
     "search": "खोजें",
     "member": "सदस्य"
   },
+  "payment": {
+    "processing": "भुगतान हो रहा है...",
+    "failed": "भुगतान विफल रहा। कृपया पुनः प्रयास करें।",
+    "cancelled": "भुगतान रद्द कर दिया गया।",
+    "secure": "आपका भुगतान PhonePe द्वारा सुरक्षित रूप से संसाधित किया जाता है।",
+    "phonePeOnly": "PhonePe भुगतान केवल Android पर उपलब्ध है।"
+  },
   "splash": {
     "heritage": "विरासत और करुणा",
     "gauSeva": "गो सेवा महासेवा"
@@ -120,6 +127,7 @@
     "myProfile": "मेरी प्रोफ़ाइल",
     "myPosts": "मेरी पोस्ट",
     "becomeMember": "सदस्य बनें",
+    "notifications": "सूचनाएं",
     "membershipContributions": "सदस्यता और योगदान",
     "membershipCertificate": "सदस्यता प्रमाणपत्र",
     "donationHistory": "दान इतिहास",
@@ -245,8 +253,18 @@
     "phonePlaceholder": "अपना फ़ोन नंबर दर्ज करें",
     "profession": "पेशा",
     "professionPlaceholder": "अपना पेशा दर्ज करें",
+    "customProfession": "अन्य पेशा",
+    "customProfessionPlaceholder": "अपना पेशा दर्ज करें",
     "country": "देश",
     "countryPlaceholder": "अपना देश दर्ज करें",
+    "address": "पता",
+    "addressPlaceholder": "पूरा पता",
+    "city": "शहर",
+    "cityPlaceholder": "अपना शहर दर्ज करें",
+    "pincode": "पिन कोड",
+    "pincodePlaceholder": "000000",
+    "state": "राज्य",
+    "statePlaceholder": "अपना राज्य दर्ज करें",
     "dob": "जन्म तिथि",
     "dobPlaceholder": "YYYY-MM-DD",
     "dom": "विवाह की तिथि (वैकल्पिक)",
@@ -347,6 +365,8 @@
     "bio": "विवरण / जीवनी",
     "bioPlaceholder": "हमें अपने बारे में बताएं",
     "profession": "पेशा",
+    "customProfession": "अन्य पेशा",
+    "customProfessionPlaceholder": "अपना पेशा दर्ज करें",
     "address": "पता",
     "addressPlaceholder": "पूरा पता",
     "city": "शहर",
@@ -400,7 +420,9 @@
     "activeCommunity": "सक्रिय सामुदायिक सदस्य",
     "shareMessage": "मैं गौ माता सेवा ट्रस्ट का सत्यापित {{tier}} होने पर गर्व महसूस करता हूँ! हमारी देशी गौ माता की रक्षा और भोजन में मेरा साथ दें। मेरा सदस्य आईडी: {{memberId}}। www.gaumatatrust.org",
     "downloadAlertTitle": "प्रमाणपत्र डाउनलोड करें",
-    "downloadAlertMessage": "उच्च-रिज़ॉल्यूशन PDF प्रमाणपत्र संकलित किया जा रहा है और आपके डिवाइस डाउनलोड फ़ोल्डर में डाउनलोड हो रहा है।"
+    "downloadAlertMessage": "उच्च-रिज़ॉल्यूशन PDF प्रमाणपत्र संकलित किया जा रहा है और आपके डिवाइस डाउनलोड फ़ोल्डर में डाउनलोड हो रहा है।",
+    "shareFailed": "साझा करने के लिए प्रमाणपत्र तैयार नहीं हो सका। कृपया पुनः प्रयास करें।",
+    "preparingPdf": "तैयार हो रहा है…"
   },
   "idCard": {
     "trustName": "गौ माता सेवा ट्रस्ट",
@@ -491,8 +513,10 @@
   },
   "communityMembers": {
     "title": "समुदाय के सदस्य",
-    "subtitle": "हमारे समर्पित सदस्य जो पूरे देश से सेवा में सहयोग और योगदान देते हैं।",
-    "memberCount": "{{count}} सदस्य"
+    "subtitle": "हमारे समर्पित सदस्य जो देश भर से गौ सेवा का समर्थन और योगदान करते हैं।",
+    "memberCount": "{{count}} सदस्य",
+    "notAvailable": "उपलब्ध नहीं",
+    "noMembers": "कोई सदस्य नहीं मिला"
   },
   "referral": {
     "referFriend": "मित्र को रेफर करें",
@@ -504,6 +528,7 @@
     "recentReferrals": "हालिया रेफरल",
     "noReferrals": "अभी तक कोई रेफरल नहीं।",
     "joined": "जुड़े ",
+    "copyFailed": "लिंक कॉपी नहीं हो सका। कृपया पुनः प्रयास करें।",
     "shareMessage": "गौ सेवा का समर्थन करने और हमारी देशी गौ माता की रक्षा करने में मेरा साथ दें! साइन अप पर मेरा रेफरल कोड *{{code}}* का उपयोग करें। आमंत्रण लिंक: {{link}}"
   },
   "help": {

@@ -31,6 +31,13 @@
     "search": "Search",
     "member": "Member"
   },
+  "payment": {
+    "processing": "Processing payment...",
+    "failed": "Payment failed. Please try again.",
+    "cancelled": "Payment cancelled.",
+    "secure": "Your payment is securely processed via PhonePe.",
+    "phonePeOnly": "PhonePe payments are available on Android."
+  },
   "splash": {
     "heritage": "Heritage & Compassion",
     "gauSeva": "गो सेवा महासेवा"
@@ -120,6 +127,7 @@
     "myProfile": "My Profile",
     "myPosts": "My Posts",
     "becomeMember": "Become a Member",
+    "notifications": "Notifications",
     "membershipContributions": "MEMBERSHIP & CONTRIBUTIONS",
     "membershipCertificate": "Membership Certificate",
     "donationHistory": "Donation History",
@@ -237,7 +245,7 @@
     "otpFailed": "Verification Failed",
     "otpFailedMessage": "Invalid OTP code. Please enter the correct code: 123456",
     "addPhoto": "Add Photo",
-    "displayName": "Display Name",
+    "displayName": "Name",
     "namePlaceholder": "Enter your name",
     "email": "Email Address",
     "emailPlaceholder": "Enter your email",
@@ -245,8 +253,18 @@
     "phonePlaceholder": "Enter your phone number",
     "profession": "Profession",
     "professionPlaceholder": "Enter your profession",
+    "customProfession": "Other Profession",
+    "customProfessionPlaceholder": "Enter your profession",
     "country": "Country",
     "countryPlaceholder": "Enter your country",
+    "address": "Address",
+    "addressPlaceholder": "Full Address",
+    "city": "City",
+    "cityPlaceholder": "Enter your city",
+    "pincode": "Pincode",
+    "pincodePlaceholder": "000000",
+    "state": "State",
+    "statePlaceholder": "Enter your state",
     "dob": "Date of Birth",
     "dobPlaceholder": "YYYY-MM-DD",
     "dom": "Date of Marriage (Optional)",
@@ -347,6 +365,8 @@
     "bio": "Description / Bio",
     "bioPlaceholder": "Tell us about yourself",
     "profession": "Profession",
+    "customProfession": "Other Profession",
+    "customProfessionPlaceholder": "Enter your profession",
     "address": "Address",
     "addressPlaceholder": "Full Address",
     "city": "City",
@@ -400,7 +420,9 @@
     "activeCommunity": "Active Community Member",
     "shareMessage": "I am proud to be a verified {{tier}} of Gau Mata Sewa Trust! Join me in protecting and feeding our indigenous cows. My Member ID: {{memberId}}. www.gaumatatrust.org",
     "downloadAlertTitle": "Download Certificate",
-    "downloadAlertMessage": "The high-resolution PDF certificate is being compiled and downloaded to your device downloads folder."
+    "downloadAlertMessage": "The high-resolution PDF certificate is being compiled and downloaded to your device downloads folder.",
+    "shareFailed": "Failed to prepare the certificate for sharing. Please try again.",
+    "preparingPdf": "Preparing…"
   },
   "idCard": {
     "trustName": "GAU MATA SEWA TRUST",
@@ -492,7 +514,9 @@
   "communityMembers": {
     "title": "Community Members",
     "subtitle": "Our dedicated members from across the country who support and contribute to Gau Seva.",
-    "memberCount": "{{count}} members"
+    "memberCount": "{{count}} members",
+    "notAvailable": "Not available",
+    "noMembers": "No members found"
   },
   "referral": {
     "referFriend": "Refer a Friend",
@@ -504,6 +528,7 @@
     "recentReferrals": "RECENT REFERRALS",
     "noReferrals": "No referrals yet.",
     "joined": "Joined ",
+    "copyFailed": "Failed to copy link. Please try again.",
     "shareMessage": "Join me in supporting Gau Seva and protecting our indigenous cows! Use my Referral Code *{{code}}* on SignUp to help us grow. Invite link: {{link}}"
   },
   "help": {

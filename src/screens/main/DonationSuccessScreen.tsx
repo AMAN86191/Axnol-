@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -26,7 +27,6 @@ import {
   ShieldCheck,
   Download,
   Home as HomeIcon,
-  HandHeart,
   Wheat,
 } from 'lucide-react-native';
 
@@ -41,8 +41,11 @@ export default function DonationSuccessScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<SuccessScreenRouteProp>();
+  const { width: windowWidth } = useWindowDimensions();
 
   const { amount, transactionId, date } = route.params;
+
+  const isSmallScreen = windowWidth < 360;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -79,7 +82,10 @@ export default function DonationSuccessScreen() {
           </View>
           <Image
             source={require('../../../assets/images/cow_transplant.png')}
-            style={styles.calfImage}
+            style={[
+              styles.calfImage,
+              isSmallScreen && styles.calfImageSmall,
+            ]}
             resizeMode="contain"
           />
         </View>
@@ -124,7 +130,7 @@ export default function DonationSuccessScreen() {
               </View>
               <Text style={styles.rowLabel}>{t('donationSuccess.transactionId')}</Text>
             </View>
-            <Text style={styles.rowValueLight}>{transactionId}</Text>
+            <Text style={styles.rowValueLight} numberOfLines={1}>{transactionId}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -146,7 +152,7 @@ export default function DonationSuccessScreen() {
             <View style={styles.impactLargeIconCircle}>
               <Image
                 source={require('../../../assets/images/hand.png')}
-                style={styles.impactImageLogo}
+                style={[styles.impactImageLogo, isSmallScreen && styles.impactImageLogoSmall]}
                 resizeMode="contain"
               />
             </View>
@@ -155,17 +161,19 @@ export default function DonationSuccessScreen() {
             <Text style={styles.impactTitleHorizontal}>{t('donationSuccess.yourContributionHelps')}</Text>
             <View style={styles.impactRowHorizontal}>
               <View style={styles.impactColHorizontal}>
-                <Wheat color="#2E6B34" size={RFValue(18)} />
+                <Wheat color="#2E6B34" size={RFValue(16)} />
                 <Text style={styles.impactTextHorizontal}>{t('donationSuccess.cowFeeding')}</Text>
               </View>
-              <View style={styles.impactDividerHorizontal} />
+            </View>
+            <View style={styles.impactSpacer} />
+            <View style={styles.impactRowHorizontal}>
               <View style={styles.impactColHorizontal}>
-                <PlusCircle color="#2E6B34" size={RFValue(18)} />
+                <PlusCircle color="#2E6B34" size={RFValue(16)} />
                 <Text style={styles.impactTextHorizontal}>{t('donationSuccess.medicalSupport')}</Text>
               </View>
               <View style={styles.impactDividerHorizontal} />
               <View style={styles.impactColHorizontal}>
-                <Home color="#2E6B34" size={RFValue(18)} />
+                <Home color="#2E6B34" size={RFValue(16)} />
                 <Text style={styles.impactTextHorizontal}>{t('donationSuccess.shelterMaintenance')}</Text>
               </View>
             </View>
@@ -180,10 +188,10 @@ export default function DonationSuccessScreen() {
 
         {/* Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
+          {/* <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8}>
             <Download color="#FFFFFF" size={RFValue(16)} />
             <Text style={styles.primaryButtonText}>{t('donationSuccess.downloadReceipt')}</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity 
             style={styles.secondaryButton} 
@@ -266,6 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    paddingRight: wp('30%'),
   },
   rupeeIconContainer: {
     width: wp('12%'),
@@ -298,11 +307,16 @@ const styles = StyleSheet.create({
     marginLeft: wp('1%'),
   },
   calfImage: {
-    width: wp('35%'),
-    height: wp('30%'),
+    width: wp('32%'),
+    height: wp('27%'),
     position: 'absolute',
     right: wp('1%'),
-    // bottom: hp('1%'),
+    bottom: wp('2%'),
+  },
+  calfImageSmall: {
+    width: wp('26%'),
+    height: wp('22%'),
+    right: wp('0.5%'),
   },
   detailsCard: {
     width: '100%',
@@ -370,6 +384,9 @@ const styles = StyleSheet.create({
     fontSize: RFValue(10),
     color: '#666666',
     fontWeight: '500',
+    flexShrink: 1,
+    textAlign: 'right',
+    paddingLeft: wp('2%'),
   },
   divider: {
     height: 1,
@@ -401,8 +418,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   impactImageLogo: {
-    width: wp('35%'),
-    height: wp('35%'),
+    width: wp('34%'),
+    height: wp('34%'),
+  },
+  impactImageLogoSmall: {
+    width: wp('30%'),
+    height: wp('30%'),
   },
   impactCardRight: {
     flex: 1,
@@ -426,17 +447,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   impactTextHorizontal: {
-    fontSize: RFValue(8),
+    fontSize: RFValue(7.5),
     color: '#1E1E1E',
     textAlign: 'center',
     marginTop: hp('0.5%'),
     fontWeight: '500',
+    flexShrink: 1,
+    paddingHorizontal: wp('1%'),
   },
   impactDividerHorizontal: {
     width: 1,
     height: hp('3%'),
     backgroundColor: '#D0E3CD',
-    // marginHorizontal: wp('1%'),
+    alignSelf: 'center',
+  },
+  impactSpacer: {
+    height: hp('0.5%'),
   },
   securityRow: {
     flexDirection: 'row',
@@ -458,8 +484,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: hp('1.2%'),
+    paddingVertical: hp('1.7%'),
     borderRadius: wp('3%'),
+    minHeight: hp('6%'),
   },
   primaryButtonText: {
     color: '#FFFFFF',
@@ -472,10 +499,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: hp('1.2%'),
+    paddingVertical: hp('1.7%'),
     borderRadius: wp('3%'),
     borderWidth: 1,
     borderColor: '#E85D04',
+    minHeight: hp('6%'),
   },
   secondaryButtonText: {
     color: '#E85D04',

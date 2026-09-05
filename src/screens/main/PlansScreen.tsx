@@ -28,6 +28,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { CommonHeader } from '../../components/CommonHeader';
 import { CustomButton } from '../../components/CustomButton';
 import useHomeStore from '../../zustand/useHomeStore';
+import { startPhonePeTransaction } from '../../services/PhonePePaymentService';
 import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PlansScreen'>;
@@ -78,12 +79,21 @@ export default function PlansScreen() {
   const handlePurchase = async (plan: Plan) => {
     setPurchasingId(plan.id);
     try {
-      const transactionId = `TXN${Date.now()}${plan.id}`;
+      const payment = await startPhonePeTransaction(
+        parseFloat(plan.price),
+        `plan_${plan.id}`
+      );
+
+      if (payment.status !== 'SUCCESS') {
+        Alert.alert(t('common.error'), payment.error || t('payment.failed'));
+        return;
+      }
+
       const payload = {
         plan_id: plan.id,
         amount: parseFloat(plan.price),
         payment_status: "paid",
-        transaction_id: transactionId
+        transaction_id: payment.transactionId
       };
 console.log('payload', payload)
       
@@ -92,7 +102,7 @@ console.log('payload', payload)
       if (response && response.status) {
         navigation.navigate('DonationSuccessScreen', {
           amount: parseFloat(plan.price),
-          transactionId: transactionId,
+          transactionId: payment.transactionId,
           date: new Date().toLocaleDateString()
         });
       } else {

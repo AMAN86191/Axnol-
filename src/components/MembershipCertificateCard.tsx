@@ -1,19 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
-  Alert,
   Platform,
-  Share,
+  Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { Download, Award, ShieldCheck, Calendar, User, Hash, Check, Share2 } from 'lucide-react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 import { useTranslation } from 'react-i18next';
-import { generateAndDownloadPDF } from '../utils/pdfGenerator';
+import Share from 'react-native-share';
+import { generateAndDownloadPDF, generatePdfFile } from '../utils/pdfGenerator';
 
 interface MembershipCertificateCardProps {
   memberDetails: {
@@ -29,9 +32,35 @@ interface MembershipCertificateCardProps {
   onShare?: () => void;
 }
 
+const loadLogoDataUri = async (): Promise<string> => {
+  const logoSource = Image.resolveAssetSource(require('../../assets/images/logo/logo.png'));
+  try {
+    const uri = logoSource.uri;
+    if (uri.startsWith('file://')) {
+      const logoBase64 = await ReactNativeBlobUtil.fs.readFile(uri.replace('file://', ''), 'base64');
+      return `data:image/png;base64,${logoBase64}`;
+    }
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      const res = await fetch(uri);
+      const blob = await res.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+  } catch (error) {
+    console.log('Error loading logo for PDF:', error);
+  }
+  return '';
+};
+
 export const MembershipCertificateCard = ({ memberDetails, onShare }: MembershipCertificateCardProps) => {
   const { t } = useTranslation();
-  const handleDownload = () => {
+  const [sharing, setSharing] = useState(false);
+  const buildCertificateHtml = async () => {
+    const logoDataUri = await loadLogoDataUri();
     const htmlContent = `
       <html>
         <head>
@@ -73,7 +102,8 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               box-sizing: border-box; 
             }
             .header { text-align: center; margin-bottom: 30px; }
-            .award-icon { margin-bottom: 15px; }
+            .award-icon { margin-bottom: 15px; display: flex; justify-content: center; }
+            .header-logo { width: 70px; height: 70px; object-fit: contain; }
             .title { 
               font-size: 26px; 
               font-weight: 800; 
@@ -181,10 +211,12 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
                 
                 <div class="header">
                   <div class="award-icon">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="8" r="6"></circle>
-                      <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
-                    </svg>
+                    ${logoDataUri
+                      ? `<img class="header-logo" src="${logoDataUri}" alt="logo" />`
+                      : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="6"></circle>
+                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+                      </svg>`}
                   </div>
                   <div class="title">${t('certificate.trustName')}</div>
                   <div class="subtitle">${t('certificate.certificateOf', { tier: memberDetails.tier })}</div>
@@ -240,16 +272,47 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
         </body>
       </html>
     `;
+    return htmlContent;
+  };
+
+  const handleDownload = async () => {
+    const htmlContent = await buildCertificateHtml();
     generateAndDownloadPDF(htmlContent, `Membership_Certificate_${memberDetails.memberId}`);
   };
 
   const defaultShare = async () => {
     try {
-      await Share.share({
-        message: t('certificate.shareMessage', { tier: memberDetails.tier, memberId: memberDetails.memberId }),
+      setSharing(true);
+      const htmlContent = await buildCertificateHtml();
+      const fileName = `Membership_Certificate_${memberDetails.memberId}`;
+      const generatedPath = await generatePdfFile(htmlContent, fileName);
+
+      let sharePath = generatedPath;
+
+      // react-native-share's Android FileProvider only exposes the app cache dir.
+      // Copy the PDF from internal Documents into the cache dir so it can be shared.
+      if (Platform.OS === 'android') {
+        const cacheDir = ReactNativeBlobUtil.fs.dirs.CacheDir;
+        const cachedPath = `${cacheDir}/${fileName}_${Date.now()}.pdf`;
+        await ReactNativeBlobUtil.fs.cp(generatedPath, cachedPath);
+        sharePath = cachedPath;
+      }
+
+      await Share.open({
+        url: `file://${sharePath}`,
+        type: 'application/pdf',
+        title: t('common.share'),
+        failOnCancel: false,
       });
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      if (error?.message && error.message.toLowerCase().includes('cancel')) {
+        // User dismissed the share sheet - not an error
+        return;
+      }
+      console.log('Share error:', error);
+      Alert.alert(t('common.error'), t('certificate.shareFailed'));
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -263,7 +326,11 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
           <View style={styles.certificateInnerBorder}>
             {/* Trust Badge Header */}
             <View style={styles.certHeader}>
-              <Award size={RFValue(24)} color="#D97706" style={styles.certBadgeIcon} />
+              <Image
+                source={require('../../assets/images/logo/logo.png')}
+                style={styles.certBadgeLogo}
+                resizeMode="contain"
+              />
               <Text style={styles.certTrustName}>{t('certificate.trustName')}</Text>
               <Text style={styles.certSubHeader}>{t('certificate.certificateOf', { tier: memberDetails.tier })}</Text>
             </View>
@@ -324,9 +391,13 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
           <Text style={styles.downloadBtnText}>{t('certificate.downloadPdf')}</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.85}>
-          <Share2 size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
-          <Text style={styles.shareBtnText}>{t('common.share')}</Text>
+        <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.85} disabled={sharing}>
+          {sharing ? (
+            <ActivityIndicator size="small" color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
+          ) : (
+            <Share2 size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
+          )}
+          <Text style={styles.shareBtnText}>{sharing ? t('certificate.preparingPdf') : t('common.share')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -452,7 +523,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: hp('2%'),
   },
-  certBadgeIcon: {
+  certBadgeLogo: {
+    width: wp('16%'),
+    height: wp('16%'),
     marginBottom: hp('0.5%'),
   },
   certTrustName: {

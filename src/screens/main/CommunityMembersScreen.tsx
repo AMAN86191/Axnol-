@@ -1,40 +1,74 @@
-import React from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, FlatList, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation } from '@react-navigation/native';
-import { Users, MapPin, Search } from 'lucide-react-native';
+import { Users, MapPin } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
+import useHomeStore from '../../zustand/useHomeStore';
 
 interface CommunityMember {
   id: string;
   name: string;
-  address: string;
+  city: string;
+  state: string;
+  profilePic: string;
   color: string;
 }
 
-const DUMMY_MEMBERS: CommunityMember[] = [
-  { id: '1', name: 'Ramesh Kumar', address: 'Vrindavan, Uttar Pradesh', color: '#FF6F34' },
-  { id: '2', name: 'Sunita Devi', address: 'Mathura, Uttar Pradesh', color: '#E07B00' },
-  { id: '3', name: 'Anil Sharma', address: 'Jaipur, Rajasthan', color: '#8B5A2B' },
-  { id: '4', name: 'Mamta Patel', address: 'Gandhinagar, Gujarat', color: '#C2410C' },
-  { id: '5', name: 'Vikram Singh', address: 'Indore, Madhya Pradesh', color: '#B45309' },
-  { id: '6', name: 'Kavita Joshi', address: 'Pune, Maharashtra', color: '#9A3412' },
-  { id: '7', name: 'Rohit Aggarwal', address: 'New Delhi, Delhi', color: '#D97706' },
-  { id: '8', name: 'Priya Nair', address: 'Chennai, Tamil Nadu', color: '#EA580C' },
-  { id: '9', name: 'Deepak Yadav', address: 'Lucknow, Uttar Pradesh', color: '#A85D00' },
-  { id: '10', name: 'Neha Verma', address: 'Ahmedabad, Gujarat', color: '#C15F3C' },
-];
+const COMMUNITY_COLORS = ['#FF6F34', '#E07B00', '#8B5A2B', '#C2410C', '#B45309', '#9A3412', '#D97706', '#EA580C', '#A85D00', '#C15F3C'];
+
+const getFullImageUrl = (path?: string) => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  return `https://gst.tambimotors.com/${path}`;
+};
 
 const CommunityMembersScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const { communityMembersStore } = useHomeStore();
+  const [members, setMembers] = useState<CommunityMember[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const renderItem = ({ item, index }: { item: CommunityMember; index: number }) => {
+  const fetchMembers = async () => {
+    try {
+      const response = await communityMembersStore();
+      console.log('Community members API response:', response);
+
+      const apiMembers = response?.data || response?.members;
+      if (Array.isArray(apiMembers)) {
+        const mapped: CommunityMember[] = apiMembers.map((item: any, index: number) => ({
+          id: String(item?.id ?? index),
+          name: item?.name || 'Member',
+          city: item?.user_profile?.city || '',
+          state: item?.user_profile?.state || '',
+          profilePic: getFullImageUrl(item?.user_profile?.profile_pic),
+          color: COMMUNITY_COLORS[index % COMMUNITY_COLORS.length],
+        }));
+        setMembers(mapped);
+      }
+    } catch (error) {
+      console.log('Error fetching community members:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchMembers();
+    setRefreshing(false);
+  };
+
+  const renderItem = ({ item }: { item: CommunityMember }) => {
     const initials = item.name
       .split(' ')
       .map(part => part.charAt(0))
@@ -42,17 +76,24 @@ const CommunityMembersScreen = () => {
       .join('')
       .toUpperCase();
 
+    const addressParts = [item.city, item.state].filter(Boolean);
+    const address = addressParts.length > 0 ? addressParts.join(', ') : t('communityMembers.notAvailable');
+
     return (
       <View style={styles.memberCard}>
         <View style={[styles.avatarCircle, { backgroundColor: `${item.color}1A`, borderColor: `${item.color}55` }]}>
-          <Text style={[styles.avatarInitials, { color: item.color }]}>{initials}</Text>
+          {item.profilePic ? (
+            <Image source={{ uri: item.profilePic }} style={styles.avatarImage} resizeMode="cover" />
+          ) : (
+            <Text style={[styles.avatarInitials, { color: item.color }]}>{initials}</Text>
+          )}
         </View>
 
         <View style={styles.memberDetails}>
           <Text style={styles.memberName} numberOfLines={1}>{item.name}</Text>
           <View style={styles.addressRow}>
             <MapPin size={RFValue(11)} color={Colors.gray} strokeWidth={2} />
-            <Text style={styles.memberAddress} numberOfLines={1}>{item.address}</Text>
+            <Text style={styles.memberAddress} numberOfLines={1}>{address}</Text>
           </View>
         </View>
 
@@ -63,28 +104,32 @@ const CommunityMembersScreen = () => {
     );
   };
 
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>{t('communityMembers.noMembers')}</Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <CommonHeader title={t('communityMembers.title')} onBackPress={() => navigation.goBack()} />
 
       {/* Info banner */}
-      <View style={styles.infoBanner}>
+      {/* <View style={styles.infoBanner}>
         <Search size={RFValue(16)} color={Colors.primary} strokeWidth={2} />
         <Text style={styles.infoBannerText}>{t('communityMembers.subtitle')}</Text>
-      </View>
-
+      </View> */}
+      <View style={{ height: hp('1%') }} />
       <FlatList
-        data={DUMMY_MEMBERS}
-        keyExtractor={(item) => item.id}
+        data={members}
+        keyExtractor={(item, index) => String(item?.id ?? index)}
         renderItem={renderItem}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <Text style={styles.listCount}>
-            {t('communityMembers.memberCount', { count: DUMMY_MEMBERS.length })}
-          </Text>
-        }
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        ListEmptyComponent={renderEmpty}
       />
     </SafeAreaView>
   );
@@ -122,8 +167,7 @@ const styles = StyleSheet.create({
     fontSize: RFValue(11),
     color: Colors.gray,
     fontWeight: '700',
-    marginTop: hp('2%'),
-    marginBottom: hp('1%'),
+    marginVertical: hp('1%'),
   },
   memberCard: {
     flexDirection: 'row',
@@ -147,6 +191,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   avatarInitials: {
     fontSize: RFValue(14),
@@ -180,6 +229,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: wp('2%'),
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    marginTop: hp('10%'),
+  },
+  emptyText: {
+    fontSize: RFValue(12),
+    color: Colors.gray,
   },
 });
 

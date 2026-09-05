@@ -7,7 +7,9 @@ import {
   Share,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -67,19 +69,14 @@ export default function ReferralScreen() {
 
   const handleCopyLink = useCallback(async () => {
     try {
-      // Trigger a share sheet with just the link or trigger native clipboard if supported
-      // Since Clipboard is deprecated in RN Core and needs third-party, general Share is safer.
-      // However, we can also use Share to "Copy" or show a nice copy success.
-      // We will show a success alert to mock copy since general Share has Copy.
+      Clipboard.setString(referralLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      // await Share.share({
-      //   message: referralLink,
-      // });
     } catch (error) {
       console.error(error);
+      Alert.alert(t('common.error'), t('referral.copyFailed'));
     }
-  }, [referralLink]);
+  }, [referralLink, t]);
 
   const handleShareLink = useCallback(async () => {
     try {

@@ -262,7 +262,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {renderDrawerItem(t('drawer.home'), Home, 'MainTabs', 'Home')}
         {renderDrawerItem(t('drawer.myProfile'), User, 'MainTabs', 'Profile')}
         {renderDrawerItem(t('drawer.myPosts'), Edit3, 'MainTabs', 'Profile', undefined, false)}
-        {/* {renderDrawerItem('Notifications', Bell, 'NotificationScreen')} */}
+        {renderDrawerItem(t('drawer.notifications'), Bell, 'NotificationScreen')}
         {renderDrawerItem(t('drawer.becomeMember'), CreditCard, 'MainTabs', 'Membership')}
 
 

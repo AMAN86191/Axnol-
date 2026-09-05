@@ -46,6 +46,9 @@ const PublicProfileScreen = () => {
       if (post.id === postId) {
         const willBeLiked = !post.isLiked;
         let newLikedBy = [...(post.likedBy || [])];
+        let newDislikedBy = [...(post.dislikedBy || [])];
+        let newDislikes = post.dislikes;
+        let newIsDisliked = post.isDisliked;
         
         if (willBeLiked) {
           if (currentUser?.id && !newLikedBy.some((u: any) => u.id === currentUser.id)) {
@@ -55,6 +58,11 @@ const PublicProfileScreen = () => {
               profile_pic: currentUser.profile_pic || currentUser.profile?.profile_pic,
               designation: currentUser.designation || currentUser.profile?.designation,
             });
+          }
+          if (post.isDisliked && currentUser?.id) {
+            newDislikedBy = newDislikedBy.filter((u: any) => u.id !== currentUser.id);
+            newDislikes = post.dislikes - 1;
+            newIsDisliked = false;
           }
         } else {
           if (currentUser?.id) {
@@ -66,6 +74,52 @@ const PublicProfileScreen = () => {
           ...post,
           isLiked: willBeLiked,
           likes: willBeLiked ? post.likes + 1 : post.likes - 1,
+          likedBy: newLikedBy,
+          isDisliked: newIsDisliked,
+          dislikes: newDislikes,
+          dislikedBy: newDislikedBy,
+        };
+      }
+      return post;
+    }));
+  }, [currentUser]);
+
+  const handleDislike = useCallback((postId: string) => {
+    setPublicPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        const willBeDisliked = !post.isDisliked;
+        let newDislikedBy = [...(post.dislikedBy || [])];
+        let newLikedBy = [...(post.likedBy || [])];
+        let newLikes = post.likes;
+        let newIsLiked = post.isLiked;
+        
+        if (willBeDisliked) {
+          if (currentUser?.id && !newDislikedBy.some((u: any) => u.id === currentUser.id)) {
+            newDislikedBy.unshift({
+              id: currentUser.id,
+              name: currentUser.name || 'You',
+              profile_pic: currentUser.profile_pic || currentUser.profile?.profile_pic,
+              designation: currentUser.designation || currentUser.profile?.designation,
+            });
+          }
+          if (post.isLiked && currentUser?.id) {
+            newLikedBy = newLikedBy.filter((u: any) => u.id !== currentUser.id);
+            newLikes = post.likes - 1;
+            newIsLiked = false;
+          }
+        } else {
+          if (currentUser?.id) {
+            newDislikedBy = newDislikedBy.filter((u: any) => u.id !== currentUser.id);
+          }
+        }
+
+        return {
+          ...post,
+          isDisliked: willBeDisliked,
+          dislikes: willBeDisliked ? post.dislikes + 1 : post.dislikes - 1,
+          dislikedBy: newDislikedBy,
+          isLiked: newIsLiked,
+          likes: newLikes,
           likedBy: newLikedBy,
         };
       }
@@ -106,6 +160,10 @@ const PublicProfileScreen = () => {
               ? item.liked_by.some((likedUser: any) => likedUser.id === currentUser.id)
               : item.is_liked || false;
 
+          const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && currentUser?.id 
+              ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === currentUser.id)
+              : item.is_disliked || false;
+
           return {
             id: item.id?.toString() || Math.random().toString(),
             author: userObj.name || t('common.unknown'),
@@ -118,6 +176,9 @@ const PublicProfileScreen = () => {
             comments: item.comments_count || 0,
             isLiked: isLikedByCurrentUser,
             likedBy: item.liked_by || [],
+            dislikes: item.dislikes_count ?? item.dislikes ?? 0,
+            isDisliked: isDislikedByCurrentUser,
+            dislikedBy: item.disliked_by || [],
             userId: userObj.id,
           };
         }) : [];
@@ -310,8 +371,12 @@ console.log('userPosts', userPosts)
                     comments={post.comments}
                     isLiked={post.isLiked}
                     likedBy={post.likedBy}
+                    dislikes={post.dislikes}
+                    isDisliked={post.isDisliked}
+                    dislikedBy={post.dislikedBy}
                     isOwnPost={false}
                     onLikePress={() => handleLike(post.id)}
+                    onDislikePress={() => handleDislike(post.id)}
                     onPostPress={() => handlePostPress(post.id)}
                   />
                 ))}

@@ -10,6 +10,7 @@ interface HomeState {
   getPosts: (page?: number) => Promise<any>;
   getPostDetails: (id: string | number) => Promise<any>;
   toggleLikePost: (postId: string | number) => Promise<any>;
+  toggleDislikePost: (postId: string | number) => Promise<any>;
   getComments: (postId: string | number) => Promise<any>;
   commentPost: (postId: string | number, comment: string) => Promise<any>;
   deleteComment: (commentId: string | number) => Promise<any>;
@@ -18,8 +19,10 @@ interface HomeState {
   deletePostImageStore: (postId: string | number, imageId: string | number) => Promise<any>;
   updatePostStore: (formData: any) => Promise<any>;
   getPlansStore: () => Promise<any>;
-  purchasePlanStore: (payload: { plan_id: number; amount: number; payment_status: string; transaction_id: string }) => Promise<any>;
+  purchasePlanStore: (payload: { plan_id?: number; amount: number; payment_status: string; transaction_id?: string; donation_type?: string; user_id?: number | string; remark?: string }) => Promise<any>;
   getContributionsStore: () => Promise<any>;
+  communityMembersStore: () => Promise<any>;
+  getNotificationsStore: () => Promise<any>;
   getPublicProfileStore: (userId: string | number) => Promise<any>;
   getEvents: () => Promise<any>;
 }
@@ -77,6 +80,15 @@ const useHomeStore = create<HomeState>((set) => ({
       return response.data;
     } catch (error: any) {
       console.log('Error in toggleLikePost:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  toggleDislikePost: async (postId: string | number) => {
+    try {
+      const response = await api.post('/user/dislike-post', { post_id: postId });
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in toggleDislikePost:', error.response?.data || error.message);
       throw error;
     }
   },
@@ -163,6 +175,24 @@ const useHomeStore = create<HomeState>((set) => ({
       return response.data;
     } catch (error: any) {
       console.log('Error in purchasePlanStore:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  communityMembersStore: async () => {
+    try {
+      const response = await api.get('user/members');
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in communityMembersStore:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+  getNotificationsStore: async () => {
+    try {
+      const response = await api.get('user/notifications');
+      return response.data;
+    } catch (error: any) {
+      console.log('Error in getNotificationsStore:', error.response?.data || error.message);
       throw error;
     }
   },

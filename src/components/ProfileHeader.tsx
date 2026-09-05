@@ -1,11 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Share } from 'react-native';
-import { Pencil, Award, Check, Mail, Phone, BadgeCheck } from 'lucide-react-native';
+import { Pencil, Award, Check, Mail, Phone, BadgeCheck, Briefcase, Calendar, MapPin, Building, Home, Globe, Share2 } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
-import { Share2 } from 'lucide-react-native';
 
 interface ProfileHeaderProps {
   profileName: string;
@@ -25,6 +24,10 @@ interface ProfileHeaderProps {
   profession?: string;
   referralCode?: string;
   country?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  address?: string;
 }
 
 const VerifiedBadge = () => (
@@ -51,6 +54,10 @@ export const ProfileHeader = React.memo(({
   profession,
   referralCode,
   country,
+  city,
+  state,
+  pincode,
+  address,
 }: ProfileHeaderProps) => {
   const { t } = useTranslation();
 
@@ -135,40 +142,110 @@ export const ProfileHeader = React.memo(({
         </View>
 
         {/* Extra Details row */}
-        {(profession || dob || dom || country || referralCode) ? (
+        {(profession || dob || dom || country || referralCode || city || state || pincode || address) ? (
           <View style={styles.extraDetailsContainer}>
             {profession ? (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Profession: </Text>
-                <Text style={styles.detailValue}>{profession}</Text>
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <Briefcase size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>Profession</Text>
+                  <Text style={styles.detailValue}>{profession}</Text>
+                </View>
               </View>
             ) : null}
             {dob ? (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>DOB: </Text>
-                <Text style={styles.detailValue}>{dob}</Text>
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <Calendar size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>DOB</Text>
+                  <Text style={styles.detailValue}>{dob}</Text>
+                </View>
               </View>
             ) : null}
             {dom ? (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>DOM: </Text>
-                <Text style={styles.detailValue}>{dom}</Text>
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <Calendar size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>DOM</Text>
+                  <Text style={styles.detailValue}>{dom}</Text>
+                </View>
+              </View>
+            ) : null}
+            
+            {city ? (
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <Building size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>City</Text>
+                  <Text style={styles.detailValue}>{city}</Text>
+                </View>
+              </View>
+            ) : null}
+            {state ? (
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <MapPin size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>State</Text>
+                  <Text style={styles.detailValue}>{state}</Text>
+                </View>
+              </View>
+            ) : null}
+            {pincode ? (
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <MapPin size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>Pincode</Text>
+                  <Text style={styles.detailValue}>{pincode}</Text>
+                </View>
               </View>
             ) : null}
             {country ? (
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Country: </Text>
-                <Text style={styles.detailValue}>{country}</Text>
+              <View style={styles.detailItem}>
+                <View style={styles.detailIconWrap}>
+                  <Globe size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={styles.detailTextWrap}>
+                  <Text style={styles.detailLabel}>Country</Text>
+                  <Text style={styles.detailValue}>{country}</Text>
+                </View>
+              </View>
+            ) : null}
+            {address ? (
+              <View style={[styles.detailItem, { width: '100%' }]}>
+                <View style={styles.detailIconWrap}>
+                  <Home size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={[styles.detailTextWrap, { flex: 0.9 }]}>
+                  <Text style={styles.detailLabel}>Address</Text>
+                  <Text style={styles.detailValue}>{address}</Text>
+                </View>
               </View>
             ) : null}
             {referralCode ? (
-              <View style={[styles.detailRow, { width: '100%' }]}>
-                <Text style={styles.detailLabel}>Referral Code: </Text>
-                <View style={styles.referralCodeContainer}>
-                  <Text style={styles.detailValue}>{referralCode}</Text>
-                  <TouchableOpacity onPress={() => handleShareReferral(referralCode)} style={styles.shareBtn}>
-                    <Share2 size={RFValue(12)} color="#FF6F34" />
-                  </TouchableOpacity>
+              <View style={[styles.detailItem, { width: '100%' }]}>
+                <View style={styles.detailIconWrap}>
+                  <Share2 size={RFValue(10)} color="#FF6F34" />
+                </View>
+                <View style={[styles.detailTextWrap, { flex: 1 }]}>
+                  <Text style={styles.detailLabel}>Referral Code</Text>
+                  <View style={styles.referralCodeContainer}>
+                    <Text style={styles.detailValue}>{referralCode}</Text>
+                    <TouchableOpacity onPress={() => handleShareReferral(referralCode)} style={styles.shareBtn}>
+                      <Share2 size={RFValue(10)} color="#FF6F34" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             ) : null}
@@ -364,19 +441,32 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  detailRow: {
+  detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '48%',
-    marginBottom: hp('0.8%'),
+    marginBottom: hp('1%'),
+  },
+  detailIconWrap: {
+    width: wp('7%'),
+    height: wp('7%'),
+    borderRadius: wp('3.5%'),
+    backgroundColor: '#FFF5F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: wp('2%'),
+  },
+  detailTextWrap: {
+    flex: 1,
   },
   detailLabel: {
-    fontSize: RFValue(9),
+    fontSize: RFValue(8),
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#9CA3AF',
+    marginBottom: 1,
   },
   detailValue: {
-    fontSize: RFValue(9),
+    fontSize: RFValue(9.5),
     fontWeight: '700',
     color: '#1F2937',
     flexShrink: 1,

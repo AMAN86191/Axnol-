@@ -74,6 +74,10 @@ const PostDetailsScreen = () => {
                 ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
                 : item.is_liked || false;
 
+            const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && user?.id 
+                ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === user.id)
+                : item.is_disliked || false;
+
             setPost({
               id: item.id?.toString() || postId,
               author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
@@ -86,6 +90,9 @@ const PostDetailsScreen = () => {
               comments: item.comments_count || 0,
               isLiked: isLikedByCurrentUser,
               likedBy: item.liked_by || [],
+              dislikes: item.dislikes_count ?? item.dislikes ?? 0,
+              isDisliked: isDislikedByCurrentUser,
+              dislikedBy: item.disliked_by || [],
               userId: item.user_id?.toString() || item.admin_id?.toString(),
               status: item.status,
               original_post_images: item.images || item.post_images || [],
@@ -149,6 +156,9 @@ const PostDetailsScreen = () => {
       setPost((prev: any) => {
         const willBeLiked = !prev.isLiked;
         let newLikedBy = [...(prev.likedBy || [])];
+        let newDislikedBy = [...(prev.dislikedBy || [])];
+        let newDislikes = prev.dislikes;
+        let newIsDisliked = prev.isDisliked;
         
         if (willBeLiked) {
           if (user?.id && !newLikedBy.some(u => u.id === user.id)) {
@@ -158,6 +168,11 @@ const PostDetailsScreen = () => {
               profile_pic: user.profile_pic || user.profile?.profile_pic,
               designation: user.designation || user.profile?.designation,
             });
+          }
+          if (prev.isDisliked && user?.id) {
+            newDislikedBy = newDislikedBy.filter(u => u.id !== user.id);
+            newDislikes = prev.dislikes - 1;
+            newIsDisliked = false;
           }
         } else {
           if (user?.id) {
@@ -169,6 +184,51 @@ const PostDetailsScreen = () => {
           ...prev,
           isLiked: willBeLiked,
           likes: willBeLiked ? prev.likes + 1 : prev.likes - 1,
+          likedBy: newLikedBy,
+          isDisliked: newIsDisliked,
+          dislikes: newDislikes,
+          dislikedBy: newDislikedBy,
+        };
+      });
+    }
+  }, [post, user]);
+
+  const handleDislike = useCallback(async () => {
+    if (post) {
+      setPost((prev: any) => {
+        const willBeDisliked = !prev.isDisliked;
+        let newDislikedBy = [...(prev.dislikedBy || [])];
+        let newLikedBy = [...(prev.likedBy || [])];
+        let newLikes = prev.likes;
+        let newIsLiked = prev.isLiked;
+        
+        if (willBeDisliked) {
+          if (user?.id && !newDislikedBy.some(u => u.id === user.id)) {
+            newDislikedBy.unshift({
+              id: user.id,
+              name: user.name || t('common.you'),
+              profile_pic: user.profile_pic || user.profile?.profile_pic,
+              designation: user.designation || user.profile?.designation,
+            });
+          }
+          if (prev.isLiked && user?.id) {
+            newLikedBy = newLikedBy.filter(u => u.id !== user.id);
+            newLikes = prev.likes - 1;
+            newIsLiked = false;
+          }
+        } else {
+          if (user?.id) {
+            newDislikedBy = newDislikedBy.filter(u => u.id !== user.id);
+          }
+        }
+
+        return {
+          ...prev,
+          isDisliked: willBeDisliked,
+          dislikes: willBeDisliked ? prev.dislikes + 1 : prev.dislikes - 1,
+          dislikedBy: newDislikedBy,
+          isLiked: newIsLiked,
+          likes: newLikes,
           likedBy: newLikedBy,
         };
       });
@@ -318,7 +378,11 @@ const PostDetailsScreen = () => {
             comments={post.comments}
             isLiked={post.isLiked}
             likedBy={post.likedBy}
+            dislikes={post.dislikes}
+            isDisliked={post.isDisliked}
+            dislikedBy={post.dislikedBy}
             onLikePress={handleLike}
+            onDislikePress={handleDislike}
             onEditPress={handleEdit}
             onDeletePress={handleDelete}
             onCommentPress={handleCommentIconPress}
