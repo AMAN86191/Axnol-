@@ -1,4 +1,4 @@
-package com.gaumatatrust
+package gst.gaumatatrust.com
 
 import android.app.Application
 import com.facebook.react.PackageList

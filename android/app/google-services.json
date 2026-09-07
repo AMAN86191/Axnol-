@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "565041194280",
-    "project_id": "gaumatatrust-701eb",
-    "storage_bucket": "gaumatatrust-701eb.firebasestorage.app"
+    "project_number": "936210679603",
+    "project_id": "gaumata-trust-91e11",
+    "storage_bucket": "gaumata-trust-91e11.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:565041194280:android:7a8a82940acdf434271c1d",
+        "mobilesdk_app_id": "1:936210679603:android:c9cf902347fd55b58c2046",
         "android_client_info": {
-          "package_name": "com.gaumatatrust"
+          "package_name": "gst.gaumatatrust.com"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD49YBuWsyQ7qmRtf3dPdrp10eJT4Jd8bQ"
+          "current_key": "AIzaSyBh_navF-MIhxkbAFlJmHaiuDiS7Gqn5Kk"
         }
       ],
       "services": {

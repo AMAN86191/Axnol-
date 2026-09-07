@@ -1,4 +1,4 @@
-package com.gaumatatrust
+package gst.gaumatatrust.com
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

@@ -30,7 +30,7 @@
 				<string>gaumatatrust</string>
 			</array>
 			<key>CFBundleURLName</key>
-			<string>com.gaumatatrust</string>
+			<string>gst.gaumatatrust.com</string>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
