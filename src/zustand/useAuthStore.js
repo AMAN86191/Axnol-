@@ -136,6 +136,22 @@ const useAuthStore = create(
           set({ token: null, user: null, loading: false });
         }
       },
+
+      deleteAccount: async () => {
+        set({ loading: true, error: null });
+        try {
+          const res = await api.delete('user/delete-account');
+          set({ token: null, user: null, loading: false, error: null });
+          return res.data; // Let component handle success message
+        } catch (error) {
+          console.log('Error during delete account:', error);
+          set({
+            error: error?.response?.data?.message || 'Failed to delete account',
+            loading: false,
+          });
+          throw error;
+        }
+      },
     }),
     {
       name: 'auth-storage',

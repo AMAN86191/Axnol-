@@ -143,7 +143,7 @@ const LoginScreen = () => {
               loadingText={t('login.sending')}
             />
 
-            <View style={styles.dividerRow}>
+            {/* <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>{t('login.or')}</Text>
               <View style={styles.dividerLine} />
@@ -152,7 +152,7 @@ const LoginScreen = () => {
             <TouchableOpacity style={styles.googleBtn} activeOpacity={0.8} onPress={() => Alert.alert(t('login.googleComingSoon'), t('login.googleMessage'))}>
               <GoogleIcon />
               <Text style={styles.googleBtnText}>{t('login.continueWithGoogle')}</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
           </View>
 
@@ -217,7 +217,8 @@ const styles = StyleSheet.create({
   loginCard: {
     backgroundColor: Colors.white,
     borderRadius: wp('4%'),
-    padding: wp('3%'),
+    paddingHorizontal: wp('2%'),
+    paddingVertical: wp('5%'),
     borderWidth: 1,
     borderColor: '#FFFFFF',
     marginBottom: hp('3%'),
@@ -298,6 +299,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: wp('2%'),
     marginBottom: hp('1%'),
+    marginTop: hp('2%'),
   },
   trustBadgeItem: {
     alignItems: 'center',
@@ -320,7 +322,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: hp('1%'),
+    marginTop: hp('2%'),
     marginBottom: hp('6%'),
   },
   dontHaveText: {

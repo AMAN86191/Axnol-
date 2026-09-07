@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Linking, Modal, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   createDrawerNavigator,
@@ -27,6 +27,8 @@ import {
   List,
   Languages,
   Users,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
@@ -54,8 +56,34 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const { state, navigation } = props;
-  const { user, logout } = useAuthStore();
+  const { user, logout, deleteAccount } = useAuthStore();
   const { language, setLanguage } = useLanguageStore();
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const res = await deleteAccount();
+      console.log(' delete account res', res);
+      setIsDeleteModalVisible(false);
+      Alert.alert(t('drawer.deleteAccount'), t('drawer.deleteAccountSuccess'));
+      navigation.closeDrawer();
+      // Reset to Login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'LoginScreen' }],
+      });
+    } catch (error: any) {
+      setIsDeleteModalVisible(false);
+      Alert.alert(
+        t('drawer.deleteAccount'),
+        error?.response?.data?.message || t('drawer.deleteAccountError')
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -323,7 +351,46 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         </TouchableOpacity>
 
         {renderDrawerItem(t('drawer.logout'), LogOut, undefined, undefined, handleLogout, false)}
+        {renderDrawerItem(t('drawer.deleteAccount'), Trash2, undefined, undefined, () => setIsDeleteModalVisible(true), false)}
       </DrawerContentScrollView>
+
+      {/* Delete Account Confirmation Modal */}
+      <Modal
+        visible={isDeleteModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsDeleteModalVisible(false)}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContainer}>
+            <View style={styles.deleteModalIconWrapper}>
+              <AlertTriangle size={RFValue(20)} color="#DC2626" />
+            </View>
+            <Text style={styles.deleteModalTitle}>{t('drawer.deleteAccountConfirm')}</Text>
+            <Text style={styles.deleteModalMessage}>{t('drawer.deleteAccountWarning')}</Text>
+            {deletingAccount ? (
+              <ActivityIndicator size="large" color="#DC2626" />
+            ) : (
+              <View style={styles.deleteModalActions}>
+                <TouchableOpacity
+                  style={[styles.deleteModalBtn, styles.deleteModalCancelBtn]}
+                  onPress={() => setIsDeleteModalVisible(false)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.deleteModalCancelText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.deleteModalBtn, styles.deleteModalConfirmBtn]}
+                  onPress={handleDeleteAccount}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.deleteModalConfirmText}>{t('drawer.deleteAccountYes')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -559,6 +626,73 @@ const styles = StyleSheet.create({
     fontSize: RFValue(11),
     fontWeight: '700',
     color: Colors.primary,
+  },
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(20, 24, 24, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: wp('8%'),
+  },
+  deleteModalContainer: {
+    width: '100%',
+    backgroundColor: Colors.white,
+    borderRadius: wp('4%'),
+    padding: wp('6%'),
+    alignItems: 'center',
+  },
+  deleteModalIconWrapper: {
+    width: wp('14%'),
+    height: wp('14%'),
+    borderRadius: wp('7%'),
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('1.5%'),
+  },
+  deleteModalTitle: {
+    fontSize: RFValue(14),
+    fontWeight: '800',
+    color: Colors.dark,
+    textAlign: 'center',
+    marginBottom: hp('1%'),
+  },
+  deleteModalMessage: {
+    fontSize: RFValue(11),
+    color: Colors.gray,
+    textAlign: 'center',
+    lineHeight: RFValue(16),
+    marginBottom: hp('2%'),
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  deleteModalBtn: {
+    flex: 1,
+    height: hp('5%'),
+    borderRadius: wp('2.5%'),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteModalCancelBtn: {
+    backgroundColor: '#F3F4F6',
+    marginRight: wp('2.5%'),
+  },
+  deleteModalConfirmBtn: {
+    backgroundColor: '#DC2626',
+    marginLeft: wp('2.5%'),
+  },
+  deleteModalCancelText: {
+    fontSize: RFValue(11.5),
+    fontWeight: '700',
+    color: Colors.dark,
+  },
+  deleteModalConfirmText: {
+    fontSize: RFValue(11.5),
+    fontWeight: '700',
+    color: Colors.white,
   },
   sponsorCard: {
     backgroundColor: '#FFF1EB', // Soft primary tint
