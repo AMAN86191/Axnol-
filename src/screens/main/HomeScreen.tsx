@@ -19,10 +19,11 @@ import { FeedCard } from '../../components/FeedCard';
 import { QuickActions } from '../../components/QuickActions';
 import { BannerSlider } from '../../components/BannerSlider';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
-import { UpcomingEventsSection } from '../../components/UpcomingEventsSection';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 import { useTranslation } from 'react-i18next';
+import { mapPostItem } from '../../utils/postMapper';
+import { UpcomingEventsSection } from '../../components/UpcomingEventsSection';
 
 const HomeScreen = () => {
   const { t } = useTranslation();
@@ -50,55 +51,12 @@ const HomeScreen = () => {
        console.log('Events data ', getEventsData)
         console.log('Home screen feed get posts data ', response)
         if (response && response.posts && response.posts.data) {
-          const mappedPosts = response.posts.data.map((item: any) => {
-            let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
-            let additionalImages: string[] = [];
-            
-            if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-              additionalImages = item.images.map((img: any) => img.image);
-            } else if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
-              additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
-            }
-            
-            if (additionalImages.length === 0 && imageUrl) {
-              additionalImages = [imageUrl];
-            }
-            let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
-
-            let avatarUrl = '';
-            if (item.author?.profile_pic) {
-              avatarUrl = item.author.profile_pic;
-            } else if (item.user?.avatar) {
-              avatarUrl = item.user.avatar.startsWith('http') ? item.user.avatar : `https://gst.tambimotors.com/${item.user.avatar}`;
-            }
-            
-            const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id 
-                ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
-                : item.is_liked || false;
-
-            const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && user?.id 
-                ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === user.id)
-                : item.is_disliked || false;
-
-            return {
-              id: item.id?.toString(),
-              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
-              avatar: avatarUrl,
-              meta: item.created_at || t('common.justNow'),
-              text: item.description || '',
-              image: displayImage,
-              images: additionalImages,
-              likes: item.likes_count ?? item.likes ?? 0,
-              comments: item.comments_count || 0,
-              isLiked: isLikedByCurrentUser,
-              likedBy: item.liked_by || [],
-              dislikes: item.dislikes_count ?? item.dislikes ?? 0,
-              isDisliked: isDislikedByCurrentUser,
-              dislikedBy: item.disliked_by || [],
-              userId: item.user_id?.toString() || item.admin_id?.toString(),
-              status: item.status,
-            };
-          });
+          const mappedPosts = response.posts.data.map((item: any) =>
+            mapPostItem(item, user?.id, {
+              unknown: t('common.unknown'),
+              justNow: t('common.justNow'),
+            })
+          );
           setHomePosts(mappedPosts.slice(0, 5)); // show max 5 on home screen
         }
       } catch (error) {

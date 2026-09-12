@@ -17,6 +17,7 @@ import ReactNativeBlobUtil from 'react-native-blob-util';
 import { useTranslation } from 'react-i18next';
 import Share from 'react-native-share';
 import { generateAndDownloadPDF, generatePdfFile } from '../utils/pdfGenerator';
+import { Colors } from '../theme/colors';
 
 interface MembershipCertificateCardProps {
   memberDetails: {
@@ -64,209 +65,118 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
     const htmlContent = `
       <html>
         <head>
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Great+Vibes&display=swap" rel="stylesheet">
+          <meta charset="utf-8" />
+          <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
           <style>
-            body { 
-              font-family: 'Inter', sans-serif; 
-              margin: 0; 
-              padding: 40px; 
-              background-color: #ffffff; 
-              display: flex; 
-              justify-content: center; 
-              align-items: center; 
-              margin-top: 30px;
-              margin-bottom: 30px;
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            @page { size: letter portrait; margin: 0; }
+            body {
+              margin: 0;
+              padding: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              width: 100vw;
+              background-color: #ffffff;
+              font-family: 'Montserrat', sans-serif;
             }
-            .certificate-outer { 
-              width: 100%; 
-              max-width: 800px;
-              background-color: #FAF5EE; 
-              border: 1.5px solid #E6D7C3; 
-              border-radius: 20px; 
-              padding: 16px; 
-              box-sizing: border-box; 
+            .certificate-outer {
+              width: 700px;
+              height: 800px;
+              padding: 40px;
+              background-color: #faf7f2;
+              border: 16px solid #ffffff;
+              box-shadow: inset 0 0 0 2px #eae0d5;
+              box-sizing: border-box;
+              position: relative;
             }
-            .certificate-border { 
-              border: 2px solid #CBB28C; 
-              border-radius: 14px; 
-              padding: 12px; 
-            }
-            .certificate-inner { 
-              border: 1px solid #CBB28C; 
-              border-radius: 10px; 
-              background-color: #FFFDF9; 
-              display: flex; 
-              flex-direction: column; 
-              align-items: center; 
-              padding: 40px 50px; 
-              box-sizing: border-box; 
-            }
-            .header { text-align: center; margin-bottom: 30px; }
-            .award-icon { margin-bottom: 15px; display: flex; justify-content: center; }
-            .header-logo { width: 70px; height: 70px; object-fit: contain; }
-            .title { 
-              font-size: 26px; 
-              font-weight: 800; 
-              color: #806030; 
-              letter-spacing: 1.5px; 
-              margin: 0 0 8px 0; 
-            }
-            .subtitle { 
-              font-size: 14px; 
-              font-weight: 700; 
-              color: #D97706; 
-              letter-spacing: 0.5px; 
-              text-transform: uppercase; 
-            }
-            .body-section { text-align: center; margin-bottom: 40px; width: 90%; }
-            .presented-text { 
-              font-size: 16px; 
-              color: #6B7280; 
-              font-style: italic; 
-            }
-            .member-name-container {
-              margin: 25px 0;
+            .certificate-inner-border {
+              border: 2px solid #e0d5c1;
+              padding: 30px;
+              height: 100%;
+              width: 100%;
+              box-sizing: border-box;
+              border-radius: 8px;
               display: flex;
               flex-direction: column;
+              justify-content: space-between;
               align-items: center;
+              position: relative;
             }
-            .member-name { 
-              font-size: 38px; 
-              font-weight: 800; 
-              color: #111827; 
-            }
-            .name-underline {
-              width: 60%;
-              height: 1.5px;
-              background-color: #E6D7C3;
-              margin-top: 10px;
-            }
-            .description { 
-              font-size: 15px; 
-              color: #4B5563; 
-              line-height: 1.6; 
-              padding: 0 20px;
-            }
-            .meta-container { 
-              display: flex; 
-              justify-content: space-between; 
-              width: 100%; 
-              margin-bottom: 40px; 
-              padding: 0 40px; 
-              box-sizing: border-box; 
-            }
-            .meta-column { text-align: center; }
-            .meta-label { 
-              font-size: 11px; 
-              color: #9CA3AF; 
-              font-weight: 700; 
-              letter-spacing: 1px; 
-            }
-            .meta-value { 
-              font-size: 15px; 
-              color: #374151; 
-              font-weight: 700; 
-              margin-top: 6px; 
-            }
-            .footer { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center; 
-              width: 100%; 
-              padding: 0 30px; 
-              box-sizing: border-box; 
-            }
-            .signature-col { 
-              text-align: center; 
-              width: 150px; 
-            }
-            .handwritten { 
-              font-family: 'Great Vibes', cursive; 
-              font-size: 32px; 
-              color: #5D4037; 
-              margin-bottom: 5px; 
-            }
-            .sig-line { 
-              width: 100%; 
-              height: 1px; 
-              background-color: #CCCCCC; 
-              margin: 8px 0; 
-            }
-            .sig-title { 
-              font-size: 12px; 
-              color: #6B7280; 
-              font-weight: 600; 
-            }
-            .seal { 
-              display: flex; 
-              justify-content: center; 
-              align-items: center; 
-            }
+            .cert-logo { width: 80px; height: 80px; }
+            .cert-header { text-align: center; width: 100%; }
+            .trust-name { font-size: 28px; color: #5c4033; letter-spacing: 1px; margin-bottom: 8px; text-transform: uppercase; }
+            .cert-subheader { font-size: 15px; font-weight: 700; color: #ff6c3c; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 27px; }
+            .presented-text { font-size: 16px; font-style: italic; color: #6b7280; margin-bottom: 17px; }
+            .member-name { font-size: 34px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; width: 80%; margin: 0 auto 20px auto; min-width: 300px; }
+            .description { font-size: 15px; line-height: 1.8; color: #475569; padding: 0 20px; margin-bottom: 10px; text-align: center; }
+            .meta-container { display: flex; justify-content: space-around; width: 100%; text-align: center; font-size: 11px; margin-bottom: 24px; }
+            .meta-column { width: 50%; }
+            .meta-label { display: block; text-transform: uppercase; color: #94a3b8;font-weight: bold; font-size: 11px; letter-spacing: 0.5px; margin-bottom: 4px; }
+            .meta-value { font-weight: 700; color: #1e293b; font-size: 14px; }
+            .meta-value-mono { font-family: monospace; }
+            .cert-footer { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 16px; padding-top: 8px; position: relative; box-sizing: border-box; }
+            .signature-col { width: 35%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px; }
+            .handwritten { font-family: 'Great Vibes', cursive; font-size: 26px; color: #1e293b; display: block; line-height: 1; margin-bottom: 5px; }
+            .sig-title { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+            .seal-column { width: 20%; display: flex; align-items: center; justify-content: center; }
+            .seal-circle { width: 65px; height: 65px; background-color: #ff6c3c; border-radius: 50%; border: 3px double #ffffff; display: flex; align-items: center; justify-content: center; }
           </style>
         </head>
         <body>
           <div class="certificate-outer">
-            <div class="certificate-border">
-              <div class="certificate-inner">
-                
-                <div class="header">
-                  <div class="award-icon">
-                    ${logoDataUri
-                      ? `<img class="header-logo" src="${logoDataUri}" alt="logo" />`
-                      : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="8" r="6"></circle>
-                        <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
-                      </svg>`}
-                  </div>
-                  <div class="title">${t('certificate.trustName')}</div>
-                  <div class="subtitle">${t('certificate.certificateOf', { tier: memberDetails.tier })}</div>
+            <div class="certificate-inner-border">
+
+              <div class="cert-header">
+                <div style="margin-bottom: 12px;">
+                  ${logoDataUri
+        ? `<img class="cert-logo" src="${logoDataUri}" alt="logo" />`
+        : `<svg class="cert-logo" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#ff6c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="6"></circle>
+                            <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path>
+                          </svg>`}
                 </div>
-                
-                <div class="body-section">
-                  <div class="presented-text">${t('certificate.presentedTo')}</div>
-                  <div class="member-name-container">
-                    <div class="member-name">${memberDetails.name}</div>
-                    <div class="name-underline"></div>
-                  </div>
-                  <div class="description">
-                    ${t('certificate.description')}
-                  </div>
-                </div>
-                
+                <h2 class="trust-name">${t('certificate.trustName')}</h2>
+                <h4 class="cert-subheader">${t('certificate.certificateOf', { tier: memberDetails.tier })}</h4>
+                <p class="presented-text">${t('certificate.presentedTo')}</p>
+                <h1 class="member-name">${memberDetails.name}</h1>
+                <p class="description">${t('certificate.description')}</p>
+              </div>
+
+              <div style="width: 100%;">
                 <div class="meta-container">
                   <div class="meta-column">
-                    <div class="meta-label">${t('certificate.memberId')}</div>
-                    <div class="meta-value">${memberDetails.memberId}</div>
+                    <span class="meta-label">${t('certificate.memberId')}</span>
+                    <span class="meta-value meta-value-mono">${memberDetails.memberId}</span>
                   </div>
                   <div class="meta-column">
-                    <div class="meta-label">${t('certificate.dateOfIssuance')}</div>
-                    <div class="meta-value">${memberDetails.joinedDate}</div>
+                    <span class="meta-label">${t('certificate.dateOfIssuance')}</span>
+                    <span class="meta-value">${memberDetails.joinedDate}</span>
                   </div>
                 </div>
-                
-                <div class="footer">
+
+                <div class="cert-footer">
                   <div class="signature-col">
-                    <div class="handwritten">${t('certificate.presidentName')}</div>
-                    <div class="sig-line"></div>
-                    <div class="sig-title">${t('certificate.president')}</div>
+                    <span class="handwritten">${t('certificate.presidentName')}</span>
+                    <span class="sig-title">${t('certificate.president')}</span>
                   </div>
-                  
-                  <div class="seal">
-                    <svg width="80" height="80" viewBox="0 0 100 100">
-                      <circle cx="50" cy="50" r="45" fill="#F59E0B" stroke="#D97706" stroke-width="2" />
-                      <circle cx="50" cy="50" r="38" fill="transparent" stroke="#FFF" stroke-width="1.5" stroke-dasharray="3,3" />
-                      <path d="M50 20 L58 40 L78 40 L62 52 L68 72 L50 60 L32 72 L38 52 L22 40 L42 40 Z" fill="#FFF" />
-                    </svg>
+
+                  <div class="seal-column">
+                    <div class="seal-circle">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff">
+                        <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.786 1.4 8.168L12 18.896l-7.334 3.857 1.4-8.168L.133 9.21l8.2-1.192z"/>
+                      </svg>
+                    </div>
                   </div>
-                  
+
                   <div class="signature-col">
-                    <div class="handwritten">${t('certificate.generalSecretaryName')}</div>
-                    <div class="sig-line"></div>
-                    <div class="sig-title">${t('certificate.generalSecretary')}</div>
+                    <span class="handwritten">${t('certificate.generalSecretaryName')}</span>
+                    <span class="sig-title">${t('certificate.generalSecretary')}</span>
                   </div>
                 </div>
-                
               </div>
+
             </div>
           </div>
         </body>
@@ -359,23 +269,27 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
             {/* Signatures & Seal */}
             <View style={styles.certFooter}>
               <View style={styles.signatureCol}>
-                <Text style={styles.handwrittenSig}>{t('certificate.presidentName')}</Text>
                 <View style={styles.sigLine} />
+                <View style={styles.sigNameWrap}>
+                  <Text style={styles.handwrittenSig}>{t('certificate.presidentName')}</Text>
+                </View>
                 <Text style={styles.sigTitle}>{t('certificate.president')}</Text>
               </View>
 
               {/* Gold Seal Svg */}
               <View style={styles.sealWrapper}>
                 <Svg width={wp('13%')} height={wp('13%')} viewBox="0 0 100 100">
-                  <Circle cx="50" cy="50" r="45" fill="#F59E0B" stroke="#D97706" strokeWidth="2" />
+                  <Circle cx="50" cy="50" r="45" fill={Colors.primary} stroke="#D97706" strokeWidth="2" />
                   <Circle cx="50" cy="50" r="38" fill="transparent" stroke="#FFF" strokeWidth="1.5" strokeDasharray="3,3" />
                   <Path d="M50 20 L58 40 L78 40 L62 52 L68 72 L50 60 L32 72 L38 52 L22 40 L42 40 Z" fill="#FFF" />
                 </Svg>
               </View>
 
               <View style={styles.signatureCol}>
-                <Text style={styles.handwrittenSig}>{t('certificate.generalSecretaryName')}</Text>
                 <View style={styles.sigLine} />
+                <View style={styles.sigNameWrap}>
+                  <Text style={styles.handwrittenSig}>{t('certificate.generalSecretaryName')}</Text>
+                </View>
                 <Text style={styles.sigTitle}>{t('certificate.generalSecretary')}</Text>
               </View>
             </View>
@@ -390,7 +304,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
           <Download size={RFValue(12)} color="#FFF" style={{ marginRight: wp('1.5%') }} />
           <Text style={styles.downloadBtnText}>{t('certificate.downloadPdf')}</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.shareBtn} onPress={handleSharePress} activeOpacity={0.85} disabled={sharing}>
           {sharing ? (
             <ActivityIndicator size="small" color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
@@ -404,7 +318,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
       {/* Membership Details Card */}
       <View style={styles.detailsCard}>
         <Text style={styles.detailsTitle}>{t('certificate.membershipDetails')}</Text>
-        
+
         {/* Detail Item Row 1 */}
         <View style={styles.detailRow}>
           <View style={styles.detailItem}>
@@ -543,7 +457,7 @@ const styles = StyleSheet.create({
   },
   certBody: {
     alignItems: 'center',
-    marginBottom: hp('2%'),
+    marginBottom: hp('8%'),
   },
   certPresentedText: {
     fontSize: RFValue(9),
@@ -574,7 +488,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     paddingHorizontal: wp('4%'),
-    marginBottom: hp('2.5%'),
+    marginBottom: hp('1%'),
   },
   certMetaColumn: {
     alignItems: 'center',
@@ -600,13 +514,19 @@ const styles = StyleSheet.create({
   },
   signatureCol: {
     alignItems: 'center',
-    width: wp('25%'),
+    width: wp('30%'),
+  },
+  sigNameWrap: {
+    alignSelf: 'stretch',
+    minHeight: hp('4.2%'),
+    justifyContent: 'center',
   },
   handwrittenSig: {
-    fontFamily: Platform.OS === 'ios' ? 'Snell Roundhand' : 'cursive',
-    fontSize: RFValue(13),
+    fontFamily: Platform.OS === 'ios' ? 'Poppins-Regular' : 'Poppins-Regular',
+    fontSize: RFValue(12),
     color: '#5D4037',
-    height: hp('2.5%'),
+    textAlign: 'center',
+    lineHeight: hp('2.1%'),
   },
   sigLine: {
     width: '100%',

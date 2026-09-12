@@ -93,8 +93,12 @@ export default function DonateScreen() {
 
     try {
       const payment = await startPhonePeTransaction(
-        finalAmount,
-        `donate_${donationType}`
+        {
+          amount: finalAmount,
+          donation_type: donationType,
+          remark: remark || null,
+        },
+        `donate_${donationType}`,
       );
 
       if (payment.status !== 'SUCCESS') {

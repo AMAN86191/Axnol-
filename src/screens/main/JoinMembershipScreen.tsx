@@ -163,8 +163,11 @@ const JoinMembershipScreen = () => {
     setPurchasingId(plan.id);
     try {
       const payment = await startPhonePeTransaction(
-        parseFloat(plan.price),
-        `membership_${plan.id}`
+        {
+          amount: parseFloat(plan.price),
+          plan_id: plan.id,
+        },
+        `membership_${plan.id}`,
       );
 
       if (payment.status !== 'SUCCESS') {
@@ -266,7 +269,7 @@ const JoinMembershipScreen = () => {
   const memberDetails = {
     name: user?.name || t('profile.memberName'),
     memberId: user?.uid || t('common.na'),
-    tier: user?.profile?.designation ? user.profile.designation.toUpperCase() : t('common.na'),
+    tier: user?.profile?.designation ? user?.profile?.designation?.toUpperCase() : t('common.na'),
     joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : t('common.active'),

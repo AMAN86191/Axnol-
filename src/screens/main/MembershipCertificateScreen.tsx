@@ -26,17 +26,17 @@ const MembershipCertificateScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<any>();
   const { user } = useAuthStore();
-  
+
   const profileData = route.params?.profileData;
   const activeUser = profileData?.user || user;
   const activeProfile = profileData?.profile || user?.profile;
   const activeMembership = activeUser?.membership || user?.membership;
-console.log(profileData);
+  console.log(profileData);
   // Dynamic Member Data
   const memberDetails = {
     name: activeUser?.name || t('profile.memberName'),
     memberId: activeUser?.uid || t('common.na'),
-    tier: activeUser?.membership ? activeUser.membership.charAt(0).toUpperCase() + activeUser.membership.slice(1) : t('membership.communityMember'),
+    tier: user?.profile?.designation ? user?.profile?.designation?.toUpperCase() : t('common.na'),
     joinedDate: activeUser?.start_date ? new Date(activeUser.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     endDate: activeUser?.end_date ? new Date(activeUser.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     status: activeUser?.status ? activeUser.status.charAt(0).toUpperCase() + activeUser.status.slice(1) : t('common.active'),
@@ -65,14 +65,10 @@ console.log(profileData);
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      <CommonHeader 
-        title={t('certificate.title')} 
+      <CommonHeader
+        title={t('certificate.title')}
         onBackPress={() => navigation.goBack()}
-        rightElement={
-          <TouchableOpacity onPress={handleShare} activeOpacity={0.7} style={styles.headerShareBtn}>
-            <Share2 size={RFValue(14)} color={Colors.dark} />
-          </TouchableOpacity>
-        }
+
       />
 
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>

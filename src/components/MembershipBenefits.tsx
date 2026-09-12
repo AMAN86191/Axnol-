@@ -26,12 +26,7 @@ export const MembershipBenefits = React.memo(({
 
       {isMember ? (
         <View style={styles.memberAccessCard}>
-          <View style={styles.memberAccessHeader}>
-            <View style={styles.statusBadgeGreen}>
-              <Check size={RFValue(7.5)} color="#065F46" strokeWidth={4} style={{ marginRight: wp('1%') }} />
-              <Text style={styles.statusBadgeTextGreen}>{t('membership.communityMember')}</Text>
-            </View>
-          </View>
+      
 
           <Text style={styles.memberAccessDesc}>
             {t('membership.thankYouMember')}
@@ -47,14 +42,14 @@ export const MembershipBenefits = React.memo(({
               <Text style={styles.memberActionBtnText}>{t('membership.viewCertificate')}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[styles.memberActionBtn, styles.memberActionBtnOutline]}
               onPress={onIdCardPress}
               activeOpacity={0.8}
             >
               <UserIcon size={RFValue(12)} color="#FF6F34" style={{ marginRight: wp('1.5%') }} />
               <Text style={[styles.memberActionBtnText, styles.memberActionBtnTextOutline]}>{t('membership.viewIdCard')}</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
         </View>
       ) : (
@@ -141,8 +136,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF5F0',
     borderWidth: 1,
     borderColor: '#FFE0D3',
-    borderRadius: wp('3.5%'),
-    height: hp('4.2%'),
+    borderRadius: wp('2%'),
+    height: hp('3%'),
     marginRight: wp('2%'),
   },
   memberActionBtnOutline: {
@@ -151,7 +146,7 @@ const styles = StyleSheet.create({
     marginLeft: wp('2%'),
   },
   memberActionBtnText: {
-    fontSize: RFValue(9.5),
+    fontSize: RFValue(9),
     fontWeight: '700',
     color: '#FF6F34',
   },

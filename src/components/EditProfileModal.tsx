@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import { InputField } from './InputField';
 import { CustomButton } from './CustomButton';
+import { sendFirebaseOtp, confirmFirebaseOtp, resendFirebaseOtp } from '../services/firebaseAuthService';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -81,7 +82,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   }, [visible, currentName, currentEmail, currentPhone, currentDesignation, currentDob, currentDom, currentProfession, currentBio, currentProfilePic]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert(t('addPost.validationError'), t('editProfile.nameRequired'));
       return;
@@ -108,8 +109,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
     if (isPhoneChanged) {
       setLoading(true);
-      // Simulate sending OTP
-      setTimeout(() => {
+      try {
+        await sendFirebaseOtp(phone);
         setLoading(false);
         setShowOtpView(true);
         Alert.alert(
@@ -117,21 +118,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           t('editProfile.otpSentMessage', { phone }),
           [{ text: t('common.ok') }]
         );
-      }, 1000);
+      } catch {
+        setLoading(false);
+        Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
+      }
     } else {
       // Phone is not changed, update other fields directly
       onUpdate(payload);
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (otpCode !== '123456') {
-      Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
-      return;
-    }
-
+  const handleVerifyOtp = async () => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await confirmFirebaseOtp(otpCode);
       setLoading(false);
       const payload = {
         name,
@@ -149,7 +149,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         t('editProfile.verifyUpdate'),
         t('editProfile.profileUpdated'),
       );
-    }, 1200);
+    } catch {
+      setLoading(false);
+      Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
+    }
   };
 
   return (
@@ -290,8 +293,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    onPress={() => {
-                      Alert.alert(t('editProfile.resent'), t('editProfile.resentMessage'));
+                    onPress={async () => {
+                      try {
+                        setLoading(true);
+                        await resendFirebaseOtp(phone);
+                        setLoading(false);
+                        Alert.alert(t('editProfile.resent'), t('editProfile.resentMessage'));
+                      } catch {
+                        setLoading(false);
+                        Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
+                      }
                     }}
                     style={styles.resendBtn}
                     disabled={loading}

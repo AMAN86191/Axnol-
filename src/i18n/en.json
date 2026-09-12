@@ -79,7 +79,12 @@
     "hasAccount": "Already have an account? ",
     "login": "Login",
     "registerFailed": "Failed to register",
-    "registrationFailed": "Registration Failed"
+    "registrationFailed": "Registration Failed",
+    "nameRequired": "Please enter your full name.",
+    "invalidPhone": "Please enter a valid 10-digit mobile number.",
+    "invalidEmail": "Please enter a valid email address.",
+    "otpFailed": "Failed to send OTP. Please try again.",
+    "alreadyRegistered": "This phone number has already been registered. Please login."
   },
   "forgotPassword": {
     "title": "Forgot Password",
@@ -90,16 +95,25 @@
   },
   "otp": {
     "verifyNumber": "Verify Your Number",
-    "enterCode": "Please enter the 4-digit code sent to",
-    "enterAllDigits": "Please enter all 4 digits",
+    "enterCode": "Please enter the 6-digit code sent to",
+    "enterAllDigits": "Please enter all 6 digits",
     "invalidOtp": "Invalid OTP",
     "otpSent": "OTP Sent",
-    "otpSentMessage": "A new 4-digit OTP has been sent to +91 {{phone}}.",
-    "testOtp": "Use Test OTP: 1234",
+    "otpSentMessage": "A new 6-digit OTP has been sent to +91 {{phone}}.",
     "verifyContinue": "Verify & Continue",
     "resendIn": "Resend code in {{time}}s",
     "didntReceive": "Didn't receive the code? ",
-    "resend": "Resend"
+    "resend": "Resend",
+    "resending": "Resending...",
+    "errors": {
+      "invalidCode": "Incorrect OTP. Please check the code sent to {{phone}} and try again.",
+      "codeExpired": "This OTP has expired. Tap Resend to get a new code.",
+      "tooManyRequests": "Too many attempts. Please wait a few minutes and try again.",
+      "quotaExceeded": "SMS quota exhausted for this number. Please try again later.",
+      "notAllowed": "Phone sign-in is not set up for this app yet. Please contact support.",
+      "network": "Network error. Please check your internet connection and try again.",
+      "apiFailed": "Something went wrong while verifying. Please try again."
+    }
   },
   "hero": {
     "secureSafe": "Secure & Safe",
@@ -157,7 +171,11 @@
   },
   "home": {
     "communityFeed": "Community Feed",
-    "noPosts": "No posts yet. Be the first to share something!"
+    "noPosts": "No posts yet. Be the first to share something!",
+    "contribute": "Contribute",
+    "contributeSub": "Support the cause",
+    "donate": "Donate Now",
+    "donateSub": "Feed a cow today"
   },
   "feed": {
     "loadMore": "Load More",
@@ -247,9 +265,9 @@
     "nameRequired": "Please enter your name",
     "invalidPhone": "Please enter a valid phone number",
     "otpSent": "Verification Code Sent",
-    "otpSentMessage": "An OTP code has been sent to {{phone}}. Enter '123456' to verify.",
+    "otpSentMessage": "An OTP code has been sent to {{phone}}.",
     "otpFailed": "Verification Failed",
-    "otpFailedMessage": "Invalid OTP code. Please enter the correct code: 123456",
+    "otpFailedMessage": "Invalid OTP code. Please enter the correct 6-digit code sent to your phone.",
     "addPhoto": "Add Photo",
     "displayName": "Name",
     "namePlaceholder": "Enter your name",
@@ -281,7 +299,7 @@
     "saveChanges": "Save Changes",
     "otpDescription": "Please enter the 6-digit verification code sent to your new phone number ",
     "otpLabel": "Verification Code (OTP)",
-    "otpPlaceholder": "Enter 6-digit OTP (123456)",
+    "otpPlaceholder": "Enter 6-digit OTP",
     "editDetails": "Edit Details",
     "resent": "Resent",
     "resentMessage": "Verification code has been resent.",
@@ -405,7 +423,7 @@
   },
   "certificate": {
     "title": "Membership Certificate",
-    "trustName": "GAU MATA SEWA TRUST",
+    "trustName": "GAUMATA SEWA TRUST",
     "certificateOf": "CERTIFICATE OF {{tier}} MEMBERSHIP",
     "presentedTo": "This certificate is proudly presented to",
     "description": "in recognition of their noble support, generous contributions, and dedicated service as a verified Gau Sevak. Your commitment directly aids the feeding, shelter, and medical protection of indigenous cows.",
@@ -448,8 +466,9 @@
     "completed": "COMPLETED",
     "tbd": "TBD",
     "startsIn": "Starts in",
-    "days": "Days",
+    "days": "{{days}} Days",
     "today": "Today",
+    "tomorrow": "Tomorrow",
     "photos": "Photos",
     "upcomingEvent": "Upcoming Event",
     "upcomingEventDesc": "Don't miss our next big event",
@@ -599,19 +618,29 @@
     "communityMember": "Community Member",
     "posts": "Posts",
     "likes": "Likes",
-    "noPostsYet": "No posts shared yet by this member."
+    "noPostsYet": "No posts shared yet by this member.",
+    "memberId": "Member ID",
+    "email": "Email",
+    "phone": "Phone",
+    "designation": "Designation",
+    "memberSince": "Member Since",
+    "location": "Location",
+    "profession": "Profession",
+    "dateOfBirth": "Date of Birth",
+    "about": "About",
+    "bio": "Bio"
   },
   "privacy": {
     "title": "Privacy Policy",
     "subtitle": "Your Privacy Matters",
     "lastUpdated": "Last updated: June 2026",
-    "intro": "Gau Mata Sewa Trust (\"we\", \"us\", or \"our\") operates the Gaumata Trust mobile application. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you support our cow protection and welfare missions.",
+    "intro": "Gau Mata Sewa Trust (\"we\", \"us\", or \"our\") operates the Gaumata Trust mobile application. This page informs you of our policies regarding the collection, use, and disclosure of personal data when you use the application.",
     "section1Title": "1. Collection of Information",
-    "section1Content": "The trust collects personal information, including names, contact details, and donation history, to maintain donor records and facilitate communication.",
+    "section1Content": "The trust collects personal information, including names, contact details, and profile information, to maintain user records and facilitate communication.",
     "section2Title": "2. Use of Information",
-    "section2Content": "Information is used solely for the purpose for which it was provided, such as processing donations, sending updates, and informing donors about NGO activities.",
+    "section2Content": "Information is used solely for the purpose for which it was provided, such as providing our services, sending updates, and informing users about NGO activities.",
     "section3Title": "3. Data Sharing",
-    "section3Content": "The trust states that it does not sell, trade, or rent personal information to third parties. Information may only be shared with trusted partners and service providers for specific tasks like processing donations.",
+    "section3Content": "The trust states that it does not sell, trade, or rent personal information to third parties. Information may only be shared with trusted partners and service providers for specific tasks like service delivery.",
     "section4Title": "4. Security",
     "section4Content": "Reasonable security measures are employed to protect personal information from unauthorized access, disclosure, alteration, or destruction.",
     "section5Title": "5. Opt-Out & Policy Updates",
@@ -627,10 +656,10 @@
     "section1Content": "By accessing or using the services of the Gaumata Sewa Trust, you agree to be bound by these terms.",
     "section2Title": "2. Use of Information",
     "section2Content": "Content is for general informational purposes only. The NGO reserves the right to modify or update information at any time without prior notice.",
-    "section3Title": "3. Donations & Refunds",
-    "section3Content": "All financial contributions made to the trust are voluntary. The trust reserves the right to allocate funds at its discretion to areas of greatest need.",
-    "refundPolicy": "Refund Policy:",
-    "refundContent": " Contributions are considered final and are non-refundable. If an incorrect transaction occurs, donors are advised to contact the trust immediately for resolution.",
+    "section3Title": "3. Community Participation",
+    "section3Content": "Participation in the trust's activities and community programs is voluntary. Members are expected to engage respectfully and contribute to the welfare of cows in whatever way they can.",
+    "refundPolicy": "Note:",
+    "refundContent": " The application currently does not process any financial transactions or online payments. Any donations or contributions must be made directly to the trust through official channels.",
     "section4Title": "4. Intellectual Property",
     "section4Content": "All content, including text, images, logos, and graphics, is the property of the NGO and is protected by copyright laws.",
     "section5Title": "5. User Conduct & Policies",
@@ -680,6 +709,10 @@
   },
   "likes": {
     "title": "Likes"
+  },
+  "dislikes": {
+    "title": "Dislikes",
+    "empty": "No dislikes yet."
   },
   "notificationsDisabled": {
     "title": "Notifications Disabled",

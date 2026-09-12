@@ -4,7 +4,6 @@ import { ArrowRight } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useTranslation } from 'react-i18next';
-import { ProgressCircle } from './ProgressCircle';
 
 interface ActiveCampaignCardProps {
   onDonatePress: () => void;

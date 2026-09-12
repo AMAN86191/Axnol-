@@ -80,8 +80,11 @@ export default function PlansScreen() {
     setPurchasingId(plan.id);
     try {
       const payment = await startPhonePeTransaction(
-        parseFloat(plan.price),
-        `plan_${plan.id}`
+        {
+          amount: parseFloat(plan.price),
+          plan_id: plan.id,
+        },
+        `plan_${plan.id}`,
       );
 
       if (payment.status !== 'SUCCESS') {

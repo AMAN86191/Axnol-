@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,16 +10,16 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { Heart, MessageSquare, Share2, Pencil, Trash2, ThumbsDown, ThumbsUp } from 'lucide-react-native';
+import { Share2, Pencil, Trash2, ThumbsDown, ThumbsUp } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../theme/colors';
 import { CommentsModal, Comment } from './CommentsModal';
-import { LikesModal, LikedUser } from './LikesModal';
+import { LikesModal } from './LikesModal';
+import { DislikesModal } from './DislikesModal';
 import useHomeStore from '../zustand/useHomeStore';
 import useAuthStore from '../zustand/useAuthStore';
-import { useEffect } from 'react';
 
 interface FeedCardProps {
   postId?: string;
@@ -69,7 +69,6 @@ export const FeedCard = ({
   status,
   onLikePress,
   onDislikePress,
-  onCommentPress,
   onSharePress,
   onEditPress,
   onDeletePress,
@@ -79,7 +78,8 @@ export const FeedCard = ({
   const [cardWidth, setCardWidth] = useState(Dimensions.get('window').width - wp('8%'));
   const [isCommentsVisible, setIsCommentsVisible] = useState(false);
   const [isLikesModalVisible, setIsLikesModalVisible] = useState(false);
-  const [commentsCount, setCommentsCount] = useState(comments);
+  const [isDislikesModalVisible, setIsDislikesModalVisible] = useState(false);
+  const isReactingRef = useRef(false);
   const [localLikes, setLocalLikes] = useState(likes);
   const [localIsLiked, setLocalIsLiked] = useState(isLiked);
   const [localLikedBy, setLocalLikedBy] = useState<any[]>(likedBy);
@@ -88,7 +88,6 @@ export const FeedCard = ({
   const [localDislikedBy, setLocalDislikedBy] = useState<any[]>(dislikedBy);
 
   useEffect(() => {
-    setCommentsCount(comments);
     setLocalLikes(likes);
     setLocalIsLiked(isLiked);
     setLocalLikedBy(likedBy);
@@ -102,13 +101,7 @@ export const FeedCard = ({
   const { user } = useAuthStore();
   const { t } = useTranslation();
 
-  useEffect(() => {
-    if (isCommentsVisible && postId) {
-      loadComments();
-    }
-  }, [isCommentsVisible, postId]);
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     if (!postId) return;
     try {
       const res = await getComments(postId);
@@ -139,117 +132,159 @@ export const FeedCard = ({
     } catch (error) {
       console.log('Error loading comments:', error);
     }
-  };
+  }, [postId, getComments, t]);
+
+  useEffect(() => {
+    if (isCommentsVisible && postId) {
+      loadComments();
+    }
+  }, [isCommentsVisible, postId, loadComments]);
 
   const handleLikeButtonPress = async () => {
-    if (onLikePress) {
-      onLikePress();
-    }
+    if (isReactingRef.current) return;
+    isReactingRef.current = true;
 
-    if (!postId) return;
-
-    const previousLikedBy = [...localLikedBy];
-    const previousDislikedBy = [...localDislikedBy];
-    const willBeLiked = !localIsLiked;
-
-    setLocalIsLiked(willBeLiked);
-    setLocalLikes(prev => willBeLiked ? prev + 1 : prev - 1);
-
-    setLocalLikedBy(prevLikedBy => {
-      if (willBeLiked) {
-        if (user?.id && !prevLikedBy.some(u => u.id === user.id)) {
-          const currentUserLike = {
-            id: user.id,
-            name: user.name || t('common.you'),
-            profile_pic: user.profile_pic || user.profile?.profile_pic,
-            designation: user.designation || user.profile?.designation,
-          };
-          return [currentUserLike, ...prevLikedBy];
-        }
-        return prevLikedBy;
-      } else {
-        if (user?.id) {
-          return prevLikedBy.filter(u => u.id !== user.id);
-        }
-        return prevLikedBy;
-      }
-    });
-
-    if (willBeLiked && localIsDisliked) {
-      setLocalIsDisliked(false);
-      setLocalDislikes(prev => prev - 1);
-      setLocalDislikedBy(prev => user?.id ? prev.filter(u => u.id !== user.id) : prev);
-    }
+    let previousLikedBy: any[] = [];
+    let previousDislikedBy: any[] = [];
+    let previousLikesCount = 0;
+    let previousDislikesCount = 0;
+    let willBeLiked = false;
+    let wasDisliked = false;
 
     try {
+      if (onLikePress) {
+        onLikePress();
+      }
+
+      if (!postId) return;
+
+      previousLikedBy = [...localLikedBy];
+      previousDislikedBy = [...localDislikedBy];
+      previousLikesCount = localLikes;
+      previousDislikesCount = localDislikes;
+      willBeLiked = !localIsLiked;
+
+      setLocalIsLiked(willBeLiked);
+      setLocalLikes(prev => Math.max(willBeLiked ? prev + 1 : prev - 1, 0));
+
+      setLocalLikedBy(prevLikedBy => {
+        if (willBeLiked) {
+          if (user?.id && !prevLikedBy.some(u => u.id === user.id)) {
+            const currentUserLike = {
+              id: user.id,
+              name: user.name || t('common.you'),
+              profile_pic: user.profile_pic || user.profile?.profile_pic,
+              designation: user.designation || user.profile?.designation,
+            };
+            return [currentUserLike, ...prevLikedBy];
+          }
+          return prevLikedBy;
+        } else {
+          if (user?.id) {
+            return prevLikedBy.filter(u => u.id !== user.id);
+          }
+          return prevLikedBy;
+        }
+      });
+
+      wasDisliked = !!(willBeLiked && localIsDisliked);
+      if (wasDisliked) {
+        setLocalIsDisliked(false);
+        setLocalDislikes(prev => Math.max(prev - 1, 0));
+        setLocalDislikedBy(prev => user?.id ? prev.filter(u => u.id !== user.id) : prev);
+      }
+
+      if (wasDisliked) {
+        await toggleDislikePost(postId);
+      }
       const res = await toggleLikePost(postId);
       console.log('FeedCard local like response:', res);
     } catch (error) {
       console.log('Error toggling like:', error);
       setLocalIsLiked(!willBeLiked);
-      setLocalLikes(prev => !willBeLiked ? prev + 1 : prev - 1);
+      setLocalLikes(previousLikesCount);
       setLocalLikedBy(previousLikedBy);
-      if (willBeLiked && localIsDisliked) {
+      if (wasDisliked) {
         setLocalIsDisliked(true);
-        setLocalDislikes(prev => prev + 1);
+        setLocalDislikes(previousDislikesCount);
         setLocalDislikedBy(previousDislikedBy);
       }
+    } finally {
+      isReactingRef.current = false;
     }
   };
 
   const handleDislikeButtonPress = async () => {
-    if (onDislikePress) {
-      onDislikePress();
-    }
+    if (isReactingRef.current) return;
+    isReactingRef.current = true;
 
-    if (!postId) return;
-
-    const previousDislikedBy = [...localDislikedBy];
-    const previousLikedBy = [...localLikedBy];
-    const willBeDisliked = !localIsDisliked;
-
-    setLocalIsDisliked(willBeDisliked);
-    setLocalDislikes(prev => willBeDisliked ? prev + 1 : prev - 1);
-
-    setLocalDislikedBy(prevDislikedBy => {
-      if (willBeDisliked) {
-        if (user?.id && !prevDislikedBy.some(u => u.id === user.id)) {
-          const currentUserDislike = {
-            id: user.id,
-            name: user.name || t('common.you'),
-            profile_pic: user.profile_pic || user.profile?.profile_pic,
-            designation: user.designation || user.profile?.designation,
-          };
-          return [currentUserDislike, ...prevDislikedBy];
-        }
-        return prevDislikedBy;
-      } else {
-        if (user?.id) {
-          return prevDislikedBy.filter(u => u.id !== user.id);
-        }
-        return prevDislikedBy;
-      }
-    });
-
-    if (willBeDisliked && localIsLiked) {
-      setLocalIsLiked(false);
-      setLocalLikes(prev => prev - 1);
-      setLocalLikedBy(prev => user?.id ? prev.filter(u => u.id !== user.id) : prev);
-    }
+    let previousDislikedBy: any[] = [];
+    let previousLikedBy: any[] = [];
+    let previousLikesCount = 0;
+    let previousDislikesCount = 0;
+    let willBeDisliked = false;
+    let wasLiked = false;
 
     try {
+      if (onDislikePress) {
+        onDislikePress();
+      }
+
+      if (!postId) return;
+
+      previousDislikedBy = [...localDislikedBy];
+      previousLikedBy = [...localLikedBy];
+      previousLikesCount = localLikes;
+      previousDislikesCount = localDislikes;
+      willBeDisliked = !localIsDisliked;
+
+      setLocalIsDisliked(willBeDisliked);
+      setLocalDislikes(prev => Math.max(willBeDisliked ? prev + 1 : prev - 1, 0));
+
+      setLocalDislikedBy(prevDislikedBy => {
+        if (willBeDisliked) {
+          if (user?.id && !prevDislikedBy.some(u => u.id === user.id)) {
+            const currentUserDislike = {
+              id: user.id,
+              name: user.name || t('common.you'),
+              profile_pic: user.profile_pic || user.profile?.profile_pic,
+              designation: user.designation || user.profile?.designation,
+            };
+            return [currentUserDislike, ...prevDislikedBy];
+          }
+          return prevDislikedBy;
+        } else {
+          if (user?.id) {
+            return prevDislikedBy.filter(u => u.id !== user.id);
+          }
+          return prevDislikedBy;
+        }
+      });
+
+      wasLiked = !!(willBeDisliked && localIsLiked);
+      if (wasLiked) {
+        setLocalIsLiked(false);
+        setLocalLikes(prev => Math.max(prev - 1, 0));
+        setLocalLikedBy(prev => user?.id ? prev.filter(u => u.id !== user.id) : prev);
+      }
+
+      if (wasLiked) {
+        await toggleLikePost(postId);
+      }
       const res = await toggleDislikePost(postId);
       console.log('FeedCard local dislike response:', res);
     } catch (error) {
       console.log('Error toggling dislike:', error);
       setLocalIsDisliked(!willBeDisliked);
-      setLocalDislikes(prev => !willBeDisliked ? prev + 1 : prev - 1);
+      setLocalDislikes(previousDislikesCount);
       setLocalDislikedBy(previousDislikedBy);
-      if (willBeDisliked && localIsLiked) {
+      if (wasLiked) {
         setLocalIsLiked(true);
-        setLocalLikes(prev => prev + 1);
+        setLocalLikes(previousLikesCount);
         setLocalLikedBy(previousLikedBy);
       }
+    } finally {
+      isReactingRef.current = false;
     }
   };
 
@@ -281,13 +316,6 @@ export const FeedCard = ({
     }
   };
 
-  const handleCommentButtonPress = () => {
-    if (onCommentPress) {
-      onCommentPress();
-    }
-    setIsCommentsVisible(true);
-  };
-
   const handleAddComment = async (commentText: string) => {
     const tempId = Math.random().toString();
     let currentUserAvatar = '';
@@ -307,19 +335,15 @@ export const FeedCard = ({
     };
 
     setLocalComments(prev => [...prev, newComment]);
-    setCommentsCount(prev => prev + 1);
 
     if (postId) {
       try {
         const res = await commentPost(postId, commentText);
         console.log('Comment post response:', res);
-        // Optionally reload comments to get the real ID and time
         loadComments();
       } catch (error) {
         console.log('Error posting comment:', error);
-        // Rollback optimistic update
         setLocalComments(prev => prev.filter(c => c.id !== tempId));
-        setCommentsCount(prev => prev - 1);
         Alert.alert(t('common.error'), t('postDetails.commentFailed'));
       }
     }
@@ -447,9 +471,11 @@ export const FeedCard = ({
               strokeWidth={1.5}
             />
           </TouchableOpacity>
-          <Text style={[styles.feedActionText, localIsDisliked && { color: '#EF4444' }]}>
-            {localDislikes}
-          </Text>
+          {/* <TouchableOpacity onPress={() => setIsDislikesModalVisible(true)} activeOpacity={0.7}> */}
+            <Text style={[styles.feedActionText, localIsDisliked && { color: '#EF4444' }]}>
+              {localDislikes}
+            </Text>
+          {/* </TouchableOpacity> */}
         </View>
         {/* <View style={styles.feedActionItem}>
           <TouchableOpacity onPress={handleCommentButtonPress} activeOpacity={0.7} style={styles.actionIconBtn}>
@@ -476,9 +502,7 @@ export const FeedCard = ({
               text: t('common.delete'),
               style: 'destructive',
               onPress: async () => {
-                // Remove optimistically
                 setLocalComments(prev => prev.filter(c => c.id !== commentId));
-                setCommentsCount(prev => prev - 1);
 
                 try {
                   const res = await deleteComment(commentId);
@@ -498,6 +522,12 @@ export const FeedCard = ({
         visible={isLikesModalVisible}
         onClose={() => setIsLikesModalVisible(false)}
         likedBy={localLikedBy}
+      />
+      {/* Reusable Dislikes Modal */}
+      <DislikesModal
+        visible={isDislikesModalVisible}
+        onClose={() => setIsDislikesModalVisible(false)}
+        dislikedBy={localDislikedBy}
       />
     </View>
   );

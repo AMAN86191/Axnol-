@@ -4,7 +4,18 @@ export type RootStackParamList = {
   LoginScreen: undefined;
   SignUpScreen: undefined;
   ForgotPasswordScreen: undefined;
-  OtpVerificationScreen: { email?: string; phoneNumber?: string };
+  OtpVerificationScreen: {
+    email?: string;
+    phoneNumber?: string;
+    mode?: 'login' | 'signup';
+    signupData?: {
+      name: string;
+      email: string;
+      dob: string;
+      bio: string;
+      refer_by: string;
+    };
+  };
   MainDrawer: undefined;
   JoinMembershipScreen: undefined;
   DonateScreen: undefined;

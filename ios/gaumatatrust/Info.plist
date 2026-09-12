@@ -39,14 +39,13 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
-	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Gaumata Trust ko aapki photos post karne ke liye photo library access chahiye.</string>
 	<key>UILaunchStoryboardName</key>
@@ -63,5 +62,34 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Mukta-Bold.ttf</string>
+		<string>Mukta-ExtraBold.ttf</string>
+		<string>Mukta-ExtraLight.ttf</string>
+		<string>Mukta-Light.ttf</string>
+		<string>Mukta-Medium.ttf</string>
+		<string>Mukta-Regular.ttf</string>
+		<string>Mukta-SemiBold.ttf</string>
+		<string>Poppins-Regular.ttf</string>
+		<string>WorkSans-Black.ttf</string>
+		<string>WorkSans-BlackItalic.ttf</string>
+		<string>WorkSans-Bold.ttf</string>
+		<string>WorkSans-BoldItalic.ttf</string>
+		<string>WorkSans-ExtraBold.ttf</string>
+		<string>WorkSans-ExtraBoldItalic.ttf</string>
+		<string>WorkSans-ExtraLight.ttf</string>
+		<string>WorkSans-ExtraLightItalic.ttf</string>
+		<string>WorkSans-Italic.ttf</string>
+		<string>WorkSans-Light.ttf</string>
+		<string>WorkSans-LightItalic.ttf</string>
+		<string>WorkSans-Medium.ttf</string>
+		<string>WorkSans-MediumItalic.ttf</string>
+		<string>WorkSans-Regular.ttf</string>
+		<string>WorkSans-SemiBold.ttf</string>
+		<string>WorkSans-SemiBoldItalic.ttf</string>
+		<string>WorkSans-Thin.ttf</string>
+		<string>WorkSans-ThinItalic.ttf</string>
+	</array>
 </dict>
 </plist>

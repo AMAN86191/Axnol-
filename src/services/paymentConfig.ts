@@ -18,7 +18,7 @@ export const MERCHANT_ID = 'GAUMATATRUSTONLINE'; // prod merchant id
  * While FALSE, PhonePePaymentService runs in mock mode (no real charge),
  * letting the UI payment flow be tested end-to-end.
  */
-export const BACKEND_READY = false;
+export const BACKEND_READY = true;
 
 /**
  * Only Android integration is supported for now.

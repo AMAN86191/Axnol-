@@ -50,18 +50,18 @@ const ProfileScreen = () => {
   const fetchMyPosts = useCallback(async () => {
     try {
       const response = await getmypost();
-console.log('mypost response', response)
+      console.log('mypost response', response)
       if (response && response.posts && response.posts.data) {
         const mappedPosts = response.posts.data.map((item: any) => {
           let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
           let additionalImages: string[] = [];
-          
+
           if (item.images && Array.isArray(item.images) && item.images.length > 0) {
             additionalImages = item.images.map((img: any) => img.image);
           } else if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
             additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
           }
-          
+
           if (additionalImages.length === 0 && imageUrl) {
             additionalImages = [imageUrl];
           }
@@ -74,9 +74,9 @@ console.log('mypost response', response)
             avatarUrl = item.user.avatar.startsWith('http') ? item.user.avatar : `https://gst.tambimotors.com/${item.user.avatar}`;
           }
 
-          const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id 
-              ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
-              : item.is_liked || false;
+          const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id
+            ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
+            : item.is_liked || false;
 
           return {
             id: item.id?.toString(),
@@ -152,8 +152,8 @@ console.log('mypost response', response)
         const mappedData = response.donations.map((d: any) => ({
           id: d.id?.toString() || Math.random().toString(),
           title: d.plan?.plan_name || t('profile.donation'),
-          category: d.plan?.duration 
-            ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1) 
+          category: d.plan?.duration
+            ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1)
             : t('profile.general'),
           amount: `₹${parseFloat(d.amount || 0).toLocaleString('en-IN')}`,
           date: d.date || t('common.na'),
@@ -187,16 +187,17 @@ console.log('mypost response', response)
       }
     }, [fetchContributions, fetchProfile, user?.id])
   );
+  console.log('profiledata :', user);
 
-  const hasMembership = !!(profileData?.user?.membership || user?.membership);
+  const hasMembership = !!(profileData?.profile?.designation || user?.profile?.designation);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
       <PrimaryHeader />
 
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />
@@ -212,8 +213,8 @@ console.log('mypost response', response)
           designation={profileData?.profile?.designation || user?.profile?.designation}
           bio={profileData?.profile?.bio || user?.profile?.bio}
           avatarUri={
-            profileData?.profile?.profile_pic 
-              ? `${profileData.profile.profile_pic}` 
+            profileData?.profile?.profile_pic
+              ? `${profileData.profile.profile_pic}`
               : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
           }
           onCameraPress={handleCameraPress}
@@ -221,7 +222,7 @@ console.log('mypost response', response)
           onPhonePress={handlePhonePress}
           membership={profileData?.user?.membership || user?.membership}
           dob={profileData?.profile?.dob || user?.profile?.dob}
-          dom={profileData?.profile?.dom || user?.profile?.dom}  
+          dom={profileData?.profile?.dom || user?.profile?.dom}
           profession={profileData?.profile?.profession || user?.profile?.profession}
           referralCode={profileData?.profile?.referral_code || user?.profile?.referral_code}
           country={profileData?.profile?.country || user?.profile?.country}
@@ -232,8 +233,8 @@ console.log('mypost response', response)
         />
 
         {/* Profile Statistics Component */}
-        <ProfileStats 
-          postsCount={profileData?.statistics?.posts_count || myPosts.length} 
+        <ProfileStats
+          postsCount={profileData?.statistics?.posts_count || myPosts.length}
           referralsCount={profileData?.statistics?.referrals_count || profileData?.statistics?.no_of_refer || 0}
           likesCount={profileData?.statistics?.likes_count || 0}
         />
@@ -281,13 +282,13 @@ console.log('mypost response', response)
             ) : (
               <View style={styles.emptyFeedContainer}>
                 <Text style={styles.emptyFeedText}>{t('profile.noContributionsYet')}</Text>
-                <TouchableOpacity 
-                  style={{ 
-                    marginTop: hp('2%'), 
-                    paddingVertical: hp('1.2%'), 
-                    paddingHorizontal: wp('6%'), 
-                    backgroundColor: Colors.primary, 
-                    borderRadius: wp('5%') 
+                <TouchableOpacity
+                  style={{
+                    marginTop: hp('2%'),
+                    paddingVertical: hp('1.2%'),
+                    paddingHorizontal: wp('6%'),
+                    backgroundColor: Colors.primary,
+                    borderRadius: wp('5%')
                   }}
                   onPress={handleDonatePress}
                 >
@@ -305,14 +306,14 @@ console.log('mypost response', response)
         onClose={() => setIsIdCardModalVisible(false)}
         profileName={profileData?.user?.name || user?.name || t('common.unknown')}
         avatarUri={
-          profileData?.profile?.profile_pic 
-            ? `${profileData.profile.profile_pic}` 
+          profileData?.profile?.profile_pic
+            ? `${profileData.profile.profile_pic}`
             : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
         }
         memberId={profileData?.user?.uid || user?.uid || t('common.na')}
         designation={(profileData?.user?.membership || user?.membership) ? t('profile.memberDesignation') : t('common.na')}
-        since={profileData?.user?.start_date || user?.start_date 
-          ? new Date(profileData?.user?.start_date || user?.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }) 
+        since={profileData?.user?.start_date || user?.start_date
+          ? new Date(profileData?.user?.start_date || user?.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
           : t('common.na')}
       />
     </SafeAreaView>

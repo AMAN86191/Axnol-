@@ -25,7 +25,6 @@ import {
   PlusCircle,
   Home,
   ShieldCheck,
-  Download,
   Home as HomeIcon,
   Wheat,
 } from 'lucide-react-native';

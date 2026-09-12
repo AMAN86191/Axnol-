@@ -126,7 +126,7 @@ export async function sdkSelfTest(launchLauncher = true): Promise<{
 export async function createOrder(amount: number): Promise<{ orderId: string; token: string }> {
   if (BACKEND_READY) {
     try {
-      const res = await api.post('/payment/create-order', { amount });
+      const res = await api.post('user/payment/create-order', { amount });
       const data = res.data;
       if (!data?.orderId || !data?.token) {
         throw new Error(data?.message || 'Invalid create-order response');

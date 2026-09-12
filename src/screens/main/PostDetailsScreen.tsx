@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -26,6 +26,7 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 import { useTranslation } from 'react-i18next';
+import { mapPostItem } from '../../utils/postMapper';
 
 type PostDetailsScreenRouteProp = RouteProp<RootStackParamList, 'PostDetailsScreen'>;
 
@@ -49,54 +50,10 @@ const PostDetailsScreen = () => {
           console.log('Post details api response', response);
           const item = response?.post || response?.data || response;
           if (item) {
-            let imageUrl = item.post_img ? `https://gst.tambimotors.com/${item.post_img}` : null;
-            let additionalImages: string[] = [];
-            
-            if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-              additionalImages = item.images.map((img: any) => img.image);
-            } else if (item.post_images && Array.isArray(item.post_images) && item.post_images.length > 0) {
-              additionalImages = item.post_images.map((img: any) => `https://gst.tambimotors.com/${img.post_img}`);
-            }
-            
-            if (additionalImages.length === 0 && imageUrl) {
-              additionalImages = [imageUrl];
-            }
-            let displayImage = imageUrl || (additionalImages.length > 0 ? additionalImages[0] : null);
-
-            let avatarUrl = '';
-            if (item.author?.profile_pic) {
-              avatarUrl = item.author.profile_pic;
-            } else if (item.user?.avatar) {
-              avatarUrl = item.user.avatar.startsWith('http') ? item.user.avatar : `https://gst.tambimotors.com/${item.user.avatar}`;
-            }
-
-            const isLikedByCurrentUser = Array.isArray(item.liked_by) && user?.id 
-                ? item.liked_by.some((likedUser: any) => likedUser.id === user.id)
-                : item.is_liked || false;
-
-            const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && user?.id 
-                ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === user.id)
-                : item.is_disliked || false;
-
-            setPost({
-              id: item.id?.toString() || postId,
-              author: item.author_name || item.author?.name || item.user?.name || item.admin?.name || t('common.unknown'),
-              avatar: avatarUrl,
-              meta: item.created_at || t('common.justNow'),
-              text: item.description || '',
-              image: displayImage,
-              images: additionalImages,
-              likes: item.likes_count ?? item.likes ?? 0,
-              comments: item.comments_count || 0,
-              isLiked: isLikedByCurrentUser,
-              likedBy: item.liked_by || [],
-              dislikes: item.dislikes_count ?? item.dislikes ?? 0,
-              isDisliked: isDislikedByCurrentUser,
-              dislikedBy: item.disliked_by || [],
-              userId: item.user_id?.toString() || item.admin_id?.toString(),
-              status: item.status,
-              original_post_images: item.images || item.post_images || [],
-            });
+            setPost(mapPostItem(item, user?.id, {
+              unknown: t('common.unknown'),
+              justNow: t('common.justNow'),
+            }));
           }
         } catch (error) {
           console.log('Error fetching post details:', error);
@@ -139,7 +96,7 @@ const PostDetailsScreen = () => {
 
       fetchPost();
       loadComments();
-    }, [postId, getPostDetails, getComments])
+    }, [postId, getPostDetails, getComments, user, t])
   );
 
   // Local state for inline comments
@@ -171,7 +128,7 @@ const PostDetailsScreen = () => {
           }
           if (prev.isDisliked && user?.id) {
             newDislikedBy = newDislikedBy.filter(u => u.id !== user.id);
-            newDislikes = prev.dislikes - 1;
+            newDislikes = Math.max(prev.dislikes - 1, 0);
             newIsDisliked = false;
           }
         } else {
@@ -183,7 +140,7 @@ const PostDetailsScreen = () => {
         return {
           ...prev,
           isLiked: willBeLiked,
-          likes: willBeLiked ? prev.likes + 1 : prev.likes - 1,
+          likes: Math.max(willBeLiked ? prev.likes + 1 : prev.likes - 1, 0),
           likedBy: newLikedBy,
           isDisliked: newIsDisliked,
           dislikes: newDislikes,
@@ -191,7 +148,7 @@ const PostDetailsScreen = () => {
         };
       });
     }
-  }, [post, user]);
+  }, [post, user, t]);
 
   const handleDislike = useCallback(async () => {
     if (post) {
@@ -213,7 +170,7 @@ const PostDetailsScreen = () => {
           }
           if (prev.isLiked && user?.id) {
             newLikedBy = newLikedBy.filter(u => u.id !== user.id);
-            newLikes = prev.likes - 1;
+            newLikes = Math.max(prev.likes - 1, 0);
             newIsLiked = false;
           }
         } else {
@@ -225,7 +182,7 @@ const PostDetailsScreen = () => {
         return {
           ...prev,
           isDisliked: willBeDisliked,
-          dislikes: willBeDisliked ? prev.dislikes + 1 : prev.dislikes - 1,
+          dislikes: Math.max(willBeDisliked ? prev.dislikes + 1 : prev.dislikes - 1, 0),
           dislikedBy: newDislikedBy,
           isLiked: newIsLiked,
           likes: newLikes,
@@ -233,7 +190,7 @@ const PostDetailsScreen = () => {
         };
       });
     }
-  }, [post, user]);
+  }, [post, user, t]);
 
   const handleEdit = useCallback(() => {
     if (post) {
@@ -265,7 +222,7 @@ const PostDetailsScreen = () => {
         },
       ]
     );
-  }, [post, deletePostStore, navigation]);
+  }, [post, deletePostStore, navigation, t]);
 
   // When clicking on FeedCard's comment icon, focus the text input at the bottom of details screen
   const handleCommentIconPress = useCallback(() => {
@@ -306,7 +263,7 @@ const PostDetailsScreen = () => {
       setPost((prev: any) => ({ ...prev, comments: prev.comments - 1 }));
       Alert.alert(t('common.error'), t('postDetails.commentFailed'));
     }
-  }, [newCommentText, postId, commentPost, user]);
+  }, [newCommentText, postId, commentPost, user, t]);
 
   const handleDeleteComment = useCallback((commentId: string) => {
     Alert.alert(t('postDetails.deleteComment'), t('postDetails.deleteCommentConfirm'), [
@@ -328,7 +285,7 @@ const PostDetailsScreen = () => {
         }
       }
     ]);
-  }, [deleteComment]);
+  }, [deleteComment, t]);
 
   if (loading) {
     return (

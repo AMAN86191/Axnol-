@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -23,6 +23,7 @@ import { InstagramGrid } from '../../components/InstagramGrid';
 import { FeedCard } from '../../components/FeedCard';
 import { CommonHeader } from '../../components/CommonHeader';
 import useAuthStore from '../../zustand/useAuthStore';
+import { mapPostItem, PostItem, toAbsoluteUrl } from '../../utils/postMapper';
 
 type PublicProfileScreenRouteProp = RouteProp<RootStackParamList, 'PublicProfileScreen'>;
 
@@ -127,7 +128,7 @@ const PublicProfileScreen = () => {
     }));
   }, [currentUser]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
@@ -141,47 +142,17 @@ const PublicProfileScreen = () => {
         const statisticsObj = responseData?.statistics || {};
         const userPostsData = responseData?.posts?.data || responseData?.posts || [];
 
-        // Map posts correctly based on the new API format
-        const mappedPosts = Array.isArray(userPostsData) ? userPostsData.map((item: any) => {
-          let additionalImages: string[] = [];
-
-          if (item.images && Array.isArray(item.images)) {
-            additionalImages = item.images.map((img: any) => typeof img.image === 'string' ? img.image : '');
-          }
-
-          let displayImage = additionalImages.length > 0 ? additionalImages[0] : null;
-
-          let authorAvatar = '';
-          if (profileObj.profile_pic) {
-            authorAvatar = typeof profileObj.profile_pic === 'string' ? profileObj.profile_pic : authorAvatar;
-          }
-
-          const isLikedByCurrentUser = Array.isArray(item.liked_by) && currentUser?.id 
-              ? item.liked_by.some((likedUser: any) => likedUser.id === currentUser.id)
-              : item.is_liked || false;
-
-          const isDislikedByCurrentUser = Array.isArray(item.disliked_by) && currentUser?.id 
-              ? item.disliked_by.some((dislikedUser: any) => dislikedUser.id === currentUser.id)
-              : item.is_disliked || false;
-
-          return {
-            id: item.id?.toString() || Math.random().toString(),
-            author: userObj.name || t('common.unknown'),
-            avatar: authorAvatar,
-            meta: item.created_at || t('common.justNow'),
-            text: item.description || '',
-            image: displayImage,
-            images: additionalImages,
-            likes: item.likes_count ?? item.likes ?? 0,
-            comments: item.comments_count || 0,
-            isLiked: isLikedByCurrentUser,
-            likedBy: item.liked_by || [],
-            dislikes: item.dislikes_count ?? item.dislikes ?? 0,
-            isDisliked: isDislikedByCurrentUser,
-            dislikedBy: item.disliked_by || [],
-            userId: userObj.id,
-          };
-        }) : [];
+        // Map posts correctly using the shared mapper (normalizes likes/dislikes,
+        // employee avatars and user ids the same way as the feed)
+        const mappedPosts: PostItem[] = Array.isArray(userPostsData)
+          ? userPostsData.map((item: any) =>
+              mapPostItem(item, currentUser?.id, {
+                unknown: userObj?.name || t('publicProfile.communityMember'),
+                justNow: t('common.justNow'),
+                fallbackAvatar: profileObj?.profile_pic || userObj?.profile_pic || userObj?.avatar,
+              }),
+            )
+          : [];
 
         // Combine user details for easy access
         setPublicUser({ ...userObj, profile: profileObj, statistics: statisticsObj });
@@ -195,13 +166,9 @@ const PublicProfileScreen = () => {
     if (userId) {
       fetchProfile();
     }
-  }, [userId, getPublicProfileStore]);
+  }, [userId, getPublicProfileStore, currentUser?.id, t]);
 
   // Compute total likes received across all posts
-  const totalLikes = useMemo(() => {
-    return publicPosts.reduce((acc, curr) => acc + (curr.likes || curr.likes_count || 0), 0);
-  }, [publicPosts]);
-
   const handleBack = useCallback(() => {
     navigation.goBack();
   }, [navigation]);
@@ -222,27 +189,66 @@ const PublicProfileScreen = () => {
     );
   }
 
-  // Extract avatar URL properly to avoid ReadableNativeMap error
-  let avatarStr = '';
-  if (publicUser?.profile?.profile_pic && typeof publicUser.profile.profile_pic === 'string') {
-    avatarStr = publicUser.profile.profile_pic.startsWith('http') ? publicUser.profile.profile_pic : `https://gst.tambimotors.com/${publicUser.profile.profile_pic}`;
-  }
+  // Extract avatar URL properly (handles relative + full employee_pics URLs)
+  const avatarStr = toAbsoluteUrl(
+    publicUser?.profile?.profile_pic ||
+      publicUser?.profile_pic ||
+      publicUser?.avatar ||
+      publicUser?.profile?.avatar,
+  );
 
+  const formatDate = (d?: string) => {
+    if (!d) return '';
+    const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    return String(d);
+  };
+
+  const location = [
+    publicUser?.profile?.city,
+    publicUser?.profile?.state,
+    publicUser?.profile?.country,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  const infoRows = [
+    {
+      label: t('publicProfile.designation'),
+      value: publicUser?.profile?.designation || publicUser?.designation,
+    },
+    { label: t('publicProfile.email'), value: publicUser?.email },
+    { label: t('publicProfile.phone'), value: publicUser?.phone ? `+91 ${publicUser.phone}` : '' },
+    {
+      label: t('publicProfile.memberSince'),
+      value: formatDate(publicUser?.profile?.join_date || publicUser?.join_date),
+    },
+    { label: t('publicProfile.location'), value: location },
+    {
+      label: t('publicProfile.profession'),
+      value: publicUser?.profile?.profession || publicUser?.profession,
+    },
+    {
+      label: t('publicProfile.dateOfBirth'),
+      value: formatDate(publicUser?.profile?.dob || publicUser?.dob),
+    },
+  ].filter(row => row.value);
+
+  console.log('publicUser', publicUser)
   // Safe fallbacks to map dynamic API fields to component expectations
   const user = {
     name: publicUser?.name || t('publicProfile.communityMember'),
     avatar: avatarStr,
-    bio: publicUser?.profile?.bio || '',
+    bio: publicUser?.profile?.bio || publicUser?.bio || '',
     badge: publicUser?.membership ? t('common.member') : '',
-    hasMembership: !!publicUser?.membership,
-    memberId: publicUser?.uid || '',
+    hasMembership: publicUser?.profile?.designation ,
+    memberId: publicUser?.uid || publicUser?.member_id || '',
     designation: publicUser?.profile?.designation || '',
     totalPosts: publicUser?.statistics?.posts_count || 0,
     totalLikes: publicUser?.statistics?.likes_count || 0,
   };
 
   const userPosts = publicPosts;
-console.log('userPosts', userPosts)
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
@@ -258,7 +264,7 @@ console.log('userPosts', userPosts)
                 <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
               ) : (
                 <View style={[styles.avatarImage, { backgroundColor: '#FFF5F0', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFE0D3' }]}>
-                  <Text style={{ fontSize: RFValue(28), fontWeight: '700', color: Colors.dark }}>
+                  <Text style={{ fontSize: RFValue(22), fontWeight: '700', color: Colors.dark }}>
                     {(user.name || 'U').charAt(0).toUpperCase()}
                   </Text>
                 </View>
@@ -287,7 +293,7 @@ console.log('userPosts', userPosts)
             </View>
           </View>
 
-          {/* Membership Badge Pill */}
+          {/* Membership Badge Pill
           {(user.hasMembership || user.designation) && (
             <View style={styles.badgeRow}>
               {user.hasMembership && (
@@ -302,18 +308,33 @@ console.log('userPosts', userPosts)
                 </View>
               )}
             </View>
-          )}
+          )} */}
 
           {/* Member ID */}
           {user.memberId && (
             <View style={styles.metaRow}>
-              <Text style={styles.metaLabel}>{t('drawer.id')}</Text>
+              <Text style={styles.metaLabel}>{t('publicProfile.memberId')} </Text>
               <Text style={styles.metaValue}>{user.memberId}</Text>
             </View>
           )}
 
           {/* Bio text */}
-          <Text style={styles.bioText}>{user.bio}</Text>
+          {user.bio ? <Text style={styles.bioText}>{user.bio}</Text> : null}
+
+          {/* Profile details */}
+          {/* {infoRows.length > 0 && (
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoSectionTitle}>{t('publicProfile.about')}</Text>
+              {infoRows.map(row => (
+                <View key={row.label} style={styles.infoRow}>
+                  <Text style={styles.infoRowLabel}>{row.label}</Text>
+                  <Text style={styles.infoRowValue} numberOfLines={2}>
+                    {row.value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )} */}
         </View>
 
         {/* Tab Selection Bar (Grid vs List) */}
@@ -414,8 +435,8 @@ const styles = StyleSheet.create({
     marginRight: wp('6%'),
   },
   avatarRing: {
-    width: wp('20%'),
-    height: wp('20%'),
+    width: wp('15%'),
+    height: wp('15%'),
     borderRadius: wp('10%'),
   },
   avatarImage: {
@@ -455,7 +476,7 @@ const styles = StyleSheet.create({
     marginBottom: hp('0.4%'),
   },
   fullName: {
-    fontSize: RFValue(13.5),
+    fontSize: RFValue(12),
     fontWeight: '800',
     color: Colors.dark,
     marginRight: wp('1.5%'),
@@ -523,6 +544,40 @@ const styles = StyleSheet.create({
     lineHeight: RFValue(14.5),
     fontWeight: '400',
     marginTop: hp('0.3%'),
+  },
+  infoContainer: {
+    marginTop: hp('1.2%'),
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: hp('1%'),
+  },
+  infoSectionTitle: {
+    fontSize: RFValue(9),
+    fontWeight: '800',
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    marginBottom: hp('0.6%'),
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: hp('0.6%'),
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#F3F4F6',
+  },
+  infoRowLabel: {
+    fontSize: RFValue(9.5),
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  infoRowValue: {
+    fontSize: RFValue(9.5),
+    fontWeight: '700',
+    color: '#4B5563',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: wp('4%'),
   },
   tabBar: {
     flexDirection: 'row',

@@ -22,8 +22,8 @@ import { useTranslation } from 'react-i18next';
 import { Colors } from '../../theme/colors';
 import { AuthInput } from '../../components/AuthInput';
 import { AuthButton } from '../../components/AuthButton';
-import { LoginHeroSection } from '../../components/LoginHeroSection';
 import { RootStackParamList } from '../../navigation/types';
+import { sendFirebaseOtp } from '../../services/firebaseAuthService';
 import useAuthStore from '../../zustand/useAuthStore';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignUpScreen'>;
@@ -56,26 +56,63 @@ const SignUpScreen = () => {
     }
   };
 
-  const { register } = useAuthStore();
+  const { checkPhoneExists } = useAuthStore();
 
   const handleSignUp = async () => {
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.replace(/\s+/g, '');
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      ToastAndroid.show(t('signup.nameRequired'), ToastAndroid.LONG);
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(trimmedPhone)) {
+      ToastAndroid.show(t('signup.invalidPhone'), ToastAndroid.LONG);
+      return;
+    }
+  
+
     setLoading(true);
     try {
+      // 1. user/send-otp se pata chalta hai ke number pehle se registered hai ya nahi
+      const { exists } = await checkPhoneExists(trimmedPhone);
+      if (exists) {
+        setLoading(false);
+        const msg = t('signup.alreadyRegistered');
+        if (Platform.OS === 'android') {
+          ToastAndroid.show(msg, ToastAndroid.LONG);
+        } else {
+          Alert.alert(t('signup.registrationFailed'), msg);
+        }
+        return;
+      }
+
+      // 2. Number naya hai -> tabhi Firebase OTP bhejo
       const formattedDob = dob ? `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}` : '';
 
-      await register({
-        name,
-        email,
-        phone,
-        dob: formattedDob,
-        bio,
-        refer_by: reff
-      });
+     const res =  await sendFirebaseOtp(trimmedPhone);
+     console.log('Firebase OTP response:', res);
+
       setLoading(false);
-      navigation.navigate('OtpVerificationScreen', { phoneNumber: phone });
+      navigation.navigate('OtpVerificationScreen', {
+        phoneNumber: trimmedPhone,
+        mode: 'signup',
+        signupData: {
+          name: trimmedName,
+          email: trimmedEmail,
+          dob: formattedDob,
+          bio: bio.trim(),
+          refer_by: reff.trim(),
+        },
+      });
     } catch (err: any) {
       setLoading(false);
-      const errorMessage = err?.response?.data?.message || err?.message || t('signup.registerFailed');
+      console.log('errorMesssage :', err);
+      const isFirebaseError = typeof err?.code === 'string' && err.code.startsWith('auth/');
+      const errorMessage = isFirebaseError
+        ? t('signup.otpFailed')
+        : err?.response?.data?.message || err?.message || t('signup.registerFailed');
       if (Platform.OS === 'android') {
         ToastAndroid.show(errorMessage, ToastAndroid.LONG);
       } else {
@@ -156,6 +193,8 @@ const SignUpScreen = () => {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
+              maxLength={10}
+
             />
 
             {/* DOB Field */}
@@ -197,7 +236,7 @@ const SignUpScreen = () => {
               placeholder={t('signup.referralPlaceholder')}
               value={reff}
               onChangeText={setReff}
-              keyboardType="numeric"
+              keyboardType="default"
             />
 
             {/* Sign Up Button */}

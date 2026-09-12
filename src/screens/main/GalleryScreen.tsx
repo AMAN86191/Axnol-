@@ -1,11 +1,10 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   Image,
   TouchableOpacity,
-  FlatList,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,13 +17,9 @@ import {
   Image as ImageIcon,
   Heart,
   Clock,
-  Bell,
   ChevronRight,
-  Users,
   CheckCircle,
 } from 'lucide-react-native';
-
-import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -55,8 +50,8 @@ const getDaysUntil = (dateStr: string) => {
   if (!dateStr) return 0;
   try {
     const eventDate = new Date(dateStr + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const diff = eventDate.getTime() - today.getTime();
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   } catch {
@@ -72,7 +67,13 @@ export default function GalleryScreen() {
 
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
-  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const today = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, []);
 
   const upcomingEvents = useMemo(() => {
     return events.filter((e: any) => e.event_date >= today);
@@ -139,7 +140,7 @@ export default function GalleryScreen() {
             <Clock size={RFValue(12)} color="#166534" style={{ marginRight: wp('1.5%') }} />
             <View>
               <Text style={styles.startsInLabel}>{t('gallery.startsIn')}</Text>
-              <Text style={styles.startsInValue}>{daysUntil > 0 ? t('gallery.days', { days: daysUntil }) : t('gallery.today')}</Text>
+              <Text style={styles.startsInValue}>{daysUntil === 0 ? t('gallery.today') : daysUntil === 1 ? t('gallery.tomorrow') : t('gallery.days', { days: daysUntil })}</Text>
             </View>
           </View>
 

@@ -75,7 +75,6 @@ const HelpSupportScreen = () => {
   // States
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
-  const [message, setMessage] = useState('');
 
   // Filtered FAQs
   const filteredFaqs = FAQ_DATA.filter(faq =>

@@ -15,7 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
-import { X, Share2, Download, Calendar, MapPin, Image as ImageIcon } from 'lucide-react-native';
+import { X, Download, Calendar, MapPin, Image as ImageIcon } from 'lucide-react-native';
 
 import { Colors } from '../../theme/colors';
 import { CommonHeader } from '../../components/CommonHeader';
@@ -48,17 +48,6 @@ export default function EventGalleryScreen() {
     return Array.isArray(event.gallery) ? event.gallery : [];
   }, [event]);
 
-  const handleShare = useCallback(async (photo: any) => {
-    try {
-      const shareMsg = t('gallery.shareMessage', { event: event?.name });
-      await Share.share({
-        message: shareMsg,
-        url: photo.image,
-      });
-    } catch (error: any) {
-      console.error('Error sharing:', error.message);
-    }
-  }, [event]);
 
   const handleDownload = useCallback((photo: any) => {
     Alert.alert(t('gallery.downloadStarted'), t('gallery.downloadingPhoto'));
@@ -154,7 +143,7 @@ export default function EventGalleryScreen() {
 
             <View style={{ width: wp('10%') }} />
           </View>
-          
+
           {selectedIndex !== null && (
             <FlatList
               data={parsedGallery}
@@ -175,18 +164,18 @@ export default function EventGalleryScreen() {
                   <Image source={{ uri: item.image }} style={styles.previewImage} />
                   <View style={[styles.previewDetails, { paddingBottom: insets.bottom + hp('3%') }]}>
                     {item.title ? <Text style={styles.previewTitle}>{item.title}</Text> : null}
-                    
+
                     <View style={styles.previewActionRow}>
-                      <TouchableOpacity
+                      {/* <TouchableOpacity
                         style={styles.previewActionBtn}
                         onPress={() => handleShare(item)}
                         activeOpacity={0.8}
                       >
                         <Share2 size={RFValue(12)} color={Colors.white} style={{ marginRight: wp('2%') }} />
                         <Text style={styles.previewActionBtnText}>{t('common.share')}</Text>
-                      </TouchableOpacity>
+                      </TouchableOpacity> */}
                       <TouchableOpacity
-                        style={[styles.previewActionBtn, { backgroundColor: '#374151' }]}
+                        style={[styles.previewActionBtn]}
                         onPress={() => handleDownload(item)}
                         activeOpacity={0.8}
                       >
@@ -381,14 +370,14 @@ const styles = StyleSheet.create({
   },
   previewActionRow: {
     flexDirection: 'row',
-    marginBottom: hp('1%'),
+    marginBottom: hp('2%'),
   },
   previewActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.primary,
-    paddingVertical: hp('1.2%'),
-    paddingHorizontal: wp('5%'),
+    paddingVertical: hp('1%'),
+    paddingHorizontal: wp(' 3%'),
     borderRadius: wp('2%'),
     marginRight: wp('3%'),
   },

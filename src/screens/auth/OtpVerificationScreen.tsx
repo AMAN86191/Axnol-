@@ -22,30 +22,65 @@ import { Colors } from '../../theme/colors';
 import { AuthButton } from '../../components/AuthButton';
 import { LoginHeroSection } from '../../components/LoginHeroSection';
 import { RootStackParamList } from '../../navigation/types';
-import { ArrowRight, UserPlus, ShieldCheck } from 'lucide-react-native';
+import { ArrowRight, UserPlus, ShieldCheck, AlertCircle } from 'lucide-react-native';
 import useAuthStore from '../../zustand/useAuthStore';
 import { getFCMToken } from '../../utils/notificationService';
+import { confirmFirebaseOtp, resendFirebaseOtp, hasPendingConfirmation } from '../../services/firebaseAuthService';
+import { getIdToken } from '@react-native-firebase/auth';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OtpVerificationScreen'>;
 type OtpScreenRouteProp = RouteProp<RootStackParamList, 'OtpVerificationScreen'>;
+
+type OtpError = { message: string; isApi: boolean }; 
 
 const OtpVerificationScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OtpScreenRouteProp>();
   const phoneNumber = route.params?.phoneNumber || '9876543210';
+  const mode = route.params?.mode || 'login';
+  const signupData = route.params?.signupData;
   
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [timer, setTimer] = useState(30);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<OtpError | null>(null);
   
-  const { otpVerify } = useAuthStore();
+  const { otpVerify, register } = useAuthStore();
   
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
   // Minimum OTP box size so digits never get clipped on small screens / high font scales.
-  const otpBoxSize = Math.max(wp('11%'), 46);
+  const otpBoxSize = Math.max(wp('10%'), 44);
+
+  const getFriendlyError = (err: any, isApiFallback: boolean): OtpError => {
+    if (err?.response?.data?.message) {
+      return { message: String(err.response.data.message), isApi: true };
+    }
+    if (err?.response?.data?.data?.message) {
+      return { message: String(err.response.data.data.message), isApi: true };
+    }
+    if (err?.response) {
+      return { message: t('otp.errors.apiFailed'), isApi: true };
+    }
+    switch (err?.code) {
+      case 'auth/invalid-verification-code':
+        return { message: t('otp.errors.invalidCode', { phone: phoneNumber }), isApi: false };
+      case 'auth/code-expired':
+        return { message: t('otp.errors.codeExpired'), isApi: false };
+      case 'auth/too-many-requests':
+        return { message: t('otp.errors.tooManyRequests'), isApi: false };
+      case 'auth/quota-exceeded':
+        return { message: t('otp.errors.quotaExceeded'), isApi: false };
+      case 'auth/operation-not-allowed':
+        return { message: t('otp.errors.notAllowed'), isApi: false };
+      case 'auth/network-request-failed':
+        return { message: t('otp.errors.network'), isApi: false };
+      default:
+        return { message: err?.message || t('otp.invalidOtp'), isApi: isApiFallback };
+    }
+  };
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -61,6 +96,21 @@ const OtpVerificationScreen = () => {
     };
   }, [timer]);
 
+  // If we arrived directly (e.g. from Sign Up) without a pending Firebase confirmation,
+  // trigger the OTP send automatically.
+  useEffect(() => {
+    if (!hasPendingConfirmation()) {
+      (async () => {
+        try {
+          await resendFirebaseOtp(phoneNumber);
+        } catch (e: any) {
+          setError(getFriendlyError(e, false));
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleOtpChange = (value: string, index: number) => {
     const numericValue = value.replace(/[^0-9]/g, '');
     
@@ -69,7 +119,7 @@ const OtpVerificationScreen = () => {
     setOtp(newOtp);
 
     if (error) {
-      setError('');
+      setError(null);
     }
 
     // Move to next input if value is entered
@@ -89,17 +139,38 @@ const OtpVerificationScreen = () => {
 
   const handleVerify = async () => {
     const otpString = otp.join('');
-    if (otpString.length < 4) {
-      setError(t('otp.enterAllDigits'));
+    if (otpString.length < 6) {
+      setError({ message: t('otp.enterAllDigits'), isApi: false });
       return;
     }
     
     setLoading(true);
-    setError('');
+    setError(null);
 
     try {
       const fcmToken = await getFCMToken();
-      const res = await otpVerify({ phone: phoneNumber, otp: otpString, fcm_token: fcmToken });
+      const firebaseUser = await confirmFirebaseOtp(otpString);
+      console.log('Firebase user after OTP confirmation:', firebaseUser);
+      const firebaseIdToken = await getIdToken(firebaseUser);
+      let res: any;
+      if (mode === 'signup' && signupData) {
+        // Signup: OTP verify hone ke baad hi user create hota hai
+        res = await register({
+          ...signupData,
+          phone: phoneNumber,
+          otp: otpString,
+          fcm_token: fcmToken,
+          firebase_id_token: firebaseIdToken,
+        });
+      } else {
+        res = await otpVerify({
+          phone: phoneNumber,
+          otp: otpString,
+          fcm_token: fcmToken,
+          firebase_id_token: firebaseIdToken,
+        });
+      }
+      console.log('OTP verification response:', res);
       setLoading(false);
       
       if (res?.token) {
@@ -110,17 +181,27 @@ const OtpVerificationScreen = () => {
       }
     } catch (err: any) {
       setLoading(false);
-      setError(err?.response?.data?.message || err?.message || t('otp.invalidOtp'));
+      const isApi = !!err?.response || err?.isAxiosError;
+      setError(getFriendlyError(err, isApi));
     }
   };
 
-  const handleResend = () => {
-    if (timer > 0) return;
-    setTimer(30);
-    setOtp(['', '', '', '']);
-    setError('');
-    inputRefs.current[0]?.focus();
-    Alert.alert(t('otp.otpSent'), t('otp.otpSentMessage', { phone: phoneNumber }));
+  const handleResend = async () => {
+    if (timer > 0 || resending) return;
+    setResending(true);
+    setError(null);
+    try {
+      await resendFirebaseOtp(phoneNumber);
+      setTimer(30);
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+      Alert.alert(t('otp.otpSent'), t('otp.otpSentMessage', { phone: phoneNumber }));
+    } catch (err: any) {
+      setTimer(0);
+      setError(getFriendlyError(err, false));
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -185,21 +266,12 @@ const OtpVerificationScreen = () => {
               ))}
             </View>
 
-            {/* Testing OTP Autofill */}
-            <TouchableOpacity 
-              activeOpacity={0.7} 
-              onPress={() => {
-                setOtp(['1', '2', '3', '4']);
-                setError('');
-              }}
-              style={{ alignItems: 'center', marginBottom: hp('2%') }}
-            >
-              <Text style={{ color: Colors.primary, fontSize: RFValue(11), fontWeight: '600' }}>
-                {t('otp.testOtp')}
-              </Text>
-            </TouchableOpacity>
-
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? (
+              <View style={[styles.errorBox, error.isApi && styles.errorBoxApi]}>
+                <AlertCircle size={RFValue(13)} color="#DC2626" />
+                <Text style={styles.errorText}>{error.message}</Text>
+              </View>
+            ) : null}
 
             {/* Verify Button */}
             <AuthButton
@@ -219,8 +291,8 @@ const OtpVerificationScreen = () => {
               ) : (
                 <>
                   <Text style={styles.footerText}>{t('otp.didntReceive')}</Text>
-                  <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
-                    <Text style={styles.resendText}>{t('otp.resend')}</Text>
+                  <TouchableOpacity onPress={handleResend} activeOpacity={0.7} disabled={resending}>
+                    <Text style={styles.resendText}>{resending ? t('otp.resending') : t('otp.resend')}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -305,8 +377,8 @@ const styles = StyleSheet.create({
   },
   otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: wp('12%'),
+    justifyContent: 'space-evenly',
+    paddingHorizontal: wp('4%'),
     marginBottom: hp('3%'),
   },
   otpInput: {
@@ -323,12 +395,29 @@ const styles = StyleSheet.create({
   otpInputActive: {
     borderColor: Colors.primary,
   },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('1.2%'),
+    marginBottom: hp('1.8%'),
+  },
+  errorBoxApi: {
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+  },
   errorText: {
-    fontSize: RFValue(11),
-    color: '#DC2626',
-    textAlign: 'center',
-    // marginBottom: hp('2%'),
+    flex: 1,
+    fontSize: RFValue(10.5),
+    color: '#B91C1C',
+    textAlign: 'left',
     fontWeight: '500',
+    lineHeight: RFValue(15),
+    marginLeft: wp('2%'),
   },
   footer: {
     flexDirection: 'row',

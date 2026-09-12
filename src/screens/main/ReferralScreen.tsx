@@ -57,7 +57,7 @@ export default function ReferralScreen() {
   };
 
   const referralCode = user?.profile?.referral_code || '';
-  const referralLink = `https://gaumata.org/invite/${referralCode}`;
+  const referralLink = `https://play.google.com/store/apps/details?id=gst.gaumatatrust.com`;
   const totalReferrals = user?.statistics?.referrals_count || 0;
 
   const shareMessage = t('referral.shareMessage', { code: referralCode, link: referralLink });
@@ -75,6 +75,7 @@ export default function ReferralScreen() {
     } catch (error) {
       console.error(error);
       Alert.alert(t('common.error'), t('referral.copyFailed'));
+
     }
   }, [referralLink, t]);
 

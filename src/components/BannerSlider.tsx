@@ -11,6 +11,7 @@ import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-nat
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '../theme/colors';
 
 export interface SlideItem {
@@ -94,6 +95,10 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
         style={styles.bannerImage}
         resizeMode="cover"
       />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.08)', 'rgba(0,0,0,0.55)']}
+        style={styles.bannerGradient}
+      />
       <View style={styles.bannerOverlay}>
         {item.badge ? (
           <View style={styles.eventBadge}>
@@ -115,10 +120,20 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
           {item.buttonText ? (
             <TouchableOpacity
               style={styles.actionButton}
-              activeOpacity={0.85}
+              activeOpacity={0.9}
               onPress={() => handlePress(item)}
             >
-              <Text style={styles.actionButtonText}>{item.buttonText}</Text>
+              <LinearGradient
+                colors={['#ffa04d', Colors.primary, '#e8540f']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.actionButtonGradient}
+              >
+                <Text style={styles.actionButtonText}>{item.buttonText}</Text>
+                <View style={styles.btnArrow}>
+                  <Text style={styles.btnArrowText}>→</Text>
+                </View>
+              </LinearGradient>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -144,7 +159,7 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
           index,
         })}
       />
-      {/* Pagination indicators on top of the list */}
+      {/* Pagination indicators */}
       <View style={styles.pagination}>
         {SLIDES.map((_, index) => (
           <View
@@ -163,27 +178,39 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
 const styles = StyleSheet.create({
   bannerCard: {
     width: wp('96%'),
-    height: hp('20%'),
-    borderRadius: wp('3%'),
+    height: hp('19%'),
+    borderRadius: wp('4.2%'),
     overflow: 'hidden',
     marginBottom: hp('2%'),
     position: 'relative',
     backgroundColor: '#000',
+    // shadow
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
   },
   slideContainer: {
     width: wp('96%'),
-    height: hp('20%'),
+    height: hp('19%'),
     position: 'relative',
   },
   bannerImage: {
     width: '100%',
     height: '100%',
   },
+  bannerGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   bannerOverlay: {
-    backgroundColor: 'rgba(20, 24, 24, 0.35)', // Premium gradient overlay
     justifyContent: 'flex-end',
-    padding: wp('4%'),
-    paddingBottom: hp('2.5%'),
+    padding: wp('4.5%'),
+    paddingBottom: hp('2%'),
     position: 'absolute',
     left: 0,
     right: 0,
@@ -193,43 +220,45 @@ const styles = StyleSheet.create({
   eventBadge: {
     backgroundColor: Colors.primary,
     alignSelf: 'flex-start',
-    paddingHorizontal: wp('2.5%'),
-    paddingVertical: hp('0.4%'),
-    borderRadius: wp('1%'),
-    marginBottom: hp('0.8%'),
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('0.5%'),
+    borderRadius: wp('3%'),
+    marginBottom: hp('1%'),
   },
   eventBadgeText: {
     color: Colors.white,
-    fontSize: RFValue(9),
+    fontSize: RFValue(8.5),
     fontWeight: '700',
+    letterSpacing: 0.4,
   },
   eventTitle: {
     color: Colors.white,
-    fontSize: RFValue(12),
-    fontWeight: '700',
-    marginBottom: hp('0.4%'),
+    fontSize: RFValue(14),
+    fontWeight: '800',
+    marginBottom: hp('0.5%'),
+    letterSpacing: 0.3,
   },
   eventSubtitle: {
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: RFValue(9.5),
+    color: 'rgba(255, 255, 255, 0.92)',
+    fontSize: RFValue(10),
     fontWeight: '500',
   },
   pagination: {
     flexDirection: 'row',
     position: 'absolute',
-    bottom: hp('1.5%'),
+    bottom: hp('1.2%'),
     alignSelf: 'center',
   },
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
     marginHorizontal: 3,
   },
-  dotActive: { 
+  dotActive: {
     backgroundColor: Colors.white,
-    width: 14,
+    width: 18,
   },
   bannerTextContainer: {
     marginBottom: hp('0.5%'),
@@ -237,13 +266,20 @@ const styles = StyleSheet.create({
   eventTitleNormal: {
     color: Colors.white,
     fontSize: RFValue(17),
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   eventTitleItalic: {
-    color: '#ff9f43',
+    color: '#ffb703',
     fontSize: RFValue(19),
-    fontWeight: '700',
+    fontWeight: '800',
     fontStyle: 'italic',
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   contentRow: {
     flexDirection: 'row',
@@ -256,24 +292,44 @@ const styles = StyleSheet.create({
     marginRight: wp('3%'),
   },
   actionButton: {
-    backgroundColor: 'rgba(255, 111, 52, 0.12)',
-    // backgroundColor: Colors.primary,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    paddingVertical: hp('0.8%'),
-    paddingHorizontal: wp('4%'),
     borderRadius: wp('4%'),
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.primary, // Orange shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  actionButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: hp('0.9%'),
+    paddingHorizontal: wp('3.5%'),
+    borderRadius: wp('4%'),
   },
   actionButtonText: {
     color: Colors.white,
     fontSize: RFValue(10.5),
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  btnArrow: {
+    marginLeft: wp('1.5%'),
+    width: wp('5%'),
+    height: wp('5%'),
+    borderRadius: wp('2.5%'),
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnArrowText: {
+    color: Colors.white,
+    fontSize: RFValue(9),
+    fontWeight: '800',
+    lineHeight: RFValue(11),
   },
 });

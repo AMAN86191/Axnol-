@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">Gaumata Sewa Trust</string>
-    <string name="StallionProjectId">6a22c5adb393a8582bb0a2fe</string>
-    <string name="StallionAppToken">spb_ap_fNUUq-9HigH90OtVxeC0zthc-I65o-S8JunT3xqyOz</string>
+    <!-- <string name="StallionProjectId">6a22c5adb393a8582bb0a2fe</string>
+    <string name="StallionAppToken">spb_ap_fNUUq-9HigH90OtVxeC0zthc-I65o-S8JunT3xqyOz</string> -->
 </resources>

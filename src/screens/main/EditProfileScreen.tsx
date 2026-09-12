@@ -26,6 +26,7 @@ import { CustomButton } from '../../components/CustomButton';
 import { CommonHeader } from '../../components/CommonHeader';
 import useAuthStore from '../../zustand/useAuthStore';
 import { useTranslation } from 'react-i18next';
+import { sendFirebaseOtp, confirmFirebaseOtp, resendFirebaseOtp } from '../../services/firebaseAuthService';
 
 const EditProfileScreen = () => {
   const { t } = useTranslation();
@@ -193,7 +194,7 @@ const EditProfileScreen = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert(t('addPost.validationError'), t('editProfile.nameRequired'));
       return;
@@ -208,7 +209,8 @@ const EditProfileScreen = () => {
 
     if (isPhoneChanged) {
       setLoading(true);
-      setTimeout(() => {
+      try {
+        await sendFirebaseOtp(phone);
         setLoading(false);
         setShowOtpView(true);
         Alert.alert(
@@ -216,20 +218,26 @@ const EditProfileScreen = () => {
           t('editProfile.otpSentMessage', { phone }),
           [{ text: t('common.ok') }]
         );
-      }, 1000);
+      } catch {
+        setLoading(false);
+        Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
+      }
     } else {
       performUpdate();
     }
   };
 
-  const handleVerifyOtp = () => {
-    if (otpCode !== '123456') {
+  const handleVerifyOtp = async () => {
+    try {
+      setLoading(true);
+      await confirmFirebaseOtp(otpCode);
+      setLoading(false);
+      setShowOtpView(false);
+      performUpdate();
+    } catch {
+      setLoading(false);
       Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
-      return;
     }
-
-    setShowOtpView(false);
-    performUpdate();
   };
 
   return (
@@ -465,7 +473,7 @@ const EditProfileScreen = () => {
                 label={t('editProfile.otpLabel')}
                 placeholder={t('editProfile.otpPlaceholder')}
                 keyboardType="number-pad"
-                maxLength={6}
+                maxLength={6} // Firebase OTP is 6-digit
                 value={otpCode}
                 onChangeText={setOtpCode}
                 leftIcon={<KeyRound size={RFValue(12)} color={Colors.primary} />}
@@ -481,8 +489,16 @@ const EditProfileScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  onPress={() => {
-                    Alert.alert(t('editProfile.resent'), t('editProfile.resentMessage'));
+                  onPress={async () => {
+                    try {
+                      setLoading(true);
+                      await resendFirebaseOtp(phone);
+                      setLoading(false);
+                      Alert.alert(t('editProfile.resent'), t('editProfile.resentMessage'));
+                    } catch {
+                      setLoading(false);
+                      Alert.alert(t('editProfile.otpFailed'), t('editProfile.otpFailedMessage'));
+                    }
                   }}
                   style={styles.resendBtn}
                   disabled={loading}
