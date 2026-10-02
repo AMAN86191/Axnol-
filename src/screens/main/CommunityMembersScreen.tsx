@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { CommonHeader } from '../../components/CommonHeader';
 import { Colors } from '../../theme/colors';
 import useHomeStore from '../../zustand/useHomeStore';
+import { PrimaryHeader } from '../../components/PrimaryHeader';
 
 interface CommunityMember {
   id: string;
@@ -113,7 +114,7 @@ const CommunityMembersScreen = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-      <CommonHeader title={t('communityMembers.title')} onBackPress={() => navigation.goBack()} />
+       <PrimaryHeader />
 
       {/* Info banner */}
       {/* <View style={styles.infoBanner}>

@@ -89,7 +89,7 @@ const SignUpScreen = () => {
       }
 
       // 2. Number naya hai -> tabhi Firebase OTP bhejo
-      const formattedDob = dob ? `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}-${dateObj.getDate()}` : '';
+      const formattedDob = dob ? `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}` : '';
 
      const res =  await sendFirebaseOtp(trimmedPhone);
      console.log('Firebase OTP response:', res);
@@ -221,13 +221,13 @@ const SignUpScreen = () => {
             )}
 
             {/* Description/Bio Field */}
-            <AuthInput
+            {/* <AuthInput
               label={t('signup.bio')}
               icon={<FileText size={RFValue(14)} color="#E85D04" />}
               placeholder={t('signup.bioPlaceholder')}
               value={bio}
               onChangeText={setBio}
-            />
+            /> */}
 
             {/* Reference Code Field */}
             <AuthInput

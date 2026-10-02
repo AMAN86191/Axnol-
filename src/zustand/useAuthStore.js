@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { zustandStorage } from '../utils/asyncstorage';
+import { normalizeUser } from '../utils/userNormalizer';
 import api from '../api/axiosConfig';
 import { sendFirebaseOtp } from '../services/firebaseAuthService';
 
@@ -38,7 +39,7 @@ checkPhoneExists: async phone => {
           console.log('res :', res);
           const responseData = res.data?.data || res.data;
           if (responseData && responseData.token && responseData.user) {
-            set({ token: responseData.token, user: responseData.user, loading: false });
+            set({ token: responseData.token, user: normalizeUser(responseData.user), loading: false });
           } else {
             set({ loading: false });
           }
@@ -60,7 +61,7 @@ checkPhoneExists: async phone => {
           const res = await api.post('user/verify-otp', OtpData);
           console.log('otp Verify response', res);
           if (res.data && res.data.token) {
-            set({ token: res.data.token, user: res.data.user, loading: false });
+            set({ token: res.data.token, user: normalizeUser(res.data.user), loading: false });
           } else {
             set({ loading: false });
           }
@@ -110,12 +111,15 @@ checkPhoneExists: async phone => {
           });
           console.log('update profile response', res.data);
           const responseData = res.data?.data || res.data;
-          
+
           if (responseData && responseData.user) {
             const updatedUser = { ...responseData.user };
             if (responseData.profile) updatedUser.profile = responseData.profile;
             if (responseData.statistics) updatedUser.statistics = responseData.statistics;
-            set((state) => ({ user: { ...state.user, ...updatedUser }, loading: false }));
+            set((state) => ({
+              user: normalizeUser({ ...state.user, ...updatedUser }),
+              loading: false,
+            }));
           } else {
             set({ loading: false });
           }
@@ -136,12 +140,17 @@ checkPhoneExists: async phone => {
           const res = await api.get('user/get-profile');
           console.log('get profile response:', res.data);
           const responseData = res.data?.data || res.data;
-          
+
           if (responseData && responseData.user) {
             const updatedUser = { ...responseData.user };
             if (responseData.profile) updatedUser.profile = responseData.profile;
             if (responseData.statistics) updatedUser.statistics = responseData.statistics;
-            set((state) => ({ user: { ...state.user, ...updatedUser }, loading: false }));
+            // get-profile omits partner_name/area, so merge over the existing
+            // user (which may carry them from the auth response) before normalising.
+            set((state) => ({
+              user: normalizeUser({ ...state.user, ...updatedUser }),
+              loading: false,
+            }));
           } else {
             set({ loading: false });
           }

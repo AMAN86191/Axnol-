@@ -348,12 +348,12 @@ const PostDetailsScreen = () => {
           />
 
           {/* Comments Section Title */}
-          <View style={styles.commentsSectionHeader}>
+          {/* <View style={styles.commentsSectionHeader}>
             <Text style={styles.commentsTitle}>{t('postDetails.comments', { count: post.comments })}</Text>
-          </View>
+          </View> */}
 
           {/* Comments List rendering */}
-          <View style={styles.commentsContainer}>
+          {/* <View style={styles.commentsContainer}>
             {commentsList.map((comment) => (
               <View key={comment.id} style={styles.commentItem}>
 
@@ -384,10 +384,10 @@ const PostDetailsScreen = () => {
                 )}
               </View>
             ))}
-          </View>
+          </View> */}
         </ScrollView>
 
-        {/* Comment Input Bar at the bottom of the screen */}
+        {/* Comment Input Bar at the bottom of the screen
         <View style={styles.inputBar}>
           {(() => {
             let currentUserAvatar = '';
@@ -429,7 +429,7 @@ const PostDetailsScreen = () => {
               {t('common.post')}
             </Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

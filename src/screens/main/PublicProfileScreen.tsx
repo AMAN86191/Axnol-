@@ -32,7 +32,7 @@ const PublicProfileScreen = () => {
   const navigation = useNavigation();
   const route = useRoute<PublicProfileScreenRouteProp>();
   const { userId } = route.params;
-
+ console.log('userId :', userId);
   const [activeTab, setActiveTab] = useState<'grid' | 'list'>('grid');
 
   const [loading, setLoading] = useState(true);
@@ -205,6 +205,7 @@ const PublicProfileScreen = () => {
   };
 
   const location = [
+    publicUser?.profile?.area,
     publicUser?.profile?.city,
     publicUser?.profile?.state,
     publicUser?.profile?.country,
@@ -231,6 +232,14 @@ const PublicProfileScreen = () => {
     {
       label: t('publicProfile.dateOfBirth'),
       value: formatDate(publicUser?.profile?.dob || publicUser?.dob),
+    },
+    {
+      label: t('publicProfile.dateOfMarriage'),
+      value: formatDate(publicUser?.profile?.dom || publicUser?.dom),
+    },
+    {
+      label: t('publicProfile.partnerName'),
+      value: publicUser?.profile?.partner_name,
     },
   ].filter(row => row.value);
 

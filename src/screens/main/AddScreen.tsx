@@ -26,6 +26,7 @@ import {
   CheckCircle,
 } from 'lucide-react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
+import ImageResizer from '@bam.tech/react-native-image-resizer';
 import { Colors } from '../../theme/colors';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { CustomButton } from '../../components/CustomButton';
@@ -33,6 +34,52 @@ import { FeedCard } from '../../components/FeedCard';
 import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 import { useTranslation } from 'react-i18next';
+
+// Instagram feed ke supported aspect ratios aur unke exact output pixels.
+type AspectRatio = 'square' | 'portrait' | 'landscape';
+
+const ASPECT_DIMS: Record<AspectRatio, { width: number; height: number }> = {
+  square: { width: 1080, height: 1080 },   // 1:1
+  portrait: { width: 1080, height: 1350 }, // 4:5  (Instagram max height)
+  landscape: { width: 1920, height: 1080 }, // 16:9
+};
+
+const MAX_IMAGES = 5;
+
+// ImageCropPicker Android par `file://` prefix ke bina path deta hai,
+// lekin ImageResizer ko proper file URI chahiye.
+const toFileUri = (path: string): string =>
+  path.startsWith('file://') || path.startsWith('content://') ? path : `file://${path}`;
+
+// Picked images ka asli width/height nikal kar ratio ka andaaza lagata hai.
+// Portrait-ish: ratio < 0.95, landscape-ish: ratio > 1.05, baaki (square/odd) ke liye
+// default square. Sab images ek hi ratio me jate hain taaki upload ek hi size ka ho.
+const detectAspectRatio = async (rawList: any[]): Promise<AspectRatio> => {
+  const ratios: number[] = await Promise.all(
+    rawList.map(
+      img =>
+        new Promise<number>(resolve => {
+          Image.getSize(
+            toFileUri(img.path),
+            (w, h) => resolve(h > 0 ? w / h : 0),
+            () => resolve(0),
+          );
+        }),
+    ),
+  );
+
+  const valid = ratios.filter(r => r > 0);
+  if (valid.length === 0) return 'square';
+
+  const allPortrait = valid.every(r => r < 0.95);
+  const allLandscape = valid.every(r => r > 1.05);
+
+  if (allPortrait) return 'portrait';
+  if (allLandscape) return 'landscape';
+
+  // Square / mixed / unknown -> square sabse safe hai
+  return 'square';
+};
 
 const AddScreen = () => {
   const { t } = useTranslation();
@@ -46,7 +93,9 @@ const AddScreen = () => {
 
   // Instagram-style: original picked images (crop karne ke liye base)
   const [rawImages, setRawImages] = useState<any[]>([]);
-  const [selectedAspect, setSelectedAspect] = useState<'original' | 'square' | 'portrait' | 'landscape'>('original');
+  // null = user ne abhi aspect ratio choose nahi kiya. Publish tab tak
+  // blocked rahega, taaki kabhi bhi raw (full-res, wrong ratio) image upload na ho.
+  const [selectedAspect, setSelectedAspect] = useState<AspectRatio | null>(null);
   const [isCropping, setIsCropping] = useState(false);
 
   const [selection, setSelection] = useState({ start: 0, end: 0 });
@@ -59,13 +108,13 @@ const AddScreen = () => {
 
 
   const pickImages = async () => {
-    if (images.length >= 5) {
+    if (images.length >= MAX_IMAGES) {
       Alert.alert(t('addPost.limitReached'), t('addPost.limitMessage'));
       return;
     }
 
     try {
-      const maxCount = 5 - images.length;
+      const maxCount = MAX_IMAGES - images.length;
 
       // Step 1: Gallery se multiple images select karo (original, bina crop)
       const picked = await ImageCropPicker.openPicker({
@@ -84,16 +133,31 @@ const AddScreen = () => {
         path: img.path,
       }));
 
-      let nextRaw = [...rawImages, ...selectedRaw].slice(0, 5);
+      let nextRaw = [...rawImages, ...selectedRaw].slice(0, MAX_IMAGES);
       setRawImages(nextRaw);
 
-      // Pehle original mein dikhao
-      setSelectedAspect('original');
+      // Preview turant dikhao (raw), phir detect karke khud hi crop kar do
+      setSelectedAspect(null);
       setImages(nextRaw.map((img: any) => ({
         uri: img.path,
         type: img.mime || 'image/jpeg',
         fileName: img.filename || img.path.split('/').pop() || 'image.jpg',
       })));
+
+      // Auto-detect + auto-crop: user ke chip click kiye bina hi sab images
+      // ek hi size me set ho jati hain.
+      const detected = await detectAspectRatio(nextRaw);
+      setIsCropping(true);
+      try {
+        const processed = await cropImagesToAspect(nextRaw, detected);
+        setImages(processed);
+        setSelectedAspect(detected);
+      } catch (cropErr: any) {
+        console.log('Auto crop error:', cropErr);
+        Alert.alert(t('common.error'), t('addPost.selectImageFailed'));
+      } finally {
+        setIsCropping(false);
+      }
     } catch (error: any) {
       // User cancelled — koi problem nahi
       if (error?.code !== 'E_PICKER_CANCELLED' && error?.message !== 'User cancelled image selection') {
@@ -103,78 +167,73 @@ const AddScreen = () => {
     }
   };
 
-  // Instagram-style: aspect ratio select karne par sab images us frame mein crop
-  const applyAspectRatio = async (aspect: 'original' | 'square' | 'portrait' | 'landscape') => {
-    setSelectedAspect(aspect);
+  // SAB images ko ek hi aspect ratio me center-crop + resize kar deta hai.
+  // mode: 'cover' => stretch nahi, exact width x height, zero white space.
+  const cropImagesToAspect = async (
+    rawList: any[],
+    aspect: AspectRatio,
+  ): Promise<any[]> => {
+    const target = ASPECT_DIMS[aspect];
+    const processed: any[] = [];
 
-    if (rawImages.length === 0) return;
+    for (let i = 0; i < rawList.length; i++) {
+      const resized = await ImageResizer.createResizedImage(
+        toFileUri(rawList[i].path),
+        target.width,
+        target.height,
+        'JPEG',
+        90, // Instagram-quality compression
+        0, // rotation
+        undefined,
+        false, // strip EXIF/GPS metadata
+        { mode: 'cover', onlyScaleDown: false },
+      );
 
-    // Original — koi crop nahi
-    if (aspect === 'original') {
-      setImages(rawImages.map((img: any) => ({
-        uri: img.path,
-        type: img.mime || 'image/jpeg',
-        fileName: img.filename || img.path.split('/').pop() || 'image.jpg',
-      })));
-      return;
+      processed.push({
+        uri: resized.uri,
+        type: 'image/jpeg',
+        fileName: resized.name || `post_${i + 1}.jpg`,
+        path: resized.path,
+      });
     }
 
-    const dims: Record<string, { width: number; height: number }> = {
-      square: { width: 1080, height: 1080 },
-      portrait: { width: 1080, height: 1350 },   // 4:5
-      landscape: { width: 1920, height: 1080 },  // 16:9
-    };
-    const target = dims[aspect];
+    return processed;
+  };
+
+  // Ratio chip tap karne par — override ke liye
+  const applyAspectRatio = async (aspect: AspectRatio) => {
+    if (rawImages.length === 0) return;
 
     setIsCropping(true);
     try {
-      const cropped: any[] = [];
-      for (let i = 0; i < rawImages.length; i++) {
-        const raw = rawImages[i];
-        const result = await ImageCropPicker.openCropper({
-          path: raw.path,
-          mediaType: 'photo',
-          width: target.width,
-          height: target.height,
-          cropperActiveWidgetColor: Colors.primary,
-          cropperToolbarColor: '#FFFFFF',
-          cropperToolbarTitle: t('addPost.cropTitle', { current: i + 1, total: rawImages.length }),
-          cropperStatusBarLight: true,
-          cropperTintColor: Colors.primary,
-          cropperCancelText: t('addPost.cropCancel'),
-          cropperChooseText: t('addPost.cropChoose'),
-        });
-
-        if (result?.path) {
-          cropped.push({
-            uri: result.path,
-            type: result.mime || 'image/jpeg',
-            fileName: result.filename || result.path.split('/').pop() || 'image.jpg',
-          });
-        }
-      }
-
-      if (cropped.length > 0) {
-        setImages(cropped);
-      }
+      const processed = await cropImagesToAspect(rawImages, aspect);
+      setImages(processed);
+      setSelectedAspect(aspect);
     } catch (error: any) {
-      if (error?.code !== 'E_PICKER_CANCELLED' && error?.message !== 'User cancelled image selection') {
-        console.log('Crop error:', error);
-        Alert.alert(t('common.error'), t('addPost.selectImageFailed'));
-      }
+      console.log('Auto crop error:', error);
+      Alert.alert(t('common.error'), t('addPost.selectImageFailed'));
     } finally {
       setIsCropping(false);
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    const nextImages = images.filter((_, i) => i !== index);
+    setImages(nextImages);
     setRawImages(prev => prev.filter((_, i) => i !== index));
+    // Saare image hat gaye to ratio selection bhi reset
+    if (nextImages.length === 0) setSelectedAspect(null);
   };
 
   const validateInputs = (): boolean => {
     if (images.length === 0 && !caption.trim()) {
       Alert.alert(t('addPost.validationError'), t('addPost.validationMessage'));
+      return false;
+    }
+
+    // Image hai par ratio nahi chuna — publish mat karo, warna raw image jayegi
+    if (images.length > 0 && !selectedAspect) {
+      Alert.alert(t('addPost.validationError'), t('addPost.aspectRequired'));
       return false;
     }
 
@@ -284,7 +343,6 @@ const AddScreen = () => {
               <View style={styles.aspectRow}>
                 {(
                   [
-                    // { key: 'original', label: t('addPost.aspectOriginal') },
                     { key: 'square', label: t('addPost.aspectSquare') },
                     { key: 'portrait', label: t('addPost.aspectPortrait') },
                     { key: 'landscape', label: t('addPost.aspectLandscape') },
@@ -304,8 +362,7 @@ const AddScreen = () => {
                     <View
                       style={[
                         styles.aspectShape,
-                        { aspectRatio: opt.key === 'square' ? 1 : opt.key === 'portrait' ? 4 / 5 : opt.key === 'landscape' ? 16 / 9 : 1 },
-                        // opt.key === 'original' && { width: 10, height: 10 },
+                        { aspectRatio: opt.key === 'square' ? 1 : opt.key === 'portrait' ? 4 / 5 : 16 / 9 },
                         selectedAspect === opt.key && styles.aspectShapeActive,
                       ]}
                     />
@@ -315,12 +372,14 @@ const AddScreen = () => {
                   </TouchableOpacity>
                 ))}
               </View>
-              {isCropping && (
+              {isCropping ? (
                 <View style={styles.croppingIndicator}>
                   <ActivityIndicator size="small" color={Colors.primary} />
                   <Text style={styles.croppingText}>{t('addPost.cropping')}</Text>
                 </View>
-              )}
+              ) : !selectedAspect ? (
+                <Text style={styles.aspectRequiredText}>{t('addPost.aspectRequired')}</Text>
+              ) : null}
             </View>
           )}
 
@@ -601,6 +660,12 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginLeft: wp('1.5%'),
     fontWeight: '500',
+  },
+  aspectRequiredText: {
+    fontSize: RFValue(10),
+    color: Colors.primary,
+    marginTop: hp('1.2%'),
+    fontWeight: '600',
   },
   captionBox: {
     backgroundColor: Colors.white,

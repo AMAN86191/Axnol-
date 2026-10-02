@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Share } from 'react-native';
-import { Pencil, Mail, Phone, BadgeCheck, Briefcase, Calendar, MapPin, Building, Home, Globe, Share2 } from 'lucide-react-native';
+import { Pencil, Mail, Phone, BadgeCheck, Briefcase, Calendar, MapPin, Building, Home, Globe, Share2, Heart } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +21,7 @@ interface ProfileHeaderProps {
   membership: any;
   dob?: string;
   dom?: string;
+  partnerName?: string;
   profession?: string;
   referralCode?: string;
   country?: string;
@@ -28,6 +29,7 @@ interface ProfileHeaderProps {
   state?: string;
   pincode?: string;
   address?: string;
+  area?: string;
 }
 
 export const ProfileHeader = React.memo(({
@@ -45,6 +47,7 @@ export const ProfileHeader = React.memo(({
   membership,
   dob,
   dom,
+  partnerName,
   profession,
   referralCode,
   country,
@@ -52,6 +55,7 @@ export const ProfileHeader = React.memo(({
   state,
   pincode,
   address,
+  area,
 }: ProfileHeaderProps) => {
   const { t } = useTranslation();
 
@@ -69,11 +73,13 @@ export const ProfileHeader = React.memo(({
     { key: 'profession', icon: Briefcase, label: t('publicProfile.profession'), value: profession },
     { key: 'dob', icon: Calendar, label: 'DOB', value: dob },
     { key: 'dom', icon: Calendar, label: 'DOM', value: dom },
+    { key: 'partnerName', icon: Heart, label: t('publicProfile.partnerName'), value: partnerName },
     { key: 'city', icon: Building, label: t('publicProfile.location'), value: city },
     { key: 'state', icon: MapPin, label: '', value: state },
     { key: 'pincode', icon: MapPin, label: '', value: pincode },
     { key: 'country', icon: Globe, label: '', value: country },
     { key: 'address', icon: Home, label: '', value: address, fullWidth: true },
+    { key: 'area', icon: MapPin, label: t('publicProfile.area'), value: area },
     { key: 'referralCode', icon: Share2, label: t('referral.yourCode'), value: referralCode, fullWidth: true, shareable: true },
   ].filter(d => !!d.value);
 

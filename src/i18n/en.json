@@ -112,7 +112,8 @@
       "quotaExceeded": "SMS quota exhausted for this number. Please try again later.",
       "notAllowed": "Phone sign-in is not set up for this app yet. Please contact support.",
       "network": "Network error. Please check your internet connection and try again.",
-      "apiFailed": "Something went wrong while verifying. Please try again."
+      "apiFailed": "Something went wrong while verifying. Please try again.",
+      "loginFailed": "Your number was verified but we couldn't complete the sign-in. Please try again."
     }
   },
   "hero": {
@@ -128,6 +129,7 @@
     "donate": "Donate",
     "create": "Create",
     "membership": "Membership",
+    "communityMembers": "Members",
     "profile": "Profile"
   },
   "drawer": {
@@ -211,6 +213,7 @@
     "aspectSquare": "Square",
     "aspectPortrait": "Portrait",
     "aspectLandscape": "Landscape",
+    "aspectRequired": "Please select an aspect ratio to continue.",
     "cropping": "Adjusting images..."
   },
   "editPost": {
@@ -283,6 +286,8 @@
     "countryPlaceholder": "Enter your country",
     "address": "Address",
     "addressPlaceholder": "Full Address",
+    "area": "Area",
+    "areaPlaceholder": "Enter your area",
     "city": "City",
     "cityPlaceholder": "Enter your city",
     "pincode": "Pincode",
@@ -292,6 +297,8 @@
     "dob": "Date of Birth",
     "dobPlaceholder": "YYYY-MM-DD",
     "dom": "Date of Marriage (Optional)",
+    "partnerName": "Partner Name",
+    "partnerNamePlaceholder": "Enter partner's name",
     "clear": "Clear",
     "bio": "Bio",
     "bioPlaceholder": "Tell us about yourself",
@@ -386,6 +393,9 @@
     "email": "Email Address",
     "mobileNumber": "Mobile Number",
     "dob": "Date of Birth",
+    "dom": "Date of Marriage (Optional)",
+    "partnerName": "Partner Name",
+    "partnerNamePlaceholder": "Enter partner's name",
     "bio": "Description / Bio",
     "bioPlaceholder": "Tell us about yourself",
     "profession": "Profession",
@@ -393,6 +403,8 @@
     "customProfessionPlaceholder": "Enter your profession",
     "address": "Address",
     "addressPlaceholder": "Full Address",
+    "area": "Area",
+    "areaPlaceholder": "Enter your area",
     "city": "City",
     "pincode": "Pincode",
     "state": "State",
@@ -627,6 +639,9 @@
     "location": "Location",
     "profession": "Profession",
     "dateOfBirth": "Date of Birth",
+    "dateOfMarriage": "Date of Marriage",
+    "partnerName": "Partner Name",
+    "area": "Area",
     "about": "About",
     "bio": "Bio"
   },

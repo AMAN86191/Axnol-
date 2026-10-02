@@ -212,29 +212,18 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name || t('drawer.guestUser')}</Text>
-            <Text style={styles.userEmailText} numberOfLines={1}>{user?.email || ''}</Text>
+            <Text style={styles.profileName} numberOfLines={1}>{user?.name || t('drawer.guestUser')}</Text>
+            <Text style={styles.userEmailText} numberOfLines={1}>{user?.profile?.designation || t('common.user')}</Text>
           </View>
-        </View>
 
-        {/* Badges and Membership Details Card */}
-        <View style={styles.membershipDetailsCard}>
-          <Text style={styles.designationText}>{user?.profile?.designation || t('common.user')}</Text>
-
-          {user?.membership ? (
-            <View style={styles.statusRowBadgesHeader}>
-              <View style={styles.patronBadge}>
-                <Award size={RFValue(8)} color="#D97706" strokeWidth={2} />
-                <Text style={styles.patronBadgeText}>
-                  {user.membership.charAt(0).toUpperCase() + user.membership.slice(1)}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-          <View style={styles.memberMetaRow}>
-            <Text style={styles.memberMetaText}>{t('drawer.id')}: {user?.uid || t('common.na')}</Text>
-            <View style={styles.metaDivider} />
-            <Text style={styles.memberMetaText}>{t('drawer.since')}: {user?.profile?.join_date ? new Date(user.profile.join_date).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { month: 'short', year: 'numeric' }) : t('common.na')}</Text>
+          {/* Since — right side */}
+          <View style={styles.sinceWrapper}>
+            <Text style={styles.sinceLabel}>{t('drawer.since')}</Text>
+            <Text style={styles.sinceValue}>
+              {user?.profile?.join_date
+                ? new Date(user.profile.join_date).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { month: 'short', year: 'numeric' })
+                : t('common.na')}
+            </Text>
           </View>
         </View>
       </View>
@@ -291,7 +280,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
         {renderDrawerItem(t('drawer.myProfile'), User, 'MainTabs', 'Profile')}
         {renderDrawerItem(t('drawer.myPosts'), Edit3, 'MainTabs', 'Profile', undefined, false)}
         {renderDrawerItem(t('drawer.notifications'), Bell, 'NotificationScreen')}
-        {renderDrawerItem(t('drawer.becomeMember'), CreditCard, 'MainTabs', 'Membership')}
+        {renderDrawerItem(t('drawer.becomeMember'), CreditCard, 'JoinMembershipScreen')}
 
 
 
@@ -401,7 +390,9 @@ export default function MainDrawerNavigator() {
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerShown: false,
-        drawerType: 'slide',
+        // 'front' => background screen move nahi hota, drawer overlay hota hai.
+        // 'slide' background ko left shift karta tha jo unneeded lag raha tha.
+        drawerType: 'front',
         overlayColor: 'rgba(20, 24, 24, 0.6)',
         drawerStyle: {
           width: wp('78%'),
@@ -464,6 +455,24 @@ const styles = StyleSheet.create({
   },
   profileInfo: {
     flex: 1,
+    marginRight: wp('2%'),
+  },
+  /* Since — right side of profile row */
+  sinceWrapper: {
+    alignItems: 'flex-end',
+  },
+  sinceLabel: {
+    fontSize: RFValue(7.5),
+    color: Colors.gray,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  sinceValue: {
+    fontSize: RFValue(9.5),
+    color: '#FF6F34',
+    fontWeight: '700',
+    marginTop: hp('0.2%'),
   },
   appName: {
     fontSize: RFValue(11),
@@ -481,65 +490,6 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     fontWeight: '500',
     marginTop: hp('0.3%'),
-  },
-  membershipDetailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: wp('3%'),
-    padding: wp('3%'),
-    // borderWidth: 1,
-    // borderColor: '#FFEBE0',
-    marginTop: hp('0.2%'),
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  designationText: {
-    fontSize: RFValue(9.5),
-    color: '#FF6F34',
-    fontWeight: '700',
-    marginTop: hp('0.2%'),
-    marginBottom: hp('0.4%'),
-  },
-  statusRowBadgesHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: hp('0.8%'),
-  },
-  patronBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF8F2',
-    borderWidth: 0.8,
-    borderColor: '#FFEBE0',
-    borderRadius: wp('1%'),
-    paddingVertical: hp('0.3%'),
-    paddingHorizontal: wp('2%'),
-    alignSelf: 'flex-start',
-    marginBottom: hp('0.8%'),
-  },
-  patronBadgeText: {
-    fontSize: RFValue(9),
-    color: '#D97706',
-    fontWeight: '700',
-    marginLeft: wp('1%'),
-  },
-  memberMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: wp('0.5%'),
-  },
-  memberMetaText: {
-    fontSize: RFValue(8),
-    fontWeight: '700',
-    color: Colors.gray,
-  },
-  metaDivider: {
-    width: 1,
-    height: hp('1.2%'),
-    backgroundColor: '#FFE5DA',
-    marginHorizontal: wp('2%'),
   },
   donationButtonWrapper: {
     marginBottom: hp('1.5%'),

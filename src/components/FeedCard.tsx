@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -50,6 +50,16 @@ interface FeedCardProps {
 
 const EMPTY_ARRAY: any[] = [];
 
+// Instagram clamps feed images between 4:5 (max portrait) and 1.91:1 (max landscape).
+// Anything outside that range gets `cover`-cropped instead of letterboxed with empty space.
+const MIN_FEED_RATIO = 4 / 5;
+const MAX_FEED_RATIO = 1.91;
+
+const clampFeedRatio = (ratio: number): number => {
+  if (!ratio || !isFinite(ratio) || ratio <= 0) return 1;
+  return Math.min(Math.max(ratio, MIN_FEED_RATIO), MAX_FEED_RATIO);
+};
+
 export const FeedCard = ({
   postId,
   author,
@@ -86,6 +96,34 @@ export const FeedCard = ({
   const [localDislikes, setLocalDislikes] = useState(dislikes);
   const [localIsDisliked, setLocalIsDisliked] = useState(isDisliked);
   const [localDislikedBy, setLocalDislikedBy] = useState<any[]>(dislikedBy);
+  // Real image dimensions se container ka aspect ratio — taaki image poori tarah
+  // frame bhar le aur kahin khaali white/gray space na dikhe.
+  const [imageRatios, setImageRatios] = useState<Record<number, number>>({});
+
+  const allImages = useMemo(() => {
+    if (images && images.length > 0) return images;
+    return image ? [image] : [];
+  }, [images, image]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    allImages.forEach((uri, idx) => {
+      if (!uri || imageRatios[idx] !== undefined) return;
+      Image.getSize(
+        uri,
+        (width, height) => {
+          if (cancelled || !width || !height) return;
+          setImageRatios(prev => ({ ...prev, [idx]: clampFeedRatio(width / height) }));
+        },
+        () => {},
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [allImages, imageRatios]);
 
   useEffect(() => {
     setLocalLikes(likes);
@@ -411,39 +449,53 @@ export const FeedCard = ({
           showsHorizontalScrollIndicator={false}
           style={styles.carouselContainer}
         >
-          {images.map((imgUri, idx) => (
-            <TouchableOpacity
-              key={idx}
-              style={[styles.carouselImageWrapper, { width: cardWidth }]}
-              activeOpacity={0.95}
-              onPress={onPostPress}
-              disabled={!onPostPress}
-            >
-              <Image source={{ uri: imgUri }} style={[styles.feedImage, styles.carouselImage]} resizeMode="contain" />
-              {images.length > 1 && (
-                <View style={styles.carouselBadge}>
-                  <Text style={styles.carouselBadgeText}>{idx + 1} / {images.length}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+          {images.map((imgUri, idx) => {
+            const ratio = imageRatios[idx] ?? 1;
+            return (
+              <TouchableOpacity
+                key={idx}
+                style={[styles.carouselImageWrapper, { width: cardWidth }]}
+                activeOpacity={0.95}
+                onPress={onPostPress}
+                disabled={!onPostPress}
+              >
+                <Image
+                  source={{ uri: imgUri }}
+                  style={[styles.carouselImage, { aspectRatio: ratio }]}
+                  resizeMode="cover"
+                />
+                {images.length > 1 && (
+                  <View style={styles.carouselBadge}>
+                    <Text style={styles.carouselBadgeText}>{idx + 1} / {images.length}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       ) : (
         image && (
-          <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+          <TouchableOpacity
+            activeOpacity={0.95}
+            onPress={onPostPress}
+            disabled={!onPostPress}
+            style={[styles.carouselImageWrapper, { width: cardWidth }]}
+          >
             <Image
               source={{ uri: image }}
-              style={styles.feedImage}
-              resizeMode="contain"
+              style={[styles.carouselImage, { aspectRatio: imageRatios[0] ?? 1 }]}
+              resizeMode="cover"
             />
           </TouchableOpacity>
         )
       )}
 
-      {/* Card Description */}
-      <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
-        <Text style={styles.feedText}>{text}</Text>
-      </TouchableOpacity>
+      {/* Card Description — sirf tabhi jab text ho, warna khali margin dikhta hai */}
+      {text?.trim() ? (
+        <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+          <Text style={styles.feedText}>{text}</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Card Actions */}
       <View style={styles.feedActions}>
@@ -609,13 +661,6 @@ const styles = StyleSheet.create({
     lineHeight: RFValue(16),
     marginBottom: hp('1.5%'),
   },
-  feedImage: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: wp('3%'),
-    marginBottom: hp('1.5%'),
-    backgroundColor: '#F9FAFB', // very light gray to fill empty space
-  },
   feedActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -650,7 +695,10 @@ const styles = StyleSheet.create({
     borderRadius: wp('3%'),
   },
   carouselImage: {
+    // aspectRatio is set per-image from real dimensions; container always hugs the image.
+    width: '100%',
     marginBottom: 0,
+    backgroundColor: '#F5F5F5',
   },
   carouselBadge: {
     position: 'absolute',

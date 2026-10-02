@@ -130,9 +130,9 @@ export const BannerSlider: React.FC<BannerSliderProps> = ({ onPressBanner }) => 
                 style={styles.actionButtonGradient}
               >
                 <Text style={styles.actionButtonText}>{item.buttonText}</Text>
-                <View style={styles.btnArrow}>
+                {/* <View style={styles.btnArrow}>
                   <Text style={styles.btnArrowText}>→</Text>
-                </View>
+                </View> */}
               </LinearGradient>
             </TouchableOpacity>
           ) : null}

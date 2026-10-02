@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Home, Heart, Plus, Crown, User as UserIcon } from 'lucide-react-native';
+import { Home, Heart, Plus, Users, User as UserIcon } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 import HomeScreen from '../screens/main/HomeScreen';
 import DonateScreen from '../screens/main/DonateScreen';
 import AddScreen from '../screens/main/AddScreen';
-import JoinMembershipScreen from '../screens/main/JoinMembershipScreen';
+import CommunityMembersScreen from '../screens/main/CommunityMembersScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import { Colors } from '../theme/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,9 +55,9 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
         } else if (route.name === 'Add') {
           IconComponent = Plus;
           label = t('tabs.create');
-        } else if (route.name === 'Membership') {
-          IconComponent = Crown;
-          label = t('tabs.membership');
+        } else if (route.name === 'CommunityMembers') {
+          IconComponent = Users;
+          label = t('tabs.communityMembers');
         } else if (route.name === 'Profile') {
           IconComponent = UserIcon;
           label = t('tabs.profile');
@@ -124,7 +124,7 @@ export default function MainTabNavigator() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Donate" component={DonateScreen} />
       <Tab.Screen name="Add" component={AddScreen} />
-      <Tab.Screen name="Membership" component={JoinMembershipScreen} />
+      <Tab.Screen name="CommunityMembers" component={CommunityMembersScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

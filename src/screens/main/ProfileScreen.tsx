@@ -148,24 +148,26 @@ const ProfileScreen = () => {
     try {
       const response = await getContributionsStore();
       console.log('Contributions API Response:', response);
-      if (response && response.donations) {
-        const mappedData = response.donations.map((d: any) => ({
-          id: d.id?.toString() || Math.random().toString(),
-          title: d.plan?.plan_name || t('profile.donation'),
-          category: d.plan?.duration
-            ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1)
-            : t('profile.general'),
-          amount: `₹${parseFloat(d.amount || 0).toLocaleString('en-IN')}`,
-          date: d.date || t('common.na'),
-          status: d.payment_status?.toLowerCase() === 'paid' ? t('common.completed') : t('common.pending'),
-          txnId: d.transaction_id || t('common.na'),
-        }));
+      if (response && Array.isArray(response.donations)) {
+        const mappedData = response.donations
+          .filter((d: any) => d.payment_status?.toLowerCase() === 'paid')
+          .map((d: any) => ({
+            id: d.id?.toString() || Math.random().toString(),
+            title: d.plan?.plan_name || t('profile.donation'),
+            category: d.plan?.duration
+              ? d.plan.duration.charAt(0).toUpperCase() + d.plan.duration.slice(1)
+              : t('profile.general'),
+            amount: `₹${parseFloat(d.amount || 0).toLocaleString('en-IN')}`,
+            date: d.date || t('common.na'),
+            status: t('common.completed'),
+            txnId: d.transaction_id || t('common.na'),
+          }));
         setContributionsData(mappedData);
       }
     } catch (error) {
       console.log('Error fetching contributions:', error);
     }
-  }, [getContributionsStore]);
+  }, [getContributionsStore, t]);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -189,7 +191,8 @@ const ProfileScreen = () => {
   );
   console.log('profiledata :', user);
 
-  const hasMembership = !!(profileData?.profile?.designation || user?.profile?.designation);
+  const designation = profileData?.profile?.designation || user?.profile?.designation;
+  const hasMembership = !!designation && designation.toLowerCase() !== 'user';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -223,6 +226,7 @@ const ProfileScreen = () => {
           membership={profileData?.user?.membership || user?.membership}
           dob={profileData?.profile?.dob || user?.profile?.dob}
           dom={profileData?.profile?.dom || user?.profile?.dom}
+          partnerName={profileData?.profile?.partner_name || user?.profile?.partner_name}
           profession={profileData?.profile?.profession || user?.profile?.profession}
           referralCode={profileData?.profile?.referral_code || user?.profile?.referral_code}
           country={profileData?.profile?.country || user?.profile?.country}
@@ -230,6 +234,7 @@ const ProfileScreen = () => {
           state={profileData?.profile?.state || user?.profile?.state}
           pincode={profileData?.profile?.pincode || user?.profile?.pincode}
           address={profileData?.profile?.address || user?.profile?.address}
+          area={profileData?.profile?.area || user?.profile?.area}
         />
 
         {/* Profile Statistics Component */}
@@ -248,7 +253,7 @@ const ProfileScreen = () => {
             isMember={hasMembership}
             onCertificatePress={handleCertificatePress}
             onIdCardPress={() => setIsIdCardModalVisible(true)}
-            onBecomeMemberPress={() => (navigation as any).navigate('Membership')}
+            onBecomeMemberPress={() => (navigation as any).navigate('JoinMembershipScreen')}
           />
         )}
 

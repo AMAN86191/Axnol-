@@ -27,11 +27,12 @@ import { CommonHeader } from '../../components/CommonHeader';
 import useAuthStore from '../../zustand/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import { sendFirebaseOtp, confirmFirebaseOtp, resendFirebaseOtp } from '../../services/firebaseAuthService';
+import { buildProfileFormData, buildProfileParts, toAbsoluteImageUrl } from '../../utils/profileFormData';
 
 const EditProfileScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const { user, updateProfile } = useAuthStore();
+  const { user, updateProfile, getProfile } = useAuthStore();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -43,6 +44,7 @@ const EditProfileScreen = () => {
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
   const [address, setAddress] = useState('');
+  const [area, setArea] = useState('');
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [selectedProfession, setSelectedProfession] = useState('');
   const [customProfession, setCustomProfession] = useState('');
@@ -54,6 +56,7 @@ const EditProfileScreen = () => {
   // Date States
   const [dob, setDob] = useState('');
   const [dom, setDom] = useState('');
+  const [partnerName, setPartnerName] = useState('');
   const [showDobPicker, setShowDobPicker] = useState(false);
   const [showDomPicker, setShowDomPicker] = useState(false);
   const [dateObjDob, setDateObjDob] = useState(new Date());
@@ -66,27 +69,40 @@ const EditProfileScreen = () => {
 
   useEffect(() => {
     if (user) {
+      const p = user.profile || {};
       setName(user.name || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
 
-      setDob(user.profile?.dob || '');
-      setDom(user.profile?.dom || '');
-      const savedProfession = user.profile?.profession || '';
+      setDob(p.dob || '');
+      setDom(p.dom || '');
+      setPartnerName(p.partner_name || '');
+      const savedProfession = p.profession || '';
       setProfession(savedProfession);
       setCustomProfession(savedProfession);
       setSelectedProfession(
         presetProfessions.includes(savedProfession) ? savedProfession : (savedProfession ? 'Other' : '')
       );
-      setBio(user.profile?.bio || '');
-      setCountry(user.profile?.country || '');
-      setCity(user.profile?.city || '');
-      setState(user.profile?.state || '');
-      setPincode(user.profile?.pincode || '');
-      setAddress(user.profile?.address || '');
-      setProfilePic(user.profile?.profile_pic ? `${user.profile.profile_pic}` : null);
+      setBio(p.bio || '');
+      setCountry(p.country || '');
+      setCity(p.city || '');
+      setState(p.state || '');
+      setPincode(p.pincode || '');
+      setAddress(p.address || '');
+      setArea(p.area || '');
+      setProfilePic(p.profile_pic ? `${p.profile_pic}` : null);
     }
   }, [user]);
+
+  useEffect(() => {
+    getProfile().catch((e: any) =>
+      console.log('Error refreshing profile on edit screen:', e),
+    );
+  }, [getProfile]);
+
+  const profilePicPreview = profilePic
+    ? toAbsoluteImageUrl(profilePic)
+    : null;
 
   const onDobChange = (event: any, selectedDate?: Date) => {
     setShowDobPicker(Platform.OS === 'ios');
@@ -141,15 +157,10 @@ const EditProfileScreen = () => {
           setState(postOffice.State || '');
           setCountry(postOffice.Country || '');
         } else {
-          setCity('');
-          setState('');
-          setCountry('');
+          console.log('pincode lookup returned no result for', normalized);
         }
       } catch (error) {
         console.log('Error fetching pincode:', error);
-        setCity('');
-        setState('');
-        setCountry('');
       } finally {
         setPincodeFetching(false);
       }
@@ -159,36 +170,57 @@ const EditProfileScreen = () => {
   const performUpdate = async () => {
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('name', name);
-      formData.append('email', email);
-      formData.append('phone', phone);
+      const values = {
+        name,
+        email,
+        phone,
+        dob,
+        dom,
+        partner_name: partnerName,
+        profession,
+        bio,
+        country,
+        city,
+        state,
+        pincode,
+        address,
+        area,
+      };
 
-      formData.append('dob', dob);
-      formData.append('dom', dom);
-      formData.append('profession', profession);
-      formData.append('bio', bio);
-      formData.append('country', country);
-      formData.append('city', city);
-      formData.append('state', state);
-      formData.append('pincode', pincode);
-      formData.append('address', address);
+      console.log('complete-profile payload:', buildProfileParts(values, profilePic));
 
-      if (profilePic && !profilePic.startsWith('http')) {
-        formData.append('profile_pic', {
-          uri: profilePic,
-          name: profilePic.split('/').pop() || 'profile.jpg',
-          type: profilePic.endsWith('.png') ? 'image/png' : 'image/jpeg',
-        } as any);
+      const res = await updateProfile(buildProfileFormData(values, profilePic));
+      console.log('complete-profile response:', res);
+
+      const failed =
+        res?.success === false ||
+        res?.status === false ||
+        res?.data?.success === false;
+
+      if (failed) {
+        Alert.alert(
+          t('common.error'),
+          res?.message || res?.data?.message || t('editProfile.updateFailed'),
+        );
+        return;
       }
-      console.log('formData', formData)
-      const res = await updateProfile(formData);
-      console.log('update profile res', res)
+
+      // Re-read from the server so the UI reflects what was actually persisted.
+      try {
+        await getProfile();
+      } catch (e) {
+        console.log('get-profile refresh failed:', e);
+      }
+
       Alert.alert(t('common.success'), t('editProfile.profileUpdated'), [
-        { text: t('common.ok'), onPress: () => navigation.goBack() }
+        { text: t('common.ok'), onPress: () => navigation.goBack() },
       ]);
-    } catch (error) {
-      Alert.alert(t('common.error'), t('editProfile.updateFailed'));
+    } catch (error: any) {
+      console.log('complete-profile error:', error?.message, error?.response?.data);
+      Alert.alert(
+        t('common.error'),
+        error?.response?.data?.message || t('editProfile.updateFailed'),
+      );
     } finally {
       setLoading(false);
     }
@@ -262,8 +294,8 @@ const EditProfileScreen = () => {
               {/* Profile Photo Picker */}
               <View style={styles.photoContainer}>
                 <TouchableOpacity style={styles.photoPicker} onPress={handleChoosePhoto} activeOpacity={0.8}>
-                  {profilePic ? (
-                    <Image source={{ uri: profilePic }} style={styles.profileImage} />
+                  {profilePicPreview ? (
+                    <Image source={{ uri: profilePicPreview }} style={styles.profileImage} />
                   ) : (
                     <View style={styles.photoPlaceholder}>
                       <Camera size={24} color={Colors.gray} />
@@ -345,6 +377,14 @@ const EditProfileScreen = () => {
                 leftIcon={<Home size={RFValue(12)} color={Colors.primary} />}
               />
 
+              <InputField
+                label={t('editProfile.area')}
+                placeholder={t('editProfile.areaPlaceholder')}
+                value={area}
+                onChangeText={setArea}
+                leftIcon={<MapPin size={RFValue(12)} color={Colors.primary} />}
+              />
+
 
 
               {/* Date of Birth Picker */}
@@ -398,6 +438,17 @@ const EditProfileScreen = () => {
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={onDomChange}
                   maximumDate={new Date()}
+                />
+              )}
+
+              {/* Partner Name (shown only after DOM is set) */}
+              {!!dom && (
+                <InputField
+                  label={t('editProfile.partnerName')}
+                  placeholder={t('editProfile.partnerNamePlaceholder')}
+                  value={partnerName}
+                  onChangeText={setPartnerName}
+                  leftIcon={<User size={RFValue(12)} color={Colors.primary} />}
                 />
               )}
 

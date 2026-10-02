@@ -50,6 +50,7 @@ const OtpVerificationScreen = () => {
   const { otpVerify, register } = useAuthStore();
   
   const inputRefs = useRef<Array<TextInput | null>>([]);
+  const verifyingRef = useRef(false);
 
   // Minimum OTP box size so digits never get clipped on small screens / high font scales.
   const otpBoxSize = Math.max(wp('10%'), 44);
@@ -138,12 +139,14 @@ const OtpVerificationScreen = () => {
   };
 
   const handleVerify = async () => {
+    if (verifyingRef.current) return;
     const otpString = otp.join('');
     if (otpString.length < 6) {
       setError({ message: t('otp.enterAllDigits'), isApi: false });
       return;
     }
-    
+
+    verifyingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -162,6 +165,18 @@ const OtpVerificationScreen = () => {
           fcm_token: fcmToken,
           firebase_id_token: firebaseIdToken,
         });
+        // Backend user/register account banata hai par token return nahi karta —
+        // login complete karne ke liye verify-otp (wahi login flow) call karo.
+        // Register response mein backend apna OTP return karta hai (dev mode),
+        // verify-otp ko wahi OTP chahiye hota hai.
+        if (!res?.token) {
+          res = await otpVerify({
+            phone: phoneNumber,
+            otp: res?.otp || otpString,
+            fcm_token: fcmToken,
+            firebase_id_token: firebaseIdToken,
+          });
+        }
       } else {
         res = await otpVerify({
           phone: phoneNumber,
@@ -172,17 +187,21 @@ const OtpVerificationScreen = () => {
       }
       console.log('OTP verification response:', res);
       setLoading(false);
-      
+
       if (res?.token) {
         navigation.reset({
           index: 0,
           routes: [{ name: 'MainDrawer' }],
         });
+      } else {
+        setError({ message: t('otp.errors.loginFailed'), isApi: true });
       }
     } catch (err: any) {
       setLoading(false);
       const isApi = !!err?.response || err?.isAxiosError;
       setError(getFriendlyError(err, isApi));
+    } finally {
+      verifyingRef.current = false;
     }
   };
 

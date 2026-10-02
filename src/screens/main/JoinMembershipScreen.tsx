@@ -38,6 +38,7 @@ import useAuthStore from '../../zustand/useAuthStore';
 import useHomeStore from '../../zustand/useHomeStore';
 import { startPhonePeTransaction } from '../../services/PhonePePaymentService';
 import { MembershipCertificateCard } from '../../components/MembershipCertificateCard';
+import { buildProfileFormData } from '../../utils/profileFormData';
 import { useTranslation } from 'react-i18next';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'JoinMembershipScreen'>;
@@ -67,8 +68,11 @@ const JoinMembershipScreen = () => {
   const [pincode, setPincode] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
+  const [area, setArea] = useState('');
   const [country, setCountry] = useState('');
   const [dob, setDob] = useState('');
+  const [dom, setDom] = useState('');
+  const [partnerName, setPartnerName] = useState('');
   const [bio, setBio] = useState('');
   const [profession, setProfession] = useState('');
   const [selectedProfession, setSelectedProfession] = useState('');
@@ -90,22 +94,32 @@ const JoinMembershipScreen = () => {
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateObj, setDateObj] = useState(new Date());
+  const [showDomPicker, setShowDomPicker] = useState(false);
+  const [dateObjDom, setDateObjDom] = useState(new Date());
 
   useEffect(() => {
     if (user) {
+      const p = user.profile || {};
       setFullName(user.name || '');
       setEmail(user.email || '');
       setPhone(user.phone || '');
-      setDob(user.profile?.dob || '');
-      setBio(user.profile?.bio || '');
-      const savedProfession = user.profile?.profession || '';
+      setDob(p.dob || '');
+      setDom(p.dom || '');
+      setPartnerName(p.partner_name || '');
+      setBio(p.bio || '');
+      const savedProfession = p.profession || '';
       setProfession(savedProfession);
       setCustomProfession(savedProfession);
       setSelectedProfession(
         presetProfessions.includes(savedProfession) ? savedProfession : (savedProfession ? 'Other' : '')
       );
-      setCountry(user.profile?.country || '');
-      setProfilePhoto(user.profile?.profile_pic ? `${user.profile.profile_pic}` : null);
+      setCountry(p.country || '');
+      setCity(p.city || '');
+      setState(p.state || '');
+      setPincode(p.pincode || '');
+      setAddress(p.address || '');
+      setArea(p.area || '');
+      setProfilePhoto(p.profile_pic ? `${p.profile_pic}` : null);
     }
   }, [user]);
 
@@ -158,6 +172,13 @@ const JoinMembershipScreen = () => {
       fetchPlans();
     }
   }, [hasMembership]);
+
+  // Pull the latest profile so the form always prefills with server values.
+  useEffect(() => {
+    getProfile().catch((e: any) =>
+      console.log('Error refreshing profile before membership form:', e),
+    );
+  }, [getProfile]);
 
   const handlePurchase = async (plan: Plan) => {
     setPurchasingId(plan.id);
@@ -216,6 +237,20 @@ const JoinMembershipScreen = () => {
     }
   };
 
+  const onDomChange = (event: any, selectedDate?: Date) => {
+    setShowDomPicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDateObjDom(selectedDate);
+      if (event.type === 'set' || Platform.OS === 'ios') {
+        const formattedDate = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+        setDom(formattedDate);
+        setShowDomPicker(false);
+      }
+    } else {
+      setShowDomPicker(false);
+    }
+  };
+
   const handleChoosePhoto = async () => {
     const result = await launchImageLibrary({
       mediaType: 'photo',
@@ -233,26 +268,27 @@ const JoinMembershipScreen = () => {
     }
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append('name', fullName);
-      formData.append('email', email);
-      formData.append('phone', phone);
-      formData.append('dob', dob);
-      formData.append('bio', bio);
-      formData.append('country', country);
-      formData.append('profession', profession);
-      formData.append('city', city);
-      formData.append('state', state);
-      formData.append('pincode', pincode);
-      formData.append('address', address);
+      const formData = buildProfileFormData(
+        {
+          name: fullName,
+          email,
+          phone,
+          dob,
+          dom,
+          partner_name: partnerName,
+          profession,
+          bio,
+          country,
+          city,
+          state,
+          pincode,
+          address,
+          area,
+        },
+        profilePhoto,
+      );
 
-      if (profilePhoto && !profilePhoto.startsWith('http')) {
-        formData.append('profile_pic', {
-          uri: profilePhoto,
-          name: profilePhoto.split('/').pop() || 'profile.jpg',
-          type: profilePhoto.endsWith('.png') ? 'image/png' : 'image/jpeg',
-        } as any);
-      }
+      console.log('complete-profile parts:', formData.getParts());
 
       await updateProfile(formData);
 
@@ -435,6 +471,40 @@ const JoinMembershipScreen = () => {
                   />
                 )}
 
+                {/* Date of Marriage */}
+                <TouchableOpacity onPress={() => setShowDomPicker(true)} activeOpacity={1}>
+                  <View pointerEvents="none">
+                    <InputField
+                      label={t('membership.dom')}
+                      placeholder={t('editProfile.dobPlaceholder')}
+                      value={dom}
+                      editable={false}
+                      leftIcon={<Calendar size={18} color={Colors.gray} strokeWidth={1.5} />}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {showDomPicker && (
+                  <DateTimePicker
+                    value={dateObjDom}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={onDomChange}
+                    maximumDate={new Date()}
+                  />
+                )}
+
+                {/* Partner Name (shown only after DOM is set) */}
+                {!!dom && (
+                  <InputField
+                    label={t('membership.partnerName')}
+                    placeholder={t('membership.partnerNamePlaceholder')}
+                    value={partnerName}
+                    onChangeText={setPartnerName}
+                    leftIcon={<User size={18} color={Colors.gray} strokeWidth={1.5} />}
+                  />
+                )}
+
                 {/* Description / Bio */}
                 <InputField
                   label={t('membership.bio')}
@@ -486,6 +556,15 @@ const JoinMembershipScreen = () => {
                   value={address}
                   onChangeText={setAddress}
                   leftIcon={<Home size={18} color={Colors.gray} strokeWidth={1.5} />}
+                />
+
+                {/* Area */}
+                <InputField
+                  label={t('membership.area')}
+                  placeholder={t('membership.areaPlaceholder')}
+                  value={area}
+                  onChangeText={setArea}
+                  leftIcon={<MapPin size={18} color={Colors.gray} strokeWidth={1.5} />}
                 />
                 <View style={styles.rowContainer}>
                   <View style={styles.halfWidth}>

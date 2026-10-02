@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
-import { Menu } from 'lucide-react-native';
+import { Menu, Bell } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import {
   widthPercentageToDP as wp,
@@ -15,9 +15,35 @@ import {
 } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import LinearGradient from 'react-native-linear-gradient';
+import useHomeStore from '../zustand/useHomeStore';
 
 export const PrimaryHeader = () => {
   const navigation = useNavigation();
+  const { getNotificationsStore } = useHomeStore();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const response = await getNotificationsStore();
+      const items = response?.notifications || response?.data || [];
+      if (Array.isArray(items)) {
+        setUnreadCount(items.filter((n: any) => !(n?.is_read || n?.read)).length);
+      }
+    } catch (error) {
+      console.log('Error fetching unread count:', error);
+    }
+  }, [getNotificationsStore]);
+
+  // Notification screen se wapas aane par badge refresh ho
+  useEffect(() => {
+    fetchUnreadCount();
+    const unsubscribe = navigation.addListener('focus', fetchUnreadCount);
+    return unsubscribe;
+  }, [navigation, fetchUnreadCount]);
+
+  const openNotifications = () => {
+    (navigation as any).navigate('NotificationScreen');
+  };
 
   return (
     <>
@@ -40,23 +66,27 @@ export const PrimaryHeader = () => {
               <Menu size={RFValue(16)} color="#EA580C" strokeWidth={2.5} />
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.notificationButton}
+              activeOpacity={0.8}
+              onPress={openNotifications}
+            >
+              <Bell size={RFValue(15)} color="#EA580C" strokeWidth={2.2} />
+              {unreadCount > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
             <View style={styles.textContainer}>
               <Text style={styles.welcomeText}>Namaste 🙏</Text>
               <Text style={styles.subText}>
                 गौ सेवा, जन कल्याण
               </Text>
             </View>
-          </View>
-
-          {/* Center Logo & Bell */}
-          <View style={styles.centerSection} pointerEvents="box-none">
-
-            {/* <TouchableOpacity
-              style={styles.notificationButton}
-              onPress={() => (navigation as any).navigate('NotificationScreen')}
-            >
-              <Bell size={RFValue(16)} color="#0F172A" />
-            </TouchableOpacity> */}
           </View>
 
           {/* Right Cow Banner */}
@@ -148,19 +178,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  /* Center Logo */
-
-  centerSection: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    pointerEvents: 'box-none',
-  },
-
   logoWrapper: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'center',
@@ -173,11 +190,39 @@ const styles = StyleSheet.create({
     height: hp('8%'),
   },
 
+  /* Notification Bell */
+
   notificationButton: {
-    marginLeft: wp('2%'),
-    padding: wp('1.5%'),
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: wp('5%'),
+    // Menu button ke baad, "Namaste" text se pehle
+    width: wp('9%'),
+    height: wp('9%'),
+    borderRadius: wp('2%'),
+    backgroundColor: '#FFF7ED',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: wp('3%'),
+  },
+
+  notificationBadge: {
+    position: 'absolute',
+    top: -wp('1.2%'),
+    right: -wp('1.2%'),
+    minWidth: wp('4.6%'),
+    height: wp('4.6%'),
+    borderRadius: wp('2.3%'),
+    backgroundColor: '#EF4444',
+    borderWidth: 1.2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: wp('0.8%'),
+  },
+
+  notificationBadgeText: {
+    color: '#FFFFFF',
+    fontSize: RFValue(6.5),
+    fontWeight: '800',
+    lineHeight: RFValue(9),
   },
 
   /* Right Image */

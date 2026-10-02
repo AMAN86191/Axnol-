@@ -112,7 +112,8 @@
       "quotaExceeded": "इस नंबर के लिए SMS सीमा समाप्त। कृपया थोड़ी देर बाद प्रयास करें।",
       "notAllowed": "इस ऐप के लिए फोन साइन-इन अभी चालू नहीं है। कृपया सहायता से संपर्क करें।",
       "network": "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जाँच कर फिर कोशिश करें।",
-      "apiFailed": "सत्यापन में कुछ गलती हुई। कृपया दोबारा प्रयास करें।"
+      "apiFailed": "सत्यापन में कुछ गलती हुई। कृपया दोबारा प्रयास करें।",
+      "loginFailed": "आपका नंबर सत्यापित हो गया पर साइन-इन पूरा नहीं हुआ। कृपया दोबारा प्रयास करें।"
     }
   },
   "hero": {
@@ -125,9 +126,10 @@
   },
   "tabs": {
     "home": "होम",
-    "donate": "दान",
+    "donate": "सहयोग राशि",
     "create": "बनाएं",
     "membership": "सदस्यता",
+    "communityMembers": "सदस्य",
     "profile": "प्रोफ़ाइल"
   },
   "drawer": {
@@ -211,6 +213,7 @@
     "aspectSquare": "स्क्वेयर",
     "aspectPortrait": "पोर्ट्रेट",
     "aspectLandscape": "लैंडस्केप",
+    "aspectRequired": "कृपया आगे बढ़ने के लिए एक आस्पेक्ट रेशो चुनें।",
     "cropping": "छवियां समायोजित हो रही हैं..."
   },
   "editPost": {
@@ -283,6 +286,8 @@
     "countryPlaceholder": "अपना देश दर्ज करें",
     "address": "पता",
     "addressPlaceholder": "पूरा पता",
+    "area": "क्षेत्र",
+    "areaPlaceholder": "अपना क्षेत्र दर्ज करें",
     "city": "शहर",
     "cityPlaceholder": "अपना शहर दर्ज करें",
     "pincode": "पिन कोड",
@@ -292,6 +297,8 @@
     "dob": "जन्म तिथि",
     "dobPlaceholder": "YYYY-MM-DD",
     "dom": "विवाह की तिथि (वैकल्पिक)",
+    "partnerName": "साथी का नाम",
+    "partnerNamePlaceholder": "साथी का नाम दर्ज करें",
     "clear": "साफ करें",
     "bio": "जीवनी",
     "bioPlaceholder": "हमें अपने बारे में बताएं",
@@ -386,6 +393,9 @@
     "email": "ईमेल पता",
     "mobileNumber": "मोबाइल नंबर",
     "dob": "जन्म तिथि",
+    "dom": "विवाह की तिथि (वैकल्पिक)",
+    "partnerName": "साथी का नाम",
+    "partnerNamePlaceholder": "साथी का नाम दर्ज करें",
     "bio": "विवरण / जीवनी",
     "bioPlaceholder": "हमें अपने बारे में बताएं",
     "profession": "पेशा",
@@ -393,6 +403,8 @@
     "customProfessionPlaceholder": "अपना पेशा दर्ज करें",
     "address": "पता",
     "addressPlaceholder": "पूरा पता",
+    "area": "क्षेत्र",
+    "areaPlaceholder": "अपना क्षेत्र दर्ज करें",
     "city": "शहर",
     "pincode": "पिन कोड",
     "state": "राज्य",
@@ -627,6 +639,9 @@
     "location": "स्थान",
     "profession": "पेशा",
     "dateOfBirth": "जन्म तिथि",
+    "dateOfMarriage": "विवाह की तिथि",
+    "partnerName": "साथी का नाम",
+    "area": "क्षेत्र",
     "about": "परिचय",
     "bio": "जीवनी"
   },
