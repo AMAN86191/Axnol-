@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>gaumatatrust</string>
+	<string>Axnol</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -30,7 +30,7 @@
 				<string>gaumatatrust</string>
 			</array>
 			<key>CFBundleURLName</key>
-			<string>gst.gaumatatrust.com</string>
+			<string>com.axnolapp</string>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>

@@ -1,40 +1,53 @@
-export type RootStackParamList = {
-  // Auth
-  SplashScreen: undefined;
-  LoginScreen: undefined;
-  SignUpScreen: undefined;
-  ForgotPasswordScreen: undefined;
-  OtpVerificationScreen: {
-    email?: string;
-    phoneNumber?: string;
-    mode?: 'login' | 'signup';
-    signupData?: {
-      name: string;
-      email: string;
-      dob: string;
-      bio: string;
-      refer_by: string;
-    };
-  };
-  MainDrawer: undefined;
-  JoinMembershipScreen: undefined;
-  DonateScreen: undefined;
-  HelpSupportScreen: undefined;
-  MembershipCertificateScreen: undefined;
-  EditPostScreen: { postId: string };
-  PostDetailsScreen: { postId: string };
-  ReferralScreen: undefined;
-  GalleryScreen: undefined;
-  EventGalleryScreen: { eventId: string };
-  PrivacyPolicyScreen: undefined;
-  TermsScreen: undefined;
-  PublicProfileScreen: { userId: string };
-  NotificationScreen: undefined;
-  AboutTrustScreen: undefined;
-  CommunityMembersScreen: undefined;
-  FeedScreen: undefined;
-  DonationSuccessScreen: { amount: number; transactionId: string; date: string };
-  PlansScreen: undefined;
-  EditProfileScreen: undefined;
-  UpcomingEventsScreen: undefined;
+import {NavigatorScreenParams} from '@react-navigation/native';
+
+export type AuthStackParamList = {
+  Splash: undefined;
+  Onboarding: undefined;
+  Login: undefined;
+  Register: undefined;
+  OtpVerify: {userId: string; email: string; demoOtp?: string};
+  ApprovalPending: {userId: string; email: string};
+  ProfileSetup: undefined;
+  ForgotPassword: undefined;
 };
+
+export type MainTabParamList = {
+  Home: undefined;
+  Catalogue: undefined;
+  Orders: undefined;
+  Notifications: undefined;
+  Profile: undefined;
+};
+
+export type CatalogueStackParamList = {
+  Industries: undefined;
+  Categories: {industryId: string; industryName: string};
+  SubCategories: {categoryId: string; categoryName: string; industryId: string};
+  Products: {
+    categoryId?: string;
+    subCategoryId?: string;
+    industryId?: string;
+    title: string;
+    featured?: boolean;
+    search?: string;
+  };
+  ProductDetails: {productId: string};
+};
+
+export type OrdersStackParamList = {
+  OrdersList: undefined;
+  OrderDetails: {orderId: string};
+  Invoice: {orderId: string; invoiceId?: string};
+};
+
+export type RootStackParamList = {
+  Auth: NavigatorScreenParams<AuthStackParamList>;
+  Main: NavigatorScreenParams<MainTabParamList>;
+};
+
+declare global {
+  namespace ReactNavigation {
+    interface RootParamList extends RootStackParamList {}
+  }
+}
+export type {RootStackParamList as RootParamList};

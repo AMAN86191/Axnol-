@@ -16,10 +16,10 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "gst.gaumatatrust.com"
+    namespace "com.axnolapp"
 
     defaultConfig {
-        applicationId "gst.gaumatatrust.com"
+        applicationId "com.axnolapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
 

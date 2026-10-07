@@ -1,0 +1,1231 @@
+import {
+  Banner,
+  Category,
+  CompanyInfo,
+  DocumentItem,
+  Industry,
+  Order,
+  Invoice,
+  Product,
+  SubCategory,
+  User,
+} from './types';
+
+const IMG = 'https://axnol.in/images';
+const PDF = 'https://axnol.in/pdf';
+
+export const companyInfo: CompanyInfo = {
+  name: 'Axnol Lubetech India Pvt. Ltd.',
+  tagline: 'We are providing solution of energy since 1959',
+  since: '1959',
+  description:
+    'Axnol Lubetech India Pvt. Ltd. is a leading specialty lubricants & grease manufacturing company in India. We are professionally managed with the best portfolio of customers, providing a complete range of quality lubricants & greases to all sectors of society under the AXNOL brand. We also deal in base oils and paraffin waxes, imported directly from refineries of UAE, US, Iran and Korea, and export to Nepal, Bangladesh, Sri Lanka and many African countries.',
+  phone: '+91 9439098999',
+  email: 'contact@axnol.in',
+  website: 'https://axnol.in',
+  registeredOffice:
+    'Shanti Niketan - Kh 65, Ground Floor, Bhawaninagar, Murlipura-302039, Jaipur, Rajasthan, India',
+  factory:
+    'Plot No-3-4, Sai Kripa Industrial Extension, Jatawali, Jaipur, Rajasthan, India',
+  stats: [
+    {label: 'Countries', value: '5'},
+    {label: 'Customers', value: '600'},
+    {label: 'Products', value: '130'},
+    {label: 'Field Engineers', value: '8'},
+    {label: 'Distributors', value: '40'},
+  ],
+};
+
+export const banners: Banner[] = [
+  {
+    id: 'b1',
+    image: `${IMG}/s1.jpg`,
+    title: 'Solution of Energy since 1959',
+    subtitle: 'Specialty Lubricants & Greases',
+  },
+  {
+    id: 'b2',
+    image: `${IMG}/s3.jpg`,
+    title: 'Lubricating Oils',
+    subtitle: 'Industrial & Automotive range',
+  },
+  {
+    id: 'b3',
+    image: `${IMG}/s4.jpg`,
+    title: 'MRO Lubricants',
+    subtitle: 'Maintenance, repair & operations',
+  },
+  {
+    id: 'b4',
+    image: `${IMG}/s5.jpg`,
+    title: 'Forging Lubricants',
+    subtitle: 'Hot & cold forging compounds',
+  },
+  {
+    id: 'b5',
+    image: `${IMG}/s7.jpg`,
+    title: 'Metal Cutting & Forming',
+    subtitle: 'Soluble, semi-synthetic & synthetic',
+  },
+  {
+    id: 'b6',
+    image: `${IMG}/s8.jpg`,
+    title: 'Food Grade Lubricants',
+    subtitle: 'H1 certified food safe lubricants',
+  },
+];
+
+export const industries: Industry[] = [
+  {
+    id: 'ind1',
+    name: 'Animal Feed',
+    image: `${IMG}/new1.jpg`,
+    description: 'Lubrication solutions for animal feed processing plants.',
+  },
+  {
+    id: 'ind2',
+    name: 'Automotive',
+    image: `${IMG}/new2.jpg`,
+    description:
+      'Engine oils, gear oils, ATF and coolants for automotive applications.',
+  },
+  {
+    id: 'ind3',
+    name: 'Agriculture',
+    image: `${IMG}/new3.jpg`,
+    description:
+      'Reliable lubricants for tractors, harvesters and farm equipment.',
+  },
+  {
+    id: 'ind4',
+    name: 'Aviation',
+    image: `${IMG}/new4.jpg`,
+    description: 'High performance aviation grade lubricants and greases.',
+  },
+  {
+    id: 'ind5',
+    name: 'Cosmetic',
+    image: `${IMG}/new5.jpg`,
+    description: 'White oil and cosmetic grade base fluids.',
+  },
+  {
+    id: 'ind6',
+    name: 'Food & Pharma',
+    image: `${IMG}/new6.jpg`,
+    description:
+      'H1 food grade lubricants for food, beverage and pharma plants.',
+  },
+  {
+    id: 'ind7',
+    name: 'General Engineering',
+    image: `${IMG}/new7.jpg`,
+    description: 'All-purpose oils and greases for engineering workshops.',
+  },
+  {
+    id: 'ind8',
+    name: 'Metal Forging',
+    image: `${IMG}/new8.jpg`,
+    description:
+      'Hot and cold forging lubricants, drawing and forming compounds.',
+  },
+  {
+    id: 'ind9',
+    name: 'Metal Cutting & Forming',
+    image: `${IMG}/s7.jpg`,
+    description: 'Cutting fluids for machining, turning, milling and grinding.',
+  },
+  {
+    id: 'ind10',
+    name: 'Mining',
+    image: `${IMG}/steel-b-377x250.jpg`,
+    description: 'Heavy duty greases and oils for mining equipment.',
+  },
+  {
+    id: 'ind11',
+    name: 'Oil & Gas',
+    image: `${IMG}/ab2.jpg`,
+    description: 'Drilling, refining and pipeline lubrication solutions.',
+  },
+  {
+    id: 'ind12',
+    name: 'Punching & Stamping',
+    image: `${IMG}/s6.jpg`,
+    description: 'Punching oils for press tools, stamping and deep drawing.',
+  },
+  {
+    id: 'ind13',
+    name: 'Pharmaceutical',
+    image: `${IMG}/new6.jpg`,
+    description: 'Clean running lubricants for pharma processing.',
+  },
+  {
+    id: 'ind14',
+    name: 'Steel',
+    image: `${IMG}/steel-b-377x250.jpg`,
+    description: 'Rolling, pickling and steel plant lubrication fluids.',
+  },
+  {
+    id: 'ind15',
+    name: 'Transformer',
+    image: `${IMG}/new5.jpg`,
+    description: 'Transformer oils and insulating fluids.',
+  },
+];
+
+export const categories: Category[] = [
+  {id: 'cat1', name: 'Base Oil', industryId: 'ind11', image: `${IMG}/s1.jpg`},
+  {
+    id: 'cat2',
+    name: 'Chemical & Additives',
+    industryId: 'ind7',
+    image: `${IMG}/ab2.jpg`,
+  },
+  {
+    id: 'cat3',
+    name: 'Food Grade Lubricants',
+    industryId: 'ind6',
+    image: `${IMG}/s8.jpg`,
+  },
+  {
+    id: 'cat4',
+    name: 'Forging Lubricants',
+    industryId: 'ind8',
+    image: `${IMG}/s5.jpg`,
+  },
+  {
+    id: 'cat5',
+    name: 'Lubricating Greases & Pastes',
+    industryId: 'ind7',
+    image: `${IMG}/s4.jpg`,
+  },
+  {
+    id: 'cat6',
+    name: 'Lubricating Oils',
+    industryId: 'ind2',
+    image: `${IMG}/s3.jpg`,
+  },
+  {id: 'cat7', name: 'MRO', industryId: 'ind7', image: `${IMG}/s4.jpg`},
+  {
+    id: 'cat8',
+    name: 'Metal Cutting & Forming',
+    industryId: 'ind9',
+    image: `${IMG}/s7.jpg`,
+  },
+  {
+    id: 'cat9',
+    name: 'Punching Oils',
+    industryId: 'ind12',
+    image: `${IMG}/s6.jpg`,
+  },
+  {id: 'cat10', name: 'Wax', industryId: 'ind11', image: `${IMG}/new8.jpg`},
+];
+
+export const subCategories: SubCategory[] = [
+  {id: 'sub1', categoryId: 'cat1', name: 'Group 1'},
+  {id: 'sub2', categoryId: 'cat1', name: 'Group 2'},
+  {id: 'sub3', categoryId: 'cat1', name: 'Group 3'},
+  {id: 'sub4', categoryId: 'cat1', name: 'Group 4 Synthetic'},
+  {id: 'sub5', categoryId: 'cat3', name: 'Bearings & Sliding Surfaces'},
+  {id: 'sub6', categoryId: 'cat3', name: 'Enclosed Gears'},
+  {id: 'sub7', categoryId: 'cat3', name: 'Stop Cocks & Valve Seals'},
+  {id: 'sub8', categoryId: 'cat4', name: 'Hot Forging'},
+  {id: 'sub9', categoryId: 'cat4', name: 'Cold Forging'},
+  {id: 'sub10', categoryId: 'cat5', name: 'Water Resistant Greases'},
+  {id: 'sub11', categoryId: 'cat5', name: 'Fluid Greases'},
+  {id: 'sub12', categoryId: 'cat5', name: 'Chain & Wire Rope Greases'},
+  {id: 'sub13', categoryId: 'cat5', name: 'Antiseizes'},
+  {id: 'sub14', categoryId: 'cat6', name: 'Industrial'},
+  {id: 'sub15', categoryId: 'cat6', name: 'Automotive'},
+  {id: 'sub16', categoryId: 'cat6', name: 'Spindle Oil'},
+  {id: 'sub17', categoryId: 'cat7', name: 'Galvanized Coatings'},
+  {id: 'sub18', categoryId: 'cat7', name: 'Multipurpose Aerosol'},
+  {id: 'sub19', categoryId: 'cat7', name: 'Silicone Compounds'},
+  {id: 'sub20', categoryId: 'cat7', name: 'Corrosion Protectors'},
+  {id: 'sub21', categoryId: 'cat8', name: 'Soluble'},
+  {id: 'sub22', categoryId: 'cat8', name: 'Semi-Synthetic'},
+  {id: 'sub23', categoryId: 'cat8', name: 'Synthetic'},
+  {id: 'sub24', categoryId: 'cat8', name: 'Forming & Drawing Oils'},
+];
+
+const OIL_IMG = `${IMG}/s3.jpg`;
+const GREASE_IMG = `${IMG}/s4.jpg`;
+const FORGE_IMG = `${IMG}/s5.jpg`;
+const CUT_IMG = `${IMG}/s7.jpg`;
+const FOOD_IMG = `${IMG}/s8.jpg`;
+const GENERIC_IMG = `${IMG}/g1.jpg`;
+
+interface ProductSeed {
+  id: string;
+  name: string;
+  categoryId: string;
+  subCategoryId?: string;
+  description: string;
+  price: number;
+  dealerPrice?: number;
+  images?: string[];
+  specs?: {label: string; value: string}[];
+  packSizes?: string[];
+  tdsUrl?: string;
+  featured?: boolean;
+}
+
+const seeds: ProductSeed[] = [
+  {
+    id: 'p1',
+    name: 'AXNOL MOTORAX SUPER 20W40',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Multi-grade engine oil for petrol and diesel engines, formulated for superior wear protection, deposit control and extended drain intervals. Suitable for passenger cars, diesel generators and light commercial vehicles.',
+    price: 1450,
+    dealerPrice: 1310,
+    images: [OIL_IMG, GENERIC_IMG],
+    specs: [
+      {label: 'SAE Grade', value: '20W-40'},
+      {label: 'API Service', value: 'SL/CF'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '13.5 – 14.5 cSt'},
+      {label: 'Flash Point (COC)', value: '210°C min'},
+      {label: 'Pour Point', value: '-30°C max'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L', '210 L'],
+    featured: true,
+  },
+  {
+    id: 'p2',
+    name: 'MOTORAX LONG LIFE 20W40',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Long life semi-synthetic engine oil designed for modern high performance engines, offering outstanding oxidation stability and sludge protection over extended service periods.',
+    price: 1650,
+    dealerPrice: 1485,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: '20W-40'},
+      {label: 'API Service', value: 'SL'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '13.0 – 14.0 cSt'},
+      {label: 'Flash Point (COC)', value: '205°C min'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+    featured: true,
+  },
+  {
+    id: 'p3',
+    name: 'AXNOL MOTORAX PRIME 20W40 SL',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Premium passenger car motor oil meeting API SL requirements, engineered for clean engines and reliable protection under Indian driving conditions.',
+    price: 1750,
+    dealerPrice: 1575,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: '20W-40'},
+      {label: 'API Service', value: 'SL'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '13.5 cSt'},
+      {label: 'TBN', value: '9.0 mg KOH/g'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+  },
+  {
+    id: 'p4',
+    name: 'AXNOL GEARAX EP 90',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Multipurpose extreme pressure gear oil for manual transmissions and differentials, delivering excellent load carrying capacity and quiet operation.',
+    price: 1850,
+    dealerPrice: 1665,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: 'EP 90'},
+      {label: 'API Service', value: 'GL-4'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '16 – 18 cSt'},
+      {label: 'Flash Point (COC)', value: '195°C min'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+  },
+  {
+    id: 'p5',
+    name: 'AXNOL GEARAX EP 140',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Heavy duty gear oil for highly loaded axle and gear applications, formulated with EP additives for gear and bearing protection.',
+    price: 2050,
+    dealerPrice: 1845,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: 'EP 140'},
+      {label: 'API Service', value: 'GL-5'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '28 – 34 cSt'},
+      {label: 'Flash Point (COC)', value: '200°C min'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+  },
+  {
+    id: 'p6',
+    name: 'AXNOL PRIMEAX 20W40 CF-4',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Heavy duty diesel engine oil for naturally aspirated and turbocharged diesel engines, providing excellent soot handling and wear protection.',
+    price: 1690,
+    dealerPrice: 1520,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: '20W-40'},
+      {label: 'API Service', value: 'CF-4'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '14.0 cSt'},
+      {label: 'TBN', value: '10.0 mg KOH/g'},
+    ],
+    packSizes: ['5 L', '20 L', '210 L'],
+    featured: true,
+  },
+  {
+    id: 'p7',
+    name: 'AXNOL PRIMEAX 15W40 CF-4',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Multi-grade heavy duty diesel engine oil for mixed fleet operations, offering strong anti-wear protection and control of high temperature deposits.',
+    price: 1740,
+    dealerPrice: 1565,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: '15W-40'},
+      {label: 'API Service', value: 'CF-4'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '14.5 cSt'},
+      {label: 'Flash Point (COC)', value: '215°C min'},
+    ],
+    packSizes: ['5 L', '20 L', '210 L'],
+  },
+  {
+    id: 'p8',
+    name: 'AXNOL HYDRAX HLP 68',
+    categoryId: 'cat6',
+    subCategoryId: 'sub14',
+    description:
+      'Anti-wear hydraulic oil for high and medium pressure hydraulic systems, with excellent oxidation stability, rust protection and foam control.',
+    price: 1290,
+    dealerPrice: 1160,
+    images: [OIL_IMG],
+    tdsUrl: `${PDF}/AXNOL%20HYDRAX%20SERIES.pdf`,
+    specs: [
+      {label: 'ISO Viscosity Grade', value: 'ISO VG 68'},
+      {label: 'Viscosity @ 40°C', value: '68 cSt'},
+      {label: 'Viscosity Index', value: '100 min'},
+      {label: 'Flash Point (COC)', value: '220°C min'},
+      {label: 'Pour Point', value: '-21°C max'},
+    ],
+    packSizes: ['5 L', '20 L', '210 L'],
+    featured: true,
+  },
+  {
+    id: 'p9',
+    name: 'AXNOL TRAMAX ATF',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Automatic transmission fluid for modern automatic gearboxes and power steering systems, providing smooth shifting and stable friction performance.',
+    price: 1590,
+    dealerPrice: 1430,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'Type', value: 'Dexron III / Mercon compatible'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '7.5 – 8.5 cSt'},
+      {label: 'Flash Point (COC)', value: '175°C min'},
+      {label: 'Pour Point', value: '-40°C max'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+  },
+  {
+    id: 'p10',
+    name: 'AXNOL COOLMAX RTU',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'Ready to use engine coolant formulated with organic acid technology, protecting all cooling system metals including aluminum radiators.',
+    price: 990,
+    dealerPrice: 890,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'Type', value: 'OAT Ready To Use'},
+      {label: 'Concentration', value: '50%'},
+      {label: 'Boiling Point', value: '108°C'},
+      {label: 'Colour', value: 'Pink / Red'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+  },
+  {
+    id: 'p11',
+    name: 'AXNOL THUNDERAX',
+    categoryId: 'cat6',
+    subCategoryId: 'sub15',
+    description:
+      'High performance 4-stroke motorcycle engine oil formulated for superior clutch performance and engine protection under hard riding conditions.',
+    price: 890,
+    dealerPrice: 799,
+    images: [OIL_IMG],
+    specs: [
+      {label: 'SAE Grade', value: '20W-50'},
+      {label: 'API Service', value: 'SL'},
+      {label: 'Kinematic Viscosity @ 100°C', value: '18.5 cSt'},
+      {label: 'Flash Point (COC)', value: '215°C min'},
+    ],
+    packSizes: ['0.9 L', '1 L', '5 L'],
+    featured: true,
+  },
+  {
+    id: 'p12',
+    name: 'AXNOL GEARAX HD',
+    categoryId: 'cat6',
+    subCategoryId: 'sub14',
+    description:
+      'Heavy duty industrial gear oil for enclosed gear drives, worm gears and circulating systems operating under shock load conditions.',
+    price: 2150,
+    dealerPrice: 1935,
+    images: [OIL_IMG],
+    tdsUrl: `${PDF}/AXNOL%20GEARAX%20HD%20SERIES.pdf`,
+    specs: [
+      {label: 'ISO Viscosity Grade', value: 'ISO VG 150 / 220 / 320'},
+      {label: 'Viscosity @ 40°C', value: '150 – 320 cSt'},
+      {label: 'Flash Point (COC)', value: '230°C min'},
+      {label: 'EP Performance', value: 'FZG pass'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p13',
+    name: 'AXNOL FREEZAX',
+    categoryId: 'cat6',
+    subCategoryId: 'sub14',
+    description:
+      'Refrigeration compressor oil for ammonia and CFC/HCFC systems, offering excellent low temperature fluidity and chemical stability.',
+    price: 2350,
+    dealerPrice: 2115,
+    images: [OIL_IMG],
+    tdsUrl: `${PDF}/AXNOL%20FREEZAX.pdf`,
+    specs: [
+      {label: 'ISO Viscosity Grade', value: 'ISO VG 46 / 68'},
+      {label: 'Pour Point', value: '-40°C max'},
+      {label: 'Flash Point (COC)', value: '200°C min'},
+      {label: 'Application', value: 'Refrigeration compressors'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p14',
+    name: 'AXNOL PRESSAX',
+    categoryId: 'cat6',
+    subCategoryId: 'sub14',
+    description:
+      'Press oil for metal forming and deep drawing operations, providing excellent surface finish and tool life on press lines.',
+    price: 1750,
+    dealerPrice: 1575,
+    images: [OIL_IMG],
+    tdsUrl: `${PDF}/AXNOL%20PRESSAX.pdf`,
+    specs: [
+      {label: 'Type', value: 'Forming / Drawing oil'},
+      {label: 'Viscosity @ 40°C', value: '32 – 46 cSt'},
+      {label: 'Flash Point (COC)', value: '200°C min'},
+      {label: 'Application', value: 'Sheet metal press lines'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p15',
+    name: 'AXNOL HYSPINAX SPINDLE OIL',
+    categoryId: 'cat6',
+    subCategoryId: 'sub16',
+    description:
+      'Light spindle oil for textile machinery, spindle lubrication and circulation systems requiring rapid oil release and clean operation.',
+    price: 1150,
+    dealerPrice: 1035,
+    images: [OIL_IMG],
+    tdsUrl: `${PDF}/AXNOL%20HYSPINAX.pdf`,
+    specs: [
+      {label: 'ISO Viscosity Grade', value: 'ISO VG 12 / 22 / 32 / 46'},
+      {label: 'Viscosity @ 40°C', value: '12 – 46 cSt'},
+      {label: 'Flash Point (COC)', value: '160°C min'},
+      {label: 'Application', value: 'Textile spindles'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p16',
+    name: 'AXNOL LITHRAX EP GREASE',
+    categoryId: 'cat5',
+    subCategoryId: 'sub10',
+    description:
+      'Lithium complex EP grease for high temperature and high load applications such as bearings, chassis and electric motors in steel and mining plants.',
+    price: 1590,
+    dealerPrice: 1430,
+    images: [GREASE_IMG],
+    tdsUrl: `${PDF}/LITHRAX%20EP%20GREASE.pdf`,
+    specs: [
+      {label: 'NLGI Grade', value: '2 / 3'},
+      {label: 'Thickener', value: 'Lithium Complex'},
+      {label: 'Dropping Point', value: '260°C min'},
+      {label: 'Four Ball Weld Load', value: '315 kg'},
+      {label: 'Operating Temperature', value: '-20°C to 180°C'},
+    ],
+    packSizes: ['1 kg', '5 kg', '18 kg', '180 kg'],
+    featured: true,
+  },
+  {
+    id: 'p17',
+    name: 'AXNOL LITHRAX AHP 460 3 M',
+    categoryId: 'cat5',
+    subCategoryId: 'sub10',
+    description:
+      'Water resistant aluminium complex grease for heavily loaded bearings exposed to water washout, ideal for sugar, steel and cement plants.',
+    price: 1890,
+    dealerPrice: 1700,
+    images: [GREASE_IMG],
+    tdsUrl: `${PDF}/LITHRAX%20AHP%20460%203%20M.pdf`,
+    specs: [
+      {label: 'NLGI Grade', value: '3'},
+      {label: 'Thickener', value: 'Aluminium Complex'},
+      {label: 'Dropping Point', value: '280°C min'},
+      {label: 'Water Washout', value: '< 5%'},
+      {label: 'Operating Temperature', value: '-20°C to 200°C'},
+    ],
+    packSizes: ['1 kg', '5 kg', '18 kg'],
+  },
+  {
+    id: 'p18',
+    name: 'AXNOL LITHRAX AP 3',
+    categoryId: 'cat5',
+    subCategoryId: 'sub10',
+    description:
+      'Multi-purpose EP grease for automotive and industrial bearings, offering strong adhesion, corrosion protection and pumpability.',
+    price: 1490,
+    dealerPrice: 1340,
+    images: [GREASE_IMG],
+    tdsUrl: `${PDF}/LITHRAX%20AP%203.pdf`,
+    specs: [
+      {label: 'NLGI Grade', value: '3'},
+      {label: 'Thickener', value: 'Lithium'},
+      {label: 'Dropping Point', value: '190°C min'},
+      {label: 'Four Ball Weld Load', value: '250 kg'},
+    ],
+    packSizes: ['1 kg', '5 kg', '18 kg'],
+  },
+  {
+    id: 'p19',
+    name: 'AXNOL HTB-2 GREASE',
+    categoryId: 'cat5',
+    subCategoryId: 'sub10',
+    description:
+      'High temperature bearing grease for kilns, ovens and continuous bake lines, retaining consistency at sustained elevated temperatures.',
+    price: 2290,
+    dealerPrice: 2060,
+    images: [GREASE_IMG],
+    tdsUrl: `${PDF}/LITHRAX%20HTB%202%20GREASE.pdf`,
+    specs: [
+      {label: 'NLGI Grade', value: '2'},
+      {label: 'Thickener', value: 'Complex Calcium'},
+      {label: 'Dropping Point', value: '300°C min'},
+      {label: 'Operating Temperature', value: 'up to 220°C'},
+    ],
+    packSizes: ['1 kg', '5 kg', '18 kg'],
+  },
+  {
+    id: 'p20',
+    name: 'AXNOL LITHRAX MPGR-2',
+    categoryId: 'cat5',
+    subCategoryId: 'sub11',
+    description:
+      'Multi-purpose grease for general industrial and automotive applications with good anti-corrosion and anti-wear performance.',
+    price: 1390,
+    dealerPrice: 1250,
+    images: [GREASE_IMG],
+    tdsUrl: `${PDF}/LITHRAX%20MPGR%202.pdf`,
+    specs: [
+      {label: 'NLGI Grade', value: '2'},
+      {label: 'Thickener', value: 'Lithium'},
+      {label: 'Dropping Point', value: '185°C min'},
+      {label: 'Application', value: 'General purpose'},
+    ],
+    packSizes: ['1 kg', '5 kg', '18 kg'],
+  },
+  {
+    id: 'p21',
+    name: 'AXNOL ZINKAX',
+    categoryId: 'cat7',
+    subCategoryId: 'sub17',
+    description:
+      'Galvanized coating compound providing sacrificial cathodic protection to steel structures, pipe work and outdoor installations.',
+    price: 1250,
+    dealerPrice: 1125,
+    images: [GENERIC_IMG],
+    specs: [
+      {label: 'Type', value: 'Zinc rich coating'},
+      {label: 'Zinc Content', value: '≥ 90%'},
+      {label: 'Coverage', value: '8 – 10 m² / L'},
+      {label: 'Drying Time', value: '30 min touch dry'},
+    ],
+    packSizes: ['1 L', '5 L', '20 L'],
+  },
+  {
+    id: 'p22',
+    name: 'AXNOL PROTAX',
+    categoryId: 'cat7',
+    subCategoryId: 'sub18',
+    description:
+      'Multipurpose aerosol for penetrating, lubricating, displacing moisture and protecting against rust on moving parts.',
+    price: 350,
+    dealerPrice: 315,
+    images: [GENERIC_IMG],
+    specs: [
+      {label: 'Format', value: 'Aerosol 500 ml'},
+      {label: 'Type', value: 'Penetrating lubricant'},
+      {label: 'Water Displacement', value: 'Yes'},
+      {label: 'Corrosion Protection', value: 'Yes'},
+    ],
+    packSizes: ['500 ml'],
+  },
+  {
+    id: 'p23',
+    name: 'AXNOL MOLDAX',
+    categoryId: 'cat7',
+    subCategoryId: 'sub19',
+    description:
+      'Silicone compound for mould release, die casting and rubber processing, delivering clean release without surface contamination.',
+    price: 890,
+    dealerPrice: 800,
+    images: [GENERIC_IMG],
+    specs: [
+      {label: 'Type', value: 'Silicone mould release'},
+      {label: 'Service Temperature', value: 'up to 250°C'},
+      {label: 'Format', value: 'Paste / Spray'},
+      {label: 'Residue', value: 'Non-staining'},
+    ],
+    packSizes: ['1 kg', '5 kg', '20 L'],
+  },
+  {
+    id: 'p24',
+    name: 'AXNOL WDAX-40',
+    categoryId: 'cat7',
+    subCategoryId: 'sub20',
+    description:
+      'Corrosion protector and water displacing spray for workshops, guarding components against moisture and freeing seized fasteners.',
+    price: 320,
+    dealerPrice: 288,
+    images: [GENERIC_IMG],
+    specs: [
+      {label: 'Format', value: 'Aerosol 500 ml'},
+      {label: 'Water Displacement', value: 'Yes'},
+      {label: 'Penetration', value: 'Fast acting'},
+      {label: 'Protection', value: 'Long lasting film'},
+    ],
+    packSizes: ['500 ml'],
+  },
+  {
+    id: 'p25',
+    name: 'AXNOL CUTAX SOLUBLE OIL',
+    categoryId: 'cat8',
+    subCategoryId: 'sub21',
+    description:
+      'Soluble cutting oil for light to medium machining of ferrous metals, mixed with water to form a stable emulsion with good cooling.',
+    price: 1190,
+    dealerPrice: 1070,
+    images: [CUT_IMG],
+    specs: [
+      {label: 'Type', value: 'Soluble (emulsifiable) oil'},
+      {label: 'Dilution', value: '5 – 10%'},
+      {label: 'Emulsion', value: 'Stable, milky white'},
+      {label: 'Application', value: 'Turning, milling, drilling'},
+    ],
+    packSizes: ['20 L', '210 L'],
+    featured: true,
+  },
+  {
+    id: 'p26',
+    name: 'AXNOL CUTAX SEMI-SYNTHETIC',
+    categoryId: 'cat8',
+    subCategoryId: 'sub22',
+    description:
+      'Semi-synthetic cutting fluid combining the cooling of synthetics with the lubricity of oils, ideal for high speed machining.',
+    price: 1450,
+    dealerPrice: 1305,
+    images: [CUT_IMG],
+    specs: [
+      {label: 'Type', value: 'Semi-synthetic'},
+      {label: 'Dilution', value: '5 – 8%'},
+      {label: 'Biostability', value: 'Extended sump life'},
+      {label: 'Application', value: 'CNC machining, grinding'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p27',
+    name: 'AXNOL CUTAX SYNTHETIC',
+    categoryId: 'cat8',
+    subCategoryId: 'sub23',
+    description:
+      'Fully synthetic metalworking fluid for demanding operations, offering excellent cleanliness, coolant life and surface finish.',
+    price: 1750,
+    dealerPrice: 1575,
+    images: [CUT_IMG],
+    specs: [
+      {label: 'Type', value: 'Fully synthetic'},
+      {label: 'Dilution', value: '4 – 6%'},
+      {label: 'Biostability', value: 'High'},
+      {label: 'Application', value: 'Heavy duty machining'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p28',
+    name: 'AXNOL FORMAX DRAWING OIL',
+    categoryId: 'cat8',
+    subCategoryId: 'sub24',
+    description:
+      'Forming and drawing oil for deep drawing, stamping and pressing of sheet metal, leaving a clean surface ready for further processing.',
+    price: 1650,
+    dealerPrice: 1485,
+    images: [CUT_IMG],
+    specs: [
+      {label: 'Type', value: 'Drawing / forming oil'},
+      {label: 'Viscosity @ 40°C', value: '22 – 32 cSt'},
+      {label: 'Flash Point (COC)', value: '180°C min'},
+      {label: 'Application', value: 'Deep drawing, stamping'},
+    ],
+    packSizes: ['20 L', '210 L'],
+  },
+  {
+    id: 'p29',
+    name: 'AXNOL PUNCHAX PUNCHING OIL',
+    categoryId: 'cat9',
+    description:
+      'Straight cutting and punching oil for press tools, blanking and piercing operations on sheet metal lines, protecting dies and punches.',
+    price: 1550,
+    dealerPrice: 1395,
+    images: [`${IMG}/s6.jpg`],
+    specs: [
+      {label: 'Type', value: 'Punching / cutting oil'},
+      {label: 'Viscosity @ 40°C', value: '32 cSt'},
+      {label: 'Flash Point (COC)', value: '190°C min'},
+      {label: 'Application', value: 'Punching, blanking, piercing'},
+    ],
+    packSizes: ['20 L', '210 L'],
+    featured: true,
+  },
+  {
+    id: 'p30',
+    name: 'AXNOL FOOD GRADE OIL H1 68',
+    categoryId: 'cat3',
+    subCategoryId: 'sub5',
+    description:
+      'NSF H1 registered food grade oil for incidental food contact, used on bearings, chains and hydraulic systems in food and pharma plants.',
+    price: 2450,
+    dealerPrice: 2205,
+    images: [FOOD_IMG],
+    specs: [
+      {label: 'NSF Classification', value: 'H1 (Food Grade)'},
+      {label: 'ISO Viscosity Grade', value: 'ISO VG 68'},
+      {label: 'Viscosity @ 40°C', value: '68 cSt'},
+      {label: 'Colour', value: 'Clear'},
+    ],
+    packSizes: ['5 L', '20 L'],
+    featured: true,
+  },
+  {
+    id: 'p31',
+    name: 'AXNOL FOOD GRADE GREASE H1',
+    categoryId: 'cat3',
+    subCategoryId: 'sub6',
+    description:
+      'NSF H1 registered food grade grease for enclosed gears, bearings and sliding surfaces where incidental food contact may occur.',
+    price: 2650,
+    dealerPrice: 2385,
+    images: [FOOD_IMG],
+    specs: [
+      {label: 'NSF Classification', value: 'H1 (Food Grade)'},
+      {label: 'NLGI Grade', value: '2'},
+      {label: 'Dropping Point', value: '250°C min'},
+      {label: 'Operating Temperature', value: '-20°C to 180°C'},
+    ],
+    packSizes: ['1 kg', '5 kg', '18 kg'],
+  },
+  {
+    id: 'p32',
+    name: 'AXNOL FORGEAX HOT FORGING COMPOUND',
+    categoryId: 'cat4',
+    subCategoryId: 'sub8',
+    description:
+      'Graphite based hot forging die lubricant and parting compound, reducing die wear and improving fill in high temperature forging presses.',
+    price: 1950,
+    dealerPrice: 1755,
+    images: [FORGE_IMG],
+    specs: [
+      {label: 'Type', value: 'Hot forging die lubricant'},
+      {label: 'Base', value: 'Graphite dispersion'},
+      {label: 'Service Temperature', value: 'up to 1200°C'},
+      {label: 'Application', value: 'Hot forging presses'},
+    ],
+    packSizes: ['20 kg', '200 kg'],
+  },
+  {
+    id: 'p33',
+    name: 'AXNOL FORGEAX COLD DRAWING COMPOUND',
+    categoryId: 'cat4',
+    subCategoryId: 'sub9',
+    description:
+      'Cold forging and wire drawing compound delivering extreme pressure lubricity for high deformation operations on steel and non-ferrous metals.',
+    price: 1850,
+    dealerPrice: 1665,
+    images: [FORGE_IMG],
+    specs: [
+      {label: 'Type', value: 'Cold forging / drawing compound'},
+      {label: 'EP Additives', value: 'Yes'},
+      {label: 'Dilution', value: 'Ready to use / 1:1'},
+      {label: 'Application', value: 'Cold heading, wire drawing'},
+    ],
+    packSizes: ['20 kg', '200 kg'],
+  },
+  {
+    id: 'p34',
+    name: 'AXNOL BASE OIL SN 500 (Group 1)',
+    categoryId: 'cat1',
+    subCategoryId: 'sub1',
+    description:
+      'Group 1 solvent neutral base oil SN 500, imported from global refineries, used in lubricant blending, greases and process oils.',
+    price: 95000,
+    dealerPrice: 88000,
+    images: [`${IMG}/s1.jpg`],
+    specs: [
+      {label: 'Group', value: 'Group 1'},
+      {label: 'Viscosity @ 40°C', value: '90 – 110 cSt'},
+      {label: 'Viscosity Index', value: '95 min'},
+      {label: 'Flash Point (COC)', value: '240°C min'},
+      {label: 'Pour Point', value: '-12°C max'},
+    ],
+    packSizes: ['165 kg drum', 'Bulk'],
+  },
+  {
+    id: 'p35',
+    name: 'AXNOL PARAFFIN WAX 58/60',
+    categoryId: 'cat10',
+    description:
+      'Fully refined paraffin wax 58/60 melting point for candles, coatings, packaging and industrial applications.',
+    price: 115000,
+    dealerPrice: 107000,
+    images: [`${IMG}/new8.jpg`],
+    specs: [
+      {label: 'Melting Point', value: '58 – 60°C'},
+      {label: 'Oil Content', value: '≤ 0.5%'},
+      {label: 'Form', value: 'Slab / Flake'},
+      {label: 'Colour', value: 'White'},
+    ],
+    packSizes: ['50 kg bag', 'Bulk'],
+  },
+];
+
+const now = Date.now();
+const DAY = 24 * 60 * 60 * 1000;
+
+export const products: Product[] = seeds.map((s, index) => ({
+  id: s.id,
+  name: s.name,
+  categoryId: s.categoryId,
+  subCategoryId: s.subCategoryId,
+  description: s.description,
+  brand: 'AXNOL',
+  price: s.price,
+  dealerPrice: s.dealerPrice,
+  images: s.images && s.images.length ? s.images : [GENERIC_IMG],
+  specs: s.specs ?? [],
+  packSizes: s.packSizes ?? ['20 L'],
+  tdsUrl: s.tdsUrl,
+  featured: Boolean(s.featured),
+  status: 'active',
+  createdAt: now - index * DAY,
+}));
+
+export const documents: DocumentItem[] = [
+  {
+    id: 'd1',
+    title: 'LITHRAX EP GREASE - TDS',
+    category: 'Greases',
+    url: `${PDF}/LITHRAX%20EP%20GREASE.pdf`,
+  },
+  {
+    id: 'd2',
+    title: 'LITHRAX AHP 460 3 M - TDS',
+    category: 'Greases',
+    url: `${PDF}/LITHRAX%20AHP%20460%203%20M.pdf`,
+  },
+  {
+    id: 'd3',
+    title: 'LITHRAX AP 3 - TDS',
+    category: 'Greases',
+    url: `${PDF}/LITHRAX%20AP%203.pdf`,
+  },
+  {
+    id: 'd4',
+    title: 'LITHRAX HTB 2 GREASE - TDS',
+    category: 'Greases',
+    url: `${PDF}/LITHRAX%20HTB%202%20GREASE.pdf`,
+  },
+  {
+    id: 'd5',
+    title: 'LITHRAX MPGR 2 - TDS',
+    category: 'Greases',
+    url: `${PDF}/LITHRAX%20MPGR%202.pdf`,
+  },
+  {
+    id: 'd6',
+    title: 'Axnol Gear Oil - TDS',
+    category: 'Lubricating Oils',
+    url: 'https://axnol.in/Axnol%20Gear%20Oil%20TDS.pdf',
+  },
+  {
+    id: 'd7',
+    title: 'AXNOL FREEZAX - TDS',
+    category: 'Lubricating Oils',
+    url: `${PDF}/AXNOL%20FREEZAX.pdf`,
+  },
+  {
+    id: 'd8',
+    title: 'AXNOL HYDRAX SERIES - TDS',
+    category: 'Lubricating Oils',
+    url: `${PDF}/AXNOL%20HYDRAX%20SERIES.pdf`,
+  },
+  {
+    id: 'd9',
+    title: 'AXNOL GEARAX HD SERIES - TDS',
+    category: 'Lubricating Oils',
+    url: `${PDF}/AXNOL%20GEARAX%20HD%20SERIES.pdf`,
+  },
+  {
+    id: 'd10',
+    title: 'AXNOL PRESSAX - TDS',
+    category: 'Lubricating Oils',
+    url: `${PDF}/AXNOL%20PRESSAX.pdf`,
+  },
+  {
+    id: 'd11',
+    title: 'AXNOL HYSPINAX - TDS',
+    category: 'Lubricating Oils',
+    url: `${PDF}/AXNOL%20HYSPINAX.pdf`,
+  },
+  {
+    id: 'd12',
+    title: 'ISO 9001:2015 Certificate',
+    category: 'Certificates',
+    url: 'https://axnol.in/certificate.html',
+  },
+];
+
+export const demoUsers: User[] = [
+  {
+    id: 'u-demo',
+    name: 'Rahul Sharma',
+    email: 'demo@axnol.in',
+    phone: '9876543210',
+    password: 'axnol123',
+    company: 'Sharma Auto Parts',
+    designation: 'Purchase Manager',
+    role: 'dealer',
+    address: 'Plot 12, Industrial Area Phase II',
+    city: 'Jaipur',
+    state: 'Rajasthan',
+    pincode: '302013',
+    gstin: '08AABCS1429B1Z6',
+    status: 'active',
+    profileCompleted: true,
+    registeredAt: now - 120 * DAY,
+    approvedAt: now - 119 * DAY,
+  },
+  {
+    id: 'u-pending',
+    name: 'Amit Verma',
+    email: 'pending@axnol.in',
+    phone: '9123456780',
+    password: 'axnol123',
+    company: 'Verma Engineering Works',
+    designation: 'Proprietor',
+    role: 'customer',
+    address: '234, SIDCO Industrial Estate',
+    city: 'Coimbatore',
+    state: 'Tamil Nadu',
+    pincode: '641021',
+    gstin: '',
+    status: 'pending',
+    profileCompleted: false,
+    registeredAt: now - 2 * 60 * 60 * 1000,
+  },
+];
+
+export const seedOrders: Order[] = [
+  {
+    id: 'ord1',
+    orderNo: 'AX/2026/1041',
+    userId: 'u-demo',
+    items: [
+      {
+        productId: 'p1',
+        name: 'AXNOL MOTORAX SUPER 20W40',
+        image: OIL_IMG,
+        quantity: 40,
+        unitPrice: 1310,
+      },
+      {
+        productId: 'p16',
+        name: 'AXNOL LITHRAX EP GREASE',
+        image: GREASE_IMG,
+        quantity: 18,
+        unitPrice: 1430,
+      },
+    ],
+    status: 'delivered',
+    subtotal: 77740,
+    tax: 13993.2,
+    total: 91733.2,
+    shippingAddress:
+      'Plot 12, Industrial Area Phase II, Jaipur, Rajasthan - 302013',
+    timeline: [
+      {
+        status: 'placed',
+        label: 'Order Placed',
+        date: now - 26 * DAY,
+        note: 'Order received by Axnol.',
+      },
+      {
+        status: 'confirmed',
+        label: 'Order Confirmed',
+        date: now - 25 * DAY,
+        note: 'Payment terms confirmed with dealer.',
+      },
+      {
+        status: 'dispatched',
+        label: 'Dispatched',
+        date: now - 23 * DAY,
+        note: 'Shipped via transport, LR generated.',
+      },
+      {
+        status: 'delivered',
+        label: 'Delivered',
+        date: now - 20 * DAY,
+        note: 'Delivered and signed by customer.',
+      },
+    ],
+    createdAt: now - 26 * DAY,
+  },
+  {
+    id: 'ord2',
+    orderNo: 'AX/2026/1067',
+    userId: 'u-demo',
+    items: [
+      {
+        productId: 'p8',
+        name: 'AXNOL HYDRAX HLP 68',
+        image: OIL_IMG,
+        quantity: 20,
+        unitPrice: 1160,
+      },
+    ],
+    status: 'dispatched',
+    subtotal: 23200,
+    tax: 4176,
+    total: 27376,
+    shippingAddress:
+      'Plot 12, Industrial Area Phase II, Jaipur, Rajasthan - 302013',
+    timeline: [
+      {
+        status: 'placed',
+        label: 'Order Placed',
+        date: now - 9 * DAY,
+        note: 'Order received by Axnol.',
+      },
+      {
+        status: 'confirmed',
+        label: 'Order Confirmed',
+        date: now - 8 * DAY,
+        note: 'Stock allocated from Jaipur depot.',
+      },
+      {
+        status: 'dispatched',
+        label: 'Dispatched',
+        date: now - 5 * DAY,
+        note: 'Loaded and dispatched, in transit.',
+      },
+    ],
+    createdAt: now - 9 * DAY,
+  },
+  {
+    id: 'ord3',
+    orderNo: 'AX/2026/1082',
+    userId: 'u-demo',
+    items: [
+      {
+        productId: 'p25',
+        name: 'AXNOL CUTAX SOLUBLE OIL',
+        image: CUT_IMG,
+        quantity: 10,
+        unitPrice: 1070,
+      },
+    ],
+    status: 'placed',
+    subtotal: 10700,
+    tax: 1926,
+    total: 12626,
+    shippingAddress:
+      'Plot 12, Industrial Area Phase II, Jaipur, Rajasthan - 302013',
+    timeline: [
+      {
+        status: 'placed',
+        label: 'Order Placed',
+        date: now - 1 * DAY,
+        note: 'Order received by Axnol.',
+      },
+    ],
+    createdAt: now - 1 * DAY,
+  },
+];
+
+export const seedInvoices: Invoice[] = [
+  {
+    id: 'inv1',
+    invoiceNo: 'AX/INV/2026/0413',
+    orderId: 'ord1',
+    orderNo: 'AX/2026/1041',
+    userId: 'u-demo',
+    buyer: {
+      name: 'Rahul Sharma',
+      company: 'Sharma Auto Parts',
+      address: 'Plot 12, Industrial Area Phase II, Jaipur, Rajasthan - 302013',
+      gstin: '08AABCS1429B1Z6',
+    },
+    items: seedOrders[0].items,
+    subtotal: 77740,
+    tax: 13993.2,
+    total: 91733.2,
+    status: 'paid',
+    date: now - 25 * DAY,
+    dueDate: now - 10 * DAY,
+  },
+  {
+    id: 'inv2',
+    invoiceNo: 'AX/INV/2026/0451',
+    orderId: 'ord2',
+    orderNo: 'AX/2026/1067',
+    userId: 'u-demo',
+    buyer: {
+      name: 'Rahul Sharma',
+      company: 'Sharma Auto Parts',
+      address: 'Plot 12, Industrial Area Phase II, Jaipur, Rajasthan - 302013',
+      gstin: '08AABCS1429B1Z6',
+    },
+    items: seedOrders[1].items,
+    subtotal: 23200,
+    tax: 4176,
+    total: 27376,
+    status: 'unpaid',
+    date: now - 8 * DAY,
+    dueDate: now + 7 * DAY,
+  },
+];
