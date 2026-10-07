@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, Share } from 'react-native';
-import { Pencil, Mail, Phone, BadgeCheck, Briefcase, Calendar, MapPin, Building, Home, Globe, Share2, Heart } from 'lucide-react-native';
+import { Pencil, Mail, Phone, BadgeCheck, Briefcase, Calendar, MapPin, Building, Home, Globe, Hash, Share2, Heart, HeartHandshake, User } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useTranslation } from 'react-i18next';
@@ -13,12 +13,12 @@ interface ProfileHeaderProps {
   avatarUri?: string;
   uid?: string;
   joinDate?: string;
-  designation?: string;
+  membership?: string;
   bio?: string;
   onCameraPress: () => void;
   onEmailPress: () => void;
   onPhonePress: () => void;
-  membership: any;
+  tier: any;
   dob?: string;
   dom?: string;
   partnerName?: string;
@@ -32,6 +32,51 @@ interface ProfileHeaderProps {
   area?: string;
 }
 
+type IconType = React.ComponentType<any>;
+
+type DetailTile = {
+  key: string;
+  icon: IconType;
+  label: string;
+  value: string;
+  fullWidth?: boolean;
+  onPress?: () => void;
+};
+
+const SectionHeading = ({ icon: Icon, title }: { icon: IconType; title: string }) => (
+  <View style={styles.catHeading}>
+    <View style={styles.catHeadingIcon}>
+      <Icon size={RFValue(10)} color={Colors.primary} strokeWidth={2.4} />
+    </View>
+    <Text style={styles.catHeadingText}>{title}</Text>
+  </View>
+);
+
+const DetailItem = ({ icon: Icon, label, value, fullWidth, onPress }: DetailTile) => {
+  const inner = (
+    <>
+      <View style={styles.tileIcon}>
+        <Icon size={RFValue(9)} color={Colors.primary} strokeWidth={2.2} />
+      </View>
+      <View style={styles.tileBody}>
+        <Text style={styles.tileLabel} numberOfLines={1}>{label}</Text>
+        <Text style={styles.tileValue} numberOfLines={2}>{value}</Text>
+      </View>
+    </>
+  );
+
+  const box = [styles.tile, fullWidth && styles.tileFull];
+
+  if (onPress) {
+    return (
+      <TouchableOpacity style={box} onPress={onPress} activeOpacity={0.7}>
+        {inner}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={box}>{inner}</View>;
+};
+
 export const ProfileHeader = React.memo(({
   profileName,
   profileEmail,
@@ -39,12 +84,12 @@ export const ProfileHeader = React.memo(({
   avatarUri = '',
   uid,
   joinDate,
-  designation,
+  membership,
   bio,
   onCameraPress,
   onEmailPress,
   onPhonePress,
-  membership,
+  tier,
   dob,
   dom,
   partnerName,
@@ -69,19 +114,43 @@ export const ProfileHeader = React.memo(({
     }
   }, [t]);
 
-  const detailsData = [
+  const naLabel = t('common.na');
+  const clean = (v?: string) => (v && v !== naLabel ? v : undefined);
+
+  const buildTiles = (list: Array<Omit<DetailTile, 'value'> & { value?: string }>): DetailTile[] =>
+    list
+      .filter((i): i is Omit<DetailTile, 'value'> & { value: string } => !!clean(i.value))
+      .map(i => ({ ...i, value: i.value }));
+
+  const personalItems = buildTiles([
     { key: 'profession', icon: Briefcase, label: t('publicProfile.profession'), value: profession },
-    { key: 'dob', icon: Calendar, label: 'DOB', value: dob },
-    { key: 'dom', icon: Calendar, label: 'DOM', value: dom },
+    { key: 'dob', icon: Calendar, label: t('publicProfile.dateOfBirth'), value: dob },
+    { key: 'dom', icon: HeartHandshake, label: t('publicProfile.dateOfMarriage'), value: dom },
     { key: 'partnerName', icon: Heart, label: t('publicProfile.partnerName'), value: partnerName },
+  ]);
+
+  const addressItems = buildTiles([
     { key: 'city', icon: Building, label: t('publicProfile.location'), value: city },
-    { key: 'state', icon: MapPin, label: '', value: state },
-    { key: 'pincode', icon: MapPin, label: '', value: pincode },
-    { key: 'country', icon: Globe, label: '', value: country },
-    { key: 'address', icon: Home, label: '', value: address, fullWidth: true },
-    { key: 'area', icon: MapPin, label: t('publicProfile.area'), value: area },
-    { key: 'referralCode', icon: Share2, label: t('referral.yourCode'), value: referralCode, fullWidth: true, shareable: true },
-  ].filter(d => !!d.value);
+    { key: 'state', icon: MapPin, label: t('publicProfile.state'), value: state },
+    { key: 'pincode', icon: Hash, label: t('publicProfile.pincode'), value: pincode },
+    { key: 'country', icon: Globe, label: t('publicProfile.country'), value: country },
+  ]);
+
+  const addressFullItems = buildTiles([
+    { key: 'address', icon: Home, label: t('publicProfile.address'), value: address, fullWidth: true },
+    { key: 'area', icon: MapPin, label: t('publicProfile.area'), value: area, fullWidth: true },
+  ]);
+
+  const contactItems = buildTiles([
+    { key: 'email', icon: Mail, label: t('publicProfile.email'), value: profileEmail, fullWidth: true, onPress: onEmailPress },
+    { key: 'phone', icon: Phone, label: t('publicProfile.phone'), value: profilePhone, fullWidth: true, onPress: onPhonePress },
+  ]);
+
+  const referralValue = clean(referralCode) || '';
+
+  const hasDetails =
+    personalItems.length + addressItems.length + addressFullItems.length + contactItems.length > 0 ||
+    !!referralValue;
 
   return (
     <>
@@ -122,12 +191,12 @@ export const ProfileHeader = React.memo(({
               <BadgeCheck size={RFValue(14)} color={Colors.primary} fill={Colors.primary} strokeWidth={0} style={{ marginLeft: wp('1%') }} />
             </View>
 
-            <Text style={styles.designationText}>{designation || t('common.user')}</Text>
+            {/* <Text style={styles.membershipText}>{membership || t('common.user')}</Text> */}
 
             <View style={styles.badgeRow}>
-              {membership ? (
+              {tier ? (
                 <View style={[styles.chip, styles.chipGold]}>
-                  <Text style={styles.chipTextGold}>{membership.charAt(0).toUpperCase() + membership.slice(1)}</Text>
+                  <Text style={styles.chipTextGold}>{tier.charAt(0).toUpperCase() + tier.slice(1)}</Text>
                 </View>
               ) : null}
             </View>
@@ -161,50 +230,61 @@ export const ProfileHeader = React.memo(({
           </View>
         ) : null}
 
-        {/* Details Grid */}
-        {detailsData.length > 0 ? (
+        {/* Details Section */}
+        {hasDetails ? (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('publicProfile.about')}</Text>
-            <View style={styles.detailsGrid}>
-              {detailsData.map(d => {
-                const IconComp = d.icon;
-                return (
-                  <View key={d.key} style={[styles.detailCard, d.fullWidth && styles.detailCardFull]}>
-                    <View style={styles.detailIconCircle}>
-                      <IconComp size={RFValue(9)} color={Colors.primary} />
-                    </View>
-                    <View style={styles.detailInfo}>
-                      <Text style={styles.detailLabel}>{d.label || d.key}</Text>
-                      <Text style={styles.detailValue} numberOfLines={2}>{d.value}</Text>
-                    </View>
-                    {d.shareable ? (
-                      <TouchableOpacity
-                        style={styles.shareIconBtn}
-                        onPress={() => d.value ? handleShareReferral(d.value) : null}
-                        activeOpacity={0.7}
-                      >
-                        <Share2 size={RFValue(10)} color={Colors.primary} />
-                      </TouchableOpacity>
-                    ) : null}
+            {personalItems.length > 0 ? (
+              <View style={styles.catCard}>
+                <SectionHeading icon={User} title={t('publicProfile.personalDetails')} />
+                <View style={styles.tileGrid}>
+                  {personalItems.map(({ key, ...rest }) => <DetailItem key={key} {...rest} />)}
+                </View>
+              </View>
+            ) : null}
+
+            {addressItems.length > 0 || addressFullItems.length > 0 ? (
+              <View style={styles.catCard}>
+                <SectionHeading icon={MapPin} title={t('publicProfile.addressDetails')} />
+                <View style={styles.tileGrid}>
+                  {addressItems.map(({ key, ...rest }) => <DetailItem key={key} {...rest} />)}
+                  {addressFullItems.map(({ key, ...rest }) => <DetailItem key={key} {...rest} />)}
+                </View>
+              </View>
+            ) : null}
+
+            {referralValue ? (
+              <View style={styles.catCard}>
+                <SectionHeading icon={Share2} title={t('publicProfile.referralDetails')} />
+                <View style={[styles.tile,{ width: '100%',}]}>
+                  <View style={styles.tileIcon}>
+                    <Share2 size={RFValue(9)} color={Colors.primary} strokeWidth={2.2} />
                   </View>
-                );
-              })}
-            </View>
+                  <View style={styles.tileBody}>
+                    <Text style={styles.tileLabel}>{t('referral.yourCode')}</Text>
+                    <Text style={styles.tileValue}>{referralValue}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.shareBtn}
+                    onPress={() => handleShareReferral(referralValue)}
+                    activeOpacity={0.8}
+                  >
+                    <Share2 size={RFValue(8.5)} color="#FFF" strokeWidth={2.4} />
+                    <Text style={styles.shareBtnText}>{t('common.share')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
+            {contactItems.length > 0 ? (
+              <View style={styles.catCard}>
+                <SectionHeading icon={Mail} title={t('publicProfile.contactInfo')} />
+                <View style={styles.tileGrid}>
+                  {contactItems.map(({ key, ...rest }) => <DetailItem key={key} {...rest} />)}
+                </View>
+              </View>
+            ) : null}
           </View>
         ) : null}
-
-        {/* Contact Buttons */}
-        <View style={styles.contactRow}>
-          <TouchableOpacity style={styles.contactBtn} onPress={onEmailPress} activeOpacity={0.7}>
-            <Mail size={RFValue(11)} color={Colors.primary} />
-            <Text style={styles.contactBtnText} numberOfLines={1}>{profileEmail}</Text>
-          </TouchableOpacity>
-          <View style={styles.contactSep} />
-          <TouchableOpacity style={styles.contactBtn} onPress={onPhonePress} activeOpacity={0.7}>
-            <Phone size={RFValue(11)} color={Colors.primary} />
-            <Text style={styles.contactBtnText} numberOfLines={1}>{profilePhone}</Text>
-          </TouchableOpacity>
-        </View>
       </View>
     </>
   );
@@ -221,7 +301,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   coverGradient: {
-    ...StyleSheet.absoluteFillObject,
+    // ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.35)',
   },
   card: {
@@ -235,7 +315,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
-    shadowRadius: 16,
+    shadowRadius: 1,
     elevation: 1,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: '#E5E7EB',
@@ -316,7 +396,7 @@ const styles = StyleSheet.create({
     color: '#111827',
     flexShrink: 1,
   },
-  designationText: {
+  membershipText: {
     fontSize: RFValue(9),
     color: '#6B7280',
     fontWeight: '500',
@@ -398,83 +478,97 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
 
-  /* ---- Details Grid ---- */
-  detailsGrid: {
+  /* ---- Details: Category Cards ---- */
+  catCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: wp('3.5%'),
+    padding: wp('3.5%'),
+    marginTop: hp('1.6%'),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  catHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp('1.1%'),
+  },
+  catHeadingIcon: {
+    width: wp('5.5%'),
+    height: wp('5.5%'),
+    borderRadius: wp('2.75%'),
+    backgroundColor: '#FFF2EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: wp('1.8%'),
+  },
+  catHeadingText: {
+    fontSize: RFValue(8.5),
+    fontWeight: '800',
+    color: Colors.dark,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+
+  /* ---- Details: Item Tiles ---- */
+  tileGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: wp('2%'),
   },
-  detailCard: {
-    width: '47%',
+  tile: {
+    width: '48%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.background,
     borderRadius: wp('2.5%'),
-    paddingVertical: hp('0.8%'),
-    paddingHorizontal: wp('2.5%'),
+    paddingVertical: hp('0.9%'),
+    paddingHorizontal: wp('2.2%'),
+    minHeight: hp('5%'),
   },
-  detailCardFull: {
+  tileFull: {
     width: '100%',
   },
-  detailIconCircle: {
-    width: wp('7%'),
-    height: wp('7%'),
-    borderRadius: wp('3.5%'),
+  tileIcon: {
+    width: wp('7.5%'),
+    height: wp('7.5%'),
+    borderRadius: wp('3.75%'),
     backgroundColor: '#FFF2EB',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: wp('2%'),
   },
-  detailInfo: {
+  tileBody: {
     flex: 1,
   },
-  detailLabel: {
-    fontSize: RFValue(7),
-    fontWeight: '500',
+  tileLabel: {
+    fontSize: RFValue(6.8),
+    fontWeight: '600',
     color: '#9CA3AF',
     marginBottom: 1,
   },
-  detailValue: {
-    fontSize: RFValue(9),
+  tileValue: {
+    fontSize: RFValue(8.8),
     fontWeight: '700',
     color: '#1F2937',
   },
-  shareIconBtn: {
-    padding: wp('1.2%'),
-    marginLeft: wp('1%'),
-    borderRadius: wp('1.2%'),
-    backgroundColor: '#FFF2EB',
-  },
-
-  /* ---- Contact ---- */
-  contactRow: {
+  shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: hp('1.5%'),
-    paddingTop: hp('1.2%'),
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E5E7EB',
-    gap: wp('2%'),
+    gap: wp('1%'),
+    backgroundColor: Colors.primary,
+    paddingVertical: hp('0.65%'),
+    paddingHorizontal: wp('3%'),
+    borderRadius: wp('2%'),
+    marginLeft: wp('2%'),
   },
-  contactBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: wp('2.5%'),
-    paddingVertical: hp('1%'),
-    gap: wp('1.5%'),
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#E5E7EB',
-  },
-  contactBtnText: {
-    fontSize: RFValue(8.5),
-    fontWeight: '600',
-    color: '#374151',
-    flexShrink: 1,
-  },
-  contactSep: {
-    width: 0,
+  shareBtnText: {
+    color: '#FFF',
+    fontSize: RFValue(8),
+    fontWeight: '800',
   },
 });

@@ -5,6 +5,7 @@
     "success": "सफल",
     "ok": "ठीक है",
     "cancel": "रद्द करें",
+    "retry": "पुनः प्रयास करें",
     "delete": "हटाएं",
     "save": "सहेजें",
     "yes": "हाँ",
@@ -29,7 +30,9 @@
     "noData": "कोई डेटा उपलब्ध नहीं",
     "verified": "सत्यापित",
     "search": "खोजें",
-    "member": "सदस्य"
+    "member": "सदस्य",
+    "readMore": "और पढ़ें",
+    "readLess": "कम पढ़ें"
   },
   "payment": {
     "processing": "भुगतान हो रहा है...",
@@ -247,7 +250,7 @@
     "noPostsYet": "आपने अभी तक कुछ पोस्ट नहीं किया। पोस्ट बनाने के लिए '+' टैब दबाएं!",
     "noContributionsYet": "आपने अभी तक कोई योगदान नहीं किया।",
     "memberName": "सदस्य का नाम",
-    "memberDesignation": "सदस्य",
+    "memberMembership": "सदस्य",
     "totalImpact": "कुल प्रभाव",
     "totalDonations": "कुल दान",
     "referrals": "रेफरल",
@@ -436,7 +439,7 @@
   "certificate": {
     "title": "सदस्यता प्रमाणपत्र",
     "trustName": "गौमाता सेवा ट्रस्ट",
-    "certificateOf": "{{tier}} सदस्यता का प्रमाणपत्र",
+    "certificateOf": "{{tier}} का प्रमाणपत्र",
     "presentedTo": "यह प्रमाणपत्र गर्व से प्रस्तुत किया जाता है",
     "description": "एक सत्यापित गौ सेवक के रूप में उनके कुलीन समर्थन, उदार योगदान और समर्पित सेवा की मान्यता में। आपकी प्रतिबद्धता सीधे तौर पर देशी गौ माता के भोजन, आश्रय और चिकित्सा सुरक्षा में सहायता करती है।",
     "memberId": "सदस्य आईडी",
@@ -466,7 +469,7 @@
     "active": "सक्रिय",
     "memberName": "सदस्य का नाम",
     "membershipId": "सदस्यता आईडी",
-    "designation": "पदनाम",
+    "membership": "सदस्यता",
     "since": "तब से",
     "verified": "सत्यापित",
     "yes": "हाँ ✓",
@@ -550,10 +553,20 @@
   },
   "communityMembers": {
     "title": "समुदाय के सदस्य",
+    "members": "सदस्य",
+    "ourGrowingFamily": "हमारा बढ़ता परिवार",
     "subtitle": "हमारे समर्पित सदस्य जो देश भर से गौ सेवा का समर्थन और योगदान करते हैं।",
     "memberCount": "{{count}} सदस्य",
     "notAvailable": "उपलब्ध नहीं",
-    "noMembers": "कोई सदस्य नहीं मिला"
+    "noMembers": "कोई सदस्य नहीं मिला",
+    "trustee": "ट्रस्टी",
+    "trustees": "ट्रस्टी सदस्य",
+    "generalMember": "सामान्य सदस्य",
+    "trusteeMembers": "ट्रस्टी सदस्य",
+    "trusteeMembersTab": "ट्रस्टी",
+    "generalMembersTab": "सामान्य",
+    "joinMembers": "सदस्यता लें",
+    "totalMembers": "कुल सदस्य"
   },
   "referral": {
     "referFriend": "मित्र को रेफर करें",
@@ -634,7 +647,7 @@
     "memberId": "सदस्य आईडी",
     "email": "ईमेल",
     "phone": "फ़ोन",
-    "designation": "पदनाम",
+    "membership": "सदस्यता",
     "memberSince": "सदस्य तब से",
     "location": "स्थान",
     "profession": "पेशा",
@@ -642,8 +655,18 @@
     "dateOfMarriage": "विवाह की तिथि",
     "partnerName": "साथी का नाम",
     "area": "क्षेत्र",
+    "state": "राज्य",
+    "pincode": "पिन कोड",
+    "country": "देश",
+    "address": "पता",
+    "personalDetails": "व्यक्तिगत विवरण",
+    "addressDetails": "पता विवरण",
+    "referralDetails": "रेफ़रल",
+    "contactInfo": "संपर्क जानकारी",
     "about": "परिचय",
-    "bio": "जीवनी"
+    "bio": "जीवनी",
+    "gridView": "ग्रिड दृश्य",
+    "listView": "सूची दृश्य"
   },
   "privacy": {
     "title": "गोपनीयता नीति",

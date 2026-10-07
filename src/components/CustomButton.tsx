@@ -1,7 +1,9 @@
 import React from 'react';
 import {
+  StyleProp,
   StyleSheet,
   Text,
+  TextStyle,
   TouchableOpacity,
   TouchableOpacityProps,
   ActivityIndicator,
@@ -14,6 +16,7 @@ interface CustomButtonProps extends TouchableOpacityProps {
   title: string;
   loading?: boolean;
   variant?: 'primary' | 'secondary';
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export const CustomButton: React.FC<CustomButtonProps> = ({
@@ -21,6 +24,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   loading = false,
   variant = 'primary',
   style,
+  textStyle,
 
   disabled,
   ...props
@@ -45,7 +49,7 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
           style={[
             styles.text,
             isPrimary ? styles.primaryText : styles.secondaryText,
-
+            textStyle,
           ]}
         >
           {title}

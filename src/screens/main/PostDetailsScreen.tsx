@@ -123,7 +123,7 @@ const PostDetailsScreen = () => {
               id: user.id,
               name: user.name || t('common.you'),
               profile_pic: user.profile_pic || user.profile?.profile_pic,
-              designation: user.designation || user.profile?.designation,
+              membership: user.profile?.membership || user.membership,
             });
           }
           if (prev.isDisliked && user?.id) {
@@ -165,7 +165,7 @@ const PostDetailsScreen = () => {
               id: user.id,
               name: user.name || t('common.you'),
               profile_pic: user.profile_pic || user.profile?.profile_pic,
-              designation: user.designation || user.profile?.designation,
+              membership: user.profile?.membership || user.membership,
             });
           }
           if (prev.isLiked && user?.id) {

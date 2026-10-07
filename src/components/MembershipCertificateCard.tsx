@@ -374,15 +374,7 @@ export const MembershipCertificateCard = ({ memberDetails, onShare }: Membership
               <Text style={styles.detailValue}>{memberDetails.endDate}</Text>
             </View>
           </View>
-          <View style={styles.detailItem}>
-            <View style={styles.detailIconCircle}>
-              <ShieldCheck size={RFValue(10.5)} color="#FF6F34" />
-            </View>
-            <View>
-              <Text style={styles.detailLabel}>{t('certificate.status')}</Text>
-              <Text style={styles.detailValue}>{memberDetails.status}</Text>
-            </View>
-          </View>
+          
         </View>
 
         {/* Status Row */}

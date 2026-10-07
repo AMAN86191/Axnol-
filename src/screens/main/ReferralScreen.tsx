@@ -157,7 +157,7 @@ export default function ReferralScreen() {
                 const statusColor = isActive ? '#10B981' : '#9CA3AF';
                 const statusText = isActive ? t('common.active') : t('common.inactive');
                 const name = friend.name || t('common.unknown');
-                const designation = friend.profile?.designation;
+                const membership = friend.profile?.membership;
                 
                 return (
                   <View key={friend.id} style={styles.historyItem}>
@@ -168,8 +168,8 @@ export default function ReferralScreen() {
                       <View>
                         <Text style={styles.friendName}>{name}</Text>
                         <Text style={styles.friendJoined}>{t('referral.joined')}{formatDate(friend.created_at)}</Text>
-                        {designation ? (
-                          <Text style={styles.friendDesignation}>{designation}</Text>
+                        {membership ? (
+                          <Text style={styles.friendMembership}>{membership}</Text>
                         ) : null}
                       </View>
                     </View>
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginTop: hp('0.1%'),
   },
-  friendDesignation: {
+  friendMembership: {
     fontSize: RFValue(8.2),
     color: Colors.primary,
     fontWeight: '600',

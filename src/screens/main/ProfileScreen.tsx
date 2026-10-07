@@ -191,8 +191,8 @@ const ProfileScreen = () => {
   );
   console.log('profiledata :', user);
 
-  const designation = profileData?.profile?.designation || user?.profile?.designation;
-  const hasMembership = !!designation && designation.toLowerCase() !== 'user';
+  const membership = profileData?.profile?.membership || user?.profile?.membership;
+  const hasMembership = !!membership && membership.toLowerCase() !== 'user';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -213,7 +213,7 @@ const ProfileScreen = () => {
           profilePhone={profileData?.user?.phone || user?.phone ? `+91 ${profileData?.user?.phone || user?.phone}` : t('common.na')}
           uid={profileData?.user?.uid || user?.uid}
           joinDate={profileData?.profile?.join_date || user?.profile?.join_date}
-          designation={profileData?.profile?.designation || user?.profile?.designation}
+          membership={profileData?.profile?.membership || user?.profile?.membership}
           bio={profileData?.profile?.bio || user?.profile?.bio}
           avatarUri={
             profileData?.profile?.profile_pic
@@ -223,7 +223,7 @@ const ProfileScreen = () => {
           onCameraPress={handleCameraPress}
           onEmailPress={handleEmailPress}
           onPhonePress={handlePhonePress}
-          membership={profileData?.user?.membership || user?.membership}
+          tier={profileData?.user?.membership || user?.membership}
           dob={profileData?.profile?.dob || user?.profile?.dob}
           dom={profileData?.profile?.dom || user?.profile?.dom}
           partnerName={profileData?.profile?.partner_name || user?.profile?.partner_name}
@@ -316,7 +316,7 @@ const ProfileScreen = () => {
             : (user?.profile?.profile_pic ? `${user.profile.profile_pic}` : undefined)
         }
         memberId={profileData?.user?.uid || user?.uid || t('common.na')}
-        designation={(profileData?.user?.membership || user?.membership) ? t('profile.memberDesignation') : t('common.na')}
+        membership={(profileData?.user?.membership || user?.membership) ? t('profile.memberMembership') : t('common.na')}
         since={profileData?.user?.start_date || user?.start_date
           ? new Date(profileData?.user?.start_date || user?.start_date).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
           : t('common.na')}

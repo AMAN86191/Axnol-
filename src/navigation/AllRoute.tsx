@@ -8,8 +8,6 @@ import SplashScreen from '../screens/auth/SplashScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import OtpVerificationScreen from '../screens/auth/OtpVerificationScreen';
 import MainDrawerNavigator from './MainDrawerNavigator';
-import JoinMembershipScreen from '../screens/main/JoinMembershipScreen';
-import DonateScreen from '../screens/main/DonateScreen';
 import HelpSupportScreen from '../screens/main/HelpSupportScreen';
 import MembershipCertificateScreen from '../screens/main/MembershipCertificateScreen';
 import EditPostScreen from '../screens/main/EditPostScreen';
@@ -22,7 +20,6 @@ import TermsScreen from '../screens/main/TermsScreen';
 import PublicProfileScreen from '../screens/main/PublicProfileScreen';
 import NotificationScreen from '../screens/main/NotificationScreen';
 import AboutTrustScreen from '../screens/main/AboutTrustScreen';
-import CommunityMembersScreen from '../screens/main/CommunityMembersScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
 import UpcomingEventsScreen from '../screens/main/UpcomingEventsScreen';
 import { RootStackParamList } from './types';
@@ -84,14 +81,6 @@ const Allroute = () => {
           component={MainDrawerNavigator}
         />
         <Stack.Screen
-          name="JoinMembershipScreen"
-          component={JoinMembershipScreen}
-        />
-        <Stack.Screen
-          name="DonateScreen"
-          component={DonateScreen}
-        />
-        <Stack.Screen
           name="HelpSupportScreen"
           component={HelpSupportScreen}
         />
@@ -138,10 +127,6 @@ const Allroute = () => {
         <Stack.Screen
           name="AboutTrustScreen"
           component={AboutTrustScreen}
-        />
-        <Stack.Screen
-          name="CommunityMembersScreen"
-          component={CommunityMembersScreen}
         />
         <Stack.Screen
           name="FeedScreen"

@@ -36,7 +36,7 @@ const MembershipCertificateScreen = () => {
   const memberDetails = {
     name: activeUser?.name || t('profile.memberName'),
     memberId: activeUser?.uid || t('common.na'),
-    tier: user?.profile?.designation ? user?.profile?.designation?.toUpperCase() : t('common.na'),
+    tier: user?.profile?.membership ? user?.profile?.membership?.toUpperCase() : t('common.na'),
     joinedDate: activeUser?.start_date ? new Date(activeUser.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     endDate: activeUser?.end_date ? new Date(activeUser.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     status: activeUser?.status ? activeUser.status.charAt(0).toUpperCase() + activeUser.status.slice(1) : t('common.active'),

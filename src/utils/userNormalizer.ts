@@ -9,7 +9,7 @@ import { toAbsoluteImageUrl } from './profileFormData';
  *                      membership, no_of_refer, refer_by, uploaded_by, fcm_token
  *     data.profile  -> dob, dom, profession, bio, country, city, state, pincode,
  *                      address, profile_pic, certificate, referral_code,
- *                      designation, join_date
+ *                      membership, join_date
  *     (NOTE: no partner_name, no area)
  *
  *  2. `GET user/members`  ("raw" shape)
@@ -42,7 +42,7 @@ export const PROFILE_FIELDS = [
   'area',
   'certificate',
   'referral_code',
-  'designation',
+  'membership',
   'join_date',
   'profile_pic',
 ] as const;

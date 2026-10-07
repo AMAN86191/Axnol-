@@ -25,7 +25,7 @@ interface EditProfileModalProps {
   currentName: string;
   currentEmail: string;
   currentPhone: string;
-  currentDesignation?: string;
+  currentMembership?: string;
   currentDob?: string;
   currentDom?: string;
   currentProfession?: string;
@@ -40,7 +40,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   currentName,
   currentEmail,
   currentPhone,
-  currentDesignation = '',
+  currentMembership = '',
   currentDob = '',
   currentDom = '',
   currentProfession = '',
@@ -51,7 +51,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [name, setName] = useState(currentName);
   const [email, setEmail] = useState(currentEmail);
   const [phone, setPhone] = useState(currentPhone);
-  const [designation, setDesignation] = useState(currentDesignation);
+  const [membership, setMembership] = useState(currentMembership);
   const [dob, setDob] = useState(currentDob);
   const [dom, setDom] = useState(currentDom);
   const [profession, setProfession] = useState(currentProfession);
@@ -70,7 +70,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setName(currentName);
       setEmail(currentEmail);
       setPhone(currentPhone);
-      setDesignation(currentDesignation || '');
+      setMembership(currentMembership || '');
       setDob(currentDob || '');
       setDom(currentDom || '');
       setProfession(currentProfession || '');
@@ -80,7 +80,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setOtpCode('');
       setLoading(false);
     }
-  }, [visible, currentName, currentEmail, currentPhone, currentDesignation, currentDob, currentDom, currentProfession, currentBio, currentProfilePic]);
+  }, [visible, currentName, currentEmail, currentPhone, currentMembership, currentDob, currentDom, currentProfession, currentBio, currentProfilePic]);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -96,7 +96,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       name,
       email,
       phone,
-      designation,
+      membership,
       dob,
       dom,
       profession,
@@ -137,7 +137,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         name,
         email,
         phone,
-        designation,
+        membership,
         dob,
         dom,
         profession,
@@ -209,10 +209,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 />
 
                 <InputField
-                  label="Designation"
-                  placeholder="Enter your designation"
-                  value={designation}
-                  onChangeText={setDesignation}
+                  label="Membership"
+                  placeholder="Enter your membership"
+                  value={membership}
+                  onChangeText={setMembership}
                   leftIcon={<Briefcase size={RFValue(12)} color={Colors.primary} />}
                 />
 

@@ -19,7 +19,7 @@ const GET_PROFILE = {
   profile: {
     id: 54,
     join_date: '2026-10-01',
-    designation: 'User',
+    membership: 'User',
     dob: '2026-10-01',
     dom: '2026-10-01',
     profession: 'Student',
@@ -49,7 +49,7 @@ const RAW_AUTH_USER = {
   user_profile: {
     id: 54,
     user_id: 7,
-    designation: 'User',
+    membership: 'User',
     area: 'Test',
     profile_pic: 'uploads/profiles/rel.png',
   },
@@ -62,7 +62,7 @@ describe('normalizeUser', () => {
     expect(u.profile.city).toBe('Hanumangarh');
     expect(u.profile.pincode).toBe('335512');
     expect(u.profile.address).toBe('Jaipur');
-    expect(u.profile.designation).toBe('User');
+    expect(u.profile.membership).toBe('User');
   });
 
   it('REGRESSION: lifts partner_name from the users table when profile omits it', () => {

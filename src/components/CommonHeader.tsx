@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: RFValue(14),
+    fontSize: RFValue(13),
     fontWeight: '700',
     color: Colors.dark,
     textAlign: 'center',

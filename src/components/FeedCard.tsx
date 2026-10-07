@@ -10,7 +10,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { Share2, Pencil, Trash2, ThumbsDown, ThumbsUp } from 'lucide-react-native';
+import { ChevronDown, Share2, Pencil, Trash2, ThumbsDown, ThumbsUp } from 'lucide-react-native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
 import { useTranslation } from 'react-i18next';
@@ -60,6 +60,38 @@ const clampFeedRatio = (ratio: number): number => {
   return Math.min(Math.max(ratio, MIN_FEED_RATIO), MAX_FEED_RATIO);
 };
 
+// Description isse zyada lines ka hua to "Read more" dikhta hai
+const COLLAPSED_LINES = 2;
+// onTextLayout FlatList/ScrollView ke andar unreliable hota hai — virtualized
+// items par fire nahi hota ya provisional width se measure hota hai. Isliye
+// character count ek reliable fallback hai (~2 lines is font size/card width par).
+const COLLAPSED_CHARS = 120;
+
+// Instagram-style short count: 999 → 999, 1800 → 1.8K, 150000 → 1.5L
+const formatCount = (value: number): string => {
+  const n = Number(value) || 0;
+  if (n < 1000) return String(n);
+
+  const units: Array<[number, string]> = [
+    [10_000_000, 'Cr'],
+    [100_000, 'L'],
+    [1_000, 'K'],
+  ];
+
+  for (const [threshold, suffix] of units) {
+    if (n >= threshold) {
+      const scaled = n / threshold;
+      // Decimal sirf jab value 10 se chhota ho (1.8K), warna round (12K)
+      const text = scaled < 10
+        ? scaled.toFixed(1).replace(/\.0$/, '')
+        : String(Math.round(scaled));
+      return `${text}${suffix}`;
+    }
+  }
+
+  return String(n);
+};
+
 export const FeedCard = ({
   postId,
   author,
@@ -99,6 +131,23 @@ export const FeedCard = ({
   // Real image dimensions se container ka aspect ratio — taaki image poori tarah
   // frame bhar le aur kahin khaali white/gray space na dikhe.
   const [imageRatios, setImageRatios] = useState<Record<number, number>>({});
+  // Har index ke liye kis uri ka measure hua — crop/re-crop ke baad uri badalta hai,
+  // tab stale ratio use hota aur frame galat size ka ho jata tha.
+  const [measuredUris, setMeasuredUris] = useState<Record<number, string>>({});
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [measuredLines, setMeasuredLines] = useState(0);
+
+  // Dono signals ka OR — jahan onTextLayout kaam kare wahan precise,
+  // jahan na kare (FlatList) wahan char count se trigger.
+  const isTruncatable =
+    measuredLines > COLLAPSED_LINES || (text?.trim().length ?? 0) > COLLAPSED_CHARS;
+  const isCollapsed = isTruncatable && !isExpanded;
+
+  // Naya post/text aane par collapse state reset
+  useEffect(() => {
+    setIsExpanded(false);
+    setMeasuredLines(0);
+  }, [text]);
 
   const allImages = useMemo(() => {
     if (images && images.length > 0) return images;
@@ -109,20 +158,42 @@ export const FeedCard = ({
     let cancelled = false;
 
     allImages.forEach((uri, idx) => {
-      if (!uri || imageRatios[idx] !== undefined) return;
+      if (!uri || measuredUris[idx] === uri) return;
+
       Image.getSize(
         uri,
         (width, height) => {
-          if (cancelled || !width || !height) return;
-          setImageRatios(prev => ({ ...prev, [idx]: clampFeedRatio(width / height) }));
+          if (cancelled) return;
+          if (width && height) {
+            setImageRatios(prev => ({ ...prev, [idx]: clampFeedRatio(width / height) }));
+          }
+          setMeasuredUris(prev => ({ ...prev, [idx]: uri }));
         },
-        () => {},
+        () => {
+          if (cancelled) return;
+          setMeasuredUris(prev => ({ ...prev, [idx]: uri }));
+        },
       );
     });
 
     return () => {
       cancelled = true;
     };
+  }, [allImages, measuredUris]);
+
+  // Carousel ke content container ka `alignItems` default 'stretch' hota hai, isliye
+  // alag-alag height ke slides sabse bali height tak stretch ho jaate hain aur chhoti
+  // images ke neeche khaali space dikhta hai. Isliye POORE post ke liye ek hi ratio
+  // use karte hain — sab slides same height, har image `cover` se clean crop.
+  const uniformRatio = useMemo(() => {
+    const known = allImages
+      .map((_, idx) => imageRatios[idx])
+      .filter((r): r is number => typeof r === 'number');
+
+    if (known.length === 0) return 1;
+
+    const avg = known.reduce((sum, r) => sum + r, 0) / known.length;
+    return clampFeedRatio(avg);
   }, [allImages, imageRatios]);
 
   useEffect(() => {
@@ -212,7 +283,7 @@ export const FeedCard = ({
               id: user.id,
               name: user.name || t('common.you'),
               profile_pic: user.profile_pic || user.profile?.profile_pic,
-              designation: user.designation || user.profile?.designation,
+              membership: user.profile?.membership || user.membership,
             };
             return [currentUserLike, ...prevLikedBy];
           }
@@ -286,7 +357,7 @@ export const FeedCard = ({
               id: user.id,
               name: user.name || t('common.you'),
               profile_pic: user.profile_pic || user.profile?.profile_pic,
-              designation: user.designation || user.profile?.designation,
+              membership: user.profile?.membership || user.membership,
             };
             return [currentUserDislike, ...prevDislikedBy];
           }
@@ -450,7 +521,6 @@ export const FeedCard = ({
           style={styles.carouselContainer}
         >
           {images.map((imgUri, idx) => {
-            const ratio = imageRatios[idx] ?? 1;
             return (
               <TouchableOpacity
                 key={idx}
@@ -461,7 +531,7 @@ export const FeedCard = ({
               >
                 <Image
                   source={{ uri: imgUri }}
-                  style={[styles.carouselImage, { aspectRatio: ratio }]}
+                  style={[styles.carouselImage, { aspectRatio: uniformRatio }]}
                   resizeMode="cover"
                 />
                 {images.length > 1 && (
@@ -483,19 +553,14 @@ export const FeedCard = ({
           >
             <Image
               source={{ uri: image }}
-              style={[styles.carouselImage, { aspectRatio: imageRatios[0] ?? 1 }]}
+              style={[styles.carouselImage, { aspectRatio: uniformRatio }]}
               resizeMode="cover"
             />
           </TouchableOpacity>
         )
       )}
 
-      {/* Card Description — sirf tabhi jab text ho, warna khali margin dikhta hai */}
-      {text?.trim() ? (
-        <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
-          <Text style={styles.feedText}>{text}</Text>
-        </TouchableOpacity>
-      ) : null}
+      
 
       {/* Card Actions */}
       <View style={styles.feedActions}>
@@ -510,7 +575,7 @@ export const FeedCard = ({
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setIsLikesModalVisible(true)} activeOpacity={0.7}>
             <Text style={[styles.feedActionText, localIsLiked && styles.activeActionText]}>
-              {localLikes}
+              {formatCount(localLikes)}
             </Text>
           </TouchableOpacity>
         </View>
@@ -525,7 +590,7 @@ export const FeedCard = ({
           </TouchableOpacity>
           {/* <TouchableOpacity onPress={() => setIsDislikesModalVisible(true)} activeOpacity={0.7}> */}
             <Text style={[styles.feedActionText, localIsDisliked && { color: '#EF4444' }]}>
-              {localDislikes}
+              {formatCount(localDislikes)}
             </Text>
           {/* </TouchableOpacity> */}
         </View>
@@ -539,6 +604,51 @@ export const FeedCard = ({
           <Share2 size={RFValue(14)} color={Colors.gray} strokeWidth={1.5} />
         </TouchableOpacity>
       </View>
+
+      {/* Card Description — collapse + Read more */}
+      {text?.trim() ? (
+        <View style={styles.feedDescription}>
+          <TouchableOpacity activeOpacity={0.95} onPress={onPostPress} disabled={!onPostPress}>
+            <Text
+              style={styles.feedText}
+              numberOfLines={isCollapsed ? COLLAPSED_LINES : undefined}
+              onTextLayout={e => {
+                // Truncate karte waqt sirf 3 lines hi report hote hain,
+                // isliye us state me measure ko ignore karo ( warna loop ban jayega).
+                if (isCollapsed) return;
+                const lines = e.nativeEvent.lines.length;
+                if (lines !== measuredLines) setMeasuredLines(lines);
+              }}
+            >
+              {text}
+            </Text>
+          </TouchableOpacity>
+
+          {isTruncatable && (
+            <View style={styles.readMoreRow}>
+              <TouchableOpacity
+                onPress={() => setIsExpanded(prev => !prev)}
+                activeOpacity={0.8}
+                style={styles.readMoreBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={styles.readMoreText}>
+                  {isExpanded ? t('common.readLess') : t('common.readMore')}
+                </Text>
+                <ChevronDown
+                  size={RFValue(10)}
+                  color={Colors.primary}
+                  strokeWidth={2.6}
+                  style={[
+                    styles.readMoreIcon,
+                    isExpanded && styles.readMoreIconOpen,
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      ) : null}
 
       {/* Reusable Comments Bottom Sheet Modal */}
       <CommentsModal
@@ -591,7 +701,8 @@ const styles = StyleSheet.create({
     borderRadius: wp('3.5%'),
     borderWidth: 0.5,
     borderColor: Colors.border,
-    padding: wp('2%'),
+    paddingHorizontal: wp('2%'),
+    paddingVertical: 3,
     marginBottom: hp('2%'),
     width: '100%',
   },
@@ -637,8 +748,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
   },
   feedAvatar: {
-    width: wp('10%'),
-    height: wp('10%'),
+    width: wp('8%'),
+    height: wp('8%'),
     borderRadius: wp('5%'),
     marginRight: wp('3%'),
   },
@@ -646,27 +757,54 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   feedAuthor: {
-    fontSize: RFValue(12.5),
+    fontSize: RFValue(11),
     fontWeight: '700',
     color: Colors.dark,
   },
   feedMeta: {
-    fontSize: RFValue(9.5),
+    fontSize: RFValue(9),
     color: Colors.gray,
     marginTop: hp('0.1%'),
+  },
+  feedDescription: {
+    marginBottom: hp('1.5%'),
   },
   feedText: {
     fontSize: RFValue(11.5),
     color: '#333333',
     lineHeight: RFValue(16),
-    marginBottom: hp('1.5%'),
+  },
+  readMoreRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: hp('0.6%'),
+  },
+  readMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp('1%'),
+    backgroundColor: '#FFF5F0',
+    borderWidth: 1,
+    borderColor: '#FFE0D2',
+    borderRadius: wp('4%'),
+    paddingHorizontal: wp('2.5%'),
+    paddingVertical: hp('0.5%'),
+  },
+  readMoreText: {
+    fontSize: RFValue(9),
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  readMoreIcon: {
+    transform: [{ rotate: '0deg' }],
+  },
+  readMoreIconOpen: {
+    transform: [{ rotate: '180deg' }],
   },
   feedActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderTopWidth: 1,
-    borderColor: '#F2F2F2',
-    paddingTop: hp('1.2%'),
+    paddingBottom: hp('1%'),
     gap: wp('4%'),
   },
   feedActionItem: {

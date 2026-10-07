@@ -26,7 +26,7 @@ import {
   CheckCircle,
 } from 'lucide-react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
-import ImageResizer from '@bam.tech/react-native-image-resizer';
+import PhotoManipulator, { MimeType } from 'react-native-photo-manipulator';
 import { Colors } from '../../theme/colors';
 import { PrimaryHeader } from '../../components/PrimaryHeader';
 import { CustomButton } from '../../components/CustomButton';
@@ -46,39 +46,68 @@ const ASPECT_DIMS: Record<AspectRatio, { width: number; height: number }> = {
 
 const MAX_IMAGES = 5;
 
+// JPEG quality for cropped uploads.
+const UPLOAD_QUALITY = 90;
+
 // ImageCropPicker Android par `file://` prefix ke bina path deta hai,
-// lekin ImageResizer ko proper file URI chahiye.
+// lekin native modules ko proper file URI chahiye.
 const toFileUri = (path: string): string =>
   path.startsWith('file://') || path.startsWith('content://') ? path : `file://${path}`;
+
+const getImageSize = (uri: string): Promise<{ width: number; height: number }> =>
+  new Promise(resolve => {
+    Image.getSize(
+      uri,
+      (width, height) => resolve({ width, height }),
+      () => resolve({ width: 0, height: 0 }),
+    );
+  });
 
 // Picked images ka asli width/height nikal kar ratio ka andaaza lagata hai.
 // Portrait-ish: ratio < 0.95, landscape-ish: ratio > 1.05, baaki (square/odd) ke liye
 // default square. Sab images ek hi ratio me jate hain taaki upload ek hi size ka ho.
 const detectAspectRatio = async (rawList: any[]): Promise<AspectRatio> => {
-  const ratios: number[] = await Promise.all(
-    rawList.map(
-      img =>
-        new Promise<number>(resolve => {
-          Image.getSize(
-            toFileUri(img.path),
-            (w, h) => resolve(h > 0 ? w / h : 0),
-            () => resolve(0),
-          );
-        }),
-    ),
-  );
+  const sizes = await Promise.all(rawList.map(img => getImageSize(toFileUri(img.path))));
 
-  const valid = ratios.filter(r => r > 0);
-  if (valid.length === 0) return 'square';
+  const ratios = sizes
+    .map(({ width, height }) => (height > 0 ? width / height : 0))
+    .filter(r => r > 0);
 
-  const allPortrait = valid.every(r => r < 0.95);
-  const allLandscape = valid.every(r => r > 1.05);
+  if (ratios.length === 0) return 'square';
+
+  const allPortrait = ratios.every(r => r < 0.95);
+  const allLandscape = ratios.every(r => r > 1.05);
 
   if (allPortrait) return 'portrait';
   if (allLandscape) return 'landscape';
 
   // Square / mixed / unknown -> square sabse safe hai
   return 'square';
+};
+
+// Center-crop rect: source me se wo sabse bada rectangle jo target ratio banata hai.
+// (ratio mismatch me do options me se chhota wala choose karte hain, kyunki crop
+//  kabhi stretch nahi karna chahiye.)
+const centerCropRect = (
+  srcWidth: number,
+  srcHeight: number,
+  targetRatio: number,
+): { x: number; y: number; width: number; height: number } => {
+  const srcRatio = srcWidth / srcHeight;
+
+  const cropWidth = srcRatio > targetRatio
+    ? Math.min(Math.round(srcHeight * targetRatio), srcWidth)
+    : srcWidth;
+  const cropHeight = srcRatio > targetRatio
+    ? srcHeight
+    : Math.min(Math.round(srcWidth / targetRatio), srcHeight);
+
+  return {
+    x: Math.round((srcWidth - cropWidth) / 2),
+    y: Math.round((srcHeight - cropHeight) / 2),
+    width: cropWidth,
+    height: cropHeight,
+  };
 };
 
 const AddScreen = () => {
@@ -168,32 +197,41 @@ const AddScreen = () => {
   };
 
   // SAB images ko ek hi aspect ratio me center-crop + resize kar deta hai.
-  // mode: 'cover' => stretch nahi, exact width x height, zero white space.
+  // Note: ImageResizer ka `mode: 'cover'` crop NAHI karta (sirf scale karta hai —
+  // output ki dimensions target se match nahi hoti). Isliye PhotoManipulator.batch
+  // use ho raha hai: cropRegion (center crop) + targetSize => output exactly
+  // width x height, zero stretch, zero white space.
   const cropImagesToAspect = async (
     rawList: any[],
     aspect: AspectRatio,
   ): Promise<any[]> => {
     const target = ASPECT_DIMS[aspect];
+    const targetRatio = target.width / target.height;
     const processed: any[] = [];
 
     for (let i = 0; i < rawList.length; i++) {
-      const resized = await ImageResizer.createResizedImage(
-        toFileUri(rawList[i].path),
-        target.width,
-        target.height,
-        'JPEG',
-        90, // Instagram-quality compression
-        0, // rotation
-        undefined,
-        false, // strip EXIF/GPS metadata
-        { mode: 'cover', onlyScaleDown: false },
+      const sourceUri = toFileUri(rawList[i].path);
+      const { width: srcWidth, height: srcHeight } = await getImageSize(sourceUri);
+
+      // Size na mile to poora image le lo, native side targetSize par fit kar dega.
+      const crop = srcWidth > 0 && srcHeight > 0
+        ? centerCropRect(srcWidth, srcHeight, targetRatio)
+        : { x: 0, y: 0, width: target.width, height: target.height };
+
+      const outUri = await PhotoManipulator.batch(
+        sourceUri,
+        [],
+        crop,
+        target,
+        UPLOAD_QUALITY,
+        MimeType.JPEG,
       );
 
       processed.push({
-        uri: resized.uri,
-        type: 'image/jpeg',
-        fileName: resized.name || `post_${i + 1}.jpg`,
-        path: resized.path,
+        uri: outUri,
+        type: MimeType.JPEG,
+        fileName: `post_${Date.now()}_${i + 1}.jpg`,
+        path: outUri.replace('file://', ''),
       });
     }
 
@@ -270,6 +308,8 @@ const AddScreen = () => {
         // Reset
         setCaption('');
         setImages([]);
+        setRawImages([]);
+        setSelectedAspect(null);
         // Redirect to feed
         navigation.navigate('FeedScreen' as never);
       } else {
@@ -412,7 +452,7 @@ const AddScreen = () => {
           {/* Trigger Button: Shows Preview first */}
           <CustomButton
             title={t('addPost.publishPost')}
-            loading={loading}
+            loading={loading || isCreatingPost}
             onPress={handlePublishClick}
             style={styles.publishBtn}
           />
@@ -452,7 +492,7 @@ const AddScreen = () => {
               <FeedCard
                 author={user?.name || t('addPost.communityMember')}
                 avatar={user?.profile?.profile_pic ? `${user.profile.profile_pic}` : ''}
-                meta={`${t('common.justNow')}${user?.profile?.designation ? ` • ${user.profile.designation}` : ''}`}
+                meta={`${t('common.justNow')}${user?.profile?.membership ? ` • ${user.profile.membership}` : ''}`}
                 text={caption.trim()}
                 images={images.map(img => img.uri)}
                 likes={0}

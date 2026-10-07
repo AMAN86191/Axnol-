@@ -23,7 +23,6 @@ import useHomeStore from '../../zustand/useHomeStore';
 import useAuthStore from '../../zustand/useAuthStore';
 import { useTranslation } from 'react-i18next';
 import { mapPostItem } from '../../utils/postMapper';
-import { UpcomingEventsSection } from '../../components/UpcomingEventsSection';
 
 const HomeScreen = () => {
   const { t } = useTranslation();
@@ -138,7 +137,7 @@ const HomeScreen = () => {
               isDisliked={item.isDisliked}
               dislikedBy={item.dislikedBy}
               isOwnPost={false}
-              onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: item.id })}
+              // onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: item.id })}
               onProfilePress={() => {
                 if (item.userId === 'current_user') {
                   (navigation as any).navigate('Profile');

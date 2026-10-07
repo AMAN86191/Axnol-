@@ -45,6 +45,20 @@ export const PrimaryHeader = () => {
     (navigation as any).navigate('NotificationScreen');
   };
 
+  // Drawer sirf MainTabs ko host karta hai, isliye root stack screens
+  // (Donate, JoinMembership, CommunityMembers) par openDrawer exist nahi karta.
+  const openMenu = () => {
+    const nav = navigation as any;
+
+    if (typeof nav.openDrawer === 'function') {
+      nav.openDrawer();
+    } else if (typeof nav.canGoBack === 'function' && nav.canGoBack()) {
+      nav.goBack();
+    } else {
+      nav.navigate('MainDrawer');
+    }
+  };
+
   return (
     <>
       <StatusBar
@@ -61,7 +75,7 @@ export const PrimaryHeader = () => {
             <TouchableOpacity
               style={styles.menuButton}
               activeOpacity={0.8}
-              onPress={() => (navigation as any).openDrawer()}
+              onPress={openMenu}
             >
               <Menu size={RFValue(16)} color="#EA580C" strokeWidth={2.5} />
             </TouchableOpacity>

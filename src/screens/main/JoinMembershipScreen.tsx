@@ -28,6 +28,7 @@ import {
 } from 'lucide-react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import LinearGradient from 'react-native-linear-gradient';
 
 import { Colors } from '../../theme/colors';
 import { RootStackParamList } from '../../navigation/types';
@@ -57,8 +58,7 @@ const JoinMembershipScreen = () => {
   const { user, updateProfile } = useAuthStore();
   const { getPlansStore, purchasePlanStore } = useHomeStore();
   const { getProfile } = useAuthStore();
-  console.log('user', user)
-  const hasMembership = !!user?.membership;
+  const hasMembership = !!user?.membership && user.membership !== "user";
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -305,7 +305,7 @@ const JoinMembershipScreen = () => {
   const memberDetails = {
     name: user?.name || t('profile.memberName'),
     memberId: user?.uid || t('common.na'),
-    tier: user?.profile?.designation ? user?.profile?.designation?.toUpperCase() : t('common.na'),
+    tier: user?.profile?.membership ? user?.profile?.membership?.toUpperCase() : t('common.na'),
     joinedDate: user?.start_date ? new Date(user.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     endDate: user?.end_date ? new Date(user.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : t('common.na'),
     status: user?.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : t('common.active'),
@@ -317,30 +317,42 @@ const JoinMembershipScreen = () => {
     return (
       <View key={plan.id} style={[styles.planCard, isPremium && styles.premiumCard]}>
         {isPremium && (
-          <View style={styles.premiumBadge}>
-            <Star size={RFValue(8)} color="#FFF" fill="#FFF" />
-            <Text style={styles.premiumBadgeText}>{t('membership.recommended')}</Text>
+          <View style={styles.premiumRibbon}>
+            <Star size={RFValue(7)} color="#FFF" fill="#FFF" strokeWidth={2.6} />
+            <Text style={styles.premiumRibbonText}>{t('membership.recommended')}</Text>
           </View>
         )}
+
         <View style={styles.planHeader}>
-          <View style={styles.planIconBox}>
-            <Award size={RFValue(16)} color={isPremium ? Colors.primary : Colors.dark} />
+          <View style={[styles.planIconBox, isPremium && styles.planIconBoxPremium]}>
+            <Award
+              size={RFValue(14)}
+              color={isPremium ? Colors.white : Colors.primary}
+              strokeWidth={2.3}
+            />
           </View>
-          <Text style={styles.planName}>{plan.plan_name}</Text>
+          <Text style={styles.planName} numberOfLines={1}>
+            {plan.plan_name}
+          </Text>
         </View>
 
         <View style={styles.planPriceContainer}>
           <Text style={styles.currencySymbol}>₹</Text>
           <Text style={styles.planPrice}>{parseInt(plan.price).toLocaleString('en-IN')}</Text>
-          <Text style={styles.planDuration}>/{plan.duration}</Text>
+          <View style={styles.durationChip}>
+            <Text style={styles.durationChipText}>/{plan.duration}</Text>
+          </View>
         </View>
+
+        <View style={styles.planDivider} />
 
         <CustomButton
           title={t('membership.selectPay')}
           onPress={() => handlePurchase(plan)}
           loading={purchasingId === plan.id}
           disabled={purchasingId !== null}
-          style={{ marginTop: hp('1%'), width: '100%', height: hp('5%') }}
+          style={styles.planCta}
+          textStyle={styles.planCtaText}
         />
       </View>
     );
@@ -372,13 +384,17 @@ const JoinMembershipScreen = () => {
                 ) : (
                   <View>
                     {(() => {
-                      const currentDesignation = (user?.profile?.designation || '').toLowerCase().trim();
-                      const upgradePlans = plans.filter(plan =>
-                        !(
-                          plan.plan_name.toLowerCase().trim() === currentDesignation ||
-                          (currentDesignation && plan.plan_name.toLowerCase().includes(currentDesignation)) ||
-                          (currentDesignation && currentDesignation.includes(plan.plan_name.toLowerCase().trim()))
-                        )
+                      const normalizePlanName = (value?: string | null) =>
+                        (value || '')
+                          .toLowerCase()
+                          .replace(/\bplans?\b/g, '')
+                          .replace(/\s+/g, ' ')
+                          .trim();
+                      const currentMembership = normalizePlanName(user?.profile?.membership);
+                      const upgradePlans = plans.filter(
+                        plan =>
+                          !currentMembership ||
+                          normalizePlanName(plan.plan_name) !== currentMembership,
                       );
                       return (
                         <>
@@ -615,20 +631,37 @@ const JoinMembershipScreen = () => {
                   </View>
                 </View>
 
-                {/* Checkbox Agreement */}
-                <TouchableOpacity
-                  style={styles.checkboxContainer}
-                  onPress={() => setAgree(!agree)}
-                  activeOpacity={0.8}
-                >
-                  <View style={[styles.checkbox, agree && styles.checkboxActive]}>
-                    {agree && <View style={styles.checkboxTick} />}
-                  </View>
+                {/* Checkbox Agreement — links ko TouchableOpacity ke bahar rakha hai
+                      taaki unka onPress reliably chale (nested touchable
+                      me parent tap steal kar leta hai) */}
+                <View style={styles.checkboxContainer}>
+                  <TouchableOpacity
+                    style={styles.checkboxHitArea}
+                    onPress={() => setAgree(!agree)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.checkbox, agree && styles.checkboxActive]}>
+                      {agree && <View style={styles.checkboxTick} />}
+                    </View>
+                  </TouchableOpacity>
+
                   <Text style={styles.checkboxText}>
-                    {t('membership.agreeTo')} <Text style={styles.highlightText}>{t('membership.termsLink')}</Text>{' '}
-                    and <Text style={styles.highlightText}>{t('membership.privacyLink')}</Text>
+                    {t('membership.agreeTo')}{' '}
+                    <Text
+                      style={styles.highlightText}
+                      onPress={() => navigation.navigate('TermsScreen')}
+                    >
+                      {t('membership.termsLink')}
+                    </Text>
+                    {' and '}
+                    <Text
+                      style={styles.highlightText}
+                      onPress={() => navigation.navigate('PrivacyPolicyScreen')}
+                    >
+                      {t('membership.privacyLink')}
+                    </Text>
                   </Text>
-                </TouchableOpacity>
+                </View>
 
                 {/* Action Button */}
                 <CustomButton
@@ -667,14 +700,21 @@ const JoinMembershipScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setModalVisible(false)}
-            >
-              <X size={24} color={Colors.gray} />
-            </TouchableOpacity>
+            <View style={styles.modalGrabber} />
 
-            <Text style={styles.modalTitle}>{t('membership.choosePlan')}</Text>
+            <View style={styles.modalHeaderRow}>
+              <View style={styles.modalTitleWrap}>
+                <Text style={styles.modalTitle}>{t('membership.choosePlan')}</Text>
+                <Text style={styles.modalSubtitle}>{t('membership.upgradeSubtitle')}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <X size={RFValue(13)} color={Colors.dark} strokeWidth={2.4} />
+              </TouchableOpacity>
+            </View>
 
             {fetchingPlans ? (
               <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: hp('5%') }} />
@@ -683,8 +723,8 @@ const JoinMembershipScreen = () => {
                 {plans.map((plan) => renderPlanCard(plan, plan.duration.toLowerCase() === 'lifetime'))}
 
                 {plans.length === 0 && (
-                  <View style={{ alignItems: 'center', padding: hp('3%') }}>
-                    <Text style={{ color: Colors.gray }}>{t('membership.noPlans')}</Text>
+                  <View style={styles.noPlansBox}>
+                    <Text style={styles.noPlansText}>{t('membership.noPlans')}</Text>
                   </View>
                 )}
               </ScrollView>
@@ -748,6 +788,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginTop: hp('0.5%'),
     marginBottom: hp('2%'),
+  },
+  checkboxHitArea: {
+    paddingRight: wp('2%'),
   },
   checkbox: {
     width: wp('4.5%'),
@@ -857,7 +900,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(17, 24, 39, 0.55)',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -867,25 +910,74 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: wp('6%'),
     borderTopRightRadius: wp('6%'),
-    padding: wp('5%'),
-    paddingBottom: hp('5%'),
+    paddingHorizontal: wp('4%'),
+    paddingTop: hp('0.9%'),
+    paddingBottom: hp('4%'),
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 16,
   },
-  closeButton: {
-    position: 'absolute',
-    top: hp('2%'),
-    right: wp('5%'),
-    zIndex: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: wp('4%'),
-    padding: wp('1.5%'),
+  modalGrabber: {
+    width: wp('9%'),
+    height: 4,
+    borderRadius: 100,
+    backgroundColor: '#E5E7EB',
+    marginBottom: hp('1.4%'),
+  },
+  modalHeaderRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: hp('1.4%'),
+    paddingBottom: hp('1%'),
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F3F5',
+  },
+  modalTitleWrap: {
+    flex: 1,
+    paddingRight: wp('3%'),
   },
   modalTitle: {
-    fontSize: RFValue(14),
-    fontWeight: '600',
+    fontSize: RFValue(11.5),
+    fontWeight: '800',
     color: Colors.dark,
-    marginBottom: hp('2%'),
-    alignSelf: 'flex-start',
+    letterSpacing: 0.2,
+  },
+  modalSubtitle: {
+    fontSize: RFValue(8.2),
+    color: Colors.gray,
+    marginTop: hp('0.3%'),
+    lineHeight: RFValue(11.5),
+  },
+  closeButton: {
+    width: wp('6.8%'),
+    height: wp('6.8%'),
+    borderRadius: wp('3.4%'),
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  noPlansBox: {
+    alignItems: 'center',
+    paddingVertical: hp('4%'),
+    paddingHorizontal: wp('4%'),
+    backgroundColor: Colors.background,
+    borderRadius: wp('4%'),
+    borderWidth: 1,
+    borderColor: '#EFF1F5',
+    borderStyle: 'dashed',
+  },
+  noPlansText: {
+    color: Colors.gray,
+    fontSize: RFValue(9),
+    fontWeight: '600',
+    textAlign: 'center',
   },
   plansScroll: {
     width: '100%',
@@ -893,84 +985,132 @@ const styles = StyleSheet.create({
   planCard: {
     backgroundColor: '#FFF',
     borderRadius: wp('4%'),
-    paddingHorizontal: wp('2%'),
+    padding: wp('2%'),
     borderWidth: 1,
-    borderColor: '#EAEAEA',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    borderColor: '#ECEEF2',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
     elevation: 2,
-    marginBottom: hp('1.5%'),
+    marginBottom: hp('1.4%'),
     position: 'relative',
     overflow: 'hidden',
   },
   premiumCard: {
     borderColor: Colors.primary,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    backgroundColor: '#FFF9F6',
     shadowColor: Colors.primary,
-    shadowOpacity: 0.1,
-    elevation: 4,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  premiumBadge: {
+  premiumRibbon: {
     position: 'absolute',
     top: 0,
     right: 0,
-    backgroundColor: Colors.primary,
+    zIndex: 5,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: wp('0.8%'),
+    backgroundColor: Colors.primary,
     paddingHorizontal: wp('2%'),
-    paddingVertical: hp('0.4%'),
-    borderBottomLeftRadius: wp('2%'),
+    paddingVertical: hp('0.35%'),
+    borderBottomLeftRadius: wp('3%'),
+    borderBottomRightRadius: 0,
+    borderTopRightRadius: wp('4%'),
   },
-  premiumBadgeText: {
+  premiumRibbonText: {
     color: '#FFF',
-    fontSize: RFValue(7),
-    fontWeight: '800',
-    marginLeft: wp('1%'),
+    fontSize: RFValue(5.8),
+    fontWeight: '900',
     letterSpacing: 0.5,
   },
   planHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: hp('1%'),
+    paddingRight: wp('26%'),
   },
   planIconBox: {
-    width: wp('7%'),
-    height: wp('7%'),
-    borderRadius: wp('2.5%'),
-    backgroundColor: '#FFF5F0',
+    width: wp('7.5%'),
+    height: wp('7.5%'),
+    borderRadius: wp('3.75%'),
+    backgroundColor: '#FFF1EA',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: wp('3%'),
+    marginRight: wp('2.5%'),
+    borderWidth: 1,
+    borderColor: '#FFE1D3',
+  },
+  planIconBoxPremium: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   planName: {
-    fontSize: RFValue(12),
-    fontWeight: '700',
-    color: '#333',
+    flex: 1,
+    fontSize: RFValue(10.5),
+    fontWeight: '800',
+    color: '#111827',
+    textTransform: 'capitalize',
   },
   planPriceContainer: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: wp('2.5%'),
+    paddingHorizontal: wp('2.5%'),
+    paddingVertical: hp('0.7%'),
     marginBottom: hp('1%'),
+    borderWidth: 1,
+    borderColor: '#EFF1F5',
   },
   currencySymbol: {
-    fontSize: RFValue(12),
-    fontWeight: '700',
-    color: '#333',
-    marginRight: wp('1%'),
+    fontSize: RFValue(10),
+    fontWeight: '800',
+    color: '#111827',
+    marginRight: wp('0.6%'),
+    alignSelf: 'flex-start',
+    marginTop: hp('0.3%'),
   },
   planPrice: {
-    fontSize: RFValue(15),
+    fontSize: RFValue(16),
     fontWeight: '900',
-    color: '#111',
+    color: '#111827',
+    letterSpacing: -0.4,
+    flexShrink: 1,
   },
-  planDuration: {
-    fontSize: RFValue(9.5),
-    color: '#666',
-    fontWeight: '600',
-    marginLeft: wp('1%'),
+  durationChip: {
+    marginLeft: 'auto',
+    backgroundColor: '#FFF1EA',
+    borderRadius: wp('5%'),
+    paddingHorizontal: wp('2.2%'),
+    paddingVertical: hp('0.35%'),
+    borderWidth: 1,
+    borderColor: '#FFE1D3',
+  },
+  durationChipText: {
+    fontSize: RFValue(7.2),
+    color: '#C2410C',
+    fontWeight: '800',
     textTransform: 'capitalize',
+  },
+  planDivider: {
+    height: 1,
+    backgroundColor: '#EFF1F5',
+    marginBottom: hp('0.4%'),
+  },
+  planCta: {
+    marginTop: hp('0.5%'),
+    width: '100%',
+    height: hp('4.4%'),
+    borderRadius: wp('3%'),
+  },
+  planCtaText: {
+    fontSize: RFValue(10),
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
 });
 

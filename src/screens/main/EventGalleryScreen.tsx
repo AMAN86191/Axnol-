@@ -197,7 +197,7 @@ export default function EventGalleryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFCFC',
+    backgroundColor: Colors.background,
   },
   errorContainer: {
     flex: 1,
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     paddingTop: hp('1%'),
   },
   eventInfoCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.white,
     borderRadius: wp('4%'),
     padding: wp('4.5%'),
     marginHorizontal: wp('1.5%'),
@@ -264,18 +264,18 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: RFValue(9.5),
-    color: '#64748B',
+    color: Colors.gray,
     fontWeight: '600',
   },
   metaDivider: {
     width: 1,
     height: hp('1.2%'),
-    backgroundColor: '#E2E8F0',
+    backgroundColor: Colors.border,
     marginHorizontal: wp('3%'),
   },
   eventDescription: {
     fontSize: RFValue(11),
-    color: '#475569',
+    color: Colors.dark,
     lineHeight: hp('2.2%'),
     marginBottom: hp('2.5%'),
   },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: Colors.background,
     paddingTop: hp('2%'),
   },
   sectionTitle: {
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     margin: wp('1.2%'),
     borderRadius: wp('3%'),
     overflow: 'hidden',
-    backgroundColor: '#EAEAED',
+    backgroundColor: Colors.secondary,
   },
   gridImage: {
     width: '100%',
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   fullScreenOverlay: {
     flex: 1,
-    backgroundColor: '#0A0C0C',
+    backgroundColor: Colors.dark,
     justifyContent: 'center',
   },
   lightboxHeader: {

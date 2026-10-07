@@ -101,7 +101,7 @@ const FeedScreen = () => {
             id: user.id,
             name: user.name || t('common.you'),
             profile_pic: user.profile_pic || user.profile?.profile_pic,
-            designation: user.designation || user.profile?.designation,
+            membership: user.profile?.membership || user.membership,
           });
         }
 
@@ -141,7 +141,7 @@ const FeedScreen = () => {
             id: user.id,
             name: user.name || t('common.you'),
             profile_pic: user.profile_pic || user.profile?.profile_pic,
-            designation: user.designation || user.profile?.designation,
+            membership: user.profile?.membership || user.membership,
           });
         }
 
@@ -190,6 +190,13 @@ const FeedScreen = () => {
               dislikedBy={post.dislikedBy}
               onLikePress={() => toggleLike(post.id)}
               onDislikePress={() => toggleDislike(post.id)}
+              onProfilePress={() => {
+                if ((post as any).userId === 'current_user') {
+                  (navigation as any).navigate('Profile');
+                } else {
+                  (navigation as any).navigate('PublicProfileScreen', { userId: (post as any).userId });
+                }
+              }}
               onPostPress={() => (navigation as any).navigate('PostDetailsScreen', { postId: post.id })}
             />
           )}

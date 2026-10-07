@@ -35,6 +35,9 @@ import { RFValue } from 'react-native-responsive-fontsize';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import MainTabNavigator from './MainTabNavigator';
+import JoinMembershipScreen from '../screens/main/JoinMembershipScreen';
+import DonateScreen from '../screens/main/DonateScreen';
+import CommunityMembersScreen from '../screens/main/CommunityMembersScreen';
 import { Colors } from '../theme/colors';
 import Svg, { Path } from 'react-native-svg';
 import useAuthStore from '../zustand/useAuthStore';
@@ -213,7 +216,12 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName} numberOfLines={1}>{user?.name || t('drawer.guestUser')}</Text>
-            <Text style={styles.userEmailText} numberOfLines={1}>{user?.profile?.designation || t('common.user')}</Text>
+            <Text style={styles.userEmailText} numberOfLines={1}>
+              {(() => {
+                const label = (user?.profile?.membership || t('common.user') || '').trim();
+                return label ? label.charAt(0).toUpperCase() + label.slice(1) : label;
+              })()}
+            </Text>
           </View>
 
           {/* Since — right side */}
@@ -292,7 +300,7 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
           <Text style={styles.sectionTitle}>{t('drawer.membershipContributions')}</Text>
         </View>
 
-        {renderDrawerItem(t('drawer.membershipCertificate'), Award, 'MembershipCertificateScreen')}
+        {/* {renderDrawerItem(t('drawer.membershipCertificate'), Award, 'MembershipCertificateScreen')} */}
         {renderDrawerItem(t('drawer.donationHistory'), History, 'MainTabs', 'Profile', undefined, false)}
         {/* {renderDrawerItem('Membership ', List, 'PlansScreen')} */}
         {renderDrawerItem(t('drawer.referralFriends'), Share2, 'ReferralScreen')}
@@ -401,6 +409,12 @@ export default function MainDrawerNavigator() {
       }}
     >
       <Drawer.Screen name="MainTabs" component={MainTabNavigator} />
+      {/* Ye screens drawer ke andar hain taaki inke PrimaryHeader par
+          openDrawer() natively kaam kare (pehle root Stack me the, jahan
+          drawer unka ancestor nahi tha). */}
+      <Drawer.Screen name="JoinMembershipScreen" component={JoinMembershipScreen} />
+      <Drawer.Screen name="DonateScreen" component={DonateScreen} />
+      <Drawer.Screen name="CommunityMembersScreen" component={CommunityMembersScreen} />
     </Drawer.Navigator>
   );
 }

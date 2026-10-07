@@ -19,7 +19,7 @@ export interface DislikedUser {
   id: string | number;
   name: string;
   profile_pic?: string;
-  designation?: string;
+  membership?: string;
   avatar?: string;
 }
 
@@ -57,8 +57,8 @@ export const DislikesModal = ({
         )}
         <View style={styles.userInfo}>
           <Text style={styles.userName}>{item.name}</Text>
-          {item.designation ? (
-            <Text style={styles.userDesignation}>{item.designation}</Text>
+          {item.membership ? (
+            <Text style={styles.userMembership}>{item.membership}</Text>
           ) : null}
         </View>
       </View>
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.dark,
   },
-  userDesignation: {
+  userMembership: {
     fontSize: RFValue(10),
     color: Colors.gray,
     marginTop: hp('0.2%'),

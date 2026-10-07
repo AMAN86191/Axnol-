@@ -11,6 +11,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { RFValue } from 'react-native-responsive-fontsize';
+import { Colors } from '../../theme/colors';
 import {
   Calendar,
   MapPin,
@@ -101,7 +102,7 @@ export default function GalleryScreen() {
 
         {/* Badge */}
         <View style={styles.upcomingBadge}>
-          <Calendar size={RFValue(9)} color="#166534" style={{ marginRight: wp('1%') }} />
+          <Calendar size={RFValue(9)} color={Colors.primary} style={{ marginRight: wp('1%') }} />
           <Text style={styles.upcomingBadgeText}>{t('gallery.upcoming')}</Text>
         </View>
 
@@ -119,7 +120,7 @@ export default function GalleryScreen() {
 
         {/* Date */}
         <View style={styles.upcomingMetaRow}>
-          <Calendar size={RFValue(12)} color="#166534" />
+          <Calendar size={RFValue(12)} color={Colors.primary} />
           <View style={{ marginLeft: wp('2%') }}>
             <Text style={styles.upcomingMetaTitle}>{dateInfo.formatted}</Text>
             {dateInfo.dayName ? <Text style={styles.upcomingMetaSub}>{dateInfo.dayName}</Text> : null}
@@ -128,7 +129,7 @@ export default function GalleryScreen() {
 
         {/* Location */}
         <View style={styles.upcomingMetaRow}>
-          <MapPin size={RFValue(12)} color="#166534" />
+          <MapPin size={RFValue(12)} color={Colors.primary} />
           <View style={{ marginLeft: wp('2%') }}>
             <Text style={styles.upcomingMetaTitle}>{item.address || t('gallery.tbd')}</Text>
           </View>
@@ -137,7 +138,7 @@ export default function GalleryScreen() {
         {/* Bottom row: Starts in X Days + Notify Me */}
         <View style={styles.upcomingBottomRow}>
           <View style={styles.startsInContainer}>
-            <Clock size={RFValue(12)} color="#166534" style={{ marginRight: wp('1.5%') }} />
+            <Clock size={RFValue(12)} color={Colors.primary} style={{ marginRight: wp('1.5%') }} />
             <View>
               <Text style={styles.startsInLabel}>{t('gallery.startsIn')}</Text>
               <Text style={styles.startsInValue}>{daysUntil === 0 ? t('gallery.today') : daysUntil === 1 ? t('gallery.tomorrow') : t('gallery.days', { days: daysUntil })}</Text>
@@ -145,7 +146,7 @@ export default function GalleryScreen() {
           </View>
 
           {/* <TouchableOpacity style={styles.notifyBtn} activeOpacity={0.8}>
-            <Bell size={RFValue(11)} color="#FFF" style={{ marginRight: wp('1.5%') }} />
+            <Bell size={RFValue(11)} color={Colors.white} style={{ marginRight: wp('1.5%') }} />
             <Text style={styles.notifyBtnText}>Notify Me</Text>
           </TouchableOpacity> */}
         </View>
@@ -174,8 +175,8 @@ export default function GalleryScreen() {
           {coverImageUri ? (
             <Image source={{ uri: coverImageUri }} style={styles.pastCoverImage} />
           ) : (
-            <View style={[styles.pastCoverImage, { backgroundColor: '#E8E8E8', justifyContent: 'center', alignItems: 'center' }]}>
-              <ImageIcon size={RFValue(20)} color="#94A3B8" />
+            <View style={[styles.pastCoverImage, { backgroundColor: Colors.secondary, justifyContent: 'center', alignItems: 'center' }]}>
+              <ImageIcon size={RFValue(20)} color={Colors.lightGray} />
             </View>
           )}
           {/* Thumbnails row */}
@@ -195,26 +196,26 @@ export default function GalleryScreen() {
         <View style={styles.pastInfoSection}>
           {/* Completed badge */}
           <View style={styles.completedBadge}>
-            <CheckCircle size={RFValue(9)} color="#166534" style={{ marginRight: wp('1%') }} />
+            <CheckCircle size={RFValue(9)} color={Colors.primary} style={{ marginRight: wp('1%') }} />
             <Text style={styles.completedBadgeText}>{t('gallery.completed')}</Text>
           </View>
 
           <Text style={styles.pastTitle} numberOfLines={2}>{item.name}</Text>
 
           <View style={styles.pastMetaRow}>
-            <Calendar size={RFValue(10)} color="#6B7280" />
+            <Calendar size={RFValue(10)} color={Colors.gray} />
             <Text style={styles.pastMetaText}>{dateInfo.formatted}</Text>
           </View>
 
           <View style={styles.pastMetaRow}>
-            <MapPin size={RFValue(10)} color="#6B7280" />
+            <MapPin size={RFValue(10)} color={Colors.gray} />
             <Text style={styles.pastMetaText} numberOfLines={1}>{item.address || t('common.na')}</Text>
           </View>
 
           {/* Stats row */}
           <View style={styles.pastStatsRow}>
             <View style={styles.pastStatItem}>
-              <ImageIcon size={RFValue(10)} color="#6B7280" style={{ marginRight: wp('1%') }} />
+              <ImageIcon size={RFValue(10)} color={Colors.gray} style={{ marginRight: wp('1%') }} />
               <Text style={styles.pastStatValue}>{photoCount}</Text>
               <Text style={styles.pastStatLabel}>{t('gallery.photos')}</Text>
             </View>
@@ -222,7 +223,7 @@ export default function GalleryScreen() {
 
           {/* Arrow */}
           <View style={styles.pastArrow}>
-            <ChevronRight size={RFValue(14)} color="#D1D5DB" />
+            <ChevronRight size={RFValue(14)} color={Colors.border} />
           </View>
         </View>
       </TouchableOpacity>
@@ -240,7 +241,7 @@ export default function GalleryScreen() {
           {/* Section Header */}
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderLeft}>
-              <Calendar size={RFValue(14)} color="#166534" style={{ marginRight: wp('2%') }} />
+              <Calendar size={RFValue(14)} color={Colors.primary} style={{ marginRight: wp('2%') }} />
               <View>
                 <Text style={styles.sectionTitle}>{t('gallery.upcomingEvent')}</Text>
                 <Text style={styles.sectionSubtitle}>{t('gallery.upcomingEventDesc')}</Text>
@@ -252,7 +253,7 @@ export default function GalleryScreen() {
             upcomingEvents.map((event: any) => renderUpcomingCard(event))
           ) : (
             <View style={styles.emptyState}>
-              <Calendar size={RFValue(30)} color="#D1D5DB" />
+              <Calendar size={RFValue(30)} color={Colors.border} />
               <Text style={styles.emptyTitle}>{t('gallery.noUpcomingEvents')}</Text>
               <Text style={styles.emptySubtitle}>{t('gallery.checkBackSoon')}</Text>
             </View>
@@ -270,7 +271,7 @@ export default function GalleryScreen() {
         {/* Section Header */}
         <View style={styles.sectionHeader}>
           <View style={styles.sectionHeaderLeft}>
-            <CheckCircle size={RFValue(14)} color="#166534" style={{ marginRight: wp('2%') }} />
+            <CheckCircle size={RFValue(14)} color={Colors.primary} style={{ marginRight: wp('2%') }} />
             <View>
               <Text style={styles.sectionTitle}>{t('gallery.pastEvents')}</Text>
               <Text style={styles.sectionSubtitle}>{t('gallery.pastEventsSubtitle')}</Text>
@@ -282,7 +283,7 @@ export default function GalleryScreen() {
           pastEvents.map((event: any) => renderPastCard(event))
         ) : (
           <View style={styles.emptyState}>
-            <ImageIcon size={RFValue(30)} color="#D1D5DB" />
+            <ImageIcon size={RFValue(30)} color={Colors.border} />
             <Text style={styles.emptyTitle}>{t('gallery.noPastEvents')}</Text>
             <Text style={styles.emptySubtitle}>{t('gallery.eventsAppear')}</Text>
           </View>
@@ -323,7 +324,7 @@ export default function GalleryScreen() {
       <View style={[styles.floatingBannerWrapper, { bottom: insets.bottom > 0 ? insets.bottom : hp('4%') }]}>
         <View style={styles.floatingBanner}>
           <View style={styles.bannerIconWrapper}>
-            <Heart size={RFValue(18)} color="#EA580C" />
+            <Heart size={RFValue(18)} color={Colors.primary} />
           </View>
           <View style={styles.bannerTextGroup}>
             <Text style={styles.bannerTitle}>{t('gallery.bePartOfSeva')}</Text>
@@ -331,7 +332,7 @@ export default function GalleryScreen() {
           </View>
           <TouchableOpacity style={styles.donateBtn} onPress={() => navigation.navigate('DonateScreen')}>
             <Text style={styles.donateBtnText}>{t('drawer.donateNow')}</Text>
-            <Heart size={RFValue(9)} color="#FFF" fill="#FFF" style={{ marginLeft: wp('1.5%') }} />
+            <Heart size={RFValue(9)} color={Colors.white} fill={Colors.white} style={{ marginLeft: wp('1.5%') }} />
           </TouchableOpacity>
         </View>
       </View>
@@ -342,15 +343,15 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FCFCFC',
+    backgroundColor: Colors.background,
   },
 
   // ── Tab Bar ──
   tabBar: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#FFF',
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.white,
   },
   tab: {
     flex: 1,
@@ -360,15 +361,15 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: '#166534',
+    borderBottomColor: Colors.primary,
   },
   tabText: {
     fontSize: RFValue(11),
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: Colors.lightGray,
   },
   tabTextActive: {
-    color: '#166534',
+    color: Colors.primary,
     fontWeight: '700',
   },
 
@@ -392,22 +393,22 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: RFValue(13),
     fontWeight: '800',
-    color: '#1F2937',
+    color: Colors.dark,
   },
   sectionSubtitle: {
     fontSize: RFValue(9),
-    color: '#9CA3AF',
+    color: Colors.lightGray,
     marginTop: hp('0.2%'),
   },
 
   // ── Upcoming Card ──
   upcomingCard: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#FFF8F5',
     borderRadius: wp('5%'),
     padding: wp('5%'),
     marginBottom: hp('2.5%'),
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: '#FFE0D3',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
   upcomingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#FFF1EB',
     alignSelf: 'flex-start',
     paddingHorizontal: wp('3%'),
     paddingVertical: hp('0.5%'),
@@ -435,18 +436,18 @@ const styles = StyleSheet.create({
   upcomingBadgeText: {
     fontSize: RFValue(8),
     fontWeight: '800',
-    color: '#166534',
+    color: Colors.primary,
     letterSpacing: 0.5,
   },
   upcomingTitle: {
     fontSize: RFValue(17),
     fontWeight: '900',
-    color: '#1F2937',
+    color: Colors.dark,
     marginBottom: hp('0.5%'),
   },
   upcomingDescription: {
     fontSize: RFValue(10),
-    color: '#6B7280',
+    color: Colors.gray,
     lineHeight: hp('2%'),
     marginBottom: hp('1.5%'),
     maxWidth: '65%',
@@ -459,11 +460,11 @@ const styles = StyleSheet.create({
   upcomingMetaTitle: {
     fontSize: RFValue(11),
     fontWeight: '700',
-    color: '#1F2937',
+    color: Colors.dark,
   },
   upcomingMetaSub: {
     fontSize: RFValue(9),
-    color: '#6B7280',
+    color: Colors.gray,
     marginTop: hp('0.1%'),
   },
   upcomingBottomRow: {
@@ -478,28 +479,28 @@ const styles = StyleSheet.create({
   },
   startsInLabel: {
     fontSize: RFValue(8),
-    color: '#6B7280',
+    color: Colors.gray,
   },
   startsInValue: {
     fontSize: RFValue(14),
     fontWeight: '900',
-    color: '#166534',
+    color: Colors.primary,
   },
   notifyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: Colors.primary,
     paddingVertical: hp('1.2%'),
     paddingHorizontal: wp('5%'),
     borderRadius: wp('3%'),
     elevation: 3,
-    shadowColor: '#166534',
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
   },
   notifyBtnText: {
-    color: '#FFF',
+    color: Colors.white,
     fontSize: RFValue(10.5),
     fontWeight: '700',
   },
@@ -507,17 +508,17 @@ const styles = StyleSheet.create({
   // ── Past Event Card ──
   pastCard: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.white,
     borderRadius: wp('4%'),
     marginBottom: hp('2%'),
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: Colors.dark,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 6,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: Colors.secondary,
   },
   pastImageSection: {
     width: wp('35%'),
@@ -544,12 +545,12 @@ const styles = StyleSheet.create({
     width: wp('7%'),
     height: wp('7%'),
     borderRadius: wp('1.5%'),
-    backgroundColor: '#1F2937',
+    backgroundColor: Colors.dark,
     justifyContent: 'center',
     alignItems: 'center',
   },
   extraCountText: {
-    color: '#FFF',
+    color: Colors.white,
     fontSize: RFValue(8),
     fontWeight: '800',
   },
@@ -563,7 +564,7 @@ const styles = StyleSheet.create({
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#FFF1EB',
     alignSelf: 'flex-start',
     paddingHorizontal: wp('2.5%'),
     paddingVertical: hp('0.35%'),
@@ -573,12 +574,12 @@ const styles = StyleSheet.create({
   completedBadgeText: {
     fontSize: RFValue(7.5),
     fontWeight: '700',
-    color: '#166534',
+    color: Colors.primary,
   },
   pastTitle: {
     fontSize: RFValue(12),
     fontWeight: '800',
-    color: '#1F2937',
+    color: Colors.dark,
     marginBottom: hp('0.5%'),
   },
   pastMetaRow: {
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
   },
   pastMetaText: {
     fontSize: RFValue(9),
-    color: '#6B7280',
+    color: Colors.gray,
     marginLeft: wp('1.5%'),
     fontWeight: '500',
   },
@@ -605,12 +606,12 @@ const styles = StyleSheet.create({
   pastStatValue: {
     fontSize: RFValue(10),
     fontWeight: '800',
-    color: '#1F2937',
+    color: Colors.dark,
     marginRight: wp('1%'),
   },
   pastStatLabel: {
     fontSize: RFValue(8),
-    color: '#9CA3AF',
+    color: Colors.lightGray,
   },
   pastArrow: {
     position: 'absolute',
@@ -627,12 +628,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: RFValue(13),
     fontWeight: '700',
-    color: '#6B7280',
+    color: Colors.gray,
     marginTop: hp('1.5%'),
   },
   emptySubtitle: {
     fontSize: RFValue(10),
-    color: '#9CA3AF',
+    color: Colors.lightGray,
     marginTop: hp('0.5%'),
     textAlign: 'center',
   },
@@ -648,10 +649,10 @@ const styles = StyleSheet.create({
   floatingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#166534',
+    backgroundColor: Colors.dark,
     padding: wp('4%'),
     borderRadius: wp('4%'),
-    shadowColor: '#000',
+    shadowColor: Colors.dark,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -664,26 +665,26 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bannerTitle: {
-    color: '#FDE68A',
+    color: Colors.primary,
     fontSize: RFValue(11.5),
     fontWeight: '800',
     marginBottom: hp('0.3%'),
   },
   bannerSubtitle: {
-    color: '#BBF7D0',
+    color: Colors.lightGray,
     fontSize: RFValue(8),
     lineHeight: hp('1.4%'),
   },
   donateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EA580C',
+    backgroundColor: Colors.primary,
     paddingVertical: hp('1%'),
     paddingHorizontal: wp('4%'),
     borderRadius: wp('2%'),
   },
   donateBtnText: {
-    color: '#FFF',
+    color: Colors.white,
     fontSize: RFValue(9.5),
     fontWeight: '800',
   },

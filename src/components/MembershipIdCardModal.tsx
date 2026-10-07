@@ -12,7 +12,7 @@ interface MembershipIdCardModalProps {
   profileName: string;
   avatarUri?: string;
   memberId?: string;
-  designation?: string;
+  membership?: string;
   since?: string;
 }
 
@@ -22,11 +22,11 @@ export const MembershipIdCardModal = React.memo(({
   profileName,
   avatarUri,
   memberId,
-  designation,
+  membership,
   since,
 }: MembershipIdCardModalProps) => {
   const { t } = useTranslation();
-  const designationLabel = designation || t('idCard.goldPatron');
+  const membershipLabel = membership || t('idCard.goldPatron');
   const initials = (profileName || 'M').trim().charAt(0).toUpperCase();
 
   return (
@@ -85,8 +85,8 @@ export const MembershipIdCardModal = React.memo(({
                 <Text style={styles.idCardLabel}>{t('idCard.membershipId', 'MEMBERSHIP ID')}</Text>
                 <Text style={styles.idCardValueMono}>{memberId}</Text>
 
-                <Text style={styles.idCardLabel}>{t('idCard.designation', 'DESIGNATION')}</Text>
-                <Text style={styles.idCardValue}>{designationLabel}</Text>
+                <Text style={styles.idCardLabel}>{t('idCard.membership', 'MEMBERSHIP')}</Text>
+                <Text style={styles.idCardValue}>{membershipLabel}</Text>
 
                 <View style={styles.idCardRow}>
                   <View style={{ flex: 1 }}>
