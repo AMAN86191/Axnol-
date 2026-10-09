@@ -1,111 +1,122 @@
 import React, {useRef, useState} from 'react';
-import {
-  FlatList,
-  ImageBackground,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AuthStackParamList} from '../../navigation/types';
-import {colors, radius, scale, spacing, theme} from '../../theme';
+import {
+  colors,
+  fontSize,
+  radius,
+  scale,
+  SCREEN,
+  spacing,
+  typography,
+} from '../../theme';
 import Button from '../../components/ui/Button';
+import AppImage from '../../components/ui/AppImage';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
 
-const DATA = [
+const IMAGE_H = Math.round(SCREEN.height * 0.75);
+
+const SLIDES = [
   {
     id: '1',
-    title: 'Axnol Lubetech — Solutions since 1959',
+    title: 'Solution of Energy since 1959',
     subtitle:
-      'Specialty lubricants, greases & base oils powering industries across India.',
-    image: 'https://axnol.in/images/s1.jpg',
+      'Axnol Lubetech India Pvt. Ltd. — specialty lubricants & greases trusted across industries.',
+    image: 'onboarding_1',
   },
   {
     id: '2',
-    title: 'Find the Right Product',
+    title: 'Explore the Catalogue',
     subtitle:
-      'Browse industries, categories, subcategories & product details with technical specs.',
-    image: 'https://axnol.in/images/s3.jpg',
+      'Browse products by industry, category and subcategory with full technical details and documents.',
+    image: 'onboarding_2',
   },
   {
     id: '3',
     title: 'Dealer Pricing & Orders',
     subtitle:
-      'Request custom pricing, track approval & manage orders & invoices.',
-    image: 'https://axnol.in/images/s7.jpg',
-  },
-  {
-    id: '4',
-    title: 'Stay Connected',
-    subtitle:
-      'Get notifications, access TDS documents & submit enquiries instantly.',
-    image: 'https://axnol.in/images/s8.jpg',
+      'Request custom dealer pricing, track approvals, orders and invoices — all in one app.',
+    image: 'onboarding_3',
   },
 ];
 
 export const OnboardingScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const ref = useRef<FlatList>(null);
+  const isLast = index === SLIDES.length - 1;
   const next = () => {
-    if (index === DATA.length - 1) {
+    if (isLast) {
       navigation.replace('Login');
     } else {
-      ref.current?.scrollToIndex({index: index + 1});
+      ref.current?.scrollToIndex({index: index + 1, animated: true});
     }
   };
   const skip = () => navigation.replace('Login');
   return (
     <View style={styles.container}>
-      <FlatList
-        ref={ref}
-        data={DATA}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={e => {
-          const i = Math.round(
-            e.nativeEvent.contentOffset.x /
-              e.nativeEvent.layoutMeasurement.width,
-          );
-          setIndex(i);
-        }}
-        renderItem={({item}) => (
-          <ImageBackground
-            source={{uri: item.image}}
-            style={styles.slide}
-            resizeMode="cover">
-            <View style={styles.overlay} />
-            <View style={styles.content}>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.subtitle}>{item.subtitle}</Text>
-            </View>
-          </ImageBackground>
-        )}
-        keyExtractor={item => item.id}
-      />
-      <View style={styles.footer}>
-        <View style={styles.dots}>
-          {DATA.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i === index && styles.dotActive]}
+      <View style={styles.imageArea}>
+        <FlatList
+          ref={ref}
+          data={SLIDES}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={item => item.id}
+          getItemLayout={(_, i) => ({
+            length: SCREEN.width,
+            offset: SCREEN.width * i,
+            index: i,
+          })}
+          onMomentumScrollEnd={e => {
+            const i = Math.round(
+              e.nativeEvent.contentOffset.x /
+                e.nativeEvent.layoutMeasurement.width,
+            );
+            setIndex(i);
+          }}
+          renderItem={({item}) => (
+            <AppImage
+              uri={item.image}
+              resizeMode="stretch"
+              style={{width: SCREEN.width, height: IMAGE_H}}
             />
-          ))}
-        </View>
-        <View style={styles.actions}>
-          <TouchableOpacity onPress={skip} style={styles.skip}>
+          )}
+        />
+        <View style={[styles.skipWrap, {top: insets.top + spacing.sm}]}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            hitSlop={8}
+            onPress={skip}
+            style={styles.skipBtn}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
-          <View style={{flex: 1, marginLeft: spacing.md}}>
-            <Button
-              title={index === DATA.length - 1 ? 'Get Started' : 'Next'}
-              onPress={next}
-            />
+        </View>
+      </View>
+      <View style={[styles.sheet, {paddingBottom: insets.bottom + spacing.xxl}]}>
+        <View style={styles.content}>
+          <Text style={styles.title}>{SLIDES[index].title}</Text>
+          <Text style={styles.subtitle}>{SLIDES[index].subtitle}</Text>
+        </View>
+        <View style={styles.footer}>
+          <View style={styles.dots}>
+            {SLIDES.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === index && styles.dotActive]}
+              />
+            ))}
           </View>
+          <Button
+            title={isLast ? 'Get Started' : 'Next'}
+            onPress={next}
+            fullWidth
+          />
         </View>
       </View>
     </View>
@@ -114,54 +125,59 @@ export const OnboardingScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: colors.background},
-  slide: {
-    width: theme.SCREEN.width,
-    height: '100%',
-    justifyContent: 'flex-end',
+  imageArea: {height: IMAGE_H, backgroundColor: colors.primaryDark},
+  skipWrap: {position: 'absolute', right: spacing.lg},
+  skipBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: 'rgba(7, 24, 44, 0.45)',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(7,24,44,0.55)',
-  },
-  content: {padding: spacing.xxl, paddingBottom: spacing.xxxl * 1.8},
-  title: {
-    ...theme.typography.bold,
-    fontSize: theme.fontSize.xxxl,
+  skipText: {
+    ...typography.semibold,
+    fontSize: fontSize.sm,
     color: colors.textInverse,
+  },
+  sheet: {
+    flex: 1,
+    marginTop: -spacing.xl,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.xxl,
+    paddingTop: spacing.xxl,
+    justifyContent: 'space-between',
+  },
+  content: {flex: 1, paddingTop: spacing.sm},
+  title: {
+    ...typography.bold,
+    fontSize: fontSize.xl,
+    color: colors.text,
     marginBottom: spacing.md,
   },
   subtitle: {
-    ...theme.typography.regular,
-    fontSize: theme.fontSize.md,
-    color: colors.primaryMuted,
-    lineHeight: theme.fontSize.md * 1.5,
+    ...typography.regular,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    lineHeight: fontSize.sm * 1.55,
   },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing.xxl,
-  },
+  footer: {gap: spacing.xl},
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: spacing.xxl,
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   dot: {
     width: scale(8),
     height: scale(8),
     borderRadius: scale(4),
-    backgroundColor: 'rgba(255,255,255,0.4)',
-    marginHorizontal: scale(4),
+    backgroundColor: colors.surfaceAlt,
   },
-  dotActive: {width: scale(22), backgroundColor: colors.textInverse},
-  actions: {flexDirection: 'row', alignItems: 'center'},
-  skip: {paddingHorizontal: spacing.lg, paddingVertical: spacing.md},
-  skipText: {
-    ...theme.typography.medium,
-    fontSize: theme.fontSize.md,
-    color: colors.textInverse,
+  dotActive: {
+    width: scale(24),
+    backgroundColor: colors.accent,
+    borderRadius: scale(4),
   },
 });
 export default OnboardingScreen;

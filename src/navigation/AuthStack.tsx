@@ -9,13 +9,22 @@ import OtpVerifyScreen from '../features/auth/OtpVerifyScreen';
 import ApprovalPendingScreen from '../features/auth/ApprovalPendingScreen';
 import ProfileSetupScreen from '../features/auth/ProfileSetupScreen';
 import ForgotPasswordScreen from '../features/auth/ForgotPasswordScreen';
+import {useAppSelector} from '../store';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthStack: React.FC = () => {
+  const {token, user} = useAppSelector(s => s.auth);
+  const initialRouteName: keyof AuthStackParamList = !token
+    ? 'Splash'
+    : user?.status === 'pending'
+    ? 'ApprovalPending'
+    : !user?.profileCompleted
+    ? 'ProfileSetup'
+    : 'Splash';
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
+      initialRouteName={initialRouteName}
       screenOptions={{headerShown: false}}>
       <Stack.Screen name="Splash" component={SplashScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />

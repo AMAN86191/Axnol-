@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -8,55 +8,107 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {ReceiptText} from 'lucide-react-native';
 import {useGetOrdersQuery} from '../../api/services/ordersApi';
-import {colors, radius, rfValue, spacing, theme} from '../../theme';
-import {getStatusColor} from '../../utils/status';
+import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
+import ScreenHeader from '../../components/ui/ScreenHeader';
+import StatusBadge from '../../components/ui/StatusBadge';
+import {colors, fontSize, radius, spacing, typography} from '../../theme';
+
+const FILTERS = [
+  'All',
+  'Placed',
+  'Confirmed',
+  'Dispatched',
+  'Delivered',
+  'Cancelled',
+];
+
+const formatDate = (ts: number) =>
+  new Date(ts).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
 export const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const {data, isLoading} = useGetOrdersQuery();
-  if (isLoading) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
+  const [filter, setFilter] = useState('All');
+
+  const orders = (data ?? []).filter(
+    o => filter === 'All' || o.status === filter.toLowerCase(),
+  );
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>My Orders</Text>
-      <FlatList
-        data={data}
-        contentContainerStyle={{padding: spacing.xl, gap: spacing.md}}
-        ListEmptyComponent={<Text style={styles.empty}>No orders yet</Text>}
-        renderItem={({item}) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              navigation.navigate('OrderDetails', {orderId: item.id})
-            }>
-            <View style={styles.rowBetween}>
-              <Text style={styles.orderNo}>{item.orderNo}</Text>
-              <View
-                style={[
-                  styles.badge,
-                  {backgroundColor: getStatusColor(item.status).bg},
-                ]}>
-                <Text
-                  style={[
-                    styles.badgeText,
-                    {color: getStatusColor(item.status).text},
-                  ]}>
-                  {item.status.toUpperCase()}
-                </Text>
-              </View>
+      <ScreenHeader title="My Orders" />
+      {isLoading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator color={colors.primary} size="large" />
+        </View>
+      ) : (
+        <FlatList
+          data={orders}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <View style={styles.chips}>
+              {FILTERS.map(f => {
+                const active = f === filter;
+                return (
+                  <TouchableOpacity
+                    key={f}
+                    activeOpacity={0.8}
+                    onPress={() => setFilter(f)}
+                    style={[styles.chip, active && styles.chipActive]}>
+                    <Text
+                      style={[styles.chipText, active && styles.chipTextActive]}>
+                      {f}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <Text style={styles.items}>{item.items.length} item(s)</Text>
-            <Text style={styles.total}>₹ {item.total.toFixed(2)}</Text>
-          </TouchableOpacity>
-        )}
-        keyExtractor={i => i.id}
-      />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon={ReceiptText}
+              title={filter === 'All' ? 'No orders yet' : `No ${filter} orders`}
+              subtitle={
+                filter === 'All'
+                  ? 'Orders appear here once an admin approves your request'
+                  : undefined
+              }
+            />
+          }
+          renderItem={({item}) => (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() =>
+                navigation.navigate('OrderDetails', {orderId: item.id})
+              }>
+              <Card>
+                <View style={styles.row}>
+                  <Text style={styles.orderNo}>{item.orderNo}</Text>
+                  <StatusBadge status={item.status} />
+                </View>
+                <View style={[styles.row, styles.metaRow]}>
+                  <Text style={styles.meta}>{formatDate(item.createdAt)}</Text>
+                  <Text style={styles.meta}>{item.items.length} item(s)</Text>
+                </View>
+                <View style={[styles.row, styles.metaRow]}>
+                  <Text style={styles.total}>
+                    ₹{item.total.toLocaleString('en-IN')}
+                  </Text>
+                  <Text style={styles.view}>View Details ›</Text>
+                </View>
+              </Card>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </View>
   );
 };
@@ -64,51 +116,64 @@ export const OrdersScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: colors.background},
   loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  header: {
-    ...theme.typography.bold,
-    fontSize: theme.fontSize.xl,
-    color: colors.text,
-    padding: spacing.xxl,
-    paddingBottom: 0,
-  },
-  empty: {
-    ...theme.typography.regular,
-    fontSize: theme.fontSize.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+  list: {
     padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.md,
   },
-  rowBetween: {
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    ...typography.medium,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+  },
+  chipTextActive: {
+    ...typography.semibold,
+    color: colors.textInverse,
+  },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  metaRow: {marginTop: spacing.sm},
   orderNo: {
-    ...theme.typography.bold,
-    fontSize: theme.fontSize.md,
+    ...typography.semibold,
+    fontSize: fontSize.md,
     color: colors.text,
   },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.pill,
-  },
-  badgeText: {...theme.typography.bold, fontSize: rfValue(10)},
-  items: {
-    ...theme.typography.regular,
-    fontSize: theme.fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
+  meta: {
+    ...typography.regular,
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
   },
   total: {
-    ...theme.typography.bold,
-    fontSize: theme.fontSize.md,
+    ...typography.bold,
+    fontSize: fontSize.lg,
     color: colors.primary,
-    marginTop: spacing.sm,
+  },
+  view: {
+    ...typography.semibold,
+    fontSize: fontSize.sm,
+    color: colors.primary,
   },
 });
+
 export default OrdersScreen;

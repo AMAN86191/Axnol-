@@ -8,10 +8,13 @@ export const getStatusColor = (status: string) => {
     case 'approved':
     case 'active':
     case 'delivered':
+    case 'paid':
+    case 'resolved':
       return {bg: colors.successLight, text: colors.success};
     case 'rejected':
     case 'inactive':
     case 'cancelled':
+    case 'unpaid':
       return {bg: colors.dangerLight, text: colors.danger};
     case 'placed':
     case 'confirmed':

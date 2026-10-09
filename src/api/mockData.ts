@@ -11,7 +11,6 @@ import {
   User,
 } from './types';
 
-const IMG = 'https://axnol.in/images';
 const PDF = 'https://axnol.in/pdf';
 
 export const companyInfo: CompanyInfo = {
@@ -39,37 +38,37 @@ export const companyInfo: CompanyInfo = {
 export const banners: Banner[] = [
   {
     id: 'b1',
-    image: `${IMG}/s1.jpg`,
+    image: 'banner_1',
     title: 'Solution of Energy since 1959',
     subtitle: 'Specialty Lubricants & Greases',
   },
   {
     id: 'b2',
-    image: `${IMG}/s3.jpg`,
+    image: 'banner_2',
     title: 'Lubricating Oils',
     subtitle: 'Industrial & Automotive range',
   },
   {
     id: 'b3',
-    image: `${IMG}/s4.jpg`,
+    image: 'banner_3',
     title: 'MRO Lubricants',
     subtitle: 'Maintenance, repair & operations',
   },
   {
     id: 'b4',
-    image: `${IMG}/s5.jpg`,
+    image: 'banner_4',
     title: 'Forging Lubricants',
     subtitle: 'Hot & cold forging compounds',
   },
   {
     id: 'b5',
-    image: `${IMG}/s7.jpg`,
+    image: 'banner_5',
     title: 'Metal Cutting & Forming',
     subtitle: 'Soluble, semi-synthetic & synthetic',
   },
   {
     id: 'b6',
-    image: `${IMG}/s8.jpg`,
+    image: 'banner_6',
     title: 'Food Grade Lubricants',
     subtitle: 'H1 certified food safe lubricants',
   },
@@ -79,145 +78,145 @@ export const industries: Industry[] = [
   {
     id: 'ind1',
     name: 'Animal Feed',
-    image: `${IMG}/new1.jpg`,
+    image: 'industry_1',
     description: 'Lubrication solutions for animal feed processing plants.',
   },
   {
     id: 'ind2',
     name: 'Automotive',
-    image: `${IMG}/new2.jpg`,
+    image: 'industry_2',
     description:
       'Engine oils, gear oils, ATF and coolants for automotive applications.',
   },
   {
     id: 'ind3',
     name: 'Agriculture',
-    image: `${IMG}/new3.jpg`,
+    image: 'industry_3',
     description:
       'Reliable lubricants for tractors, harvesters and farm equipment.',
   },
   {
     id: 'ind4',
     name: 'Aviation',
-    image: `${IMG}/new4.jpg`,
+    image: 'industry_4',
     description: 'High performance aviation grade lubricants and greases.',
   },
   {
     id: 'ind5',
     name: 'Cosmetic',
-    image: `${IMG}/new5.jpg`,
+    image: 'industry_5',
     description: 'White oil and cosmetic grade base fluids.',
   },
   {
     id: 'ind6',
     name: 'Food & Pharma',
-    image: `${IMG}/new6.jpg`,
+    image: 'industry_6',
     description:
       'H1 food grade lubricants for food, beverage and pharma plants.',
   },
   {
     id: 'ind7',
     name: 'General Engineering',
-    image: `${IMG}/new7.jpg`,
+    image: 'industry_7',
     description: 'All-purpose oils and greases for engineering workshops.',
   },
   {
     id: 'ind8',
     name: 'Metal Forging',
-    image: `${IMG}/new8.jpg`,
+    image: 'industry_8',
     description:
       'Hot and cold forging lubricants, drawing and forming compounds.',
   },
   {
     id: 'ind9',
     name: 'Metal Cutting & Forming',
-    image: `${IMG}/s7.jpg`,
+    image: 'industry_9',
     description: 'Cutting fluids for machining, turning, milling and grinding.',
   },
   {
     id: 'ind10',
     name: 'Mining',
-    image: `${IMG}/steel-b-377x250.jpg`,
+    image: 'industry_10',
     description: 'Heavy duty greases and oils for mining equipment.',
   },
   {
     id: 'ind11',
     name: 'Oil & Gas',
-    image: `${IMG}/ab2.jpg`,
+    image: 'industry_11',
     description: 'Drilling, refining and pipeline lubrication solutions.',
   },
   {
     id: 'ind12',
     name: 'Punching & Stamping',
-    image: `${IMG}/s6.jpg`,
+    image: 'industry_12',
     description: 'Punching oils for press tools, stamping and deep drawing.',
   },
   {
     id: 'ind13',
     name: 'Pharmaceutical',
-    image: `${IMG}/new6.jpg`,
+    image: 'industry_13',
     description: 'Clean running lubricants for pharma processing.',
   },
   {
     id: 'ind14',
     name: 'Steel',
-    image: `${IMG}/steel-b-377x250.jpg`,
+    image: 'industry_14',
     description: 'Rolling, pickling and steel plant lubrication fluids.',
   },
   {
     id: 'ind15',
     name: 'Transformer',
-    image: `${IMG}/new5.jpg`,
+    image: 'industry_15',
     description: 'Transformer oils and insulating fluids.',
   },
 ];
 
 export const categories: Category[] = [
-  {id: 'cat1', name: 'Base Oil', industryId: 'ind11', image: `${IMG}/s1.jpg`},
+  {id: 'cat1', name: 'Base Oil', industryId: 'ind11', image: 'category_1'},
   {
     id: 'cat2',
     name: 'Chemical & Additives',
     industryId: 'ind7',
-    image: `${IMG}/ab2.jpg`,
+    image: 'category_2',
   },
   {
     id: 'cat3',
     name: 'Food Grade Lubricants',
     industryId: 'ind6',
-    image: `${IMG}/s8.jpg`,
+    image: 'category_3',
   },
   {
     id: 'cat4',
     name: 'Forging Lubricants',
     industryId: 'ind8',
-    image: `${IMG}/s5.jpg`,
+    image: 'category_4',
   },
   {
     id: 'cat5',
     name: 'Lubricating Greases & Pastes',
     industryId: 'ind7',
-    image: `${IMG}/s4.jpg`,
+    image: 'category_5',
   },
   {
     id: 'cat6',
     name: 'Lubricating Oils',
     industryId: 'ind2',
-    image: `${IMG}/s3.jpg`,
+    image: 'category_6',
   },
-  {id: 'cat7', name: 'MRO', industryId: 'ind7', image: `${IMG}/s4.jpg`},
+  {id: 'cat7', name: 'MRO', industryId: 'ind7', image: 'category_7'},
   {
     id: 'cat8',
     name: 'Metal Cutting & Forming',
     industryId: 'ind9',
-    image: `${IMG}/s7.jpg`,
+    image: 'category_8',
   },
   {
     id: 'cat9',
     name: 'Punching Oils',
     industryId: 'ind12',
-    image: `${IMG}/s6.jpg`,
+    image: 'category_9',
   },
-  {id: 'cat10', name: 'Wax', industryId: 'ind11', image: `${IMG}/new8.jpg`},
+  {id: 'cat10', name: 'Wax', industryId: 'ind11', image: 'category_10'},
 ];
 
 export const subCategories: SubCategory[] = [
@@ -247,12 +246,12 @@ export const subCategories: SubCategory[] = [
   {id: 'sub24', categoryId: 'cat8', name: 'Forming & Drawing Oils'},
 ];
 
-const OIL_IMG = `${IMG}/s3.jpg`;
-const GREASE_IMG = `${IMG}/s4.jpg`;
-const FORGE_IMG = `${IMG}/s5.jpg`;
-const CUT_IMG = `${IMG}/s7.jpg`;
-const FOOD_IMG = `${IMG}/s8.jpg`;
-const GENERIC_IMG = `${IMG}/g1.jpg`;
+const OIL_IMG = 'product_oil';
+const GREASE_IMG = 'product_grease';
+const FORGE_IMG = 'product_forge';
+const CUT_IMG = 'product_cutting';
+const FOOD_IMG = 'product_food';
+const GENERIC_IMG = 'product_generic';
 
 interface ProductSeed {
   id: string;
@@ -803,7 +802,7 @@ const seeds: ProductSeed[] = [
       'Straight cutting and punching oil for press tools, blanking and piercing operations on sheet metal lines, protecting dies and punches.',
     price: 1550,
     dealerPrice: 1395,
-    images: [`${IMG}/s6.jpg`],
+    images: ['product_punch'],
     specs: [
       {label: 'Type', value: 'Punching / cutting oil'},
       {label: 'Viscosity @ 40°C', value: '32 cSt'},
@@ -895,7 +894,7 @@ const seeds: ProductSeed[] = [
       'Group 1 solvent neutral base oil SN 500, imported from global refineries, used in lubricant blending, greases and process oils.',
     price: 95000,
     dealerPrice: 88000,
-    images: [`${IMG}/s1.jpg`],
+    images: ['product_baseoil'],
     specs: [
       {label: 'Group', value: 'Group 1'},
       {label: 'Viscosity @ 40°C', value: '90 – 110 cSt'},
@@ -913,7 +912,7 @@ const seeds: ProductSeed[] = [
       'Fully refined paraffin wax 58/60 melting point for candles, coatings, packaging and industrial applications.',
     price: 115000,
     dealerPrice: 107000,
-    images: [`${IMG}/new8.jpg`],
+    images: ['product_wax'],
     specs: [
       {label: 'Melting Point', value: '58 – 60°C'},
       {label: 'Oil Content', value: '≤ 0.5%'},

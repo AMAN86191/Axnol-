@@ -16,7 +16,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 export const RootNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
   const {token, isHydrated} = useAppSelector(state => state.auth);
-  const {data: user} = useMeQuery(undefined, {skip: !token});
+  const user = useAppSelector(state => state.auth.user);
+  useMeQuery(undefined, {skip: !token});
+  const ready = Boolean(
+    token && user?.status === 'active' && user?.profileCompleted,
+  );
 
   useEffect(() => {
     const hydrate = async () => {
@@ -28,7 +32,7 @@ export const RootNavigator: React.FC = () => {
             setCredentials({token: storedToken, user: JSON.parse(storedUser)}),
           );
         }
-      } catch (err) {
+      } catch {
         // ignore
       } finally {
         dispatch(setHydrated(true));
@@ -54,7 +58,7 @@ export const RootNavigator: React.FC = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
-        {token ? (
+        {ready ? (
           <Stack.Screen name="Main" component={MainTabs} />
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />

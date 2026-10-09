@@ -3,6 +3,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -10,19 +11,14 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
+import {ArrowLeft, Building2, IdCard, Lock, Mail, MapPin, Phone, User} from 'lucide-react-native';
 import {AuthStackParamList} from '../../navigation/types';
-import {colors, radius, spacing, theme} from '../../theme';
+import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 import Input from '../../components/ui/Input';
-import {
-  Building2,
-  IdCard,
-  Lock,
-  Mail,
-  MapPin,
-  Phone,
-  User,
-} from 'lucide-react-native';
 import Button from '../../components/ui/Button';
+import Card from '../../components/ui/Card';
+import SectionHeader from '../../components/ui/SectionHeader';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -54,8 +50,8 @@ type FormValues = z.infer<typeof schema>;
 
 export const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
   const [register, {isLoading}] = useRegisterMutation();
-  const [role, setRole] = useState<'dealer' | 'customer'>('dealer');
   const {control, handleSubmit} = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -67,7 +63,7 @@ export const RegisterScreen: React.FC = () => {
     },
   });
   const onSubmit = async (values: FormValues) => {
-    const res = await register({...values, role}).unwrap();
+    const res = await register({...values}).unwrap();
     navigation.navigate('OtpVerify', {
       userId: res.userId,
       email: values.email,
@@ -75,41 +71,22 @@ export const RegisterScreen: React.FC = () => {
     });
   };
   return (
+    <SafeAreaView style={[styles.flex]}>
     <KeyboardAvoidingView
-      style={{flex: 1}}
+      style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>
-            Register to access Axnol dealer portal
-          </Text>
-        </View>
-        <View style={styles.card}>
-          <View style={styles.roleRow}>
-            <TouchableOpacity
-              style={[styles.roleBtn, role === 'dealer' && styles.roleActive]}
-              onPress={() => setRole('dealer')}>
-              <Text
-                style={[
-                  styles.roleText,
-                  role === 'dealer' && styles.roleActiveText,
-                ]}>
-                Dealer
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.roleBtn, role === 'customer' && styles.roleActive]}
-              onPress={() => setRole('customer')}>
-              <Text
-                style={[
-                  styles.roleText,
-                  role === 'customer' && styles.roleActiveText,
-                ]}>
-                Customer
-              </Text>
-            </TouchableOpacity>
-          </View>
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>
+          Register to access Axnol dealer portal
+        </Text>
+
+        <Card style={styles.card}>
+          <SectionHeader title="Account Details" />
+         
           <Controller
             name="name"
             control={control}
@@ -120,6 +97,7 @@ export const RegisterScreen: React.FC = () => {
                 onChangeText={onChange}
                 error={error?.message}
                 leftIcon={User}
+                placeholder="e.g. Rahul Sharma"
               />
             )}
           />
@@ -135,6 +113,7 @@ export const RegisterScreen: React.FC = () => {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 leftIcon={Mail}
+                placeholder="name@company.com"
               />
             )}
           />
@@ -149,110 +128,10 @@ export const RegisterScreen: React.FC = () => {
                 error={error?.message}
                 keyboardType="phone-pad"
                 leftIcon={Phone}
+                placeholder="10-digit mobile number"
               />
             )}
           />
-          <Controller
-            name="company"
-            control={control}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
-              <Input
-                label="Company (Optional)"
-                value={value}
-                onChangeText={onChange}
-                error={error?.message}
-                leftIcon={Building2}
-              />
-            )}
-          />
-          <Controller
-            name="designation"
-            control={control}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
-              <Input
-                label="Designation (Optional)"
-                value={value}
-                onChangeText={onChange}
-                error={error?.message}
-                leftIcon={IdCard}
-              />
-            )}
-          />
-          <Controller
-            name="address"
-            control={control}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
-              <Input
-                label="Address (Optional)"
-                value={value}
-                onChangeText={onChange}
-                error={error?.message}
-                leftIcon={MapPin}
-              />
-            )}
-          />
-          <View style={{flexDirection: 'row', gap: spacing.md}}>
-            <View style={{flex: 1}}>
-              <Controller
-                name="city"
-                control={control}
-                render={({field: {onChange, value}, fieldState: {error}}) => (
-                  <Input
-                    label="City"
-                    value={value}
-                    onChangeText={onChange}
-                    error={error?.message}
-                  />
-                )}
-              />
-            </View>
-            <View style={{flex: 1}}>
-              <Controller
-                name="state"
-                control={control}
-                render={({field: {onChange, value}, fieldState: {error}}) => (
-                  <Input
-                    label="State"
-                    value={value}
-                    onChangeText={onChange}
-                    error={error?.message}
-                  />
-                )}
-              />
-            </View>
-          </View>
-          <View style={{flexDirection: 'row', gap: spacing.md}}>
-            <View style={{flex: 1}}>
-              <Controller
-                name="pincode"
-                control={control}
-                render={({field: {onChange, value}, fieldState: {error}}) => (
-                  <Input
-                    label="Pincode"
-                    value={value}
-                    onChangeText={onChange}
-                    error={error?.message}
-                    keyboardType="numeric"
-                  />
-                )}
-              />
-            </View>
-            <View style={{flex: 1}}>
-              <Controller
-                name="gstin"
-                control={control}
-                render={({field: {onChange, value}, fieldState: {error}}) => (
-                  <Input
-                    label="GSTIN (Dealer)"
-                    value={value}
-                    onChangeText={onChange}
-                    error={error?.message}
-                    autoCapitalize="characters"
-                  />
-                )}
-              />
-            </View>
-          </View>
           <Controller
             name="password"
             control={control}
@@ -264,6 +143,7 @@ export const RegisterScreen: React.FC = () => {
                 error={error?.message}
                 secureTextEntry
                 leftIcon={Lock}
+                placeholder="Min 6 characters"
               />
             )}
           />
@@ -278,57 +158,149 @@ export const RegisterScreen: React.FC = () => {
                 error={error?.message}
                 secureTextEntry
                 leftIcon={Lock}
+                placeholder="Re-enter password"
               />
             )}
           />
-          <Button
-            title="Register & Get OTP"
-            onPress={handleSubmit(onSubmit)}
-            loading={isLoading}
+        </Card>
+
+        <Card style={styles.card}>
+          <SectionHeader title="Company Details" />
+          <Controller
+            name="company"
+            control={control}
+            render={({field: {onChange, value}, fieldState: {error}}) => (
+              <Input
+                label="Company Name"
+                value={value}
+                onChangeText={onChange}
+                error={error?.message}
+                leftIcon={Building2}
+                placeholder="e.g. Sharma Auto Parts"
+              />
+            )}
           />
-          <View style={styles.loginRow}>
-            <Text style={styles.loginText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}> Login</Text>
-            </TouchableOpacity>
+         
+          <Controller
+            name="address"
+            control={control}
+            render={({field: {onChange, value}, fieldState: {error}}) => (
+              <Input
+                label="Address"
+                value={value}
+                onChangeText={onChange}
+                error={error?.message}
+                leftIcon={MapPin}
+                placeholder="Street, area, landmark"
+              />
+            )}
+          />
+           <Controller
+                name="gstin"
+                control={control}
+                render={({field: {onChange, value}, fieldState: {error}}) => (
+                  <Input
+                    label="GSTIN (Dealer)"
+                    value={value}
+                    onChangeText={onChange}
+                    error={error?.message}
+                    autoCapitalize="characters"
+                    placeholder="e.g. 08AABCS1429B1Z6"
+                  />
+                )}
+              />
+       
+          <View style={styles.row}>
+            <View style={styles.half}>
+              <Controller
+                name="pincode"
+                control={control}
+                render={({field: {onChange, value}, fieldState: {error}}) => (
+                  <Input
+                    label="Pincode"
+                    value={value}
+                    onChangeText={onChange}
+                    error={error?.message}
+                    keyboardType="numeric"
+                    placeholder="Pincode"
+                  />
+                )}
+              />
+            </View>
+      
+             
+          
           </View>
+        </Card>
+
+        <Button
+          title="Create Account"
+          size="medium"
+          onPress={handleSubmit(onSubmit)}
+          loading={isLoading}
+        />
+        <View style={styles.loginRow}>
+          <Text style={styles.loginText}>Already have an account?</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginLink}> Login</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  scroll: {flexGrow: 1, backgroundColor: colors.background},
-  header: {
-    paddingTop: spacing.xxxl,
-    paddingHorizontal: spacing.xxl,
-    paddingBottom: spacing.lg,
+  flex: {flex: 1},
+  topRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  backBtn: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scroll: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    flexGrow: 1,
+    backgroundColor: colors.background,
   },
   title: {
-    ...theme.typography.bold,
-    fontSize: theme.fontSize.xxxl,
+    ...typography.bold,
+    fontSize: fontSize.xxxl,
     color: colors.text,
   },
   subtitle: {
-    ...theme.typography.regular,
-    fontSize: theme.fontSize.md,
+    ...typography.regular,
+    fontSize: fontSize.md,
     color: colors.textSecondary,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xl,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    padding: spacing.xxl,
-    flex: 1,
+  card: {marginBottom: spacing.lg},
+  label: {
+    ...typography.medium,
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   roleRow: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceAlt,
     borderRadius: radius.pill,
     padding: spacing.xs,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
   },
   roleBtn: {
     flex: 1,
@@ -338,24 +310,26 @@ const styles = StyleSheet.create({
   },
   roleActive: {backgroundColor: colors.primary},
   roleText: {
-    ...theme.typography.medium,
-    fontSize: theme.fontSize.sm,
+    ...typography.semibold,
+    fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
   roleActiveText: {color: colors.textInverse},
+  row: {flexDirection: 'row', gap: spacing.md},
+  half: {flex: 1},
   loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: spacing.xl,
   },
   loginText: {
-    ...theme.typography.regular,
-    fontSize: theme.fontSize.md,
+    ...typography.regular,
+    fontSize: fontSize.md,
     color: colors.textSecondary,
   },
   loginLink: {
-    ...theme.typography.bold,
-    fontSize: theme.fontSize.md,
+    ...typography.bold,
+    fontSize: fontSize.md,
     color: colors.primary,
   },
 });

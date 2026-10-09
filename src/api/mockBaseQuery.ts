@@ -1,5 +1,4 @@
 import type {BaseQueryFn} from '@reduxjs/toolkit/query';
-import type {RootState} from '../store';
 import {
   db,
   delay,
@@ -745,7 +744,7 @@ const routes: Route[] = [
   {
     method: 'POST',
     segments: ['enquiries'],
-    handler: async ({body, user, query}) => {
+    handler: async ({body, user}) => {
       const current = user;
       await delay(500);
       if (!body?.name || !body?.email || !body?.message) {

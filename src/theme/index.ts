@@ -70,13 +70,13 @@ export const colors = {
 };
 
 export const spacing = {
-  xs: scale(4),
-  sm: scale(8),
-  md: scale(12),
-  lg: scale(16),
-  xl: scale(20),
-  xxl: scale(24),
-  xxxl: scale(32),
+  xs: scale(1),
+  sm: scale(5),
+  md: scale(9),
+  lg: scale(13),
+  xl: scale(17),
+  xxl: scale(21),
+  xxxl: scale(25),
 };
 
 export const radius = {
@@ -90,29 +90,21 @@ export const radius = {
 };
 
 export const fontSize = {
-  xs: rfValue(11),
-  sm: rfValue(13),
-  md: rfValue(14),
-  lg: rfValue(16),
-  xl: rfValue(18),
-  xxl: rfValue(22),
-  xxxl: rfValue(26),
-  display: rfValue(32),
+  xs: rfValue(10),
+  sm: rfValue(12),
+  md: rfValue(13),
+  lg: rfValue(15),
+  xl: rfValue(17),
+  xxl: rfValue(21),
+  xxxl: rfValue(25),
+  display: rfValue(31),
 };
 
 export const typography = {
-  regular: {
-    fontFamily: Platform.select({ios: 'System', android: 'sans-serif'}),
-    fontWeight: '400' as const,
-  },
-  medium: {
-    fontFamily: Platform.select({ios: 'System', android: 'sans-serif-medium'}),
-    fontWeight: '500' as const,
-  },
-  bold: {
-    fontFamily: Platform.select({ios: 'System', android: 'sans-serif-black'}),
-    fontWeight: '700' as const,
-  },
+  regular: {fontWeight: '400' as const},
+  medium: {fontWeight: '500' as const},
+  semibold: {fontWeight: '600' as const},
+  bold: {fontWeight: '700' as const},
 };
 
 export const shadows = {

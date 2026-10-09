@@ -54,6 +54,7 @@ const authSlice = createSlice({
         }
       })
       .addMatcher(authApi.endpoints.me.matchRejected, state => {
+        state.token = null;
         state.user = null;
       })
       .addMatcher(authApi.endpoints.logout.matchFulfilled, state => {

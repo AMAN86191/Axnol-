@@ -1,19 +1,18 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {Provider} from 'react-redux';
 import {store} from './src/store';
 import RootNavigator from './src/navigation/RootNavigator';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
 
-const App = () => {
-  return (
+const App = () => (
+  <GestureHandlerRootView style={{flex: 1}}>
     <SafeAreaProvider>
       <Provider store={store}>
         <RootNavigator />
       </Provider>
     </SafeAreaProvider>
-  );
-};
+  </GestureHandlerRootView>
+);
 
-const styles = StyleSheet.create({});
 export default App;
