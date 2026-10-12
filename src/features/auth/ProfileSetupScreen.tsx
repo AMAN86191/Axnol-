@@ -10,12 +10,11 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ArrowLeft} from 'lucide-react-native';
-import {colors, fontSize, scale, spacing, typography} from '../../theme';
+import {ArrowLeft, Building2, MapPin, Tag, UserCircle} from 'lucide-react-native';
+import {colors, fontSize, scale, spacing, typography, verticalScale} from '../../theme';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import SectionHeader from '../../components/ui/SectionHeader';
+import AppImage from '../../components/ui/AppImage';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
@@ -41,6 +40,7 @@ export const ProfileSetupScreen: React.FC = () => {
   const dispatch = useAppDispatch();
   const {user, token} = useAppSelector(s => s.auth);
   const [update, {isLoading}] = useUpdateProfileMutation();
+  
   const {control, handleSubmit} = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -53,33 +53,37 @@ export const ProfileSetupScreen: React.FC = () => {
       gstin: user?.gstin || '',
     },
   });
+
   const onSubmit = async (values: FormValues) => {
     const res = await update({...values, completeProfile: true}).unwrap();
     dispatch(setCredentials({token, user: res}));
   };
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[styles.topRow, {paddingTop: insets.top + spacing.sm}]}>
+      
+      <View style={[styles.header, {paddingTop: insets.top || spacing.md}]}>
         <TouchableOpacity
-          activeOpacity={0.7}
           style={styles.backBtn}
-          hitSlop={12}
           onPress={() => navigation.goBack()}>
-          <ArrowLeft size={scale(20)} color={colors.text} strokeWidth={2.2} />
+          <ArrowLeft size={scale(24)} color={colors.primary} />
         </TouchableOpacity>
+        <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
+        <View style={styles.placeholder} />
       </View>
+
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, {paddingBottom: insets.bottom + spacing.xxl}]}
         keyboardShouldPersistTaps="handled">
+        
         <Text style={styles.title}>Complete Your Profile</Text>
         <Text style={styles.subtitle}>
-          Help us complete your business details
+          Help us complete your business details to serve you better.
         </Text>
 
-        <Card style={styles.card}>
-          <SectionHeader title="Company Information" />
+        <View style={styles.form}>
           <Controller
             name="company"
             control={control}
@@ -89,7 +93,9 @@ export const ProfileSetupScreen: React.FC = () => {
                 value={value}
                 onChangeText={onChange}
                 error={error?.message}
-                placeholder="e.g. Sharma Auto Parts"
+                leftIcon={Building2}
+                placeholder="Enter company name"
+                containerStyle={styles.inputSpacing}
               />
             )}
           />
@@ -102,14 +108,12 @@ export const ProfileSetupScreen: React.FC = () => {
                 value={value}
                 onChangeText={onChange}
                 error={error?.message}
+                leftIcon={UserCircle}
                 placeholder="e.g. Purchase Manager"
+                containerStyle={styles.inputSpacing}
               />
             )}
           />
-        </Card>
-
-        <Card style={styles.card}>
-          <SectionHeader title="Address" />
           <Controller
             name="address"
             control={control}
@@ -119,10 +123,13 @@ export const ProfileSetupScreen: React.FC = () => {
                 value={value}
                 onChangeText={onChange}
                 error={error?.message}
+                leftIcon={MapPin}
                 placeholder="Street, area, landmark"
+                containerStyle={styles.inputSpacing}
               />
             )}
           />
+          
           <View style={styles.row}>
             <View style={styles.half}>
               <Controller
@@ -135,6 +142,7 @@ export const ProfileSetupScreen: React.FC = () => {
                     onChangeText={onChange}
                     error={error?.message}
                     placeholder="City"
+                    containerStyle={styles.inputSpacing}
                   />
                 )}
               />
@@ -150,11 +158,13 @@ export const ProfileSetupScreen: React.FC = () => {
                     onChangeText={onChange}
                     error={error?.message}
                     placeholder="State"
+                    containerStyle={styles.inputSpacing}
                   />
                 )}
               />
             </View>
           </View>
+
           <Controller
             name="pincode"
             control={control}
@@ -166,13 +176,11 @@ export const ProfileSetupScreen: React.FC = () => {
                 error={error?.message}
                 keyboardType="numeric"
                 placeholder="Pincode"
+                containerStyle={styles.inputSpacing}
               />
             )}
           />
-        </Card>
 
-        <Card style={styles.card}>
-          <SectionHeader title="Tax Details" />
           <Controller
             name="gstin"
             control={control}
@@ -183,11 +191,13 @@ export const ProfileSetupScreen: React.FC = () => {
                 onChangeText={onChange}
                 error={error?.message}
                 autoCapitalize="characters"
+                leftIcon={Tag}
                 placeholder="e.g. 08AABCS1429B1Z6"
+                containerStyle={styles.inputSpacing}
               />
             )}
           />
-        </Card>
+        </View>
 
         <Button
           title="Complete Profile"
@@ -201,41 +211,58 @@ export const ProfileSetupScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  flex: {flex: 1},
-  topRow: {
+  flex: {flex: 1, backgroundColor: colors.background},
+  header: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
     backgroundColor: colors.background,
   },
   backBtn: {
-    width: scale(36),
-    height: scale(36),
-    borderRadius: scale(18),
-    backgroundColor: colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.xs,
+  },
+  logo: {
+    width: scale(120),
+    height: verticalScale(40),
+  },
+  placeholder: {
+    width: scale(32),
   },
   scroll: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
     flexGrow: 1,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
     backgroundColor: colors.background,
   },
   title: {
     ...typography.bold,
-    fontSize: fontSize.xxxl,
+    fontSize: fontSize.xxl,
     color: colors.text,
+    textAlign: 'center',
   },
   subtitle: {
     ...typography.regular,
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
-    marginBottom: spacing.xl,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.xxxl,
+    lineHeight: fontSize.sm * 1.5,
   },
-  card: {marginBottom: spacing.lg},
-  row: {flexDirection: 'row', gap: spacing.md},
-  half: {flex: 1},
+  form: {
+    marginBottom: spacing.md,
+  },
+  inputSpacing: {
+    marginBottom: spacing.lg,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  half: {
+    flex: 1,
+  },
 });
 export default ProfileSetupScreen;

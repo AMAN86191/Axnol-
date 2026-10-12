@@ -3,9 +3,11 @@ import {NavigatorScreenParams} from '@react-navigation/native';
 export type AuthStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
+  Welcome: undefined;
   Login: undefined;
   Register: undefined;
   OtpVerify: {userId: string; email: string; demoOtp?: string};
+  SetPassword: {userId?: string; email?: string} | undefined;
   ApprovalPending: {userId?: string; email?: string};
   ProfileSetup: undefined;
   ForgotPassword: undefined;

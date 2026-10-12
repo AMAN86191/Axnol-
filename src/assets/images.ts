@@ -12,6 +12,12 @@ const images = {
   auth_dealer_badge: require('../../assets/axnol/auth_dealer_badge.png'),
   auth_splash_bg: require('../../assets/axnol/auth_splash_bg.png'),
 
+  // Auth AI background assets
+  auth_splash_bg_ai: require('../../assets/axnol/auth_splash_bg_ai.jpg'),
+  auth_welcome_bg_ai: require('../../assets/axnol/auth_welcome_bg_ai.jpg'),
+  onboarding_apps_ai: require('../../assets/axnol/onboarding_apps_ai.jpg'),
+  onboarding_barrel_ai: require('../../assets/axnol/onboarding_barrel_ai.jpg'),
+
   // Onboarding
   onboarding_1: require('../../assets/axnol/onboarding_1.png'),
   onboarding_2: require('../../assets/axnol/onboarding_2.png'),
