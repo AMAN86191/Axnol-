@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   NativeScrollEvent,
@@ -22,6 +22,7 @@ import Svg, {
   Text as SvgText,
 } from 'react-native-svg';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedProps,
   useAnimatedStyle,
@@ -31,9 +32,9 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Activity,
   ArrowRight,
@@ -42,8 +43,9 @@ import {
   ShieldCheck,
   TrendingUp,
 } from 'lucide-react-native';
-import {AuthStackParamList} from '../../navigation/types';
+import { AuthStackParamList } from '../../navigation/types';
 import {
+  colors,
   fontSize,
   radius,
   scale,
@@ -92,22 +94,28 @@ const SpinView: React.FC<{
   size: number;
   duration?: number;
   reverse?: boolean;
+  /** When false the loop is cancelled so off-screen slides cost nothing. */
+  active?: boolean;
   children: React.ReactNode;
-}> = ({size, duration = 22000, reverse = false, children}) => {
+}> = ({ size, duration = 22000, reverse = false, active = true, children }) => {
   const r = useSharedValue(0);
   useEffect(() => {
+    if (!active) {
+      cancelAnimation(r);
+      return;
+    }
     r.value = withRepeat(
-      withTiming(reverse ? -360 : 360, {duration, easing: Easing.linear}),
+      withTiming(reverse ? -360 : 360, { duration, easing: Easing.linear }),
       -1,
     );
-  }, [duration, reverse, r]);
+  }, [duration, reverse, r, active]);
   const style = useAnimatedStyle(() => ({
-    transform: [{rotate: `${r.value}deg`}],
+    transform: [{ rotate: `${r.value}deg` }],
   }));
   return (
     <Animated.View
       style={[
-        {width: size, height: size, alignItems: 'center', justifyContent: 'center'},
+        { width: size, height: size, alignItems: 'center', justifyContent: 'center' },
         style,
       ]}>
       {children}
@@ -122,19 +130,25 @@ const PingView: React.FC<{
   duration?: number;
   delay?: number;
   borderWidth?: number;
-}> = ({size, color, duration = 2800, delay = 0, borderWidth = 1.5}) => {
+  /** When false the loop is cancelled so off-screen slides cost nothing. */
+  active?: boolean;
+}> = ({ size, color, duration = 2800, delay = 0, borderWidth = 1.5, active = true }) => {
   const p = useSharedValue(0);
   useEffect(() => {
+    if (!active) {
+      cancelAnimation(p);
+      return;
+    }
     p.value = withDelay(
       delay,
       withRepeat(
-        withTiming(1, {duration, easing: Easing.out(Easing.cubic)}),
+        withTiming(1, { duration, easing: Easing.out(Easing.cubic) }),
         -1,
       ),
     );
-  }, [delay, duration, p]);
+  }, [delay, duration, p, active]);
   const style = useAnimatedStyle(() => ({
-    transform: [{scale: 0.85 + p.value * 0.5}],
+    transform: [{ scale: 0.85 + p.value * 0.5 }],
     opacity: 0.8 * (1 - p.value),
   }));
   return (
@@ -161,18 +175,24 @@ const FloatView: React.FC<{
   duration?: number;
   children: React.ReactNode;
   style?: object;
-}> = ({distance = 4, duration = 1800, children, style}) => {
+  /** When false the loop is cancelled so off-screen slides cost nothing. */
+  active?: boolean;
+}> = ({ distance = 4, duration = 1800, children, style, active = true }) => {
   const y = useSharedValue(0);
   useEffect(() => {
+    if (!active) {
+      cancelAnimation(y);
+      return;
+    }
     y.value = withRepeat(
       withSequence(
-        withTiming(-distance, {duration, easing: Easing.inOut(Easing.ease)}),
-        withTiming(0, {duration, easing: Easing.inOut(Easing.ease)}),
+        withTiming(-distance, { duration, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0, { duration, easing: Easing.inOut(Easing.ease) }),
       ),
       -1,
     );
-  }, [distance, duration, y]);
-  const anim = useAnimatedStyle(() => ({transform: [{translateY: y.value}]}));
+  }, [distance, duration, y, active]);
+  const anim = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
   return <Animated.View style={[anim, style]}>{children}</Animated.View>;
 };
 
@@ -185,15 +205,21 @@ const FlowPath: React.FC<{
   duration?: number;
   from?: number;
   opacity?: number;
-}> = ({d, stroke, strokeWidth, dash = '4 6', duration = 2000, from = 40, opacity = 1}) => {
+  /** When false the loop is cancelled so off-screen slides cost nothing. */
+  active?: boolean;
+}> = ({ d, stroke, strokeWidth, dash = '4 6', duration = 2000, from = 40, opacity = 1, active = true }) => {
   const o = useSharedValue(from);
   useEffect(() => {
+    if (!active) {
+      cancelAnimation(o);
+      return;
+    }
     o.value = withRepeat(
-      withTiming(0, {duration, easing: Easing.linear}),
+      withTiming(0, { duration, easing: Easing.linear }),
       -1,
     );
-  }, [duration, o]);
-  const props = useAnimatedProps(() => ({strokeDashoffset: o.value}));
+  }, [duration, o, active]);
+  const props = useAnimatedProps(() => ({ strokeDashoffset: o.value }));
   return (
     <AnimatedPath
       d={d}
@@ -217,17 +243,23 @@ const PulseDot: React.FC<{
   duration?: number;
   delay?: number;
   maxOpacity?: number;
-}> = ({x, y, r, color, duration = 2600, delay = 0, maxOpacity = 0.35}) => {
+  /** When false the loop is cancelled so off-screen slides cost nothing. */
+  active?: boolean;
+}> = ({ x, y, r, color, duration = 2600, delay = 0, maxOpacity = 0.35, active = true }) => {
   const p = useSharedValue(0);
   useEffect(() => {
+    if (!active) {
+      cancelAnimation(p);
+      return;
+    }
     p.value = withDelay(
       delay,
       withRepeat(
-        withTiming(1, {duration, easing: Easing.out(Easing.cubic)}),
+        withTiming(1, { duration, easing: Easing.out(Easing.cubic) }),
         -1,
       ),
     );
-  }, [delay, duration, p]);
+  }, [delay, duration, p, active]);
   const props = useAnimatedProps(() => ({
     r: r * (0.9 + p.value * 1.1),
     opacity: maxOpacity * (1 - p.value),
@@ -236,12 +268,13 @@ const PulseDot: React.FC<{
 };
 
 /** Small live indicator dot with ping halo. */
-const LiveDot: React.FC<{color?: string; size?: number}> = ({
+const LiveDot: React.FC<{ color?: string; size?: number; active?: boolean }> = ({
   color = DS.secondary,
   size = 8,
+  active = true,
 }) => (
-  <View style={{width: size, height: size}}>
-    <PingView size={size} color={color} duration={2000} borderWidth={1} />
+  <View style={{ width: size, height: size }}>
+    <PingView size={size} color={color} duration={2000} borderWidth={1} active={active} />
     <View
       style={{
         width: size,
@@ -253,10 +286,48 @@ const LiveDot: React.FC<{color?: string; size?: number}> = ({
   </View>
 );
 
+/**
+ * Blueprint-style dotted background for the graphic card.
+ * Rendered as ONE stroked path (round dotted dashes) instead of hundreds
+ * of circle nodes, so it stays cheap on low-end devices.
+ */
+const DotGrid: React.FC<{ width: number; height?: number }> = ({
+  width,
+  height = 420,
+}) => {
+  const gap = 22;
+  const rows = Math.floor(height / gap);
+  let d = '';
+  for (let r = 0; r <= rows; r++) {
+    d += `M0 ${r * gap} H${width} `;
+  }
+  return (
+    <Svg
+      width={width}
+      height={height}
+      style={{ position: 'absolute', top: 0, left: 0 }}>
+      <Path
+        d={d}
+        fill="none"
+        stroke={DS.primary}
+        strokeOpacity={0.1}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        strokeDasharray="0.1 22"
+      />
+    </Svg>
+  );
+};
+
+
+
 /* ------------------------------------------------------------------ */
 /* Slide 1 — Refinery Fluid Motion (Direct Sourcing)                    */
 /* ------------------------------------------------------------------ */
-const RefineryGraphic: React.FC<{size: number}> = ({size}) => {
+const RefineryGraphic: React.FC<{ size: number; active?: boolean }> = ({
+  size,
+  active = true,
+}) => {
   const gauge = size * 0.8;
   const conduit = size * 0.62;
   const chamber = size * 0.43;
@@ -264,9 +335,9 @@ const RefineryGraphic: React.FC<{size: number}> = ({size}) => {
 
   return (
     <View
-      style={{width: size, height: size, alignItems: 'center', justifyContent: 'center'}}>
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       {/* Outer sonic pulse rings */}
-      <PingView size={size * 0.86} color={DS.primary} duration={2800} />
+      <PingView size={size * 0.86} color={DS.primary} duration={2800} active={active} />
       <View
         style={{
           position: 'absolute',
@@ -279,8 +350,8 @@ const RefineryGraphic: React.FC<{size: number}> = ({size}) => {
       />
       {/* Rotating precision gauge ring */}
       <View style={StyleSheet.absoluteFill}>
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-          <SpinView size={gauge} duration={22000}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <SpinView size={gauge} duration={22000} active={active}>
             <Svg width={gauge} height={gauge} viewBox="0 0 208 208">
               <Circle
                 cx={104}
@@ -302,8 +373,8 @@ const RefineryGraphic: React.FC<{size: number}> = ({size}) => {
       </View>
       {/* Reverse rotating orbital fluid conduit */}
       <View style={StyleSheet.absoluteFill}>
-        <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-          <SpinView size={conduit} duration={26000} reverse>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <SpinView size={conduit} duration={26000} reverse active={active}>
             <Svg width={conduit} height={conduit} viewBox="0 0 160 160">
               <Circle
                 cx={80}
@@ -341,7 +412,7 @@ const RefineryGraphic: React.FC<{size: number}> = ({size}) => {
           justifyContent: 'center',
           ...shadows.medium,
         }}>
-        <FloatView distance={4} duration={1800}>
+        <FloatView distance={4} duration={1800} active={active}>
           <Svg width={droplet} height={droplet} viewBox="0 0 64 64">
             <Defs>
               <SvgGradient id="dropletGrad" x1="22.5" y1="17" x2="41.5" y2="44.5">
@@ -390,10 +461,10 @@ const RefineryGraphic: React.FC<{size: number}> = ({size}) => {
             <Circle cx={30} cy={23} r={1.2} fill="#FFFFFF" fillOpacity={0.9} />
           </Svg>
         </FloatView>
-        <View style={[ominTick, {top: -3}]} />
-        <View style={[ominTick, {bottom: -3, backgroundColor: '#F59E0B99'}]} />
-        <View style={[ominTick, {left: -3, backgroundColor: `${DS.sky}99`}]} />
-        <View style={[ominTick, {right: -3, backgroundColor: `${DS.sky}99`}]} />
+        <View style={[ominTick, { top: -3 }]} />
+        <View style={[ominTick, { bottom: -3, backgroundColor: '#F59E0B99' }]} />
+        <View style={[ominTick, { left: -3, backgroundColor: `${DS.sky}99` }]} />
+        <View style={[ominTick, { right: -3, backgroundColor: `${DS.sky}99` }]} />
       </View>
     </View>
   );
@@ -414,7 +485,7 @@ const WAVE_D =
   'M 20 160 C 70 160, 95 110, 140 115 C 185 120, 210 55, 260 50 C 295 45, 310 70, 325 65';
 const WAVE_FILL = `${WAVE_D} L 325 190 L 20 190 Z`;
 
-const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
+const PricingGraphic: React.FC<{ width: number; active: boolean }> = ({
   width,
   active,
 }) => {
@@ -429,7 +500,7 @@ const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
       });
     }
   }, [active, draw]);
-  const drawProps = useAnimatedProps(() => ({strokeDashoffset: draw.value}));
+  const drawProps = useAnimatedProps(() => ({ strokeDashoffset: draw.value }));
 
   return (
     <View>
@@ -476,10 +547,10 @@ const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
           animatedProps={drawProps}
         />
         <Circle cx={68} cy={142} r={4} fill={DS.primary} />
-        <PulseDot x={68} y={142} r={8} color={DS.primary} duration={2800} maxOpacity={0.2} />
+        <PulseDot x={68} y={142} r={8} color={DS.primary} duration={2800} maxOpacity={0.2} active={active} />
         <Circle cx={140} cy={115} r={4} fill={DS.secondary} />
-        <PulseDot x={140} y={115} r={9} color={DS.secondary} duration={2200} maxOpacity={0.25} />
-        <PulseDot x={260} y={50} r={12} color={DS.sky} duration={1800} maxOpacity={0.3} />
+        <PulseDot x={140} y={115} r={9} color={DS.secondary} duration={2200} maxOpacity={0.25} active={active} />
+        <PulseDot x={260} y={50} r={12} color={DS.sky} duration={1800} maxOpacity={0.3} active={active} />
         <Circle cx={260} cy={50} r={6} fill="#FFFFFF" />
         <Circle cx={260} cy={50} r={4} fill={DS.secondary} />
         <Circle cx={325} cy={65} r={4} fill={DS.sky} />
@@ -488,7 +559,8 @@ const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
       <FloatView
         distance={3}
         duration={1500}
-        style={{position: 'absolute', right: width * 0.12, top: height * 0.18}}>
+        active={active}
+        style={{ position: 'absolute', right: width * 0.12, top: height * 0.18 }}>
         <View style={styles.peakPill}>
           <TrendingUp size={scale(15)} color={DS.secondary} />
           <Text style={styles.peakText}>+14.8%</Text>
@@ -496,7 +568,7 @@ const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
         </View>
       </FloatView>
       {/* Market pulse chip */}
-      <View style={[styles.pulseChip, {left: scale(12), bottom: scale(8)}]}>
+      <View style={[styles.pulseChip, { left: scale(12), bottom: scale(8) }]}>
         <Activity size={scale(14)} color={DS.primary} />
         <Text style={styles.pulseChipText}>Automated Tier Calibration</Text>
       </View>
@@ -509,15 +581,22 @@ const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
 /* ------------------------------------------------------------------ */
 const ARTERY_PRIMARY = 'M 50 125 C 95 70, 190 75, 245 185';
 
-const DispatchGraphic: React.FC<{width: number}> = ({width}) => {
+const DispatchGraphic: React.FC<{ width: number; active?: boolean }> = ({
+  width,
+  active = true,
+}) => {
   const height = (width * 250) / 340;
   const t = useSharedValue(0);
   useEffect(() => {
+    if (!active) {
+      cancelAnimation(t);
+      return;
+    }
     t.value = withRepeat(
-      withTiming(1, {duration: 4800, easing: Easing.linear}),
+      withTiming(1, { duration: 4800, easing: Easing.linear }),
       -1,
     );
-  }, [t]);
+  }, [t, active]);
   const markerProps = useAnimatedProps(() => {
     const v = t.value;
     const u = 1 - v;
@@ -525,7 +604,7 @@ const DispatchGraphic: React.FC<{width: number}> = ({width}) => {
       u * u * u * 50 + 3 * u * u * v * 95 + 3 * u * v * v * 190 + v * v * v * 245;
     const y =
       u * u * u * 125 + 3 * u * u * v * 70 + 3 * u * v * v * 75 + v * v * v * 185;
-    return {cx: x, cy: y};
+    return { cx: x, cy: y };
   });
 
   return (
@@ -548,24 +627,24 @@ const DispatchGraphic: React.FC<{width: number}> = ({width}) => {
       <Line x1={130} y1={200} x2={245} y2={185} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
       <Line x1={245} y1={185} x2={280} y2={85} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
       {/* Animated expressway arteries */}
-      <FlowPath d={ARTERY_PRIMARY} stroke="url(#routeGradA)" strokeWidth={3} dash="7 5" duration={2400} from={120} />
-      <FlowPath d="M 150 50 C 210 50, 240 120, 280 85" stroke="url(#routeGradB)" strokeWidth={2.5} dash="6 4" duration={3200} from={100} />
-      <FlowPath d="M 50 125 C 75 190, 160 215, 245 185" stroke={DS.sky} strokeWidth={2} dash="4 4" duration={2800} from={80} opacity={0.6} />
+      <FlowPath d={ARTERY_PRIMARY} stroke="url(#routeGradA)" strokeWidth={3} dash="7 5" duration={2400} from={120} active={active} />
+      <FlowPath d="M 150 50 C 210 50, 240 120, 280 85" stroke="url(#routeGradB)" strokeWidth={2.5} dash="6 4" duration={3200} from={100} active={active} />
+      <FlowPath d="M 50 125 C 75 190, 160 215, 245 185" stroke={DS.sky} strokeWidth={2} dash="4 4" duration={2800} from={80} opacity={0.6} active={active} />
       {/* Gliding telemetry fleet marker */}
       <AnimatedCircle r={5} fill={DS.primary} animatedProps={markerProps} />
       <AnimatedCircle r={2.5} fill="#FFFFFF" animatedProps={markerProps} />
       {/* HUB 1 — Refinery HQ */}
-      <PulseDot x={50} y={125} r={22} color={DS.sky} duration={3000} maxOpacity={0.35} />
+      <PulseDot x={50} y={125} r={22} color={DS.sky} duration={3000} maxOpacity={0.35} active={active} />
       <Circle cx={50} cy={125} r={12} fill={DS.primaryContainer} />
       <Circle cx={50} cy={125} r={5} fill="#FFFFFF" />
       <SvgText x={26} y={151} fill={DS.onSurface} fontSize={10} fontWeight="700">REFINERY HQ</SvgText>
       {/* HUB 2 — North */}
-      <PulseDot x={150} y={50} r={16} color={DS.secondary} duration={2600} delay={400} maxOpacity={0.3} />
+      <PulseDot x={150} y={50} r={16} color={DS.secondary} duration={2600} delay={400} maxOpacity={0.3} active={active} />
       <Circle cx={150} cy={50} r={9} fill={DS.secondary} />
       <Circle cx={150} cy={50} r={3.5} fill="#FFFFFF" />
       <SvgText x={128} y={36} fill={DS.onVariant} fontSize={9}>HUB-NORTH</SvgText>
       {/* HUB 3 — Port terminal */}
-      <PulseDot x={280} y={85} r={18} color={DS.sky} duration={2900} delay={800} maxOpacity={0.3} />
+      <PulseDot x={280} y={85} r={18} color={DS.sky} duration={2900} delay={800} maxOpacity={0.3} active={active} />
       <Circle cx={280} cy={85} r={10} fill={DS.primary} />
       <Circle cx={280} cy={85} r={4} fill="#FFFFFF" />
       <SvgText x={252} y={109} fill={DS.onSurface} fontSize={9} fontWeight="700">PORT TERMINAL</SvgText>
@@ -574,7 +653,7 @@ const DispatchGraphic: React.FC<{width: number}> = ({width}) => {
       <Circle cx={130} cy={200} r={4} fill={DS.secondary} />
       <SvgText x={112} y={216} fill={DS.outline} fontSize={9}>CENTRAL-04</SvgText>
       {/* HUB 5 — Dealer dispatch */}
-      <PulseDot x={245} y={185} r={20} color={DS.primaryContainer} duration={2200} delay={200} maxOpacity={0.4} />
+      <PulseDot x={245} y={185} r={20} color={DS.primaryContainer} duration={2200} delay={200} maxOpacity={0.4} active={active} />
       <Circle cx={245} cy={185} r={11} fill={DS.primaryContainer} />
       <Circle cx={245} cy={185} r={4} fill="#FFFFFF" />
       <SvgText x={213} y={209} fill={DS.primary} fontSize={10} fontWeight="700">DEALER DISPATCH</SvgText>
@@ -619,7 +698,7 @@ const SLIDES: Slide[] = [
 export const OnboardingScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-  const {width, height} = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const ref = useRef<FlatList>(null);
 
@@ -628,7 +707,7 @@ export const OnboardingScreen: React.FC = () => {
 
   const next = () => {
     if (index < SLIDES.length - 1) {
-      ref.current?.scrollToIndex({index: index + 1, animated: true});
+      ref.current?.scrollToIndex({ index: index + 1, animated: true });
     } else {
       goToRegister();
     }
@@ -671,158 +750,163 @@ export const OnboardingScreen: React.FC = () => {
       Math.min(cardInner, ((stageH - scale(112)) * 340) / 250),
     );
     return (
-    <View style={{width, height}}>
-      <View style={[styles.top, {paddingTop: insets.top + spacing.sm}]}>
-      {/* Header */}
-      {item.key === 'sourcing' ? (
-        <View style={styles.headerRow}>
-          <View style={styles.portalPill}>
-            <LiveDot />
-            <Text style={styles.portalText}>PORTAL v2.4</Text>
-          </View>
-          <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={styles.headerRow}>
-          <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
-          <View style={styles.headerRight}>
-            {/* <View style={styles.stepPill}>
+      <View style={{ width, height }}>
+        <View style={[styles.top, { paddingTop: insets.top + spacing.sm }]}>
+          {/* Header */}
+          {item.key === 'sourcing' ? (
+            <View style={styles.headerRow}>
+              <View style={styles.portalPill}>
+                <LiveDot active={active} />
+                <Text style={styles.portalText}>PORTAL v2.4</Text>
+              </View>
+              <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.headerRow}>
+              <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
+              <View style={styles.headerRight}>
+                {/* <View style={styles.stepPill}>
               <Text style={styles.stepPillText}>{item.step}</Text>
             </View> */}
-            <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
-              <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+                <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
+                  <Text style={styles.skipText}>Skip</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
-      {/* Brand block (slide 1 like the reference) */}
-      {item.key === 'sourcing' && (
-        <View style={styles.brandBlock}>
-          <AppImage uri="logo" resizeMode="contain" style={styles.brandLogo} />
-          <Text style={styles.brandEyebrow}>WHOLESALE TERMINAL ACCESS</Text>
-        </View>
-      )}
-      {item.key !== 'sourcing' && (
-        <View style={styles.stepRow}>
-          <View style={styles.stepPillCenter}>
-            <View style={styles.stepDot} />
-            <Text style={styles.stepPillText}>{item.step}</Text>
-          </View>
-        </View>
-      )}
+          {/* Brand block (slide 1 like the reference) */}
+          {item.key === 'sourcing' && (
+            <View style={styles.brandBlock}>
+              <AppImage uri="logo" resizeMode="contain" style={styles.brandLogo} />
+              <Text style={styles.brandEyebrow}>WHOLESALE TERMINAL ACCESS</Text>
+            </View>
+          )}
+          {item.key !== 'sourcing' && (
+            <View style={styles.stepRow}>
+              <View style={styles.stepPillCenter}>
+                <View style={styles.stepDot} />
+                <Text style={styles.stepPillText}>{item.step}</Text>
+              </View>
+            </View>
+          )}
 
+        </View>
+
+        {/* Middle stage: graphic card vertically centered */}
+        <View style={styles.stage}>
+          <View style={styles.card}>
+            <DotGrid width={cardW} />
+            {item.key === 'pricing' && (
+              <View style={styles.badgeRow}>
+                <View style={styles.badge}>
+                  <LiveDot active={active} />
+                  <Text style={styles.badgeText}>Spot Terminal • Live</Text>
+                </View>
+                <View style={styles.badge}>
+                  <Activity size={scale(13)} color={DS.secondary} />
+                  <Text style={styles.badgeMono}>ISO VG 460</Text>
+                </View>
+              </View>
+            )}
+            {item.key === 'dispatch' && (
+              <View style={styles.badgeRow}>
+                <View style={styles.badge}>
+                  <LiveDot active={active} />
+                  <Text style={styles.badgeMono}>48 Hubs Active</Text>
+                </View>
+                <View style={[styles.badge, styles.badgeTint]}>
+                  <Satellite size={scale(13)} color={DS.primary} />
+                  <Text style={styles.badgeTintText}>Telemetry Live</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.graphicWrap}>
+              {item.key === 'sourcing' && <RefineryGraphic size={refinerySize} active={active} />}
+              {item.key === 'pricing' && <PricingGraphic width={pricingW} active={active} />}
+              {item.key === 'dispatch' && <DispatchGraphic width={dispatchW} active={active} />}
+            </View>
+
+            {item.key === 'dispatch' && (
+              <View style={styles.infoBar}>
+                <View style={styles.infoLeft}>
+                  <RouteIcon size={scale(15)} color={DS.secondary} />
+                  <Text style={styles.infoLabel}>Auto Route Matrix</Text>
+                </View>
+                <View style={styles.infoRight}>
+                  <Text style={styles.infoValue}>99.84%</Text>
+                  <Text style={styles.infoLabel}>On-Time Index</Text>
+                </View>
+              </View>
+            )}
+          </View>
+
+        </View>
+
+        {/* Bottom footer: title, dots and CTAs pinned at the bottom */}
+        <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.lg }]}>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.subtitle}>{item.subtitle}</Text>
+
+          {/* Dots */}
+          <View style={styles.dots}>
+            {SLIDES.map((s, i) => (
+              <View
+                key={s.key}
+                style={[styles.dot, i === index && styles.dotActive]}
+              />
+            ))}
+          </View>
+
+          {/* CTAs */}
+          {item.key === 'dispatch' ? (
+            <View style={styles.ctaCol}>
+              <Button
+                title="Get Started"
+                textStyle={styles.loginBtnText}
+                variant="outline"
+                size="medium"
+                onPress={goToRegister}
+                iconRight={<ArrowRight size={scale(18)} color={colors.primary} />}
+           
+              />
+              <Button
+                title="Sign In to Existing Account"
+                size="medium"
+                variant="outline"
+                onPress={goToLogin}
+                style={styles.secondaryBtn}
+                textStyle={styles.secondaryBtnText}
+              />
+              <View style={styles.trustRow}>
+                <ShieldCheck size={scale(14)} color={DS.secondary} />
+                <Text style={styles.trustText}>Secured B2B Wholesale Portal</Text>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.ctaCol}>
+              <Button
+                title="Next"
+                size="medium"
+                variant='outline'
+                textStyle={styles.loginBtnText}
+                onPress={next}
+                iconRight={<ArrowRight size={scale(18)} color={colors.primary} />}
+              // style={styles.primaryBtn}
+              />
+              <TouchableOpacity
+                onPress={goToLogin}
+                activeOpacity={0.7}
+                style={styles.textBtn}>
+                <Text style={styles.textBtnLabel}>Skip to Login</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
-
-      {/* Middle stage: graphic card vertically centered */}
-      <View style={styles.stage}>
-      <View style={styles.card}>
-        {item.key === 'pricing' && (
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <LiveDot />
-              <Text style={styles.badgeText}>Spot Terminal • Live</Text>
-            </View>
-            <View style={styles.badge}>
-              <Activity size={scale(13)} color={DS.secondary} />
-              <Text style={styles.badgeMono}>ISO VG 460</Text>
-            </View>
-          </View>
-        )}
-        {item.key === 'dispatch' && (
-          <View style={styles.badgeRow}>
-            <View style={styles.badge}>
-              <LiveDot />
-              <Text style={styles.badgeMono}>48 Hubs Active</Text>
-            </View>
-            <View style={[styles.badge, styles.badgeTint]}>
-              <Satellite size={scale(13)} color={DS.primary} />
-              <Text style={styles.badgeTintText}>Telemetry Live</Text>
-            </View>
-          </View>
-        )}
-
-        <View style={styles.graphicWrap}>
-          {item.key === 'sourcing' && <RefineryGraphic size={refinerySize} />}
-          {item.key === 'pricing' && <PricingGraphic width={pricingW} active={active} />}
-          {item.key === 'dispatch' && <DispatchGraphic width={dispatchW} />}
-        </View>
-
-        {item.key === 'dispatch' && (
-          <View style={styles.infoBar}>
-            <View style={styles.infoLeft}>
-              <RouteIcon size={scale(15)} color={DS.secondary} />
-              <Text style={styles.infoLabel}>Auto Route Matrix</Text>
-            </View>
-            <View style={styles.infoRight}>
-              <Text style={styles.infoValue}>99.84%</Text>
-              <Text style={styles.infoLabel}>On-Time Index</Text>
-            </View>
-          </View>
-        )}
-      </View>
-
-      </View>
-
-      {/* Bottom footer: title, dots and CTAs pinned at the bottom */}
-      <View style={[styles.footer, {paddingBottom: insets.bottom + spacing.lg}]}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.subtitle}>{item.subtitle}</Text>
-
-      {/* Dots */}
-      <View style={styles.dots}>
-        {SLIDES.map((s, i) => (
-          <View
-            key={s.key}
-            style={[styles.dot, i === index && styles.dotActive]}
-          />
-        ))}
-      </View>
-
-      {/* CTAs */}
-      {item.key === 'dispatch' ? (
-        <View style={styles.ctaCol}>
-          <Button
-            title="Get Started"
-            size="medium"
-            onPress={goToRegister}
-            iconRight={<ArrowRight size={scale(18)} color="#FFFFFF" />}
-            style={styles.primaryBtn}
-          />
-          <Button
-            title="Sign In to Existing Account"
-            size="medium"
-            variant="outline"
-            onPress={goToLogin}
-            style={styles.secondaryBtn}
-            textStyle={styles.secondaryBtnText}
-          />
-          <View style={styles.trustRow}>
-            <ShieldCheck size={scale(14)} color={DS.secondary} />
-            <Text style={styles.trustText}>Secured B2B Wholesale Portal</Text>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.ctaCol}>
-          <Button
-            title="Next"
-            size="medium"
-            onPress={next}
-            iconRight={<ArrowRight size={scale(18)} color="#FFFFFF" />}
-            style={styles.primaryBtn}
-          />
-          <TouchableOpacity
-            onPress={goToLogin}
-            activeOpacity={0.7}
-            style={styles.textBtn}>
-            <Text style={styles.textBtnLabel}>Skip to Login</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      </View>
-    </View>
     );
   };
 
@@ -847,9 +931,9 @@ export const OnboardingScreen: React.FC = () => {
           index: i,
         })}
         onMomentumScrollEnd={onMomentumEnd}
-        onScrollToIndexFailed={() => {}}
-        renderItem={({item, index: i}) => (
-          <View style={{width}}>{renderSlide(item, i === index)}</View>
+        onScrollToIndexFailed={() => { }}
+        renderItem={({ item, index: i }) => (
+          <View style={{ width }}>{renderSlide(item, i === index)}</View>
         )}
       />
     </View>
@@ -883,6 +967,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  loginBtnText: {
+    fontSize: scale(13.5),
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   portalPill: {
     flexDirection: 'row',

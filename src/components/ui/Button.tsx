@@ -6,6 +6,7 @@ import {
   Text,
   TextStyle,
   TouchableOpacity,
+  View,
   ViewStyle,
 } from 'react-native';
 import {colors, radius, spacing, theme} from '../../theme';
@@ -61,7 +62,19 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={isDisabled}
       style={containerStyle}>
       {loading ? (
-        <ActivityIndicator color={spinnerColor} size="small" />
+        <>
+          {/* Invisible ghost keeps the exact same layout size */}
+          <View pointerEvents="none" style={styles.loadingGhost}>
+            {iconLeft}
+            <Text style={[styles.text, textStyle, styles.transparentText]}>
+              {title}
+            </Text>
+            {iconRight}
+          </View>
+          <View pointerEvents="none" style={styles.spinnerOverlay}>
+            <ActivityIndicator color={spinnerColor} size="small" />
+          </View>
+        </>
       ) : (
         <>
           {iconLeft}
@@ -102,6 +115,21 @@ const styles = StyleSheet.create({
     ...theme.typography.medium,
     fontSize: theme.fontSize.md,
     letterSpacing: 0.2,
+  },
+  transparentText: {
+    color: 'transparent',
+  },
+  loadingGhost: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    opacity: 0,
+  },
+  spinnerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 export default Button;

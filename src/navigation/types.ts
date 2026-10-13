@@ -5,7 +5,6 @@ export type AuthStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
-  SetPassword: {userId?: string; email?: string} | undefined;
   ProfileSetup: undefined;
   ForgotPassword: undefined;
 };

@@ -40,13 +40,9 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.user = action.payload.user;
       })
-      .addMatcher(
-        authApi.endpoints.verifyOtp.matchFulfilled,
-        (state, action) => {
-          state.token = action.payload.token;
-          state.user = action.payload.user;
-        },
-      )
+      // NOTE: verifyOtp must NOT auto-login — the forgot-password flow
+      // verifies an OTP without signing the user in. Call sites that need
+      // a session (e.g. Register) set credentials explicitly.
       .addMatcher(authApi.endpoints.me.matchFulfilled, (state, action) => {
         state.user = action.payload;
         if (!state.token) {

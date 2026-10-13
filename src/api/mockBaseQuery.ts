@@ -314,9 +314,33 @@ const routes: Route[] = [
       if (!user as any) {
         apiError(404, 'No account found with this email.');
       }
+      const otp = String(Math.floor(100000 + Math.random() * 900000));
+      db.otps.set((user as any).id, otp);
       return {
         data: {
-          message: 'Password reset instructions have been sent to your email.',
+          message: 'OTP sent to your email & phone.',
+          userId: (user as any).id,
+          demoOtp: otp,
+        },
+      };
+    },
+  },
+  {
+    method: 'POST',
+    segments: ['auth', 'reset-password'],
+    handler: async ({body}) => {
+      await delay();
+      const user = db.users.find(u => u.id === body?.userId);
+      if (!user as any) {
+        apiError(404, 'Account not found. Please register again.');
+      }
+      if (!body?.password || String(body.password).length < 8) {
+        apiError(400, 'Password must be at least 8 characters.');
+      }
+      (user as any).password = String(body.password);
+      return {
+        data: {
+          message: 'Password reset successfully. Please login with your new password.',
         },
       };
     },

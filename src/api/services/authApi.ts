@@ -37,8 +37,17 @@ export const authApi = createApi({
     >({
       query: body => ({url: 'auth/resend-otp', method: 'POST', body}),
     }),
-    forgotPassword: builder.mutation<{message: string}, {email: string}>({
+    forgotPassword: builder.mutation<
+      {message: string; userId: string; demoOtp: string},
+      {email: string}
+    >({
       query: body => ({url: 'auth/forgot-password', method: 'POST', body}),
+    }),
+    resetPassword: builder.mutation<
+      {message: string},
+      {userId: string; password: string}
+    >({
+      query: body => ({url: 'auth/reset-password', method: 'POST', body}),
     }),
     me: builder.query<SafeUser, void>({
       query: () => ({url: 'auth/me'}),
@@ -55,6 +64,7 @@ export const {
   useVerifyOtpMutation,
   useResendOtpMutation,
   useForgotPasswordMutation,
+  useResetPasswordMutation,
   useMeQuery,
   useLogoutMutation,
 } = authApi;
