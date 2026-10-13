@@ -1,298 +1,383 @@
 import React from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import {ReceiptText} from 'lucide-react-native';
-import {useGetOrderByIdQuery} from '../../api/services/ordersApi';
+import {Check, ChevronLeft, MoreVertical} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {OrdersStackParamList} from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
-import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
-import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
-import SectionHeader from '../../components/ui/SectionHeader';
-import StatusBadge from '../../components/ui/StatusBadge';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 
-const formatDate = (ts: number) =>
-  new Date(ts).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+type Route = RouteProp<OrdersStackParamList, 'OrderDetails'>;
 
 export const OrderDetailsScreen: React.FC = () => {
-  const route = useRoute<RouteProp<OrdersStackParamList, 'OrderDetails'>>();
   const navigation = useNavigation<any>();
-  const {data: order, isLoading, isError} = useGetOrderByIdQuery(
-    route.params.orderId,
-  );
+  const insets = useSafeAreaInsets();
+  const route = useRoute<Route>();
 
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="Order Details" onBack={() => navigation.goBack()} />
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      </View>
-    );
-  }
-
-  if (isError || !order) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="Order Details" onBack={() => navigation.goBack()} />
-        <EmptyState
-          icon={ReceiptText}
-          title="Order not found"
-          subtitle="This order could not be loaded right now."
-        />
-      </View>
-    );
-  }
-
-  const latestIndex = order.timeline.length - 1;
+  const order = {
+    orderNo: '#AX0003',
+    date: '18 Sep 2026, 10:30 AM',
+    status: 'Delivered',
+    image: 'product_drum',
+    productName: 'Gear Oil AX-200',
+    quantity: 20,
+    unitPrice: 2250,
+    productTotal: 45000,
+    subtotal: 45000,
+    gst: 8100,
+    total: 53100,
+    timeline: [
+      {title: 'Order Placed', time: '18 Sep 2026, 10:30 AM'},
+      {title: 'Approved', time: '18 Sep 2026, 12:15 PM'},
+      {title: 'Processing', time: '19 Sep 2026, 09:00 AM'},
+      {title: 'Dispatched', time: '20 Sep 2026, 04:20 PM'},
+      {title: 'Delivered', time: '21 Sep 2026, 11:30 AM'},
+    ],
+  };
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Order Details" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Card>
-          <View style={styles.rowBetween}>
-            <Text style={styles.orderNo}>{order.orderNo}</Text>
-            <StatusBadge status={order.status} />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}>
+          <ChevronLeft size={scale(24)} color="#1E293B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Order Details</Text>
+        <TouchableOpacity style={styles.moreBtn} activeOpacity={0.7}>
+          <MoreVertical size={scale(20)} color="#1E293B" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, {paddingBottom: insets.bottom + scale(60)}]}>
+        
+        {/* Top Order Card */}
+        <View style={styles.topCard}>
+          <View style={styles.topImgWrap}>
+            <AppImage uri={order.image} style={styles.topImg} resizeMode="contain" />
           </View>
-          <Text style={styles.date}>{formatDate(order.createdAt)}</Text>
-          <Text style={styles.address}>{order.shippingAddress}</Text>
-          <View style={styles.amountBlock}>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Subtotal</Text>
-              <Text style={styles.amountValue}>
+          <View style={styles.topInfo}>
+            <Text style={styles.topOrderNo}>{order.orderNo}</Text>
+            <Text style={styles.topDate}>{order.date}</Text>
+          </View>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>{order.status}</Text>
+          </View>
+        </View>
+
+        {/* Stepper / Timeline */}
+        <View style={styles.timelineCard}>
+          {order.timeline.map((step, index) => {
+            const isLast = index === order.timeline.length - 1;
+            return (
+              <View key={step.title} style={styles.stepRow}>
+                <View style={styles.stepIndicatorCol}>
+                  <View style={styles.stepCheckCircle}>
+                    <Check size={scale(12)} color="#FFFFFF" strokeWidth={3} />
+                  </View>
+                  {!isLast && <View style={styles.stepLine} />}
+                </View>
+
+                <View style={[styles.stepContent, !isLast && styles.stepContentSpaced]}>
+                  <Text style={styles.stepTitle}>{step.title}</Text>
+                  <Text style={styles.stepTime}>{step.time}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Products Section */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionHeader}>Products</Text>
+          <View style={styles.productCard}>
+            <View style={styles.productImgWrap}>
+              <AppImage uri={order.image} style={styles.productImg} resizeMode="contain" />
+            </View>
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>{order.productName}</Text>
+              <Text style={styles.productMeta}>
+                Qty: {order.quantity} | ₹{order.unitPrice.toLocaleString('en-IN')}
+              </Text>
+            </View>
+            <Text style={styles.productTotal}>
+              ₹{order.productTotal.toLocaleString('en-IN')}
+            </Text>
+          </View>
+        </View>
+
+        {/* Order Summary Section */}
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionHeader}>Order Summary</Text>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>
                 ₹{order.subtotal.toLocaleString('en-IN')}
               </Text>
             </View>
-            <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Tax (GST)</Text>
-              <Text style={styles.amountValue}>
-                ₹{order.tax.toLocaleString('en-IN')}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>GST (18%)</Text>
+              <Text style={styles.summaryValue}>
+                ₹{order.gst.toLocaleString('en-IN')}
               </Text>
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalValue}>
+            <View style={[styles.summaryRow, styles.summaryTotalRow]}>
+              <Text style={styles.summaryTotalLabel}>Total</Text>
+              <Text style={styles.summaryTotalValue}>
                 ₹{order.total.toLocaleString('en-IN')}
               </Text>
             </View>
           </View>
-        </Card>
+        </View>
 
-        {order.timeline.length > 0 ? (
-          <Card>
-            <SectionHeader title="Order Status" />
-            {order.timeline.map((entry, index) => (
-              <View key={`${entry.status}-${entry.date}`} style={styles.timelineRow}>
-                <View style={styles.timelineLeft}>
-                  <View
-                    style={[
-                      styles.dot,
-                      index === latestIndex ? styles.dotActive : styles.dotPast,
-                    ]}
-                  />
-                  {index < latestIndex ? <View style={styles.line} /> : null}
-                </View>
-                <View style={styles.timelineBody}>
-                  <Text style={styles.timelineLabel}>{entry.label}</Text>
-                  <Text style={styles.timelineDate}>
-                    {formatDate(entry.date)}
-                  </Text>
-                  {entry.note ? (
-                    <Text style={styles.timelineNote}>{entry.note}</Text>
-                  ) : null}
-                </View>
-              </View>
-            ))}
-          </Card>
-        ) : null}
-
-        <Card>
-          <SectionHeader title={`Items (${order.items.length})`} />
-          {order.items.map((item, index) => (
-            <View
-              key={`${item.productId}-${index}`}
-              style={styles.itemRow}>
-              <AppImage uri={item.image} style={styles.itemImg} />
-              <View style={styles.itemBody}>
-                <Text style={styles.itemName} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                <Text style={styles.itemMeta}>
-                  {item.quantity} × ₹{item.unitPrice.toLocaleString('en-IN')}
-                </Text>
-              </View>
-              <Text style={styles.itemAmount}>
-                ₹
-                {(item.quantity * item.unitPrice).toLocaleString('en-IN')}
-              </Text>
-            </View>
-          ))}
-        </Card>
-
-        <Button
-          title="View Invoice"
-          onPress={() => navigation.navigate('Invoice', {orderId: order.id})}
-        />
       </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  content: {
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F6',
+  },
+  backBtn: {
+    padding: scale(4),
+  },
+  headerTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  moreBtn: {
+    padding: scale(4),
+  },
+  scrollContent: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
     gap: spacing.lg,
   },
-  rowBetween: {
+  topCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  orderNo: {
-    ...typography.bold,
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-  date: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-  },
-  address: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-    lineHeight: fontSize.sm * 1.5,
-  },
-  amountBlock: {
-    marginTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  amountLabel: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-  },
-  amountValue: {
-    ...typography.medium,
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-    marginTop: spacing.xs,
-  },
-  totalLabel: {
-    ...typography.semibold,
-    fontSize: fontSize.md,
-    color: colors.text,
-  },
-  totalValue: {
-    ...typography.bold,
-    fontSize: fontSize.lg,
-    color: colors.primary,
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  timelineLeft: {
-    width: scale(14),
-    alignItems: 'center',
-  },
-  dot: {
-    width: scale(12),
-    height: scale(12),
-    borderRadius: scale(6),
-    marginTop: scale(3),
-  },
-  dotActive: {backgroundColor: colors.primary},
-  dotPast: {backgroundColor: colors.primaryMuted},
-  line: {
-    width: 2,
-    flex: 1,
-    backgroundColor: colors.primaryMuted,
-    marginVertical: spacing.xs,
-  },
-  timelineBody: {flex: 1, paddingBottom: spacing.lg},
-  timelineLabel: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  timelineDate: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  timelineNote: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: fontSize.xs * 1.5,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  itemImg: {
+  topImgWrap: {
     width: scale(52),
     height: scale(52),
     borderRadius: radius.sm,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: scale(4),
+    marginRight: spacing.md,
   },
-  itemBody: {flex: 1},
-  itemName: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.text,
-    lineHeight: fontSize.sm * 1.4,
+  topImg: {
+    width: '100%',
+    height: '100%',
   },
-  itemMeta: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
+  topInfo: {
+    flex: 1,
+  },
+  topOrderNo: {
+    fontSize: scale(14),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  topDate: {
+    fontSize: scale(11),
+    color: '#64748B',
     marginTop: 2,
   },
-  itemAmount: {
-    ...typography.semibold,
+  statusBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: spacing.md,
+    paddingVertical: scale(4),
+    borderRadius: radius.pill,
+  },
+  statusText: {
+    fontSize: scale(11),
+    fontWeight: '700',
+    color: '#16A34A',
+  },
+  timelineCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  stepRow: {
+    flexDirection: 'row',
+  },
+  stepIndicatorCol: {
+    width: scale(24),
+    alignItems: 'center',
+  },
+  stepCheckCircle: {
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(10),
+    backgroundColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  stepLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#16A34A',
+    marginVertical: 2,
+  },
+  stepContent: {
+    flex: 1,
+    paddingLeft: spacing.md,
+  },
+  stepContentSpaced: {
+    paddingBottom: spacing.lg,
+  },
+  stepTitle: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  stepTime: {
+    fontSize: scale(11),
+    color: '#64748B',
+    marginTop: 2,
+  },
+  sectionWrap: {
+    gap: spacing.sm,
+  },
+  sectionHeader: {
     fontSize: fontSize.sm,
-    color: colors.text,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  productCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  productImgWrap: {
+    width: scale(52),
+    height: scale(52),
+    borderRadius: radius.sm,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: scale(4),
+    marginRight: spacing.md,
+  },
+  productImg: {
+    width: '100%',
+    height: '100%',
+  },
+  productInfo: {
+    flex: 1,
+  },
+  productName: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  productMeta: {
+    fontSize: scale(11),
+    color: '#64748B',
+    marginTop: 2,
+  },
+  productTotal: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  summaryCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: spacing.sm,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  summaryLabel: {
+    fontSize: scale(13),
+    color: '#64748B',
+  },
+  summaryValue: {
+    fontSize: scale(13),
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  summaryTotalRow: {
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingTop: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  summaryTotalLabel: {
+    fontSize: scale(14),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  summaryTotalValue: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: '#0F172A',
   },
 });
 

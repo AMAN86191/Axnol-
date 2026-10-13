@@ -15,31 +15,34 @@ export type AuthStackParamList = {
 
 export type MainTabParamList = {
   Home: undefined;
-  Catalogue: NavigatorScreenParams<CatalogueStackParamList>;
+  Products: NavigatorScreenParams<CatalogueStackParamList>;
   Orders: NavigatorScreenParams<OrdersStackParamList>;
-  Notifications: undefined;
+  Documents: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
 export type CatalogueStackParamList = {
+  Products:
+    | {
+        categoryId?: string;
+        subCategoryId?: string;
+        industryId?: string;
+        title?: string;
+        featured?: boolean;
+        search?: string;
+      }
+    | undefined;
+  ProductDetails: {productId: string};
   Industries: undefined;
   Categories: {industryId: string; industryName: string};
   SubCategories: {categoryId: string; categoryName: string; industryId: string};
-  Products: {
-    categoryId?: string;
-    subCategoryId?: string;
-    industryId?: string;
-    title: string;
-    featured?: boolean;
-    search?: string;
-  };
-  ProductDetails: {productId: string};
+  RequestPrice: {productId?: string; productName?: string; productImage?: string; category?: string} | undefined;
 };
 
 export type OrdersStackParamList = {
   OrdersList: undefined;
   OrderDetails: {orderId: string};
-  Invoice: {orderId: string; invoiceId?: string};
+  Invoice: {orderId?: string; invoiceId?: string} | undefined;
 };
 
 export type ProfileStackParamList = {

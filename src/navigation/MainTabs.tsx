@@ -1,56 +1,88 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {
-  Bell,
+  FileCheck2,
   Home,
-  LayoutGrid,
-  LucideIcon,
-  ReceiptText,
+  Package,
+  Receipt,
   User,
 } from 'lucide-react-native';
 import {MainTabParamList} from './types';
 import HomeScreen from '../features/home/HomeScreen';
 import CatalogueScreen from '../features/catalogue/CatalogueScreen';
 import OrdersNavigator from '../features/orders/OrdersNavigator';
-import NotificationsScreen from '../features/notifications/NotificationsScreen';
+import DocumentsScreen from '../features/documents/DocumentsScreen';
 import ProfileNavigator from '../features/profile/ProfileNavigator';
 import {colors, fontSize, verticalScale} from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const iconMap: Record<string, LucideIcon> = {
-  Home,
-  Catalogue: LayoutGrid,
-  Orders: ReceiptText,
-  Notifications: Bell,
-  Profile: User,
-};
-
 export const MainTabs: React.FC = () => {
   return (
     <Tab.Navigator
-      screenOptions={({route}) => ({
+      screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: {fontSize: fontSize.xs},
+        tabBarInactiveTintColor: '#8E9BAE',
+        tabBarLabelStyle: {
+          fontSize: fontSize.xs,
+          fontWeight: '600',
+          marginTop: -2,
+        },
         tabBarStyle: {
-          height: verticalScale(60),
+          height: verticalScale(62),
           paddingBottom: verticalScale(8),
           paddingTop: verticalScale(6),
-          backgroundColor: colors.surface,
-          borderTopColor: colors.borderLight,
+          backgroundColor: '#FFFFFF',
+          borderTopColor: '#E6ECF5',
+          borderTopWidth: 1,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: {width: 0, height: -2},
+          shadowOpacity: 0.05,
+          shadowRadius: 6,
         },
-        tabBarIcon: ({color, size}) => {
-          const TabIcon = iconMap[route.name];
-          return <TabIcon size={size} color={color} />;
-        },
-      })}>
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Catalogue" component={CatalogueScreen} />
-      <Tab.Screen name="Orders" component={OrdersNavigator} />
-      <Tab.Screen name="Notifications" component={NotificationsScreen} />
-      <Tab.Screen name="Profile" component={ProfileNavigator} />
+      }}>
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarLabel: 'Home',
+          tabBarIcon: ({color, size}) => <Home size={size} color={color} strokeWidth={2} />,
+        }}
+      />
+      <Tab.Screen
+        name="Products"
+        component={CatalogueScreen}
+        options={{
+          tabBarLabel: 'Products',
+          tabBarIcon: ({color, size}) => <Package size={size} color={color} strokeWidth={2} />,
+        }}
+      />
+      <Tab.Screen
+        name="Orders"
+        component={OrdersNavigator}
+        options={{
+          tabBarLabel: 'Orders',
+          tabBarIcon: ({color, size}) => <Receipt size={size} color={color} strokeWidth={2} />,
+        }}
+      />
+      <Tab.Screen
+        name="Documents"
+        component={DocumentsScreen}
+        options={{
+          tabBarLabel: 'Documents',
+          tabBarIcon: ({color, size}) => <FileCheck2 size={size} color={color} strokeWidth={2} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileNavigator}
+        options={{
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({color, size}) => <User size={size} color={color} strokeWidth={2} />,
+        }}
+      />
     </Tab.Navigator>
   );
 };

@@ -1,307 +1,283 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
-  ActivityIndicator,
-  ScrollView,
+  Alert,
+  FlatList,
+  StatusBar,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import {FileText} from 'lucide-react-native';
-import {useGetOrderInvoiceQuery} from '../../api/services/ordersApi';
-import {OrdersStackParamList} from '../../navigation/types';
-import Card from '../../components/ui/Card';
-import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
-import StatusBadge from '../../components/ui/StatusBadge';
-import {colors, fontSize, radius, spacing, typography} from '../../theme';
+import {useNavigation} from '@react-navigation/native';
+import {ChevronLeft, FileText, RotateCcw} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 
-const formatDate = (ts: number) =>
-  new Date(ts).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+const FILTER_TABS = ['All', 'Paid', 'Pending'];
+
+const MOCK_INVOICES = [
+  {
+    id: 'inv1',
+    invoiceNo: 'INV-2026-001',
+    orderNo: 'Order #AX0003',
+    date: '18 Sep 2026',
+    status: 'Paid',
+    amount: 53100,
+  },
+  {
+    id: 'inv2',
+    invoiceNo: 'INV-2026-002',
+    orderNo: 'Order #AX0002',
+    date: '22 Sep 2026',
+    status: 'Pending',
+    amount: 21830,
+  },
+  {
+    id: 'inv3',
+    invoiceNo: 'INV-2026-003',
+    orderNo: 'Order #AX0001',
+    date: '25 Sep 2026',
+    status: 'Paid',
+    amount: 28320,
+  },
+  {
+    id: 'inv4',
+    invoiceNo: 'INV-2026-004',
+    orderNo: 'Order #AX0004',
+    date: '10 Sep 2026',
+    status: 'Paid',
+    amount: 14760,
+  },
+];
 
 export const InvoiceScreen: React.FC = () => {
-  const route = useRoute<RouteProp<OrdersStackParamList, 'Invoice'>>();
   const navigation = useNavigation<any>();
-  const {data: invoice, isLoading, isError} = useGetOrderInvoiceQuery(
-    route.params.orderId,
-  );
+  const insets = useSafeAreaInsets();
+  const [selectedFilter, setSelectedFilter] = useState('All');
 
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="Invoice" onBack={() => navigation.goBack()} />
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      </View>
-    );
-  }
+  const filtered = MOCK_INVOICES.filter(inv => {
+    if (selectedFilter === 'All') return true;
+    return inv.status.toLowerCase() === selectedFilter.toLowerCase();
+  });
 
-  if (isError || !invoice) {
-    return (
-      <View style={styles.container}>
-        <ScreenHeader title="Invoice" onBack={() => navigation.goBack()} />
-        <EmptyState
-          icon={FileText}
-          title="Invoice not available"
-          subtitle="The invoice will be generated once the order is processed"
-          actionLabel="Go Back"
-          onAction={() => navigation.goBack()}
-        />
-      </View>
+  const handleInvoicePress = (item: (typeof MOCK_INVOICES)[0]) => {
+    Alert.alert(
+      'Tax Invoice',
+      `${item.invoiceNo}\n${item.orderNo}\nAmount: ₹${item.amount.toLocaleString('en-IN')}\nStatus: ${item.status}`,
+      [
+        {text: 'Download PDF', onPress: () => Alert.alert('Downloading', `${item.invoiceNo}.pdf downloaded`)},
+        {text: 'Close'},
+      ],
     );
-  }
+  };
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Invoice" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Card>
-          <View style={styles.rowBetween}>
-            <Text style={styles.heading}>TAX INVOICE</Text>
-            <StatusBadge status={invoice.status} />
-          </View>
-          <Text style={styles.invoiceNo}>{invoice.invoiceNo}</Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>Date</Text>
-            <Text style={styles.metaValue}>{formatDate(invoice.date)}</Text>
-          </View>
-          <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>Due Date</Text>
-            <Text style={styles.metaValue}>{formatDate(invoice.dueDate)}</Text>
-          </View>
-        </Card>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-        <Card>
-          <Text style={styles.blockTitle}>Buyer Details</Text>
-          <View style={styles.buyerBox}>
-            <Text style={styles.buyerName}>{invoice.buyer.name}</Text>
-            {invoice.buyer.company ? (
-              <Text style={styles.buyerLine}>{invoice.buyer.company}</Text>
-            ) : null}
-            {invoice.buyer.address ? (
-              <Text style={styles.buyerLine}>{invoice.buyer.address}</Text>
-            ) : null}
-            {invoice.buyer.gstin ? (
-              <Text style={styles.buyerLine}>
-                GSTIN: {invoice.buyer.gstin}
-              </Text>
-            ) : null}
-          </View>
-        </Card>
+      {/* Header */}
+      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}>
+          <ChevronLeft size={scale(24)} color="#1E293B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Invoices</Text>
+        <TouchableOpacity style={styles.refreshBtn} activeOpacity={0.7}>
+          <RotateCcw size={scale(19)} color="#1E293B" />
+        </TouchableOpacity>
+      </View>
 
-        <Card>
-          <Text style={styles.blockTitle}>Items</Text>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.thProduct, styles.th]}>Product</Text>
-            <Text style={[styles.thQty, styles.th]}>Qty</Text>
-            <Text style={[styles.thAmount, styles.th]}>Amount</Text>
-          </View>
-          {invoice.items.map((item, index) => (
-            <View
-              key={`${item.productId}-${index}`}
-              style={[
-                styles.tableRow,
-                index === invoice.items.length - 1 && styles.tableRowLast,
-              ]}>
-              <Text style={styles.tdProduct} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <Text style={styles.tdQty}>{item.quantity}</Text>
-              <Text style={styles.tdAmount}>
-                ₹{(item.quantity * item.unitPrice).toLocaleString('en-IN')}
-              </Text>
-            </View>
-          ))}
+      {/* Filter Tabs */}
+      <View style={styles.filterBar}>
+        <View style={styles.filterList}>
+          {FILTER_TABS.map(tab => {
+            const active = tab === selectedFilter;
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.filterPill, active && styles.filterPillActive]}
+                activeOpacity={0.8}
+                onPress={() => setSelectedFilter(tab)}>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    active && styles.filterPillTextActive,
+                  ]}>
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
 
-          <View style={styles.totals}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalValue}>
-                ₹{invoice.subtotal.toLocaleString('en-IN')}
-              </Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax (GST)</Text>
-              <Text style={styles.totalValue}>
-                ₹{invoice.tax.toLocaleString('en-IN')}
-              </Text>
-            </View>
-            <View style={styles.grandRow}>
-              <Text style={styles.grandLabel}>Total</Text>
-              <Text style={styles.grandValue}>
-                ₹{invoice.total.toLocaleString('en-IN')}
-              </Text>
-            </View>
-          </View>
-        </Card>
+      {/* Invoices List */}
+      <FlatList
+        data={filtered}
+        keyExtractor={item => item.id}
+        contentContainerStyle={[styles.listContent, {paddingBottom: insets.bottom + scale(80)}]}
+        showsVerticalScrollIndicator={false}
+        renderItem={({item}) => {
+          const isPaid = item.status === 'Paid';
+          return (
+            <TouchableOpacity
+              style={styles.invoiceCard}
+              activeOpacity={0.85}
+              onPress={() => handleInvoicePress(item)}>
+              <View style={styles.pdfIconWrap}>
+                <FileText size={scale(24)} color="#EF4444" strokeWidth={2} />
+              </View>
 
-        <Text style={styles.footerNote}>
-          This is a computer generated invoice.
-        </Text>
-      </ScrollView>
+              <View style={styles.invoiceInfo}>
+                <Text style={styles.invoiceNo}>{item.invoiceNo}</Text>
+                <Text style={styles.orderNo}>{item.orderNo}</Text>
+                <Text style={styles.invoiceDate}>{item.date}</Text>
+              </View>
+
+              <View style={styles.invoiceRight}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {backgroundColor: isPaid ? '#DCFCE7' : '#FEF3C7'},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      {color: isPaid ? '#16A34A' : '#D97706'},
+                    ]}>
+                    {item.status}
+                  </Text>
+                </View>
+                <Text style={styles.invoiceAmount}>
+                  ₹{item.amount.toLocaleString('en-IN')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.lg,
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
   },
-  rowBetween: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  heading: {
-    ...typography.bold,
-    fontSize: fontSize.lg,
-    color: colors.text,
-    letterSpacing: 0.5,
-  },
-  invoiceNo: {
-    ...typography.semibold,
-    fontSize: fontSize.md,
-    color: colors.primary,
-    marginTop: spacing.sm,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  metaLabel: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  metaValue: {
-    ...typography.medium,
-    fontSize: fontSize.xs,
-    color: colors.text,
-  },
-  blockTitle: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: spacing.sm,
-  },
-  buyerBox: {
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  buyerName: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  buyerLine: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    lineHeight: fontSize.xs * 1.5,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: '#EEF2F6',
   },
-  th: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+  backBtn: {
+    padding: scale(4),
   },
-  thProduct: {flex: 2},
-  thQty: {flex: 1, textAlign: 'center'},
-  thAmount: {flex: 1, textAlign: 'right'},
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  refreshBtn: {
+    padding: scale(4),
+  },
+  filterBar: {
+    backgroundColor: '#FFFFFF',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: '#EEF2F6',
   },
-  tableRowLast: {borderBottomWidth: 0},
-  tdProduct: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: colors.text,
-    flex: 2,
-    paddingRight: spacing.sm,
-  },
-  tdQty: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  tdAmount: {
-    ...typography.medium,
-    fontSize: fontSize.sm,
-    color: colors.text,
-    flex: 1,
-    textAlign: 'right',
-  },
-  totals: {
-    marginTop: spacing.md,
+  filterList: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
     gap: spacing.sm,
   },
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  filterPill: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: scale(6),
+    borderRadius: radius.pill,
+    backgroundColor: '#F1F5F9',
   },
-  totalLabel: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+  filterPillActive: {
+    backgroundColor: '#0284C7',
   },
-  totalValue: {
-    ...typography.medium,
-    fontSize: fontSize.sm,
-    color: colors.text,
-  },
-  grandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-  },
-  grandLabel: {
-    ...typography.semibold,
-    fontSize: fontSize.md,
-    color: colors.text,
-  },
-  grandValue: {
-    ...typography.bold,
-    fontSize: fontSize.lg,
-    color: colors.primary,
-  },
-  footerNote: {
-    ...typography.regular,
+  filterPillText: {
     fontSize: fontSize.xs,
-    color: colors.textMuted,
-    textAlign: 'center',
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+  },
+  listContent: {
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  invoiceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  pdfIconWrap: {
+    width: scale(46),
+    height: scale(46),
+    borderRadius: radius.sm,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  invoiceInfo: {
+    flex: 1,
+  },
+  invoiceNo: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  orderNo: {
+    fontSize: scale(11),
+    color: '#64748B',
+    marginTop: 2,
+  },
+  invoiceDate: {
+    fontSize: scale(11),
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  invoiceRight: {
+    alignItems: 'flex-end',
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: scale(3),
+    borderRadius: radius.pill,
+    marginBottom: spacing.xs,
+  },
+  statusText: {
+    fontSize: scale(11),
+    fontWeight: '700',
+  },
+  invoiceAmount: {
+    fontSize: scale(14),
+    fontWeight: '800',
+    color: '#0F172A',
   },
 });
 

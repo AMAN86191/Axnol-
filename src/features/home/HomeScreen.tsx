@@ -1,524 +1,475 @@
-import React, {useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
-  FlatList,
+  ImageBackground,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {
+  ArrowRight,
   Bell,
-  ChevronRight,
+  FileCheck,
+  FileSpreadsheet,
   FileText,
-  LayoutGrid,
-  ReceiptText,
-  Tag,
+  FolderOpen,
+  Search,
 } from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useGetHomeQuery} from '../../api/services/homeApi';
-import {useGetNotificationsQuery} from '../../api/services/documentsApi';
 import AppImage from '../../components/ui/AppImage';
-import SectionHeader from '../../components/ui/SectionHeader';
-import {Banner, Industry, Product} from '../../api/types';
-import {
-  colors,
-  fontSize,
-  radius,
-  scale,
-  shadows,
-  spacing,
-  typography,
-  verticalScale,
-} from '../../theme';
+import {colors, fontSize, radius, scale, spacing, typography, verticalScale} from '../../theme';
+import {useAppSelector} from '../../store';
+import images from '../../assets/images';
 
-const {width: WIN_WIDTH} = Dimensions.get('window');
-const BANNER_W = WIN_WIDTH - spacing.lg * 2;
-const BANNER_H = verticalScale(180);
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 const QUICK_ACTIONS = [
-  {key: 'Catalogue', label: 'Catalogue', icon: LayoutGrid},
-  {key: 'Orders', label: 'Orders', icon: ReceiptText},
-  {key: 'Pricing', label: 'Pricing', icon: Tag},
-  {key: 'Documents', label: 'Docs', icon: FileText},
-] as const;
+  {
+    key: 'Products',
+    label: 'Products',
+    icon: FileText,
+    iconBg: '#FFEDD5',
+    iconColor: '#EA580C',
+  },
+  {
+    key: 'PriceRequest',
+    label: 'Price Request',
+    icon: FileCheck,
+    iconBg: '#DCFCE7',
+    iconColor: '#16A34A',
+  },
+  {
+    key: 'Orders',
+    label: 'My Orders',
+    icon: FolderOpen,
+    iconBg: '#DBEAFE',
+    iconColor: '#2563EB',
+  },
+  {
+    key: 'Invoices',
+    label: 'Invoices',
+    icon: FileSpreadsheet,
+    iconBg: '#FEF3C7',
+    iconColor: '#D97706',
+  },
+];
+
+const POPULAR_CATEGORIES = [
+  {id: 'cat1', name: 'Engine Oil', image: 'cat_engine_oil', industryId: 'ind2'},
+  {id: 'cat2', name: 'Gear Oil', image: 'cat_gear_oil', industryId: 'ind2'},
+  {id: 'cat3', name: 'Hydraulic Oil', image: 'cat_hydraulic_oil', industryId: 'ind2'},
+  {id: 'cat4', name: 'Industrial', image: 'cat_industrial', industryId: 'ind1'},
+  {id: 'cat5', name: 'Marine', image: 'cat_marine', industryId: 'ind4'},
+  {id: 'cat6', name: 'Automotive', image: 'cat_automotive', industryId: 'ind2'},
+];
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const {data, isLoading} = useGetHomeQuery();
-  const {data: notifications} = useGetNotificationsQuery();
-  const [bannerIndex, setBannerIndex] = useState(0);
-  const bannerRef = useRef<FlatList<Banner>>(null);
+  const user = useAppSelector(s => s.auth.user);
+  const [search, setSearch] = useState('');
 
-  if (isLoading || !data) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
-  }
-
-  const go = (tab: string, screen?: string, params?: object) =>
-    navigation.navigate(tab, screen ? {screen, params} : undefined);
-
-  const onQuickAction = (key: string) => {
-    if (key === 'Catalogue') {
-      go('Catalogue', 'Industries');
-    } else if (key === 'Orders') {
-      go('Orders', 'OrdersList');
-    } else if (key === 'Pricing') {
-      go('Profile', 'PricingRequests');
-    } else {
-      go('Profile', 'Documents');
+  const handleSearchSubmit = () => {
+    if (search.trim()) {
+      navigation.navigate('Products', {
+        screen: 'Products',
+        params: {search: search.trim(), title: `Search: ${search.trim()}`},
+      });
     }
   };
 
-  const updates = (notifications ?? []).slice(0, 2);
+  const onQuickAction = (key: string) => {
+    switch (key) {
+      case 'Products':
+        navigation.navigate('Products', {screen: 'Products'});
+        break;
+      case 'PriceRequest':
+        navigation.navigate('Products', {screen: 'RequestPrice'});
+        break;
+      case 'Orders':
+        navigation.navigate('Orders', {screen: 'OrdersList'});
+        break;
+      case 'Invoices':
+        navigation.navigate('Orders', {screen: 'Invoice'});
+        break;
+    }
+  };
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{paddingBottom: spacing.xxxl}}>
-      {/* Top bar */}
-      <View style={[styles.topBar, {paddingTop: insets.top + spacing.md}]}>
-        <View>
-          <Text style={styles.hello}>Axnol Lubetech</Text>
-          <Text style={styles.tagline}>Solution of energy since 1959</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.bellBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('Notifications')}>
-          <Bell size={scale(20)} color={colors.primary} />
-          {updates.length > 0 && !notifications?.every(n => n.read) ? (
-            <View style={styles.bellDot} />
-          ) : null}
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
 
-      {/* Banners */}
-      <View style={styles.bannerWrap}>
-        <FlatList
-          ref={bannerRef}
-          data={data.banners}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={b => b.id}
-          onMomentumScrollEnd={e =>
-            setBannerIndex(
-              Math.round(e.nativeEvent.contentOffset.x / BANNER_W),
-            )
-          }
-          renderItem={({item}) => (
-            <AppImage
-              uri={item.image}
-              style={styles.banner}
-              accessibilityLabel={item.title}
-            />
-          )}
-        />
-        <View style={styles.bannerOverlay}>
-          <Text style={styles.bannerTitle} numberOfLines={1}>
-            {data.banners[bannerIndex]?.title}
-          </Text>
-          <Text style={styles.bannerSubtitle} numberOfLines={1}>
-            {data.banners[bannerIndex]?.subtitle}
-          </Text>
-        </View>
-        <View style={styles.dots}>
-          {data.banners.map((b, i) => (
-            <View
-              key={b.id}
-              style={[styles.dot, i === bannerIndex && styles.dotActive]}
-            />
-          ))}
-        </View>
-      </View>
-
-      {/* Quick actions */}
-      <View style={styles.quickRow}>
-        {QUICK_ACTIONS.map(a => (
+      {/* Top Header Background with City Backdrop */}
+      <ImageBackground
+        source={images.header_sky_bg}
+        style={[styles.headerBg, {paddingTop: insets.top + scale(4)}]}
+        resizeMode="cover">
+        
+        {/* Logo and Notification Row */}
+        <View style={styles.topBar}>
+          <View style={styles.logoWrap}>
+            <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
+          </View>
           <TouchableOpacity
-            key={a.key}
-            style={styles.quickCard}
-            activeOpacity={0.75}
-            onPress={() => onQuickAction(a.key)}>
-            <View style={styles.quickIcon}>
-              <a.icon size={scale(20)} color={colors.primary} strokeWidth={2} />
-            </View>
-            <Text style={styles.quickLabel}>{a.label}</Text>
+            style={styles.bellBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Orders', {screen: 'OrdersList'})}>
+            <Bell size={scale(20)} color="#1E293B" strokeWidth={2.2} />
+            <View style={styles.bellDot} />
           </TouchableOpacity>
-        ))}
-      </View>
+        </View>
 
-      {/* Updates */}
-      {updates.length > 0 ? (
-        <View style={styles.section}>
-          <SectionHeader
-            title="Updates"
-            actionLabel="View all"
-            onAction={() => navigation.navigate('Notifications')}
+        {/* User Greeting Row */}
+        <View style={styles.greetingRow}>
+          <View style={styles.avatarWrap}>
+            <AppImage uri="user_avatar" style={styles.avatar} resizeMode="cover" />
+          </View>
+          <View style={styles.greetingText}>
+            <Text style={styles.helloText}>Hello,</Text>
+            <Text style={styles.userName}>{user?.name ?? 'Rahul Sharma'}</Text>
+          </View>
+        </View>
+      </ImageBackground>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, {paddingBottom: insets.bottom + scale(85)}]}>
+        
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Search size={scale(18)} color="#94A3B8" strokeWidth={2.2} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search products, industries..."
+            placeholderTextColor="#94A3B8"
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={handleSearchSubmit}
+            returnKeyType="search"
           />
-          {updates.map(n => (
-            <View key={n.id} style={styles.updateCard}>
-              <View
-                style={[
-                  styles.updateDot,
-                  {
-                    backgroundColor: n.read
-                      ? colors.border
-                      : colors.accent,
-                  },
-                ]}
-              />
-              <View style={{flex: 1}}>
-                <Text style={styles.updateTitle} numberOfLines={1}>
-                  {n.title}
-                </Text>
-                <Text style={styles.updateBody} numberOfLines={2}>
-                  {n.body}
-                </Text>
+        </View>
+
+        {/* Hero Banner with Exact Graphic and View Products Button */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('Products', {screen: 'Products'})}
+          style={styles.bannerWrap}>
+          <ImageBackground
+            source={images.hero_banner}
+            style={styles.bannerImage}
+            imageStyle={styles.bannerImageInner}
+            resizeMode="cover">
+            {/* Clickable View Products Pill Button overlaid on banner position */}
+            <View style={styles.bannerBtnOverlay}>
+              <View style={styles.viewProductsBtn}>
+                <Text style={styles.viewProductsBtnText}>View Products</Text>
+                <ArrowRight size={scale(13)} color="#FFFFFF" strokeWidth={2.5} />
               </View>
             </View>
+          </ImageBackground>
+        </TouchableOpacity>
+
+        {/* Quick Actions (4 Cards Row) */}
+        <View style={styles.quickActionRow}>
+          {QUICK_ACTIONS.map(action => (
+            <TouchableOpacity
+              key={action.key}
+              style={styles.quickCard}
+              activeOpacity={0.8}
+              onPress={() => onQuickAction(action.key)}>
+              <View style={[styles.quickIconBox, {backgroundColor: action.iconBg}]}>
+                <action.icon size={scale(22)} color={action.iconColor} strokeWidth={2.2} />
+              </View>
+              <Text style={styles.quickLabel}>{action.label}</Text>
+            </TouchableOpacity>
           ))}
         </View>
-      ) : null}
 
-      {/* Industries */}
-      <View style={styles.section}>
-        <SectionHeader
-          title="Industries"
-          actionLabel="View all"
-          onAction={() => go('Catalogue', 'Industries')}
-        />
-        <FlatList
-          data={data.industries}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{gap: spacing.md}}
-          keyExtractor={(i: Industry) => i.id}
-          renderItem={({item}) => (
+        {/* Popular Categories Section */}
+        <View style={styles.categoriesSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Popular Categories</Text>
             <TouchableOpacity
-              style={styles.indCard}
-              activeOpacity={0.8}
-              onPress={() =>
-                go('Catalogue', 'Categories', {
-                  industryId: item.id,
-                  industryName: item.name,
-                })
-              }>
-              <AppImage uri={item.image} style={styles.indImg} />
-              <View style={styles.indLabel}>
-                <Text style={styles.indName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-              </View>
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Products', {screen: 'Industries'})}>
+              <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
-          )}
-        />
-      </View>
+          </View>
 
-      {/* Featured products */}
-      <View style={styles.section}>
-        <SectionHeader
-          title="Featured Products"
-          actionLabel="View all"
-          onAction={() =>
-            go('Catalogue', 'Products', {title: 'Featured', featured: true})
-          }
-        />
-        <FlatList
-          data={data.featuredProducts}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{gap: spacing.md}}
-          keyExtractor={(p: Product) => p.id}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.prodCard}
-              activeOpacity={0.8}
-              onPress={() =>
-                go('Catalogue', 'ProductDetails', {productId: item.id})
-              }>
-              <AppImage uri={item.images[0]} style={styles.prodImg} />
-              <View style={styles.prodBody}>
-                <Text style={styles.prodBrand} numberOfLines={1}>
-                  {item.brand}
-                </Text>
-                <Text style={styles.prodName} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                <View style={styles.prodFooter}>
-                  <Text style={styles.prodPrice}>
-                    ₹{(item.dealerPrice ?? item.price).toLocaleString('en-IN')}
-                  </Text>
-                  <View style={styles.prodCta}>
-                    <ChevronRight size={scale(14)} color={colors.primary} />
-                  </View>
+          {/* 2x3 Grid Matching Exact Artwork */}
+          <View style={styles.catGrid}>
+            {POPULAR_CATEGORIES.map(cat => (
+              <TouchableOpacity
+                key={cat.id}
+                style={styles.catCard}
+                activeOpacity={0.82}
+                onPress={() =>
+                  navigation.navigate('Products', {
+                    screen: 'Products',
+                    params: {title: cat.name},
+                  })
+                }>
+                <View style={styles.catImageWrap}>
+                  <AppImage uri={cat.image} style={styles.catImage} resizeMode="cover" />
                 </View>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
-
-      {/* Stats */}
-      <View style={styles.section}>
-        <SectionHeader title="Our Reach" />
-        <View style={styles.statsCard}>
-          {data.stats.map(s => (
-            <View key={s.label} style={styles.statItem}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
+                <Text style={styles.catName} numberOfLines={1}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  headerBg: {
+    width: '100%',
+    paddingBottom: scale(10),
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    paddingVertical: scale(6),
   },
-  hello: {
-    ...typography.bold,
-    fontSize: fontSize.xl,
-    color: colors.text,
+  logoWrap: {
+    height: scale(36),
+    justifyContent: 'center',
   },
-  tagline: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
+  logo: {
+    width: scale(140),
+    height: scale(36),
   },
   bellBtn: {
-    width: scale(40),
-    height: scale(40),
-    borderRadius: scale(20),
-    backgroundColor: colors.primaryLight,
+    width: scale(38),
+    height: scale(38),
     alignItems: 'center',
     justifyContent: 'center',
   },
   bellDot: {
     position: 'absolute',
-    top: scale(9),
-    right: scale(11),
-    width: scale(9),
-    height: scale(9),
-    borderRadius: scale(5),
-    backgroundColor: colors.accent,
+    top: scale(7),
+    right: scale(7),
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
+    backgroundColor: '#EA580C',
     borderWidth: 1.5,
-    borderColor: colors.primaryLight,
+    borderColor: '#FFFFFF',
   },
-
-  bannerWrap: {
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.primaryDark,
-    ...shadows.medium,
-  },
-  banner: {width: BANNER_W, height: BANNER_H},
-  bannerOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing.lg,
-    backgroundColor: 'rgba(7, 24, 44, 0.55)',
-  },
-  bannerTitle: {
-    ...typography.bold,
-    fontSize: fontSize.xl,
-    color: colors.textInverse,
-  },
-  bannerSubtitle: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: colors.primaryMuted,
-    marginTop: 2,
-  },
-  dots: {
-    position: 'absolute',
-    right: spacing.lg,
-    top: spacing.md,
+  greetingRow: {
     flexDirection: 'row',
-    gap: 5,
-  },
-  dot: {
-    width: scale(6),
-    height: scale(6),
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  dotActive: {
-    backgroundColor: colors.accent,
-    width: scale(16),
-  },
-
-  quickRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+    marginTop: scale(4),
+    marginBottom: scale(8),
+    gap: spacing.md,
   },
-  quickCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.xs,
-    ...shadows.small,
+  avatarWrap: {
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  quickIcon: {
-    width: scale(38),
-    height: scale(38),
-    borderRadius: scale(19),
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
+  avatar: {
+    width: '100%',
+    height: '100%',
+  },
+  greetingText: {
     justifyContent: 'center',
   },
-  quickLabel: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: colors.text,
+  helloText: {
+    fontSize: scale(12.5),
+    color: '#64748B',
+    fontWeight: '500',
   },
-
-  section: {
-    marginTop: spacing.xl,
+  userName: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  scrollContent: {
+    paddingTop: scale(4),
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+    height: scale(46),
+    borderRadius: radius.pill,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    marginBottom: scale(14),
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: spacing.sm,
+    fontSize: fontSize.sm,
+    color: '#0F172A',
+    paddingVertical: 0,
+    fontWeight: '500',
+  },
+  bannerWrap: {
+    marginHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: scale(16),
+    shadowColor: '#073660',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  bannerImage: {
+    width: '100%',
+    height: scale(140),
+  },
+  bannerImageInner: {
+    borderRadius: radius.lg,
+  },
+  bannerBtnOverlay: {
+    position: 'absolute',
+    bottom: scale(14),
+    left: scale(14),
+  },
+  viewProductsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284C7',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: radius.pill,
+    gap: scale(4),
+  },
+  viewProductsBtnText: {
+    fontSize: scale(11.5),
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  quickActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    marginBottom: scale(20),
+  },
+  quickCard: {
+    width: (SCREEN_WIDTH - spacing.lg * 2 - spacing.sm * 3) / 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    paddingVertical: scale(10),
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickIconBox: {
+    width: scale(38),
+    height: scale(38),
+    borderRadius: scale(10),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: scale(6),
+  },
+  quickLabel: {
+    fontSize: scale(10.5),
+    fontWeight: '700',
+    color: '#334155',
+    textAlign: 'center',
+  },
+  categoriesSection: {
     paddingHorizontal: spacing.lg,
   },
-  updateCard: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    padding: spacing.lg,
-    marginBottom: spacing.sm,
-    alignItems: 'center',
-    ...shadows.small,
-  },
-  updateDot: {width: scale(8), height: scale(8), borderRadius: 4},
-  updateTitle: {
-    ...typography.semibold,
-    fontSize: fontSize.md,
-    color: colors.text,
-  },
-  updateBody: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: fontSize.xs * 1.5,
-  },
-
-  indCard: {
-    width: scale(120),
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    ...shadows.small,
-  },
-  indImg: {width: '100%', height: verticalScale(80)},
-  indLabel: {padding: spacing.sm},
-  indName: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: colors.text,
-  },
-
-  prodCard: {
-    width: scale(170),
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    overflow: 'hidden',
-    ...shadows.small,
-  },
-  prodImg: {width: '100%', height: verticalScale(110)},
-  prodBody: {padding: spacing.md},
-  prodBrand: {
-    ...typography.medium,
-    fontSize: fontSize.xs,
-    color: colors.accentDark,
-    textTransform: 'uppercase',
-  },
-  prodName: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.text,
-    marginTop: 2,
-    lineHeight: fontSize.sm * 1.4,
-    minHeight: fontSize.sm * 2.8,
-  },
-  prodFooter: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.sm,
+    marginBottom: spacing.md,
   },
-  prodPrice: {
-    ...typography.bold,
-    fontSize: fontSize.md,
-    color: colors.primary,
+  sectionTitle: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
   },
-  prodCta: {
-    width: scale(24),
-    height: scale(24),
-    borderRadius: scale(12),
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+  viewAllText: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0284C7',
   },
-
-  statsCard: {
+  catGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    justifyContent: 'space-between',
+    gap: scale(10),
+  },
+  catCard: {
+    width: (SCREEN_WIDTH - spacing.lg * 2 - scale(20)) / 3,
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: scale(4),
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingVertical: spacing.lg,
-    ...shadows.small,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
+    marginBottom: scale(4),
   },
-  statItem: {width: '33.33%', alignItems: 'center', paddingVertical: spacing.sm},
-  statValue: {
-    ...typography.bold,
-    fontSize: fontSize.xxl,
-    color: colors.primary,
+  catImageWrap: {
+    width: '100%',
+    height: scale(64),
+    borderRadius: scale(8),
+    overflow: 'hidden',
+    backgroundColor: '#F1F5F9',
+    marginBottom: scale(5),
   },
-  statLabel: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-    marginTop: 2,
+  catImage: {
+    width: '100%',
+    height: '100%',
+  },
+  catName: {
+    fontSize: scale(11),
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+    paddingBottom: scale(2),
   },
 });
+
 export default HomeScreen;

@@ -1,178 +1,299 @@
 import React, {useState} from 'react';
 import {
-  ActivityIndicator,
   FlatList,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ReceiptText} from 'lucide-react-native';
-import {useGetOrdersQuery} from '../../api/services/ordersApi';
-import Card from '../../components/ui/Card';
-import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
-import StatusBadge from '../../components/ui/StatusBadge';
-import {colors, fontSize, radius, spacing, typography} from '../../theme';
+import {ArrowUpDown, ChevronLeft} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import AppImage from '../../components/ui/AppImage';
+import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 
-const FILTERS = [
-  'All',
-  'Placed',
-  'Confirmed',
-  'Dispatched',
-  'Delivered',
-  'Cancelled',
+const FILTER_TABS = ['All', 'Pending', 'Processing', 'Delivered', 'Canceled'];
+
+const MOCK_ORDERS = [
+  {
+    id: 'ord1',
+    orderNo: '#AX0001',
+    productName: 'Engine Oil AX-1000',
+    quantity: 10,
+    amount: 24000,
+    date: '25 Sep 2026',
+    status: 'Pending',
+    image: 'product_drum',
+  },
+  {
+    id: 'ord2',
+    orderNo: '#AX0002',
+    productName: 'Hydraulic Oil AX-300',
+    quantity: 5,
+    amount: 18500,
+    date: '22 Sep 2026',
+    status: 'Processing',
+    image: 'product_drum',
+  },
+  {
+    id: 'ord3',
+    orderNo: '#AX0003',
+    productName: 'Gear Oil AX-200',
+    quantity: 20,
+    amount: 45000,
+    date: '18 Sep 2026',
+    status: 'Delivered',
+    image: 'product_drum',
+  },
+  {
+    id: 'ord4',
+    orderNo: '#AX0004',
+    productName: 'Compressor Oil AX-400',
+    quantity: 2,
+    amount: 12000,
+    date: '10 Sep 2026',
+    status: 'Canceled',
+    image: 'product_drum',
+  },
 ];
-
-const formatDate = (ts: number) =>
-  new Date(ts).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
 
 export const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const {data, isLoading} = useGetOrdersQuery();
-  const [filter, setFilter] = useState('All');
+  const insets = useSafeAreaInsets();
+  const [selectedFilter, setSelectedFilter] = useState('All');
 
-  const orders = (data ?? []).filter(
-    o => filter === 'All' || o.status === filter.toLowerCase(),
-  );
+  const filteredOrders = MOCK_ORDERS.filter(o => {
+    if (selectedFilter === 'All') return true;
+    return o.status.toLowerCase() === selectedFilter.toLowerCase();
+  });
+
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status) {
+      case 'Pending':
+        return {bg: '#FEF3C7', text: '#D97706'};
+      case 'Processing':
+        return {bg: '#DBEAFE', text: '#2563EB'};
+      case 'Delivered':
+        return {bg: '#DCFCE7', text: '#16A34A'};
+      case 'Canceled':
+        return {bg: '#FEE2E2', text: '#DC2626'};
+      default:
+        return {bg: '#F1F5F9', text: '#64748B'};
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="My Orders" />
-      {isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      ) : (
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}>
+          <ChevronLeft size={scale(24)} color="#1E293B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Orders</Text>
+        <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
+          <ArrowUpDown size={scale(20)} color="#1E293B" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Horizontal Filter Tabs */}
+      <View style={styles.filterBar}>
         <FlatList
-          data={orders}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.list}
-          ListHeaderComponent={
-            <View style={styles.chips}>
-              {FILTERS.map(f => {
-                const active = f === filter;
-                return (
-                  <TouchableOpacity
-                    key={f}
-                    activeOpacity={0.8}
-                    onPress={() => setFilter(f)}
-                    style={[styles.chip, active && styles.chipActive]}>
-                    <Text
-                      style={[styles.chipText, active && styles.chipTextActive]}>
-                      {f}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          }
-          ListEmptyComponent={
-            <EmptyState
-              icon={ReceiptText}
-              title={filter === 'All' ? 'No orders yet' : `No ${filter} orders`}
-              subtitle={
-                filter === 'All'
-                  ? 'Orders appear here once an admin approves your request'
-                  : undefined
-              }
-            />
-          }
-          renderItem={({item}) => (
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={FILTER_TABS}
+          keyExtractor={item => item}
+          contentContainerStyle={styles.filterList}
+          renderItem={({item}) => {
+            const active = item === selectedFilter;
+            return (
+              <TouchableOpacity
+                style={[styles.filterPill, active && styles.filterPillActive]}
+                activeOpacity={0.8}
+                onPress={() => setSelectedFilter(item)}>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    active && styles.filterPillTextActive,
+                  ]}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+
+      {/* Orders List */}
+      <FlatList
+        data={filteredOrders}
+        keyExtractor={item => item.id}
+        contentContainerStyle={[styles.orderList, {paddingBottom: insets.bottom + scale(80)}]}
+        showsVerticalScrollIndicator={false}
+        renderItem={({item}) => {
+          const badge = getStatusBadgeStyle(item.status);
+          return (
             <TouchableOpacity
-              activeOpacity={0.8}
+              style={styles.orderCard}
+              activeOpacity={0.85}
               onPress={() =>
                 navigation.navigate('OrderDetails', {orderId: item.id})
               }>
-              <Card>
-                <View style={styles.row}>
-                  <Text style={styles.orderNo}>{item.orderNo}</Text>
-                  <StatusBadge status={item.status} />
-                </View>
-                <View style={[styles.row, styles.metaRow]}>
-                  <Text style={styles.meta}>{formatDate(item.createdAt)}</Text>
-                  <Text style={styles.meta}>{item.items.length} item(s)</Text>
-                </View>
-                <View style={[styles.row, styles.metaRow]}>
-                  <Text style={styles.total}>
-                    ₹{item.total.toLocaleString('en-IN')}
-                  </Text>
-                  <Text style={styles.view}>View Details ›</Text>
-                </View>
-              </Card>
+              <View style={styles.orderImgWrap}>
+                <AppImage
+                  uri={item.image}
+                  style={styles.orderImg}
+                  resizeMode="contain"
+                />
+              </View>
+
+              <View style={styles.orderContent}>
+                <Text style={styles.orderNo}>{item.orderNo}</Text>
+                <Text style={styles.productName} numberOfLines={1}>
+                  {item.productName}
+                </Text>
+                <Text style={styles.orderMeta}>
+                  Qty: {item.quantity} | ₹{item.amount.toLocaleString('en-IN')}
+                </Text>
+                <Text style={styles.orderDate}>{item.date}</Text>
+              </View>
+
+              <View style={[styles.statusBadge, {backgroundColor: badge.bg}]}>
+                <Text style={[styles.statusText, {color: badge.text}]}>
+                  {item.status}
+                </Text>
+              </View>
             </TouchableOpacity>
-          )}
-        />
-      )}
+          );
+        }}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  list: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.md,
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
   },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    ...typography.medium,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-  },
-  chipTextActive: {
-    ...typography.semibold,
-    color: colors.textInverse,
-  },
-  row: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F6',
   },
-  metaRow: {marginTop: spacing.sm},
-  orderNo: {
-    ...typography.semibold,
-    fontSize: fontSize.md,
-    color: colors.text,
+  backBtn: {
+    padding: scale(4),
   },
-  meta: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: colors.textMuted,
-  },
-  total: {
-    ...typography.bold,
+  headerTitle: {
     fontSize: fontSize.lg,
-    color: colors.primary,
+    fontWeight: '700',
+    color: '#0F172A',
   },
-  view: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.primary,
+  filterBtn: {
+    padding: scale(4),
+  },
+  filterBar: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F6',
+  },
+  filterList: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  filterPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: scale(6),
+    borderRadius: radius.pill,
+    backgroundColor: '#F1F5F9',
+  },
+  filterPillActive: {
+    backgroundColor: '#0284C7',
+  },
+  filterPillText: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+  },
+  orderList: {
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  orderCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  orderImgWrap: {
+    width: scale(56),
+    height: scale(56),
+    borderRadius: radius.sm,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: scale(4),
+    marginRight: spacing.md,
+  },
+  orderImg: {
+    width: '100%',
+    height: '100%',
+  },
+  orderContent: {
+    flex: 1,
+  },
+  orderNo: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  productName: {
+    fontSize: scale(12),
+    color: '#475569',
+    marginTop: 2,
+  },
+  orderMeta: {
+    fontSize: scale(12),
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: 4,
+  },
+  orderDate: {
+    fontSize: scale(11),
+    color: '#94A3B8',
+    marginTop: 4,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: scale(4),
+    borderRadius: radius.pill,
+    alignSelf: 'flex-start',
+  },
+  statusText: {
+    fontSize: scale(11),
+    fontWeight: '700',
   },
 });
 

@@ -1,139 +1,247 @@
 import React, {useState} from 'react';
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
-  Linking,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {Download, FileText, FolderOpen} from 'lucide-react-native';
-import {useGetDocumentsQuery} from '../../api/services/documentsApi';
-import Card from '../../components/ui/Card';
-import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
-import SearchBar from '../../components/ui/SearchBar';
+import {ChevronLeft, ChevronRight, FileText} from 'lucide-react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+
+const FILTER_TABS = ['All', 'Technical Data', 'Safety Data', 'Brochure'];
+
+const MOCK_DOCUMENTS = [
+  {
+    id: 'doc1',
+    title: 'Product Brochure',
+    category: 'Brochure',
+    size: 'PDF • 2.4 MB',
+    url: 'https://axnol.in/pdf/brochure.pdf',
+  },
+  {
+    id: 'doc2',
+    title: 'Technical Data Sheet',
+    category: 'Technical Data',
+    size: 'PDF • 1.8 MB',
+    url: 'https://axnol.in/pdf/tds.pdf',
+  },
+  {
+    id: 'doc3',
+    title: 'Safety Data Sheet',
+    category: 'Safety Data',
+    size: 'PDF • 1.1 MB',
+    url: 'https://axnol.in/pdf/sds.pdf',
+  },
+  {
+    id: 'doc4',
+    title: 'Certificate of Analysis',
+    category: 'Technical Data',
+    size: 'PDF • 1.5 MB',
+    url: 'https://axnol.in/pdf/coa.pdf',
+  },
+  {
+    id: 'doc5',
+    title: 'Application Guide',
+    category: 'Brochure',
+    size: 'PDF • 1.9 MB',
+    url: 'https://axnol.in/pdf/guide.pdf',
+  },
+  {
+    id: 'doc6',
+    title: 'Material Compatibility',
+    category: 'Technical Data',
+    size: 'PDF • 2.2 MB',
+    url: 'https://axnol.in/pdf/compatibility.pdf',
+  },
+];
 
 export const DocumentsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const [search, setSearch] = useState('');
-  const {data, isLoading} = useGetDocumentsQuery({
-    search: search || undefined,
+  const insets = useSafeAreaInsets();
+  const [selectedFilter, setSelectedFilter] = useState('All');
+
+  const filtered = MOCK_DOCUMENTS.filter(doc => {
+    if (selectedFilter === 'All') return true;
+    return doc.category.toLowerCase().includes(selectedFilter.toLowerCase());
   });
 
-  const openDocument = async (url: string) => {
-    try {
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert('Error', 'Unable to open this document.');
-    }
+  const handleOpenDoc = (doc: (typeof MOCK_DOCUMENTS)[0]) => {
+    Alert.alert(
+      doc.title,
+      `${doc.size}\nTap download to view this document.`,
+      [
+        {text: 'Download & View', onPress: () => Alert.alert('Downloading', `${doc.title}.pdf is opening...`)},
+        {text: 'Cancel'},
+      ],
+    );
   };
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Documents" onBack={() => navigation.goBack()} />
-      {isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      ) : (
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      {/* Header */}
+      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}>
+          <ChevronLeft size={scale(24)} color="#1E293B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Documents</Text>
+        <View style={{width: scale(24)}} />
+      </View>
+
+      {/* Horizontal Filter Tabs */}
+      <View style={styles.filterBar}>
         <FlatList
-          data={data ?? []}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.list}
-          ListHeaderComponent={
-            <View style={styles.searchWrap}>
-              <SearchBar
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Search documents"
-              />
-            </View>
-          }
-          ListEmptyComponent={
-            <EmptyState icon={FolderOpen} title="No documents found" />
-          }
-          renderItem={({item}) => (
-            <Card style={styles.card}>
-              <View style={styles.iconBox}>
-                <FileText size={scale(20)} color={colors.primary} />
-              </View>
-              <View style={styles.body}>
-                <Text style={styles.title} numberOfLines={2}>
-                  {item.title}
-                </Text>
-                <View style={styles.categoryChip}>
-                  <Text style={styles.categoryText}>{item.category}</Text>
-                </View>
-              </View>
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={FILTER_TABS}
+          keyExtractor={item => item}
+          contentContainerStyle={styles.filterList}
+          renderItem={({item}) => {
+            const active = item === selectedFilter;
+            return (
               <TouchableOpacity
-                activeOpacity={0.7}
-                hitSlop={8}
-                onPress={() => openDocument(item.url)}
-                style={styles.downloadBtn}>
-                <Download size={scale(20)} color={colors.primary} />
+                style={[styles.filterPill, active && styles.filterPillActive]}
+                activeOpacity={0.8}
+                onPress={() => setSelectedFilter(item)}>
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    active && styles.filterPillTextActive,
+                  ]}>
+                  {item}
+                </Text>
               </TouchableOpacity>
-            </Card>
-          )}
+            );
+          }}
         />
-      )}
+      </View>
+
+      {/* Documents List */}
+      <FlatList
+        data={filtered}
+        keyExtractor={item => item.id}
+        contentContainerStyle={[styles.listContent, {paddingBottom: insets.bottom + scale(80)}]}
+        showsVerticalScrollIndicator={false}
+        renderItem={({item}) => (
+          <TouchableOpacity
+            style={styles.docCard}
+            activeOpacity={0.85}
+            onPress={() => handleOpenDoc(item)}>
+            <View style={styles.pdfIconWrap}>
+              <FileText size={scale(22)} color="#EF4444" strokeWidth={2} />
+            </View>
+
+            <View style={styles.docInfo}>
+              <Text style={styles.docTitle}>{item.title}</Text>
+              <Text style={styles.docSize}>{item.size}</Text>
+            </View>
+
+            <ChevronRight size={scale(18)} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  list: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.md,
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
   },
-  searchWrap: {marginBottom: spacing.md},
-  card: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F6',
+  },
+  backBtn: {
+    padding: scale(4),
+  },
+  headerTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  filterBar: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F6',
+  },
+  filterList: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  filterPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: scale(6),
+    borderRadius: radius.pill,
+    backgroundColor: '#F1F5F9',
+  },
+  filterPillActive: {
+    backgroundColor: '#0284C7',
+  },
+  filterPillText: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  filterPillTextActive: {
+    color: '#FFFFFF',
+  },
+  listContent: {
+    padding: spacing.lg,
     gap: spacing.md,
   },
-  iconBox: {
-    width: scale(42),
-    height: scale(42),
+  docCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderRadius: radius.md,
-    backgroundColor: colors.primaryLight,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  pdfIconWrap: {
+    width: scale(44),
+    height: scale(44),
+    borderRadius: radius.sm,
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: spacing.md,
   },
-  body: {flex: 1},
-  title: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: colors.text,
-    lineHeight: fontSize.sm * 1.4,
+  docInfo: {
+    flex: 1,
   },
-  categoryChip: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    marginTop: spacing.xs,
+  docTitle: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
   },
-  categoryText: {
-    ...typography.medium,
-    fontSize: fontSize.xs,
-    color: colors.textSecondary,
-  },
-  downloadBtn: {
-    width: scale(38),
-    height: scale(38),
-    borderRadius: scale(19),
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+  docSize: {
+    fontSize: scale(11),
+    color: '#64748B',
+    marginTop: 2,
   },
 });
 

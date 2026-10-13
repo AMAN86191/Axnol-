@@ -4,7 +4,17 @@
 import type {ImageSourcePropType} from 'react-native';
 
 const images = {
-  logo: require('../assets/logo.png'),
+  logo: require('../assets/logo_blue.png'),
+  user_avatar: require('../../assets/axnol/rahul_avatar.png'),
+  product_drum: require('../../assets/axnol/mock_drum.png'),
+  hero_banner: require('../../assets/axnol/hero_banner.png'),
+  header_sky_bg: require('../../assets/axnol/header_sky_bg.png'),
+  cat_engine_oil: require('../../assets/axnol/cat_engine_oil.png'),
+  cat_gear_oil: require('../../assets/axnol/cat_gear_oil.png'),
+  cat_hydraulic_oil: require('../../assets/axnol/cat_hydraulic_oil.png'),
+  cat_industrial: require('../../assets/axnol/cat_industrial.png'),
+  cat_marine: require('../../assets/axnol/cat_marine.png'),
+  cat_automotive: require('../../assets/axnol/cat_automotive.png'),
 
   // Auth AI assets
   auth_hero_oil: require('../../assets/axnol/auth_hero_oil.png'),
