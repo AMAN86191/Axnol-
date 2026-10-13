@@ -15,6 +15,7 @@ const images = {
   cat_industrial: require('../../assets/axnol/cat_industrial.png'),
   cat_marine: require('../../assets/axnol/cat_marine.png'),
   cat_automotive: require('../../assets/axnol/cat_automotive.png'),
+  register_corner_bg: require('../../assets/axnol/register_corner_bg.png'),
 
   // Auth AI assets
   auth_hero_oil: require('../../assets/axnol/auth_hero_oil.png'),

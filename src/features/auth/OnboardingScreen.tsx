@@ -13,9 +13,11 @@ import {
 import Svg, {
   Circle,
   Defs,
+  Ellipse,
   Line,
   LinearGradient as SvgGradient,
   Path,
+  RadialGradient as SvgRadial,
   Stop,
   Text as SvgText,
 } from 'react-native-svg';
@@ -443,7 +445,14 @@ const PricingGraphic: React.FC<{width: number; active: boolean}> = ({
             <Stop offset="60%" stopColor={DS.secondary} stopOpacity={0.08} />
             <Stop offset="100%" stopColor={DS.primary} stopOpacity={0} />
           </SvgGradient>
+          <SvgRadial id="chartGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor={DS.sky} stopOpacity={0.22} />
+            <Stop offset="60%" stopColor={DS.sky} stopOpacity={0.07} />
+            <Stop offset="100%" stopColor={DS.sky} stopOpacity={0} />
+          </SvgRadial>
         </Defs>
+        {/* Soft light glow behind the chart */}
+        <Ellipse cx={170} cy={110} rx={155} ry={95} fill="url(#chartGlow)" />
         {[50, 100, 150].map(y => (
           <Line
             key={y}
@@ -578,6 +587,7 @@ const DispatchGraphic: React.FC<{width: number}> = ({width}) => {
 /* ------------------------------------------------------------------ */
 interface Slide {
   key: 'sourcing' | 'pricing' | 'dispatch';
+  step: string;
   title: string;
   subtitle: string;
 }
@@ -585,18 +595,21 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     key: 'sourcing',
+    step: 'STEP 01 OF 03',
     title: 'Direct Sourcing',
     subtitle:
       'Procure premium industrial lubricants directly from certified refineries.',
   },
   {
     key: 'pricing',
+    step: 'STEP 02 OF 03 • MARKET TERMINAL',
     title: 'Real-Time Bulk Pricing',
     subtitle:
       'Live terminal index pricing, automated volume discount tiers, and instant bulk locks.',
   },
   {
     key: 'dispatch',
+    step: 'STEP 03 OF 03',
     title: 'Nationwide Express Dispatch',
     subtitle:
       'Direct refinery routing across 48 distribution hubs with automated order tracking.',
@@ -610,14 +623,14 @@ export const OnboardingScreen: React.FC = () => {
   const [index, setIndex] = useState(0);
   const ref = useRef<FlatList>(null);
 
-  const goToWelcome = () => navigation.navigate('Welcome');
+  const goToRegister = () => navigation.navigate('Register');
   const goToLogin = () => navigation.navigate('Login');
 
   const next = () => {
     if (index < SLIDES.length - 1) {
       ref.current?.scrollToIndex({index: index + 1, animated: true});
     } else {
-      goToWelcome();
+      goToRegister();
     }
   };
   const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -663,33 +676,43 @@ export const OnboardingScreen: React.FC = () => {
       {/* Header */}
       {item.key === 'sourcing' ? (
         <View style={styles.headerRow}>
-         <View />
-          <TouchableOpacity onPress={goToWelcome} activeOpacity={0.7} style={styles.skipHit}>
+          <View style={styles.portalPill}>
+            <LiveDot />
+            <Text style={styles.portalText}>PORTAL v2.4</Text>
+          </View>
+          <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
             <Text style={styles.skipText}>Skip</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.headerRow}>
-          {/* <AppImage uri="logo" resizeMode="contain" style={styles.logo} /> */}
-          <View></View>
+          <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
           <View style={styles.headerRight}>
             {/* <View style={styles.stepPill}>
               <Text style={styles.stepPillText}>{item.step}</Text>
             </View> */}
-            <TouchableOpacity onPress={goToWelcome} activeOpacity={0.7} style={styles.skipHit}>
+            <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
               <Text style={styles.skipText}>Skip</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-     
+      {/* Brand block (slide 1 like the reference) */}
+      {item.key === 'sourcing' && (
         <View style={styles.brandBlock}>
           <AppImage uri="logo" resizeMode="contain" style={styles.brandLogo} />
           <Text style={styles.brandEyebrow}>WHOLESALE TERMINAL ACCESS</Text>
         </View>
-    
-      
+      )}
+      {item.key !== 'sourcing' && (
+        <View style={styles.stepRow}>
+          <View style={styles.stepPillCenter}>
+            <View style={styles.stepDot} />
+            <Text style={styles.stepPillText}>{item.step}</Text>
+          </View>
+        </View>
+      )}
 
       </View>
 
@@ -764,7 +787,7 @@ export const OnboardingScreen: React.FC = () => {
           <Button
             title="Get Started"
             size="medium"
-            onPress={goToWelcome}
+            onPress={goToRegister}
             iconRight={<ArrowRight size={scale(18)} color="#FFFFFF" />}
             style={styles.primaryBtn}
           />
@@ -854,6 +877,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
   },
   headerRight: {
     flexDirection: 'row',
@@ -881,7 +905,18 @@ const styles = StyleSheet.create({
     width: scale(110),
     height: scale(26),
   },
-
+  stepPill: {
+    backgroundColor: DS.container,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: scale(5),
+  },
+  stepPillText: {
+    ...typography.semibold,
+    fontSize: fontSize.xs,
+    letterSpacing: 0.8,
+    color: DS.onVariant,
+  },
   skipHit: {
     paddingHorizontal: spacing.sm,
     paddingVertical: scale(6),
@@ -928,13 +963,17 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    backgroundColor: DS.card,
+    // backgroundColor: DS.card,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: DS.containerHighest,
     padding: spacing.lg,
     overflow: 'hidden',
-    ...shadows.medium,
+    // shadowColor: '#0F172A',
+    // shadowOffset: {width: 0, height: 2},
+    // shadowOpacity: 0.05,
+    // shadowRadius: 8,
+    // elevation: 2,
   },
   graphicWrap: {
     width: '100%',
@@ -1045,7 +1084,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.bold,
-    fontSize: fontSize.xxxl,
+    fontSize: fontSize.xxl,
     color: DS.onSurface,
     textAlign: 'center',
     letterSpacing: -0.4,
@@ -1112,6 +1151,25 @@ const styles = StyleSheet.create({
     ...typography.regular,
     fontSize: fontSize.xs,
     color: DS.onVariant,
+  },
+  centerCard: {
+    flex: 1,
+    borderRadius: scale(68),
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: scale(8),
+  },
+  iconHolder: {
+    width: '100%',
+    height: '100%',
+    borderRadius: scale(64),
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  iconHolderInner: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

@@ -9,33 +9,25 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {AuthStackParamList} from '../../navigation/types';
-import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AuthStackParamList } from '../../navigation/types';
+import { colors, fontSize, radius, scale, spacing, typography } from '../../theme';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import AppImage from '../../components/ui/AppImage';
-import {AppleIcon, GoogleIcon} from '../../components/ui/BrandIcons';
-import {Controller, useForm} from 'react-hook-form';
-import {z} from 'zod';
-import {zodResolver} from '@hookform/resolvers/zod';
-import {useLoginMutation} from '../../api/services/authApi';
+import { AppleIcon, GoogleIcon } from '../../components/ui/BrandIcons';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLoginMutation } from '../../api/services/authApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useAppDispatch} from '../../store';
-import {ArrowLeft, Lock, User} from 'lucide-react-native';
-import {setCredentials} from './authSlice';
+import { useAppDispatch } from '../../store';
+import { ArrowRight, ChevronLeft, Lock, User } from 'lucide-react-native';
+import { logout, setCredentials } from './authSlice';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
-
-const SCRIM: string[] = [
-  'rgba(6,32,60,0.72)',
-  'rgba(10,77,140,0.30)',
-  'rgba(6,32,60,0.78)',
-  'rgba(5,20,38,0.95)',
-];
 
 const schema = z.object({
   email: z.string().trim().min(1, 'Required'),
@@ -48,16 +40,16 @@ export const LoginScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
-  const [login, {isLoading}] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
   const {
     control,
     handleSubmit,
     setError,
-    formState: {errors},
+    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: {email: 'demo@axnol.in', password: 'axnol123'},
+    defaultValues: { email: 'demo@axnol.in', password: 'axnol123' },
   });
 
   const onSubmit = async (values: FormValues) => {
@@ -65,154 +57,168 @@ export const LoginScreen: React.FC = () => {
       const res = await login(values).unwrap();
       await AsyncStorage.setItem('axnol_token', res.token);
       await AsyncStorage.setItem('axnol_user', JSON.stringify(res.user));
-      dispatch(setCredentials({token: res.token, user: res.user}));
-      navigation.navigate('ApprovalPending', {email: res.user.email});
+      dispatch(setCredentials({ token: res.token, user: res.user }));
+      if (res.user.status === 'active' && res.user.profileCompleted) {
+        return; // RootNavigator switches to Main automatically
+      }
+      await AsyncStorage.removeItem('axnol_token');
+      await AsyncStorage.removeItem('axnol_user');
+      dispatch(logout());
+      setError('root', {
+        message: `Welcome ${res.user.name}! Your account is pending administrator approval. You will be notified once it is activated.`,
+      });
     } catch (err: any) {
-      setError('root', {message: err?.data?.message || 'Login failed'});
+      setError('root', { message: err?.data?.message || 'Login failed' });
     }
   };
 
   const goBack = () =>
     navigation.canGoBack()
       ? navigation.goBack()
-      : navigation.navigate('Welcome');
+      : navigation.navigate('Onboarding');
 
   return (
     <View style={styles.container}>
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle="light-content"
+        barStyle="dark-content"
       />
 
-      <AppImage
-        uri="auth_welcome_bg_ai"
-        resizeMode="cover"
-        style={StyleSheet.absoluteFill}
-      />
-      <LinearGradient
-        colors={SCRIM}
-        locations={[0, 0.25, 0.55, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Ambient tint blobs */}
+      <View pointerEvents="none" style={styles.blobBlue} />
+      <View pointerEvents="none" style={styles.blobAmber} />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.scroll,
-            {
-              paddingTop: insets.top + scale(72),
-              paddingBottom: insets.bottom + spacing.xxl,
-            },
-          ]}
-          bounces={false}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled">
-          <Text style={styles.eyebrow}>WELCOME BACK</Text>
-          <Text style={styles.title}>Login to Your Account</Text>
-          <Text style={styles.subtitle}>
-            Access your products, orders, invoices and more.
-          </Text>
-
-          {errors.root?.message ? (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{errors.root.message}</Text>
-            </View>
-          ) : null}
-
-          <Controller
-            name="email"
-            control={control}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
-              <Input
-                label="Email or Mobile Number"
-                value={value}
-                onChangeText={onChange}
-                error={error?.message}
-                autoCapitalize="none"
-                keyboardType="email-address"
-                leftIcon={User}
-                placeholder="Enter email or mobile"
-                variant="dark"
-                labelStyle={styles.inputLabel}
-                containerStyle={styles.inputContainer}
-              />
-            )}
-          />
-
-          <Controller
-            name="password"
-            control={control}
-            render={({field: {onChange, value}, fieldState: {error}}) => (
-              <Input
-                label="Password"
-                value={value}
-                onChangeText={onChange}
-                error={error?.message}
-                secureTextEntry
-                leftIcon={Lock}
-                placeholder="Enter your password"
-                variant="dark"
-                labelStyle={styles.inputLabel}
-                containerStyle={styles.inputContainer}
-              />
-            )}
-          />
-
-          <TouchableOpacity
-            style={styles.forgot}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotText}>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          <Button
-            title="Login"
-            size="medium"
-            onPress={handleSubmit(onSubmit)}
-            loading={isLoading}
-          />
-
-          <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or continue with</Text>
-            <View style={styles.divider} />
-          </View>
-
-          <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialBtn} activeOpacity={0.8}>
-              <GoogleIcon size={scale(20)} />
-              <Text style={styles.socialText}>Google</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialBtn} activeOpacity={0.8}>
-              <AppleIcon size={scale(20)} color={colors.textInverse} />
-              <Text style={styles.socialText}>Apple</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.registerRow}>
-            <Text style={styles.registerText}>Don't have an account?</Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.registerLink}> Create New Account</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
+      {/* Fixed Header */}
+      <View style={[styles.header, { paddingTop: insets.top + scale(6) }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={goBack}
-          activeOpacity={0.7}>
-          <ArrowLeft size={scale(20)} color={colors.textInverse} />
+          activeOpacity={0.75}>
+          <ChevronLeft size={scale(22)} color="#1E293B" />
         </TouchableOpacity>
         <AppImage uri="logo" resizeMode="contain" style={styles.headerLogo} />
         <View style={styles.headerSpacer} />
       </View>
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[
+            styles.scroll,
+            {
+              paddingTop: insets.top + scale(60),
+              paddingBottom: insets.bottom + scale(40),
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets>
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <Text style={styles.eyebrow}>WELCOME BACK</Text>
+            <Text style={styles.title}>Login to Your Account</Text>
+            <Text style={styles.subtitle}>
+              Access your products, orders, invoices and more.
+            </Text>
+          </View>
+
+          {/* Main Glass Card Container */}
+          <View style={styles.mainCard}>
+            {errors.root?.message ? (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{errors.root.message}</Text>
+              </View>
+            ) : null}
+
+            <Controller
+              name="email"
+              control={control}
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Input
+                  variant="clean"
+                  required
+                  label="Email"
+                  value={value}
+                  onChangeText={onChange}
+                  error={error?.message}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  leftIcon={User}
+                  placeholder="Enter email or mobile"
+                  containerStyle={styles.fieldSpacing}
+                />
+              )}
+            />
+
+            <Controller
+              name="password"
+              control={control}
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
+                <Input
+                  variant="clean"
+                  required
+                  label="Password"
+                  value={value}
+                  onChangeText={onChange}
+                  error={error?.message}
+                  secureTextEntry
+                  leftIcon={Lock}
+                  placeholder="Enter your password"
+                  containerStyle={styles.fieldSpacing}
+                />
+              )}
+            />
+
+            <TouchableOpacity
+              style={styles.forgot}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('ForgotPassword')}>
+              <Text style={styles.forgotText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <Button
+              title="Login"
+              variant="outline"
+              size="medium"
+              onPress={handleSubmit(onSubmit)}
+              loading={isLoading}
+              iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
+              // style={styles.loginBtn}
+              textStyle={styles.loginBtnText}
+            />
+
+            <View style={styles.dividerRow}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>or continue with</Text>
+              <View style={styles.divider} />
+            </View>
+
+            <View style={styles.socialRow}>
+              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.8}>
+                <GoogleIcon size={scale(20)} />
+                <Text style={styles.socialText}>Google</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.socialBtn} activeOpacity={0.8}>
+                <AppleIcon size={scale(20)} color="#0F172A" />
+                <Text style={styles.socialText}>Apple</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.registerRow}>
+              <Text style={styles.registerText}>Don't have an account?</Text>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.registerLink}> Create New Account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -220,12 +226,28 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: '#F8FAFC',
   },
-  flex: {flex: 1},
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.lg,
+  blobBlue: {
+    position: 'absolute',
+    top: scale(100),
+    left: -scale(80),
+    width: scale(240),
+    height: scale(240),
+    borderRadius: scale(120),
+    backgroundColor: 'rgba(2,132,199,0.10)',
+  },
+  blobAmber: {
+    position: 'absolute',
+    bottom: scale(60),
+    right: -scale(70),
+    width: scale(220),
+    height: scale(220),
+    borderRadius: scale(110),
+    backgroundColor: 'rgba(2,132,199,0.10)',
+  },
+  flex: {
+    flex: 1,
   },
   header: {
     position: 'absolute',
@@ -236,89 +258,127 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
+    zIndex: 10,
   },
   backBtn: {
-    width: scale(42),
-    height: scale(42),
-    borderRadius: scale(21),
+     width: scale(30),
+    height: scale(30),
+    borderRadius: scale(20),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.28)',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   headerLogo: {
-    width: scale(120),
-    height: scale(40),
+    width: scale(135),
+    height: scale(36),
   },
   headerSpacer: {
-    width: scale(42),
+    width: scale(40),
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  titleSection: {
+    marginTop: scale(10),
+    marginBottom: scale(16),
   },
   eyebrow: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: colors.accent,
-    letterSpacing: 1.8,
-    marginBottom: spacing.sm,
+    fontSize: scale(11.5),
+    fontWeight: '800',
+    color: '#0284C7',
+    letterSpacing: 1.5,
+    marginBottom: scale(4),
   },
   title: {
-    ...typography.bold,
-    fontSize: fontSize.xxl,
-    color: colors.textInverse,
-    lineHeight: fontSize.xxl * 1.2,
+    fontSize: scale(25),
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.4,
+    marginBottom: scale(4),
   },
   subtitle: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: 'rgba(255, 255, 255, 0.8)',
-    lineHeight: fontSize.sm * 1.5,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
+    fontSize: scale(13),
+    color: '#64748B',
+    lineHeight: scale(18.5),
+  },
+  mainCard: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: radius.xl,
+    paddingVertical: scale(15),
+    paddingHorizontal: scale(10),
+    borderWidth: 1.2,
+    borderColor: 'rgba(203,213,225,0.5)',
+    // shadowColor: '#0F172A',
+    // shadowOffset: {width: 0, height: 8},
+    // shadowOpacity: 0.08,
+    // shadowRadius: 16,
+    // elevation: 1,
+    marginBottom: scale(20),
   },
   errorBox: {
-    backgroundColor: 'rgba(220, 38, 38, 0.25)',
+    backgroundColor: '#FEF2F2',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderColor: '#FECACA',
     borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
+    padding: scale(10),
+    marginBottom: scale(14),
   },
   errorText: {
     ...typography.medium,
     fontSize: fontSize.sm,
-    color: '#FFD1D1',
+    color: '#DC2626',
     textAlign: 'center',
   },
-  inputLabel: {
-    color: colors.textInverse,
-  },
-  inputContainer: {
-    marginBottom: spacing.lg,
+  fieldSpacing: {
+    marginBottom: scale(14),
   },
   forgot: {
     alignSelf: 'flex-end',
-    marginBottom: spacing.xl,
-    marginTop: -spacing.xs,
+    marginBottom: spacing.lg,
+    marginTop: scale(2),
   },
   forgotText: {
     ...typography.semibold,
     fontSize: fontSize.sm,
-    color: colors.accent,
+    color: '#0284C7',
+  },
+  loginBtn: {
+    height: scale(48),
+    borderRadius: scale(12),
+    backgroundColor: '#063970',
+    shadowColor: '#063970',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  loginBtnText: {
+    fontSize: scale(13.5),
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.xl,
+    marginVertical: spacing.lg,
   },
   divider: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+    backgroundColor: '#E2E8F0',
   },
   dividerText: {
     ...typography.regular,
     fontSize: fontSize.xs,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#64748B',
     paddingHorizontal: spacing.md,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -330,35 +390,35 @@ const styles = StyleSheet.create({
   socialBtn: {
     flex: 1,
     flexDirection: 'row',
-    height: scale(52),
-    borderRadius: radius.lg,
+    height: scale(48),
+    borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: '#FFFFFF',
     gap: spacing.sm,
   },
   socialText: {
-    ...typography.medium,
+    ...typography.semibold,
     fontSize: fontSize.sm,
-    color: colors.textInverse,
+    color: '#0F172A',
   },
   registerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.xxl,
+    marginTop: scale(16),
   },
   registerText: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: scale(12.5),
+    color: '#64748B',
+    fontWeight: '500',
   },
   registerLink: {
-    ...typography.bold,
-    fontSize: fontSize.sm,
-    color: colors.accent,
+    fontSize: scale(12.5),
+    fontWeight: '800',
+    color: '#0284C7',
   },
 });
 

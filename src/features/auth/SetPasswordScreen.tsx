@@ -5,7 +5,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CheckCircle2, Lock} from 'lucide-react-native';
@@ -27,7 +27,6 @@ import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'SetPassword'>;
-type Route = RouteProp<AuthStackParamList, 'SetPassword'>;
 
 const schema = z
   .object({
@@ -62,7 +61,6 @@ const ValidationItem = ({
 
 export const SetPasswordScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  const {params} = useRoute<Route>();
   const insets = useSafeAreaInsets();
 
   const {control, handleSubmit, watch} = useForm<FormValues>({
@@ -78,13 +76,6 @@ export const SetPasswordScreen: React.FC = () => {
   const hasNumber = /[0-9]/.test(password);
 
   const onSubmit = () => {
-    if (params?.email) {
-      navigation.navigate('ApprovalPending', {
-        userId: params.userId,
-        email: params.email,
-      });
-      return;
-    }
     navigation.navigate('Login');
   };
 

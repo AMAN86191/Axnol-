@@ -13,7 +13,7 @@ import {colors, radius, spacing, theme} from '../../theme';
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'navy';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
@@ -50,6 +50,10 @@ export const Button: React.FC<ButtonProps> = ({
     variant === 'outline' || variant === 'ghost'
       ? colors.primary
       : colors.textInverse;
+  const spinnerColor =
+    variant === 'outline' || variant === 'ghost'
+      ? colors.primary
+      : colors.textInverse;
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -57,7 +61,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={isDisabled}
       style={containerStyle}>
       {loading ? (
-        <ActivityIndicator color={colors.textInverse} size="small" />
+        <ActivityIndicator color={spinnerColor} size="small" />
       ) : (
         <>
           {iconLeft}
@@ -91,6 +95,7 @@ const styles = StyleSheet.create({
   },
   ghost: {backgroundColor: 'transparent'},
   danger: {backgroundColor: colors.danger},
+  navy: {backgroundColor: '#063970'},
   fullWidth: {width: '100%'},
   disabled: {opacity: 0.5},
   text: {
