@@ -17,6 +17,22 @@ const images = {
   cat_automotive: require('../../assets/axnol/cat_automotive.png'),
   register_corner_bg: require('../../assets/axnol/register_corner_bg.png'),
 
+  // New Home Screen Assets
+  home_hero_new: require('../../assets/axnol/home_hero_new.png'),
+  ind_automotive: require('../../assets/axnol/ind_automotive.png'),
+  ind_industrial: require('../../assets/axnol/ind_industrial.png'),
+  ind_construction: require('../../assets/axnol/ind_construction.png'),
+  ind_marine: require('../../assets/axnol/ind_marine.png'),
+  feat_prod1_img: require('../../assets/axnol/feat_prod1_img.png'),
+  feat_prod2_img: require('../../assets/axnol/feat_prod2_img.png'),
+  feat_prod3_img: require('../../assets/axnol/feat_prod3_img.png'),
+  feat_prod4_img: require('../../assets/axnol/feat_prod4_img.png'),
+  why_axnol_banner: require('../../assets/axnol/why_axnol_banner.png'),
+  act_products_icon: require('../../assets/axnol/act_products_icon.png'),
+  act_pricereq_icon: require('../../assets/axnol/act_pricereq_icon.png'),
+  act_orders_icon: require('../../assets/axnol/act_orders_icon.png'),
+  act_invoices_icon: require('../../assets/axnol/act_invoices_icon.png'),
+
   // Auth AI assets
   auth_hero_oil: require('../../assets/axnol/auth_hero_oil.png'),
   auth_onboard_tech: require('../../assets/axnol/auth_onboard_tech.png'),
@@ -30,6 +46,14 @@ const images = {
   onboarding_barrel_ai: require('../../assets/axnol/onboarding_barrel_ai.jpg'),
 
   // Onboarding
+  onboard_cloud_bg: require('../../assets/axnol/onboard_cloud_bg.png'),
+  onboard_slide1_bg: require('../../assets/axnol/onboard_slide1_hd.png'),
+  onboard_slide2_bg: require('../../assets/axnol/Golden Ribbon Drive at Sunset.png'),
+  onboard_slide3_bg: require('../../assets/axnol/AXNOL Lubricants_ Power in Motion.png'),
+  onboard_hero_range: require('../../assets/axnol/onboard_slide_1.png'),
+  onboard_hero_engine: require('../../assets/axnol/slide1_artwork_hd.png'),
+  onboard_hero_supply: require('../../assets/axnol/onboard_slide3_bg.jpg'),
+  axnol_round_logo: require('../../assets/axnol/axnol_round_logo.png'),
   onboarding_1: require('../../assets/axnol/onboarding_1.png'),
   onboarding_2: require('../../assets/axnol/onboarding_2.png'),
   onboarding_3: require('../../assets/axnol/onboarding_3.png'),

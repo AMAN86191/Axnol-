@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
+  ImageStyle,
   NativeScrollEvent,
   NativeSyntheticEvent,
   StatusBar,
@@ -10,688 +11,121 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Svg, {
-  Circle,
-  Defs,
-  Ellipse,
-  Line,
-  LinearGradient as SvgGradient,
-  Path,
-  RadialGradient as SvgRadial,
-  Stop,
-  Text as SvgText,
-} from 'react-native-svg';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  Activity,
   ArrowRight,
-  Route as RouteIcon,
-  Satellite,
+  Award,
+  Car,
+  Cog,
+  Database,
+  Factory,
+  Flame,
+  FlaskConical,
+  Gauge,
+  Package,
   ShieldCheck,
-  TrendingUp,
+  Truck,
+  Zap,
 } from 'lucide-react-native';
 import { AuthStackParamList } from '../../navigation/types';
-import {
-  colors,
-  fontSize,
-  radius,
-  scale,
-  shadows,
-  spacing,
-  typography,
-} from '../../theme';
+import { colors, scale } from '../../theme';
 import AppImage from '../../components/ui/AppImage';
-import Button from '../../components/ui/Button';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
 
-/* ------------------------------------------------------------------ */
-/* Design tokens matching the reference splash screens                 */
-/* ------------------------------------------------------------------ */
-const DS = {
-  surface: '#FAF8FF',
-  card: '#FFFFFF',
-  primary: '#00288E',
-  primaryContainer: '#1E40AF',
-  secondary: '#006591',
-  sky: '#39B8FD',
-  skyLight: '#89CEFF',
-  skyPale: '#C9E6FF',
-  onSurface: '#131B2E',
-  onVariant: '#444653',
-  outline: '#757684',
-  outlineVariant: '#C4C5D5',
-  container: '#EAEDFF',
-  containerHigh: '#E2E7FF',
-  containerHighest: '#DAE2FD',
-  containerLow: '#F2F3FF',
-  amber: '#FFA929',
-  amberDark: '#D97706',
-};
-
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-/* ------------------------------------------------------------------ */
-/* Reusable animation primitives                                       */
-/* ------------------------------------------------------------------ */
-
-/** Infinitely rotating wrapper (ring rotation, radar sweep, conduits). */
-const SpinView: React.FC<{
-  size: number;
-  duration?: number;
-  reverse?: boolean;
-  /** When false the loop is cancelled so off-screen slides cost nothing. */
-  active?: boolean;
-  children: React.ReactNode;
-}> = ({ size, duration = 22000, reverse = false, active = true, children }) => {
-  const r = useSharedValue(0);
-  useEffect(() => {
-    if (!active) {
-      cancelAnimation(r);
-      return;
-    }
-    r.value = withRepeat(
-      withTiming(reverse ? -360 : 360, { duration, easing: Easing.linear }),
-      -1,
-    );
-  }, [duration, reverse, r, active]);
-  const style = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${r.value}deg` }],
-  }));
-  return (
-    <Animated.View
-      style={[
-        { width: size, height: size, alignItems: 'center', justifyContent: 'center' },
-        style,
-      ]}>
-      {children}
-    </Animated.View>
-  );
-};
-
-/** Expanding + fading pulse ring (sonar ping effect). */
-const PingView: React.FC<{
-  size: number;
-  color: string;
-  duration?: number;
-  delay?: number;
-  borderWidth?: number;
-  /** When false the loop is cancelled so off-screen slides cost nothing. */
-  active?: boolean;
-}> = ({ size, color, duration = 2800, delay = 0, borderWidth = 1.5, active = true }) => {
-  const p = useSharedValue(0);
-  useEffect(() => {
-    if (!active) {
-      cancelAnimation(p);
-      return;
-    }
-    p.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(1, { duration, easing: Easing.out(Easing.cubic) }),
-        -1,
-      ),
-    );
-  }, [delay, duration, p, active]);
-  const style = useAnimatedStyle(() => ({
-    transform: [{ scale: 0.85 + p.value * 0.5 }],
-    opacity: 0.8 * (1 - p.value),
-  }));
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[
-        {
-          position: 'absolute',
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth,
-          borderColor: color,
-        },
-        style,
-      ]}
-    />
-  );
-};
-
-/** Gentle floating motion for badges / droplets. */
-const FloatView: React.FC<{
-  distance?: number;
-  duration?: number;
-  children: React.ReactNode;
-  style?: object;
-  /** When false the loop is cancelled so off-screen slides cost nothing. */
-  active?: boolean;
-}> = ({ distance = 4, duration = 1800, children, style, active = true }) => {
-  const y = useSharedValue(0);
-  useEffect(() => {
-    if (!active) {
-      cancelAnimation(y);
-      return;
-    }
-    y.value = withRepeat(
-      withSequence(
-        withTiming(-distance, { duration, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1,
-    );
-  }, [distance, duration, y, active]);
-  const anim = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
-  return <Animated.View style={[anim, style]}>{children}</Animated.View>;
-};
-
-/** SVG path with infinitely flowing dashes (fluid / route motion). */
-const FlowPath: React.FC<{
-  d: string;
-  stroke: string;
-  strokeWidth: number;
-  dash?: string;
-  duration?: number;
-  from?: number;
-  opacity?: number;
-  /** When false the loop is cancelled so off-screen slides cost nothing. */
-  active?: boolean;
-}> = ({ d, stroke, strokeWidth, dash = '4 6', duration = 2000, from = 40, opacity = 1, active = true }) => {
-  const o = useSharedValue(from);
-  useEffect(() => {
-    if (!active) {
-      cancelAnimation(o);
-      return;
-    }
-    o.value = withRepeat(
-      withTiming(0, { duration, easing: Easing.linear }),
-      -1,
-    );
-  }, [duration, o, active]);
-  const props = useAnimatedProps(() => ({ strokeDashoffset: o.value }));
-  return (
-    <AnimatedPath
-      d={d}
-      fill="none"
-      stroke={stroke}
-      strokeWidth={strokeWidth}
-      strokeDasharray={dash}
-      strokeLinecap="round"
-      strokeOpacity={opacity}
-      animatedProps={props}
-    />
-  );
-};
-
-/** SVG circle that repeatedly pulses in radius + opacity. */
-const PulseDot: React.FC<{
-  x: number;
-  y: number;
-  r: number;
-  color: string;
-  duration?: number;
-  delay?: number;
-  maxOpacity?: number;
-  /** When false the loop is cancelled so off-screen slides cost nothing. */
-  active?: boolean;
-}> = ({ x, y, r, color, duration = 2600, delay = 0, maxOpacity = 0.35, active = true }) => {
-  const p = useSharedValue(0);
-  useEffect(() => {
-    if (!active) {
-      cancelAnimation(p);
-      return;
-    }
-    p.value = withDelay(
-      delay,
-      withRepeat(
-        withTiming(1, { duration, easing: Easing.out(Easing.cubic) }),
-        -1,
-      ),
-    );
-  }, [delay, duration, p, active]);
-  const props = useAnimatedProps(() => ({
-    r: r * (0.9 + p.value * 1.1),
-    opacity: maxOpacity * (1 - p.value),
-  }));
-  return <AnimatedCircle cx={x} cy={y} fill={color} animatedProps={props} />;
-};
-
-/** Small live indicator dot with ping halo. */
-const LiveDot: React.FC<{ color?: string; size?: number; active?: boolean }> = ({
-  color = DS.secondary,
-  size = 8,
-  active = true,
-}) => (
-  <View style={{ width: size, height: size }}>
-    <PingView size={size} color={color} duration={2000} borderWidth={1} active={active} />
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        backgroundColor: color,
-      }}
-    />
-  </View>
-);
-
-/**
- * Blueprint-style dotted background for the graphic card.
- * Rendered as ONE stroked path (round dotted dashes) instead of hundreds
- * of circle nodes, so it stays cheap on low-end devices.
- */
-const DotGrid: React.FC<{ width: number; height?: number }> = ({
-  width,
-  height = 420,
-}) => {
-  const gap = 22;
-  const rows = Math.floor(height / gap);
-  let d = '';
-  for (let r = 0; r <= rows; r++) {
-    d += `M0 ${r * gap} H${width} `;
-  }
-  return (
-    <Svg
-      width={width}
-      height={height}
-      style={{ position: 'absolute', top: 0, left: 0 }}>
-      <Path
-        d={d}
-        fill="none"
-        stroke={DS.primary}
-        strokeOpacity={0.1}
-        strokeWidth={2.2}
-        strokeLinecap="round"
-        strokeDasharray="0.1 22"
-      />
-    </Svg>
-  );
-};
-
-
-
-/* ------------------------------------------------------------------ */
-/* Slide 1 — Refinery Fluid Motion (Direct Sourcing)                    */
-/* ------------------------------------------------------------------ */
-const RefineryGraphic: React.FC<{ size: number; active?: boolean }> = ({
-  size,
-  active = true,
-}) => {
-  const gauge = size * 0.8;
-  const conduit = size * 0.62;
-  const chamber = size * 0.43;
-  const droplet = size * 0.25;
-
-  return (
-    <View
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {/* Outer sonic pulse rings */}
-      <PingView size={size * 0.86} color={DS.primary} duration={2800} active={active} />
-      <View
-        style={{
-          position: 'absolute',
-          width: size * 0.74,
-          height: size * 0.74,
-          borderRadius: (size * 0.74) / 2,
-          borderWidth: 1,
-          borderColor: `${DS.sky}40`,
-        }}
-      />
-      {/* Rotating precision gauge ring */}
-      <View style={StyleSheet.absoluteFill}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <SpinView size={gauge} duration={22000} active={active}>
-            <Svg width={gauge} height={gauge} viewBox="0 0 208 208">
-              <Circle
-                cx={104}
-                cy={104}
-                r={100}
-                fill="none"
-                stroke={DS.outline}
-                strokeOpacity={0.18}
-                strokeWidth={1.5}
-                strokeDasharray="2 6"
-              />
-              <Circle cx={104} cy={4} r={3} fill={DS.sky} />
-              <Circle cx={204} cy={104} r={2.5} fill={DS.amber} />
-              <Circle cx={104} cy={204} r={2.5} fill={DS.primaryContainer} />
-              <Circle cx={4} cy={104} r={2.5} fill={DS.sky} />
-            </Svg>
-          </SpinView>
-        </View>
-      </View>
-      {/* Reverse rotating orbital fluid conduit */}
-      <View style={StyleSheet.absoluteFill}>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <SpinView size={conduit} duration={26000} reverse active={active}>
-            <Svg width={conduit} height={conduit} viewBox="0 0 160 160">
-              <Circle
-                cx={80}
-                cy={80}
-                r={76}
-                fill="none"
-                stroke={DS.secondary}
-                strokeOpacity={0.35}
-                strokeWidth={2}
-              />
-              <FlowPath
-                d="M 80 4 A 76 76 0 1 1 79.9 4"
-                stroke={DS.sky}
-                strokeWidth={2}
-                dash="4 6"
-                duration={2000}
-                from={40}
-              />
-              <Circle cx={80} cy={4} r={3.5} fill={DS.amber} />
-              <Circle cx={156} cy={80} r={2.5} fill={DS.sky} />
-            </Svg>
-          </SpinView>
-        </View>
-      </View>
-      {/* Glowing refinery chamber with lubricant droplet */}
-      <View
-        style={{
-          width: chamber,
-          height: chamber,
-          borderRadius: chamber / 2,
-          backgroundColor: DS.card,
-          borderWidth: 1.5,
-          borderColor: 'rgba(255,255,255,0.9)',
-          alignItems: 'center',
-          justifyContent: 'center',
-          ...shadows.medium,
-        }}>
-        <FloatView distance={4} duration={1800} active={active}>
-          <Svg width={droplet} height={droplet} viewBox="0 0 64 64">
-            <Defs>
-              <SvgGradient id="dropletGrad" x1="22.5" y1="17" x2="41.5" y2="44.5">
-                <Stop offset="0%" stopColor={DS.sky} />
-                <Stop offset="45%" stopColor={DS.primaryContainer} />
-                <Stop offset="100%" stopColor={DS.primary} />
-              </SvgGradient>
-              <SvgGradient id="amberWave" x1="22.5" y1="34" x2="41.5" y2="44.5">
-                <Stop offset="0%" stopColor="#F59E0B" />
-                <Stop offset="60%" stopColor={DS.amberDark} />
-                <Stop offset="100%" stopColor="#B45309" />
-              </SvgGradient>
-            </Defs>
-            <Path
-              d="M18 20C18 16.5 21 14 25 14H39C43 14 46 16.5 46 20V44C46 47.5 43 50 39 50H25C21 50 18 47.5 18 44V20Z"
-              fill="#FFFFFF"
-              fillOpacity={0.5}
-              stroke={DS.primary}
-              strokeOpacity={0.25}
-              strokeWidth={2}
-            />
-            <Line x1={18} y1={23} x2={46} y2={23} stroke={DS.secondary} strokeOpacity={0.2} strokeWidth={1.5} />
-            <Line x1={18} y1={41} x2={46} y2={41} stroke={DS.secondary} strokeOpacity={0.2} strokeWidth={1.5} />
-            <Line x1={10} y1={32} x2={18} y2={32} stroke={DS.secondary} strokeLinecap="round" strokeWidth={2.5} />
-            <Circle cx={10} cy={32} r={2} fill={DS.sky} />
-            <Line x1={46} y1={32} x2={54} y2={32} stroke={DS.secondary} strokeLinecap="round" strokeWidth={2.5} />
-            <Circle cx={54} cy={32} r={2} fill={DS.amber} />
-            <Path
-              d="M32 17C32 17 41.5 28.5 41.5 35C41.5 40.2 37.2 44.5 32 44.5C26.8 44.5 22.5 40.2 22.5 35C22.5 28.5 32 17 32 17Z"
-              fill="url(#dropletGrad)"
-              stroke={DS.primary}
-              strokeWidth={1.8}
-            />
-            <Path
-              d="M23.2 36C25.5 34.5 28 36.5 31.5 35C35 33.5 38 35.5 40.8 34.2C41.2 35.1 41.5 36 41.5 37C41.5 42 37.5 44.5 32 44.5C26.5 44.5 22.5 42 22.5 37C22.5 36.6 22.7 36.3 23.2 36Z"
-              fill="url(#amberWave)"
-            />
-            <Path
-              d="M26.5 29C25.5 31 25.2 33.5 25.4 35"
-              stroke="#FFFFFF"
-              strokeLinecap="round"
-              strokeOpacity={0.85}
-              strokeWidth={1.5}
-              fill="none"
-            />
-            <Circle cx={30} cy={23} r={1.2} fill="#FFFFFF" fillOpacity={0.9} />
-          </Svg>
-        </FloatView>
-        <View style={[ominTick, { top: -3 }]} />
-        <View style={[ominTick, { bottom: -3, backgroundColor: '#F59E0B99' }]} />
-        <View style={[ominTick, { left: -3, backgroundColor: `${DS.sky}99` }]} />
-        <View style={[ominTick, { right: -3, backgroundColor: `${DS.sky}99` }]} />
-      </View>
-    </View>
-  );
-};
-
-const ominTick = {
-  position: 'absolute' as const,
-  width: 6,
-  height: 6,
-  borderRadius: 3,
-  backgroundColor: `${DS.primary}66`,
-};
-
-/* ------------------------------------------------------------------ */
-/* Slide 2 — Real-Time Bulk Pricing (animated wave chart)              */
-/* ------------------------------------------------------------------ */
-const WAVE_D =
-  'M 20 160 C 70 160, 95 110, 140 115 C 185 120, 210 55, 260 50 C 295 45, 310 70, 325 65';
-const WAVE_FILL = `${WAVE_D} L 325 190 L 20 190 Z`;
-
-const PricingGraphic: React.FC<{ width: number; active: boolean }> = ({
-  width,
-  active,
-}) => {
-  const height = (width * 210) / 340;
-  const draw = useSharedValue(400);
-  useEffect(() => {
-    if (active) {
-      draw.value = 400;
-      draw.value = withTiming(0, {
-        duration: 2400,
-        easing: Easing.bezier(0.16, 1, 0.3, 1),
-      });
-    }
-  }, [active, draw]);
-  const drawProps = useAnimatedProps(() => ({ strokeDashoffset: draw.value }));
-
-  return (
-    <View>
-      <Svg width={width} height={height} viewBox="0 0 340 210">
-        <Defs>
-          <SvgGradient id="curveGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <Stop offset="0%" stopColor={DS.primary} />
-            <Stop offset="50%" stopColor={DS.secondary} />
-            <Stop offset="100%" stopColor={DS.sky} />
-          </SvgGradient>
-          <SvgGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={DS.sky} stopOpacity={0.32} />
-            <Stop offset="60%" stopColor={DS.secondary} stopOpacity={0.08} />
-            <Stop offset="100%" stopColor={DS.primary} stopOpacity={0} />
-          </SvgGradient>
-          <SvgRadial id="chartGlow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={DS.sky} stopOpacity={0.22} />
-            <Stop offset="60%" stopColor={DS.sky} stopOpacity={0.07} />
-            <Stop offset="100%" stopColor={DS.sky} stopOpacity={0} />
-          </SvgRadial>
-        </Defs>
-        {/* Soft light glow behind the chart */}
-        <Ellipse cx={170} cy={110} rx={155} ry={95} fill="url(#chartGlow)" />
-        {[50, 100, 150].map(y => (
-          <Line
-            key={y}
-            x1={20}
-            x2={320}
-            y1={y}
-            y2={y}
-            stroke={DS.containerHighest}
-            strokeDasharray="3 3"
-            strokeWidth={0.75}
-          />
-        ))}
-        <Path d={WAVE_FILL} fill="url(#areaGrad)" />
-        <AnimatedPath
-          d={WAVE_D}
-          fill="none"
-          stroke="url(#curveGrad)"
-          strokeLinecap="round"
-          strokeWidth={3.5}
-          strokeDasharray="400"
-          animatedProps={drawProps}
-        />
-        <Circle cx={68} cy={142} r={4} fill={DS.primary} />
-        <PulseDot x={68} y={142} r={8} color={DS.primary} duration={2800} maxOpacity={0.2} active={active} />
-        <Circle cx={140} cy={115} r={4} fill={DS.secondary} />
-        <PulseDot x={140} y={115} r={9} color={DS.secondary} duration={2200} maxOpacity={0.25} active={active} />
-        <PulseDot x={260} y={50} r={12} color={DS.sky} duration={1800} maxOpacity={0.3} active={active} />
-        <Circle cx={260} cy={50} r={6} fill="#FFFFFF" />
-        <Circle cx={260} cy={50} r={4} fill={DS.secondary} />
-        <Circle cx={325} cy={65} r={4} fill={DS.sky} />
-      </Svg>
-      {/* Glassmorphic live delta peak pill */}
-      <FloatView
-        distance={3}
-        duration={1500}
-        active={active}
-        style={{ position: 'absolute', right: width * 0.12, top: height * 0.18 }}>
-        <View style={styles.peakPill}>
-          <TrendingUp size={scale(15)} color={DS.secondary} />
-          <Text style={styles.peakText}>+14.8%</Text>
-          <View style={styles.peakDot} />
-        </View>
-      </FloatView>
-      {/* Market pulse chip */}
-      <View style={[styles.pulseChip, { left: scale(12), bottom: scale(8) }]}>
-        <Activity size={scale(14)} color={DS.primary} />
-        <Text style={styles.pulseChipText}>Automated Tier Calibration</Text>
-      </View>
-    </View>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Slide 3 — Nationwide Express Dispatch (logistics network)           */
-/* ------------------------------------------------------------------ */
-const ARTERY_PRIMARY = 'M 50 125 C 95 70, 190 75, 245 185';
-
-const DispatchGraphic: React.FC<{ width: number; active?: boolean }> = ({
-  width,
-  active = true,
-}) => {
-  const height = (width * 250) / 340;
-  const t = useSharedValue(0);
-  useEffect(() => {
-    if (!active) {
-      cancelAnimation(t);
-      return;
-    }
-    t.value = withRepeat(
-      withTiming(1, { duration: 4800, easing: Easing.linear }),
-      -1,
-    );
-  }, [t, active]);
-  const markerProps = useAnimatedProps(() => {
-    const v = t.value;
-    const u = 1 - v;
-    const x =
-      u * u * u * 50 + 3 * u * u * v * 95 + 3 * u * v * v * 190 + v * v * v * 245;
-    const y =
-      u * u * u * 125 + 3 * u * u * v * 70 + 3 * u * v * v * 75 + v * v * v * 185;
-    return { cx: x, cy: y };
-  });
-
-  return (
-    <Svg width={width} height={height} viewBox="0 0 340 250">
-      <Defs>
-        <SvgGradient id="routeGradA" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor={DS.primary} />
-          <Stop offset="50%" stopColor={DS.secondary} />
-          <Stop offset="100%" stopColor={DS.sky} />
-        </SvgGradient>
-        <SvgGradient id="routeGradB" x1="100%" y1="0%" x2="0%" y2="100%">
-          <Stop offset="0%" stopColor={DS.primaryContainer} />
-          <Stop offset="100%" stopColor={DS.skyLight} />
-        </SvgGradient>
-      </Defs>
-      {/* Static background link matrix */}
-      <Line x1={50} y1={125} x2={150} y2={50} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
-      <Line x1={150} y1={50} x2={280} y2={85} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
-      <Line x1={50} y1={125} x2={130} y2={200} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
-      <Line x1={130} y1={200} x2={245} y2={185} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
-      <Line x1={245} y1={185} x2={280} y2={85} stroke={DS.containerHighest} strokeDasharray="3 3" strokeWidth={1.5} />
-      {/* Animated expressway arteries */}
-      <FlowPath d={ARTERY_PRIMARY} stroke="url(#routeGradA)" strokeWidth={3} dash="7 5" duration={2400} from={120} active={active} />
-      <FlowPath d="M 150 50 C 210 50, 240 120, 280 85" stroke="url(#routeGradB)" strokeWidth={2.5} dash="6 4" duration={3200} from={100} active={active} />
-      <FlowPath d="M 50 125 C 75 190, 160 215, 245 185" stroke={DS.sky} strokeWidth={2} dash="4 4" duration={2800} from={80} opacity={0.6} active={active} />
-      {/* Gliding telemetry fleet marker */}
-      <AnimatedCircle r={5} fill={DS.primary} animatedProps={markerProps} />
-      <AnimatedCircle r={2.5} fill="#FFFFFF" animatedProps={markerProps} />
-      {/* HUB 1 — Refinery HQ */}
-      <PulseDot x={50} y={125} r={22} color={DS.sky} duration={3000} maxOpacity={0.35} active={active} />
-      <Circle cx={50} cy={125} r={12} fill={DS.primaryContainer} />
-      <Circle cx={50} cy={125} r={5} fill="#FFFFFF" />
-      <SvgText x={26} y={151} fill={DS.onSurface} fontSize={10} fontWeight="700">REFINERY HQ</SvgText>
-      {/* HUB 2 — North */}
-      <PulseDot x={150} y={50} r={16} color={DS.secondary} duration={2600} delay={400} maxOpacity={0.3} active={active} />
-      <Circle cx={150} cy={50} r={9} fill={DS.secondary} />
-      <Circle cx={150} cy={50} r={3.5} fill="#FFFFFF" />
-      <SvgText x={128} y={36} fill={DS.onVariant} fontSize={9}>HUB-NORTH</SvgText>
-      {/* HUB 3 — Port terminal */}
-      <PulseDot x={280} y={85} r={18} color={DS.sky} duration={2900} delay={800} maxOpacity={0.3} active={active} />
-      <Circle cx={280} cy={85} r={10} fill={DS.primary} />
-      <Circle cx={280} cy={85} r={4} fill="#FFFFFF" />
-      <SvgText x={252} y={109} fill={DS.onSurface} fontSize={9} fontWeight="700">PORT TERMINAL</SvgText>
-      {/* HUB 4 — Central */}
-      <Circle cx={130} cy={200} r={7} fill={DS.container} />
-      <Circle cx={130} cy={200} r={4} fill={DS.secondary} />
-      <SvgText x={112} y={216} fill={DS.outline} fontSize={9}>CENTRAL-04</SvgText>
-      {/* HUB 5 — Dealer dispatch */}
-      <PulseDot x={245} y={185} r={20} color={DS.primaryContainer} duration={2200} delay={200} maxOpacity={0.4} active={active} />
-      <Circle cx={245} cy={185} r={11} fill={DS.primaryContainer} />
-      <Circle cx={245} cy={185} r={4} fill="#FFFFFF" />
-      <SvgText x={213} y={209} fill={DS.primary} fontSize={10} fontWeight="700">DEALER DISPATCH</SvgText>
-    </Svg>
-  );
-};
-
-/* ------------------------------------------------------------------ */
-/* Slide definitions                                                   */
-/* ------------------------------------------------------------------ */
-interface Slide {
-  key: 'sourcing' | 'pricing' | 'dispatch';
-  step: string;
+interface CategoryItem {
+  id: string;
   title: string;
-  subtitle: string;
+  icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>;
+  color: string;
 }
 
-const SLIDES: Slide[] = [
+interface SlideItem {
+  id: string;
+  bgUri: string;
+  /** Per-slide image style - edit each slide's CSS independently */
+  imageStyle: ImageStyle;
+  titleLine1: string;
+  titleLine2: string;
+  categories: CategoryItem[];
+}
+
+/**
+ * Per-slide image CSS (edit each slide independently).
+ * Slide 1: 941 x 1672 | Slide 2: 768 x 1376 | Slide 3: 768 x 1376
+ */
+const slideImageStyles = StyleSheet.create({
+  slide1: {
+    position: 'absolute',
+    top: -scale(70),
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  slide2: {
+    position: 'absolute',
+    top: -scale(70),
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '110%',
+  },
+  slide3: {
+    position: 'absolute',
+    top: scale(65),
+    left: 0,
+    right: 0,
+    bottom: 0,
+     width: '100%',
+    height: '85%',
+  },
+});
+
+const ONBOARDING_SLIDES: SlideItem[] = [
   {
-    key: 'sourcing',
-    step: 'STEP 01 OF 03',
-    title: 'Direct Sourcing',
-    subtitle:
-      'Procure premium industrial lubricants directly from certified refineries.',
+    id: 'slide_1',
+    bgUri: 'onboard_slide1_bg',
+    imageStyle: slideImageStyles.slide1,
+    titleLine1: 'A Complete Range of',
+    titleLine2: 'Lubricants',
+    categories: [
+      { id: 'c1', title: 'Engine\nOils', icon: Car, color: '#0084FF' },
+      { id: 'c2', title: 'Gear\nOils', icon: Cog, color: '#F59E0B' },
+      { id: 'c3', title: 'Base\nOils', icon: Database, color: '#0084FF' },
+      { id: 'c4', title: 'Speciality\nProducts', icon: FlaskConical, color: '#F59E0B' },
+    ],
   },
   {
-    key: 'pricing',
-    step: 'STEP 02 OF 03 • MARKET TERMINAL',
-    title: 'Real-Time Bulk Pricing',
-    subtitle:
-      'Live terminal index pricing, automated volume discount tiers, and instant bulk locks.',
+    id: 'slide_2',
+    bgUri: 'onboard_slide2_bg',
+    imageStyle: slideImageStyles.slide2,
+    titleLine1: 'Maximum Engine',
+    titleLine2: 'Protection & Life',
+    categories: [
+      { id: 'c1', title: 'Wear\nGuard', icon: ShieldCheck, color: '#0084FF' },
+      { id: 'c2', title: 'High\nMileage', icon: Gauge, color: '#F59E0B' },
+      { id: 'c3', title: 'Thermal\nStability', icon: Flame, color: '#0084FF' },
+      { id: 'c4', title: 'Smooth\nDrive', icon: Zap, color: '#F59E0B' },
+    ],
   },
   {
-    key: 'dispatch',
-    step: 'STEP 03 OF 03',
-    title: 'Nationwide Express Dispatch',
-    subtitle:
-      'Direct refinery routing across 48 distribution hubs with automated order tracking.',
+    id: 'slide_3',
+    bgUri: 'onboard_slide3_bg',
+    imageStyle: slideImageStyles.slide3,
+    titleLine1: 'Nationwide Bulk',
+    titleLine2: 'Supply Chain',
+    categories: [
+      { id: 'c1', title: 'Refinery\nDirect', icon: Factory, color: '#0084FF' },
+      { id: 'c2', title: 'Bulk\nOrders', icon: Package, color: '#F59E0B' },
+      { id: 'c3', title: 'Express\nDispatch', icon: Truck, color: '#0084FF' },
+      { id: 'c4', title: 'Certified\nQuality', icon: Award, color: '#F59E0B' },
+    ],
   },
 ];
 
@@ -699,216 +133,114 @@ export const OnboardingScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const [index, setIndex] = useState(0);
-  const ref = useRef<FlatList>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const flatListRef = useRef<FlatList<SlideItem>>(null);
 
-  const goToRegister = () => navigation.navigate('Register');
-  const goToLogin = () => navigation.navigate('Login');
+  const goToLogin = useCallback(() => {
+    navigation.navigate('Login');
+  }, [navigation]);
 
-  const next = () => {
-    if (index < SLIDES.length - 1) {
-      ref.current?.scrollToIndex({ index: index + 1, animated: true });
+  const handleNext = useCallback(() => {
+    if (currentIndex < ONBOARDING_SLIDES.length - 1) {
+      flatListRef.current?.scrollToIndex({
+        index: currentIndex + 1,
+        animated: true,
+      });
     } else {
-      goToRegister();
+      goToLogin();
     }
-  };
-  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(
-      e.nativeEvent.contentOffset.x / e.nativeEvent.layoutMeasurement.width,
-    );
-    setIndex(i);
-  };
+  }, [currentIndex, goToLogin]);
 
-  const cardW = width - spacing.lg * 2;
-  const cardInner = cardW - spacing.lg * 2;
+  const handleDotPress = useCallback((index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+  }, []);
 
-  /**
-   * Vertical space available for the graphic stage.
-   * Header + brand/step sit on top, title + dots + CTAs are pinned
-   * to the bottom footer — the card gets whatever is left.
-   */
-  const stageFor = (key: Slide['key']) => {
-    const topReserve =
-      insets.top + scale(49) + (key === 'sourcing' ? scale(74) : scale(40));
-    const bottomReserve =
-      insets.bottom + scale(key === 'dispatch' ? 350 : 250);
-    return Math.max(scale(170), height - topReserve - bottomReserve);
-  };
+  const onMomentumScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const offsetX = e.nativeEvent.contentOffset.x;
+      const index = Math.round(offsetX / width);
+      setCurrentIndex(Math.max(0, Math.min(index, ONBOARDING_SLIDES.length - 1)));
+    },
+    [width],
+  );
 
-  const renderSlide = (item: Slide, active: boolean) => {
-    const stageH = stageFor(item.key);
-    const refinerySize = Math.max(
-      scale(140),
-      Math.min(scale(240), stageH - scale(28)),
-    );
-    const pricingW = Math.max(
-      scale(180),
-      Math.min(cardInner, ((stageH - scale(64)) * 340) / 210),
-    );
-    const dispatchW = Math.max(
-      scale(180),
-      Math.min(cardInner, ((stageH - scale(112)) * 340) / 250),
-    );
-    return (
-      <View style={{ width, height }}>
-        <View style={[styles.top, { paddingTop: insets.top + spacing.sm }]}>
-          {/* Header */}
-          {item.key === 'sourcing' ? (
-            <View style={styles.headerRow}>
-              <View style={styles.portalPill}>
-                <LiveDot active={active} />
-                <Text style={styles.portalText}>PORTAL v2.4</Text>
-              </View>
-              <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
-                <Text style={styles.skipText}>Skip</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.headerRow}>
-              <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
-              <View style={styles.headerRight}>
-                {/* <View style={styles.stepPill}>
-              <Text style={styles.stepPillText}>{item.step}</Text>
-            </View> */}
-                <TouchableOpacity onPress={goToLogin} activeOpacity={0.7} style={styles.skipHit}>
-                  <Text style={styles.skipText}>Skip</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+  const renderSlide = useCallback(
+    ({ item }: { item: SlideItem }) => {
+      return (
+        <View style={{ width, height }}>
+          {/* Hero Image - per-slide style (edit slideImageStyles above) */}
+          <AppImage
+            uri={item.bgUri}
+            style={item.imageStyle}
+            resizeMode="cover"
+          />
 
-          {/* Brand block (slide 1 like the reference) */}
-          {item.key === 'sourcing' && (
-            <View style={styles.brandBlock}>
-              <AppImage uri="logo" resizeMode="contain" style={styles.brandLogo} />
-              <Text style={styles.brandEyebrow}>WHOLESALE TERMINAL ACCESS</Text>
-            </View>
-          )}
-          {item.key !== 'sourcing' && (
-            <View style={styles.stepRow}>
-              <View style={styles.stepPillCenter}>
-                <View style={styles.stepDot} />
-                <Text style={styles.stepPillText}>{item.step}</Text>
-              </View>
-            </View>
-          )}
+          {/* Soft fade where image meets the top white area */}
+          <LinearGradient
+            colors={['rgba(245,247,250,1)', 'rgba(245,247,250,0)']}
+            locations={[0, 1]}
+            style={styles.topFade}
+            pointerEvents="none"
+          />
 
-        </View>
+          {/* Top white/light background section */}
+          <View style={styles.topSection}>
+            {/* Logo */}
+            <View style={styles.header}>
 
-        {/* Middle stage: graphic card vertically centered */}
-        <View style={styles.stage}>
-          <View style={styles.card}>
-            <DotGrid width={cardW} />
-            {item.key === 'pricing' && (
-              <View style={styles.badgeRow}>
-                <View style={styles.badge}>
-                  <LiveDot active={active} />
-                  <Text style={styles.badgeText}>Spot Terminal • Live</Text>
-                </View>
-                <View style={styles.badge}>
-                  <Activity size={scale(13)} color={DS.secondary} />
-                  <Text style={styles.badgeMono}>ISO VG 460</Text>
-                </View>
-              </View>
-            )}
-            {item.key === 'dispatch' && (
-              <View style={styles.badgeRow}>
-                <View style={styles.badge}>
-                  <LiveDot active={active} />
-                  <Text style={styles.badgeMono}>48 Hubs Active</Text>
-                </View>
-                <View style={[styles.badge, styles.badgeTint]}>
-                  <Satellite size={scale(13)} color={DS.primary} />
-                  <Text style={styles.badgeTintText}>Telemetry Live</Text>
-                </View>
-              </View>
-            )}
+              <AppImage
+                uri="logo"
+                style={styles.logo}
+                resizeMode="contain"
+              />
 
-            <View style={styles.graphicWrap}>
-              {item.key === 'sourcing' && <RefineryGraphic size={refinerySize} active={active} />}
-              {item.key === 'pricing' && <PricingGraphic width={pricingW} active={active} />}
-              {item.key === 'dispatch' && <DispatchGraphic width={dispatchW} active={active} />}
             </View>
 
-            {item.key === 'dispatch' && (
-              <View style={styles.infoBar}>
-                <View style={styles.infoLeft}>
-                  <RouteIcon size={scale(15)} color={DS.secondary} />
-                  <Text style={styles.infoLabel}>Auto Route Matrix</Text>
-                </View>
-                <View style={styles.infoRight}>
-                  <Text style={styles.infoValue}>99.84%</Text>
-                  <Text style={styles.infoLabel}>On-Time Index</Text>
-                </View>
-              </View>
-            )}
+            {/* Title */}
+            <View style={styles.titleSection}>
+              <Text style={styles.titleLine1}>{item.titleLine1}</Text>
+              <Text style={styles.titleLine2}>{item.titleLine2}</Text>
+            </View>
           </View>
 
-        </View>
+          {/* Bottom Section - fades image out instead of hard cut */}
+          <View style={styles.bottomSection}>
+            <LinearGradient
+              colors={[
+                'rgba(245,247,250,0)',
+                'rgba(245,247,250,0.9)',
+                '#F5F7FA',
+              ]}
+              locations={[0, 0.4, 0.65]}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
 
-        {/* Bottom footer: title, dots and CTAs pinned at the bottom */}
-        <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.lg }]}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.subtitle}>{item.subtitle}</Text>
+            {/* Categories Row */}
+            <View style={styles.categoriesRow}>
+              {item.categories.map((cat, idx) => (
+                <React.Fragment key={cat.id}>
+                  {idx > 0 && <View style={styles.divider} />}
+                  <View style={styles.categoryItem}>
+                    <cat.icon
+                      size={scale(23)}
+                      color={cat.color}
+                      strokeWidth={2}
+                    />
+                    <Text style={styles.categoryText}>{cat.title}</Text>
+                  </View>
+                </React.Fragment>
+              ))}
+            </View>
 
-          {/* Dots */}
-          <View style={styles.dots}>
-            {SLIDES.map((s, i) => (
-              <View
-                key={s.key}
-                style={[styles.dot, i === index && styles.dotActive]}
-              />
-            ))}
+            {/* Bottom spacer for footer controls */}
+            <View style={styles.bottomSpacer} />
           </View>
-
-          {/* CTAs */}
-          {item.key === 'dispatch' ? (
-            <View style={styles.ctaCol}>
-              <Button
-                title="Get Started"
-                textStyle={styles.loginBtnText}
-                variant="outline"
-                size="medium"
-                onPress={goToRegister}
-                iconRight={<ArrowRight size={scale(18)} color={colors.primary} />}
-           
-              />
-              <Button
-                title="Sign In to Existing Account"
-                size="medium"
-                variant="outline"
-                onPress={goToLogin}
-                style={styles.secondaryBtn}
-                textStyle={styles.secondaryBtnText}
-              />
-              <View style={styles.trustRow}>
-                <ShieldCheck size={scale(14)} color={DS.secondary} />
-                <Text style={styles.trustText}>Secured B2B Wholesale Portal</Text>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.ctaCol}>
-              <Button
-                title="Next"
-                size="medium"
-                variant='outline'
-                textStyle={styles.loginBtnText}
-                onPress={next}
-                iconRight={<ArrowRight size={scale(18)} color={colors.primary} />}
-              // style={styles.primaryBtn}
-              />
-              <TouchableOpacity
-                onPress={goToLogin}
-                activeOpacity={0.7}
-                style={styles.textBtn}>
-                <Text style={styles.textBtnLabel}>Skip to Login</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
-      </View>
-    );
-  };
+      );
+    },
+    [width, height],
+  );
 
   return (
     <View style={styles.container}>
@@ -917,25 +249,69 @@ export const OnboardingScreen: React.FC = () => {
         backgroundColor="transparent"
         barStyle="dark-content"
       />
+
+      {/* Horizontal Slides */}
       <FlatList
-        ref={ref}
-        style={StyleSheet.absoluteFill}
-        data={SLIDES}
+        ref={flatListRef}
+        data={ONBOARDING_SLIDES}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={item => item.key}
+        keyExtractor={item => item.id}
+        renderItem={renderSlide}
+        onMomentumScrollEnd={onMomentumScrollEnd}
         getItemLayout={(_, i) => ({
           length: width,
           offset: width * i,
           index: i,
         })}
-        onMomentumScrollEnd={onMomentumEnd}
-        onScrollToIndexFailed={() => { }}
-        renderItem={({ item, index: i }) => (
-          <View style={{ width }}>{renderSlide(item, i === index)}</View>
-        )}
+        bounces={false}
+        scrollEventThrottle={16}
       />
+
+      {/* Top-Right Skip Button */}
+      <TouchableOpacity
+        onPress={goToLogin}
+        activeOpacity={0.7}
+        hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+        style={[styles.skipButton, { top: insets.top + scale(14) }]}>
+        <Text style={styles.skipButtonText}>Skip</Text>
+      </TouchableOpacity>
+
+      {/* Fixed Bottom Controls */}
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.footerControls,
+          { paddingBottom: insets.bottom + scale(20) },
+        ]}>
+        {/* Pagination Dots */}
+        <View style={styles.dotsContainer}>
+          {ONBOARDING_SLIDES.map((slide, idx) => {
+            const isActive = idx === currentIndex;
+            return (
+              <TouchableOpacity
+                key={slide.id}
+                onPress={() => handleDotPress(idx)}
+                activeOpacity={0.8}
+                hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+                style={[
+                  styles.dot,
+                  isActive ? styles.dotActive : styles.dotInactive,
+                ]}
+              />
+            );
+          })}
+        </View>
+
+        {/* Circular Next Button */}
+        <TouchableOpacity
+          onPress={handleNext}
+          activeOpacity={0.85}
+          style={styles.nextButton}>
+          <ArrowRight size={scale(22)} color="#FFFFFF" strokeWidth={2.6} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -943,322 +319,158 @@ export const OnboardingScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: DS.surface,
+    backgroundColor: '#F5F7FA', // Light grey-blue background like the image
   },
-  top: {
-    paddingHorizontal: spacing.lg,
-  },
-  stage: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  footer: {
-    paddingHorizontal: spacing.lg,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  loginBtnText: {
-    fontSize: scale(13.5),
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  portalPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: `${DS.container}CC`,
-    borderWidth: 1,
-    borderColor: DS.containerHighest,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: scale(6),
-  },
-  portalText: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    letterSpacing: 1.4,
-    color: DS.onVariant,
-  },
-  logo: {
-    width: scale(110),
-    height: scale(26),
-  },
-  stepPill: {
-    backgroundColor: DS.container,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: scale(5),
-  },
-  stepPillText: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    letterSpacing: 0.8,
-    color: DS.onVariant,
-  },
-  skipHit: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: scale(6),
-  },
-  skipText: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: DS.onVariant,
-  },
-  brandBlock: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  brandLogo: {
-    width: scale(190),
-    height: scale(40),
-  },
-  brandEyebrow: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    letterSpacing: 2.4,
-    color: DS.secondary,
-    marginTop: spacing.sm,
-  },
-  stepRow: {
-    alignItems: 'center',
-    marginVertical: spacing.sm,
-  },
-  stepPillCenter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: DS.containerHigh,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: scale(5),
-  },
-  stepDot: {
-    width: scale(6),
-    height: scale(6),
-    borderRadius: scale(3),
-    backgroundColor: DS.sky,
-  },
-  card: {
-    width: '100%',
-    // backgroundColor: DS.card,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: DS.containerHighest,
-    padding: spacing.lg,
-    overflow: 'hidden',
-    // shadowColor: '#0F172A',
-    // shadowOffset: {width: 0, height: 2},
-    // shadowOpacity: 0.05,
-    // shadowRadius: 8,
-    // elevation: 2,
-  },
-  graphicWrap: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-    zIndex: 2,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(6),
-    backgroundColor: DS.card,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: scale(5),
-    ...shadows.small,
-  },
-  badgeText: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: DS.onSurface,
-  },
-  badgeMono: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    letterSpacing: 0.4,
-    color: DS.onSurface,
-  },
-  badgeTint: {
-    backgroundColor: '#DDE1FF',
-  },
-  badgeTintText: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: DS.primary,
-  },
-  peakPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(6),
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: scale(6),
-    ...shadows.medium,
-  },
-  peakText: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: DS.secondary,
-  },
-  peakDot: {
-    width: scale(6),
-    height: scale(6),
-    borderRadius: scale(3),
-    backgroundColor: DS.secondary,
-  },
-  pulseChip: {
+
+  // Top section - white/light area with logo & title
+  topSection: {
     position: 'absolute',
-    flexDirection: 'row',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
+    paddingTop: scale(56),
+  },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: scale(260),
+    zIndex: 1,
+  },
+  header: {
     alignItems: 'center',
-    gap: scale(6),
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: scale(5),
+    justifyContent: 'center',
+    marginBottom: -scale(10),
   },
-  pulseChipText: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: DS.onVariant,
+
+  logo: {
+    width: scale(140),
+    height: scale(80),
   },
-  infoBar: {
+  titleSection: {
+    alignItems: 'center',
+    paddingHorizontal: scale(20),
+    // marginTop: scale(6),
+  },
+  titleLine1: {
+    fontSize: scale(28),
+    fontWeight: '800',
+    color: '#0D1E3A',
+    textAlign: 'center',
+    letterSpacing: -0.2,
+    lineHeight: scale(35),
+  },
+  titleLine2: {
+    fontSize: scale(28),
+    fontWeight: '700',
+    color: colors.primary,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+    marginTop: scale(5),
+    lineHeight: scale(30),
+  },
+
+  // Bottom section
+  bottomSection: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 3,
+    paddingTop: scale(24),
+  },
+  categoriesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: scale(22),
+  },
+  categoryItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  divider: {
+    width: 1,
+    height: scale(56),
+    backgroundColor: '#C9D3E0',
+    marginTop: scale(2),
+  },
+  categoryText: {
+    fontSize: scale(11),
+    fontWeight: '600',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginTop: scale(10),
+    lineHeight: scale(17),
+  },
+  bottomSpacer: {
+    height: scale(96), // Space for footer controls
+  },
+
+  // Skip button
+  skipButton: {
+    position: 'absolute',
+    right: scale(20),
+    paddingHorizontal: scale(10),
+    paddingVertical: scale(6),
+    zIndex: 20,
+  },
+  skipButtonText: {
+    fontSize: scale(14),
+    fontWeight: '700',
+    color: '#0F172A',
+    opacity: 0.75,
+  },
+
+  // Footer controls
+  footerControls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: DS.containerLow,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.sm,
+    paddingHorizontal: scale(26),
+    zIndex: 20,
   },
-  infoLeft: {
+  dotsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: scale(6),
-  },
-  infoRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(4),
-  },
-  infoLabel: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: DS.onSurface,
-  },
-  infoValue: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: DS.secondary,
-  },
-  title: {
-    ...typography.bold,
-    fontSize: fontSize.xxl,
-    color: DS.onSurface,
-    textAlign: 'center',
-    letterSpacing: -0.4,
-    marginTop: spacing.md,
-  },
-  subtitle: {
-    ...typography.regular,
-    fontSize: fontSize.sm,
-    color: DS.onVariant,
-    textAlign: 'center',
-    lineHeight: fontSize.sm * 1.5,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.xl,
-  },
-  dots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginVertical: spacing.lg,
   },
   dot: {
+    height: scale(7),
+    borderRadius: scale(7),
+  },
+  dotActive: {
+    width: scale(9),
+    height: scale(9),
+    borderRadius: scale(5),
+    backgroundColor: colors.primary,
+  },
+  dotInactive: {
     width: scale(8),
     height: scale(8),
     borderRadius: scale(4),
-    backgroundColor: DS.containerHighest,
+    backgroundColor: '#BFDBFE',
+    opacity: 0.8,
   },
-  dotActive: {
-    width: scale(28),
-    backgroundColor: DS.primary,
-  },
-  ctaCol: {
-    gap: spacing.sm,
-  },
-  primaryBtn: {
-    backgroundColor: DS.primary,
-    borderRadius: radius.md,
-  },
-  secondaryBtn: {
-    backgroundColor: DS.container,
-    borderColor: DS.container,
-  },
-  secondaryBtnText: {
-    color: DS.onSurface,
-  },
-  textBtn: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  textBtnLabel: {
-    ...typography.semibold,
-    fontSize: fontSize.sm,
-    color: DS.secondary,
-  },
-  trustRow: {
-    flexDirection: 'row',
+  nextButton: {
+    width: scale(45),
+    height: scale(45),
+    borderRadius: scale(28),
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: scale(6),
-    marginTop: spacing.md,
-    opacity: 0.85,
-  },
-  trustText: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: DS.onVariant,
-  },
-  centerCard: {
-    flex: 1,
-    borderRadius: scale(68),
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: scale(8),
-  },
-  iconHolder: {
-    width: '100%',
-    height: '100%',
-    borderRadius: scale(64),
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  iconHolderInner: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 6,
   },
 });
 
