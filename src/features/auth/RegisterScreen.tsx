@@ -544,19 +544,6 @@ export const RegisterScreen: React.FC = () => {
                   )}
                 />
 
-                {/* Divider between Company and Security */}
-                <View style={styles.sectionDivider} />
-
-                {/* ================= Account Security ================= */}
-                <View style={styles.sectionHeaderRow}>
-                  <View style={[styles.sectionBadge, styles.badgeGreen]}>
-                    <Lock size={scale(19)} color="#16A34A" strokeWidth={2.2} />
-                  </View>
-                  <View style={styles.sectionHeaderTexts}>
-                    <Text style={styles.sectionHeaderTitle}>Account Security</Text>
-                    <Text style={styles.sectionHeaderSubtitle}>Create a strong password</Text>
-                  </View>
-                </View>
 
                 {/* Password */}
                 <Controller
@@ -766,7 +753,7 @@ export const RegisterScreen: React.FC = () => {
                   size="medium"
                   onPress={goToLoginFresh}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
-                  style={styles.registerBtn}
+                  // style={styles.registerBtn}
                   textStyle={styles.registerBtnText}
                 />
                 {/* <Button
