@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
   Alert,
   ScrollView,
@@ -14,7 +14,6 @@ import {useDispatch} from 'react-redux';
 import {
   Bell,
   Building2,
-  ChevronLeft,
   ChevronRight,
   HelpCircle,
   Info,
@@ -30,7 +29,8 @@ import {useLogoutMutation} from '../../api/services/authApi';
 import {logout} from '../auth/authSlice';
 import {useAppSelector} from '../../store';
 import AppImage from '../../components/ui/AppImage';
-import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+import {radius, scale, spacing} from '../../theme';
+import CommonHeader from '../../components/ui/CommonHeader';
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -103,26 +103,29 @@ export const ProfileScreen: React.FC = () => {
     },
   ];
 
+  const company = {
+    name: user?.company ?? 'Sharma Auto Traders',
+    gstin: '08AABCS1429B1Z6',
+    status: 'Verified Axnol Partner',
+    address: user?.address ?? 'Plot 12, Industrial Area Phase II',
+    location: `${user?.city ?? 'Jaipur'}, ${user?.state ?? 'Rajasthan'} - ${user?.pincode ?? '302013'}`,
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={[styles.header, {paddingTop: insets.top + scale(6)}]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
-          <ChevronLeft size={scale(24)} color="#0F172A" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Profile</Text>
-        <TouchableOpacity
-          style={styles.settingsBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.navigate('EditProfile')}>
-          <Settings size={scale(19)} color="#0F172A" />
-        </TouchableOpacity>
-      </View>
+      <CommonHeader
+        title="My Profile"
+        right={
+          <TouchableOpacity
+            style={styles.settingsBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('EditProfile')}>
+            <Settings size={scale(19)} color="#0F172A" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -140,7 +143,7 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.userInfo}>
             <View style={styles.userNameRow}>
               <Text style={styles.userName}>{user?.name ?? 'Rahul Sharma'}</Text>
-              <ShieldCheck size={scale(15)} color="#0284C7" />
+              <ShieldCheck size={scale(15)} color="#1264A3" />
             </View>
             <Text style={styles.userCompany}>
               {user?.company ?? 'Sharma Auto Traders'}
@@ -154,9 +157,46 @@ export const ProfileScreen: React.FC = () => {
             style={styles.editBtn}
             activeOpacity={0.75}
             onPress={() => navigation.navigate('EditProfile')}>
-            <Pencil size={scale(12)} color="#0284C7" />
+            <Pencil size={scale(12)} color="#1264A3" />
             <Text style={styles.editText}>Edit</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Company Details Card */}
+        <View style={styles.companyCard}>
+          <View style={styles.companyHeader}>
+            <View style={styles.companyIconWrap}>
+              <Building2 size={scale(20)} color="#0284C7" strokeWidth={2} />
+            </View>
+            <View style={styles.companyHeaderText}>
+              <Text style={styles.companyName} numberOfLines={1}>
+                {company.name}
+              </Text>
+              <View style={styles.verifiedRow}>
+                <ShieldCheck size={scale(13)} color="#0284C7" />
+                <Text style={styles.verifiedText}>{company.status}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.companyDivider} />
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>GSTIN</Text>
+            <Text style={styles.detailValue}>{company.gstin}</Text>
+          </View>
+
+          <View style={styles.detailRow}>
+            <Text style={styles.detailLabel}>Business Address</Text>
+            <Text style={styles.detailValue} numberOfLines={2}>
+              {company.address}
+            </Text>
+          </View>
+
+          <View style={[styles.detailRow, styles.detailRowLast]}>
+            <Text style={styles.detailLabel}>City & State</Text>
+            <Text style={styles.detailValue}>{company.location}</Text>
+          </View>
         </View>
 
         {/* Menu Options Group */}
@@ -170,7 +210,7 @@ export const ProfileScreen: React.FC = () => {
                 activeOpacity={0.7}
                 onPress={item.onPress}>
                 <View style={styles.menuIconWrap}>
-                  <item.icon size={scale(19)} color="#0284C7" strokeWidth={2.2} />
+                  <item.icon size={scale(19)} color="#1264A3" strokeWidth={2} />
                 </View>
 
                 <Text style={styles.menuTitle}>{item.title}</Text>
@@ -199,25 +239,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: scale(10),
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  backBtn: {
-    padding: scale(4),
-  },
-  headerTitle: {
-    fontSize: scale(17),
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.2,
   },
   settingsBtn: {
     padding: scale(4),
@@ -299,6 +320,78 @@ const styles = StyleSheet.create({
     fontSize: scale(11),
     fontWeight: '700',
     color: '#0284C7',
+  },
+  companyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    padding: scale(15),
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  companyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  companyIconWrap: {
+    width: scale(42),
+    height: scale(42),
+    borderRadius: scale(12),
+    backgroundColor: '#F0F9FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: scale(11),
+  },
+  companyHeaderText: {
+    flex: 1,
+  },
+  companyName: {
+    fontSize: scale(14.5),
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  verifiedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(4),
+    marginTop: scale(2),
+  },
+  verifiedText: {
+    fontSize: scale(11),
+    color: '#0284C7',
+    fontWeight: '600',
+  },
+  companyDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: scale(13),
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: scale(12),
+    marginBottom: scale(11),
+  },
+  detailRowLast: {
+    marginBottom: 0,
+  },
+  detailLabel: {
+    fontSize: scale(12),
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: scale(12.5),
+    color: '#0F172A',
+    fontWeight: '700',
+    textAlign: 'right',
   },
   menuCard: {
     backgroundColor: '#FFFFFF',

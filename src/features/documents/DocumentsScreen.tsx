@@ -9,9 +9,10 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ChevronLeft, ChevronRight, FileText} from 'lucide-react-native';
+import {ChevronRight, FileText} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+import {colors, fontSize, radius, scale, spacing} from '../../theme';
+import CommonHeader from '../../components/ui/CommonHeader';
 
 const FILTER_TABS = ['All', 'Technical Data', 'Safety Data', 'Brochure'];
 
@@ -85,17 +86,7 @@ export const DocumentsScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
-          <ChevronLeft size={scale(24)} color="#1E293B" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Documents</Text>
-        <View style={{width: scale(24)}} />
-      </View>
+      <CommonHeader title="Documents" />
 
       {/* Horizontal Filter Tabs */}
       <View style={styles.filterBar}>
@@ -157,24 +148,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F6',
-  },
-  backBtn: {
-    padding: scale(4),
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: '#0F172A',
   },
   filterBar: {
     backgroundColor: '#FFFFFF',

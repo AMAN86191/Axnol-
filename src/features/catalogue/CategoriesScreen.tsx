@@ -11,7 +11,7 @@ import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {CatalogueStackParamList} from '../../navigation/types';
 import {useGetCategoriesQuery} from '../../api/services/catalogueApi';
 import AppImage from '../../components/ui/AppImage';
-import ScreenHeader from '../../components/ui/ScreenHeader';
+import CommonHeader from '../../components/ui/CommonHeader';
 import {
   colors,
   fontSize,
@@ -32,7 +32,7 @@ export const CategoriesScreen: React.FC = () => {
   });
   return (
     <View style={styles.container}>
-      <ScreenHeader
+      <CommonHeader
         title={params.industryName ?? 'Categories'}
         onBack={() => navigation.goBack()}
       />

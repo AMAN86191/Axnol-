@@ -14,7 +14,7 @@ import {
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
-import ScreenHeader from '../../components/ui/ScreenHeader';
+import CommonHeader from '../../components/ui/CommonHeader';
 import SectionHeader from '../../components/ui/SectionHeader';
 import {colors, spacing} from '../../theme';
 
@@ -87,7 +87,7 @@ export const EditProfileScreen: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Edit Profile" onBack={() => navigation.goBack()} />
+        <CommonHeader title="Edit Profile" onBack={() => navigation.goBack()} />
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
@@ -97,7 +97,7 @@ export const EditProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Edit Profile" onBack={() => navigation.goBack()} />
+      <CommonHeader title="Edit Profile" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.content}>
         <Card>
           <SectionHeader title="Personal" />

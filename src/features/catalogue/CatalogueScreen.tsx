@@ -11,8 +11,16 @@ import PricingRequestsScreen from '../pricing/PricingRequestsScreen';
 
 const Stack = createNativeStackNavigator<CatalogueStackParamList>();
 
-export const CatalogueScreen: React.FC = () => (
-  <Stack.Navigator initialRouteName="Products" screenOptions={{headerShown: false}}>
+interface CatalogueNavigatorProps {
+  initialRouteName: keyof CatalogueStackParamList;
+}
+
+const CatalogueNavigator: React.FC<CatalogueNavigatorProps> = ({
+  initialRouteName,
+}) => (
+  <Stack.Navigator
+    initialRouteName={initialRouteName}
+    screenOptions={{headerShown: false}}>
     <Stack.Screen name="Products" component={ProductsScreen} />
     <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
     <Stack.Screen name="Industries" component={IndustriesScreen} />
@@ -21,4 +29,13 @@ export const CatalogueScreen: React.FC = () => (
     <Stack.Screen name="RequestPrice" component={PricingRequestsScreen} />
   </Stack.Navigator>
 );
+
+export const CatalogueScreen: React.FC = () => (
+  <CatalogueNavigator initialRouteName="Products" />
+);
+
+export const IndustryStack: React.FC = () => (
+  <CatalogueNavigator initialRouteName="Industries" />
+);
+
 export default CatalogueScreen;

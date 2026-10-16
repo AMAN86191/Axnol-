@@ -16,7 +16,7 @@ import {useCreateEnquiryMutation} from '../../api/services/enquiriesApi';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
-import ScreenHeader from '../../components/ui/ScreenHeader';
+import CommonHeader from '../../components/ui/CommonHeader';
 import SectionHeader from '../../components/ui/SectionHeader';
 import {useAppSelector} from '../../store';
 import {colors, fontSize, scale, spacing, typography} from '../../theme';
@@ -65,7 +65,7 @@ export const ContactUsScreen: React.FC = () => {
   if (isLoading || !company) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Contact Us" onBack={() => navigation.goBack()} />
+        <CommonHeader title="Contact Us" onBack={() => navigation.goBack()} />
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
@@ -75,7 +75,7 @@ export const ContactUsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Contact Us" onBack={() => navigation.goBack()} />
+      <CommonHeader title="Contact Us" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.content}>
         <Card>
           <Text style={styles.companyName}>{company.name}</Text>

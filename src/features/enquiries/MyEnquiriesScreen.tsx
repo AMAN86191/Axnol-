@@ -11,7 +11,7 @@ import {MessageSquareText} from 'lucide-react-native';
 import {useGetEnquiriesQuery} from '../../api/services/enquiriesApi';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
+import CommonHeader from '../../components/ui/CommonHeader';
 import StatusBadge from '../../components/ui/StatusBadge';
 import {colors, fontSize, radius, spacing, typography} from '../../theme';
 
@@ -28,7 +28,7 @@ export const MyEnquiriesScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="My Enquiries" onBack={() => navigation.goBack()} />
+      <CommonHeader title="My Enquiries" onBack={() => navigation.goBack()} />
       {isLoading ? (
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />

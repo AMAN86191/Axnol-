@@ -8,10 +8,11 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ArrowUpDown, ChevronLeft} from 'lucide-react-native';
+import {ArrowUpDown} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
-import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+import CommonHeader from '../../components/ui/CommonHeader';
+import {fontSize, radius, scale, spacing} from '../../theme';
 
 const FILTER_TABS = ['All', 'Pending', 'Processing', 'Delivered', 'Canceled'];
 
@@ -87,19 +88,14 @@ export const OrdersScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
-          <ChevronLeft size={scale(24)} color="#1E293B" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Orders</Text>
-        <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
-          <ArrowUpDown size={scale(20)} color="#1E293B" />
-        </TouchableOpacity>
-      </View>
+      <CommonHeader
+        title="My Orders"
+        right={
+          <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
+            <ArrowUpDown size={scale(20)} color="#0F172A" />
+          </TouchableOpacity>
+        }
+      />
 
       {/* Horizontal Filter Tabs */}
       <View style={styles.filterBar}>
@@ -180,24 +176,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F6',
-  },
-  backBtn: {
-    padding: scale(4),
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: '#0F172A',
   },
   filterBtn: {
     padding: scale(4),

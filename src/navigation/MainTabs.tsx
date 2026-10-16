@@ -1,7 +1,7 @@
 import React from 'react';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {
-  FileCheck2,
+  Factory,
   Home,
   Package,
   Receipt,
@@ -9,9 +9,10 @@ import {
 } from 'lucide-react-native';
 import {MainTabParamList} from './types';
 import HomeScreen from '../features/home/HomeScreen';
-import CatalogueScreen from '../features/catalogue/CatalogueScreen';
+import CatalogueScreen, {
+  IndustryStack,
+} from '../features/catalogue/CatalogueScreen';
 import OrdersNavigator from '../features/orders/OrdersNavigator';
-import DocumentsScreen from '../features/documents/DocumentsScreen';
 import ProfileNavigator from '../features/profile/ProfileNavigator';
 import {colors, fontSize, verticalScale} from '../theme';
 
@@ -68,11 +69,11 @@ export const MainTabs: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Documents"
-        component={DocumentsScreen}
+        name="Industry"
+        component={IndustryStack}
         options={{
-          tabBarLabel: 'Documents',
-          tabBarIcon: ({color, size}) => <FileCheck2 size={size} color={color} strokeWidth={2} />,
+          tabBarLabel: 'Industry',
+          tabBarIcon: ({color, size}) => <Factory size={size} color={color} strokeWidth={2} />,
         }}
       />
       <Tab.Screen

@@ -12,7 +12,7 @@ import {ChevronRight, Layers} from 'lucide-react-native';
 import {CatalogueStackParamList} from '../../navigation/types';
 import {useGetSubCategoriesQuery} from '../../api/services/catalogueApi';
 import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
+import CommonHeader from '../../components/ui/CommonHeader';
 import {
   colors,
   fontSize,
@@ -34,7 +34,7 @@ export const SubCategoriesScreen: React.FC = () => {
   const isEmpty = !isLoading && (data?.length ?? 0) === 0;
   return (
     <View style={styles.container}>
-      <ScreenHeader
+      <CommonHeader
         title="Sub Categories"
         onBack={() => navigation.goBack()}
       />

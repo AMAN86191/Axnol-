@@ -23,10 +23,10 @@ const images = {
   ind_industrial: require('../../assets/axnol/ind_industrial.png'),
   ind_construction: require('../../assets/axnol/ind_construction.png'),
   ind_marine: require('../../assets/axnol/ind_marine.png'),
-  feat_prod1_img: require('../../assets/axnol/feat_prod1_img.png'),
-  feat_prod2_img: require('../../assets/axnol/feat_prod2_img.png'),
-  feat_prod3_img: require('../../assets/axnol/feat_prod3_img.png'),
-  feat_prod4_img: require('../../assets/axnol/feat_prod4_img.png'),
+  feat_prod1_img: require('../../assets/axnol/product1.png'),
+  feat_prod2_img: require('../../assets/axnol/product1.png'),
+  feat_prod3_img: require('../../assets/axnol/product1.png'),
+  feat_prod4_img: require('../../assets/axnol/product1.png'),
   why_axnol_banner: require('../../assets/axnol/why_axnol_banner.png'),
   act_products_icon: require('../../assets/axnol/act_products_icon.png'),
   act_pricereq_icon: require('../../assets/axnol/act_pricereq_icon.png'),
@@ -59,6 +59,7 @@ const images = {
   onboarding_3: require('../../assets/axnol/onboarding_3.png'),
 
   // Home banners
+  banner_industrial: require('../../assets/axnol/banner_industrial.png'),
   banner_1: require('../../assets/axnol/banner_1.png'),
   banner_2: require('../../assets/axnol/banner_2.png'),
   banner_3: require('../../assets/axnol/banner_3.png'),
@@ -96,17 +97,17 @@ const images = {
   category_10: require('../../assets/axnol/category_10.png'),
 
   // Products
-  product_oil: require('../../assets/axnol/product_oil.png'),
-  product_grease: require('../../assets/axnol/product_grease.png'),
-  product_forge: require('../../assets/axnol/product_forge.png'),
-  product_cutting: require('../../assets/axnol/product_cutting.png'),
-  product_food: require('../../assets/axnol/product_food.png'),
-  product_generic: require('../../assets/axnol/product_generic.png'),
-  product_baseoil: require('../../assets/axnol/product_baseoil.png'),
-  product_chem: require('../../assets/axnol/product_chem.png'),
-  product_mro: require('../../assets/axnol/product_mro.png'),
-  product_punch: require('../../assets/axnol/product_punch.png'),
-  product_wax: require('../../assets/axnol/product_wax.png'),
+  product_oil: require('../../assets/axnol/product1.png'),
+  product_grease: require('../../assets/axnol/product1.png'),
+  product_forge: require('../../assets/axnol/product1.png'),
+  product_cutting: require('../../assets/axnol/product1.png'),
+  product_food: require('../../assets/axnol/product1.png'),
+  product_generic: require('../../assets/axnol/product1.png'),
+  product_baseoil: require('../../assets/axnol/product1.png'),
+  product_chem: require('../../assets/axnol/product1.png'),
+  product_mro: require('../../assets/axnol/product1.png'),
+  product_punch: require('../../assets/axnol/product1.png'),
+  product_wax: require('../../assets/axnol/product1.png'),
 } as const;
 
 export type ImageKey = keyof typeof images;

@@ -1,29 +1,27 @@
-import React, {useState} from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Alert,
+  Dimensions,
   ScrollView,
-  Share,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  FlatList,
+  ViewToken,
 } from 'react-native';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import {
-  ChevronLeft,
-  FileText,
-  Heart,
-  Share2,
-  ShieldCheck,
-  Sparkles,
-} from 'lucide-react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {CatalogueStackParamList} from '../../navigation/types';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { FileText, Heart, ShieldCheck } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { CatalogueStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
-import {colors, fontSize, radius, scale, spacing, typography, verticalScale} from '../../theme';
+import CommonHeader from '../../components/ui/CommonHeader';
+import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
+
+const { width: SCREEN_W } = Dimensions.get('window');
 
 export const ProductDetailsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -32,54 +30,41 @@ export const ProductDetailsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
   const [selectedPack, setSelectedPack] = useState('20L');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [activeImage, setActiveImage] = useState(0);
+
+  const onViewableItemsChanged = useRef((info: { viewableItems: ViewToken[] }) => {
+    const item = info.viewableItems[0];
+    if (item?.index != null) {
+      setActiveImage(item.index);
+    }
+  }).current;
+  const viewConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
   const product = {
     id: route.params?.productId ?? 'p2',
     name: 'Gear Oil AX-200',
     subtitle: 'Extreme Pressure Gear Oil',
-    image: 'product_drum',
+    images: ['product_drum', 'product_oil', 'product_generic', 'product_grease'],
     tags: ['Automotive', 'Industrial', 'High Performance'],
     description:
       'High-performance gear oil designed for industrial gear systems with excellent wear protection and thermal stability. Delivers prolonged machinery life and reduces friction.',
     packSizes: ['1L', '5L', '20L', '210L'],
     specs: [
-      {label: 'Viscosity Grade', value: 'ISO VG 220'},
-      {label: 'Flash Point', value: '230°C'},
-      {label: 'Pour Point', value: '-18°C'},
-      {label: 'Density @ 15°C', value: '0.892 g/cm³'},
-      {label: 'Copper Corrosion', value: '1a (ASTM D130)'},
+      { label: 'Viscosity Grade', value: 'ISO VG 220' },
+      { label: 'Flash Point', value: '230°C' },
+      { label: 'Pour Point', value: '-18°C' },
+      { label: 'Density @ 15°C', value: '0.892 g/cm³' },
+      { label: 'Copper Corrosion', value: '1a (ASTM D130)' },
     ],
-  };
-
-  const onShare = async () => {
-    try {
-      await Share.share({
-        message: `${product.name} - ${product.subtitle}\nAxnol Lubetech India Pvt. Ltd.`,
-      });
-    } catch {
-      // ignore
-    }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={[styles.header, {paddingTop: insets.top + scale(6)}]}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
-          <ChevronLeft size={scale(24)} color="#0F172A" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Product Details</Text>
-
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7} onPress={onShare}>
-            <Share2 size={scale(20)} color="#0F172A" />
-          </TouchableOpacity>
+      <CommonHeader
+        title="Product Details"
+        right={
           <TouchableOpacity
             style={styles.headerBtn}
             activeOpacity={0.7}
@@ -90,21 +75,44 @@ export const ProductDetailsScreen: React.FC = () => {
               fill={isFavorite ? '#EF4444' : 'none'}
             />
           </TouchableOpacity>
-        </View>
-      </View>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, {paddingBottom: insets.bottom + scale(105)}]}>
-        
-        {/* Large Centered Hero Showcase with Soft Glow */}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(105) }]}>
+
+        {/* Image Gallery */}
         <View style={styles.heroWrap}>
-          <View style={styles.heroAura} />
-          <AppImage
-            uri={product.image}
-            style={styles.heroImage}
-            resizeMode="contain"
+          <FlatList
+            data={product.images}
+            keyExtractor={(item, index) => `${item}-${index}`}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewConfig}
+            renderItem={({ item }) => (
+              <View style={styles.heroSlide}>
+                {/* <View style={styles.heroAura} /> */}
+                <AppImage
+                  uri={item}
+                  style={styles.heroImage}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
           />
+          {product.images.length > 1 && (
+            <View style={styles.dotsRow}>
+              {product.images.map((_, index) => (
+                <View
+                  key={`dot-${index}`}
+                  style={[styles.dot, index === activeImage && styles.dotActive]}
+                />
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Product Basic Info */}
@@ -145,16 +153,6 @@ export const ProductDetailsScreen: React.FC = () => {
                 Specifications
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tabItem, activeTab === 'documents' && styles.tabItemActive]}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab('documents')}>
-              <Text
-                style={[styles.tabText, activeTab === 'documents' && styles.tabTextActive]}>
-                Documents
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* Tab Content */}
@@ -179,20 +177,6 @@ export const ProductDetailsScreen: React.FC = () => {
             </View>
           )}
 
-          {activeTab === 'documents' && (
-            <View style={styles.docBox}>
-              <TouchableOpacity
-                style={styles.docItem}
-                activeOpacity={0.75}
-                onPress={() => Alert.alert('Downloading', 'TDS PDF downloading...')}>
-                <FileText size={scale(22)} color="#EF4444" />
-                <View style={{flex: 1, marginLeft: spacing.sm}}>
-                  <Text style={styles.docTitle}>Technical Data Sheet (TDS)</Text>
-                  <Text style={styles.docSub}>PDF • 1.8 MB</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* Available Pack Sizes */}
           <View style={styles.packSection}>
@@ -222,28 +206,20 @@ export const ProductDetailsScreen: React.FC = () => {
       </ScrollView>
 
       {/* Sticky Bottom Action Bar */}
-      <View style={[styles.bottomBar, {paddingBottom: insets.bottom + scale(10)}]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         <TouchableOpacity
           style={styles.addRequestBtn}
-          activeOpacity={0.85}
-          onPress={() => {
-            Alert.alert('Added to Request', `${product.name} (${selectedPack}) added to quote list.`);
-          }}>
-          <Text style={styles.addRequestText}>Add to Request</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.requestPriceBtn}
           activeOpacity={0.85}
           onPress={() =>
             navigation.navigate('RequestPrice', {
               productId: product.id,
               productName: product.name,
               category: product.subtitle,
-            })
-          }>
-          <Text style={styles.requestPriceText}>Request Price</Text>
+            })}>
+          <Text style={styles.addRequestText}>Check Out</Text>
         </TouchableOpacity>
+
+
       </View>
     </View>
   );
@@ -254,39 +230,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: scale(10),
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
   headerBtn: {
     padding: scale(4),
-  },
-  headerTitle: {
-    fontSize: scale(17),
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.2,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
   },
   scrollContent: {
     paddingTop: spacing.xs,
   },
   heroWrap: {
-    height: verticalScale(230),
+    height: verticalScale(250),
+    backgroundColor: '#FFFFFF',
+    paddingTop: spacing.sm,
+  },
+  heroSlide: {
+    width: SCREEN_W,
+    height: verticalScale(212),
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingVertical: spacing.md,
   },
   heroAura: {
     position: 'absolute',
@@ -299,18 +258,35 @@ const styles = StyleSheet.create({
     width: scale(175),
     height: scale(205),
   },
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(6),
+    paddingVertical: scale(8),
+  },
+  dot: {
+    width: scale(7),
+    height: scale(7),
+    borderRadius: scale(4),
+    backgroundColor: '#CBD5E1',
+  },
+  dotActive: {
+    width: scale(16),
+    backgroundColor: colors.primary,
+  },
   bodyContent: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.sm,
   },
   productName: {
-    fontSize: scale(22),
-    fontWeight: '800',
+    fontSize: scale(18),
+    fontWeight: '700',
     color: '#0F172A',
     letterSpacing: -0.3,
   },
   productSubtitle: {
-    fontSize: scale(13),
+    fontSize: scale(12),
     color: '#64748B',
     marginTop: 2,
     marginBottom: spacing.md,
@@ -346,7 +322,7 @@ const styles = StyleSheet.create({
   },
   tabItemActive: {
     borderBottomWidth: 2.5,
-    borderBottomColor: '#0284C7',
+    borderBottomColor: colors.primary,
   },
   tabText: {
     fontSize: scale(13),
@@ -354,7 +330,7 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
   tabTextActive: {
-    color: '#0284C7',
+    color: colors.primary,
     fontWeight: '800',
   },
   tabContentBlock: {
@@ -403,28 +379,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0F172A',
   },
-  docBox: {
-    marginBottom: spacing.xl,
-  },
-  docItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  docTitle: {
-    fontSize: scale(13),
-    fontWeight: '700',
-    color: '#0F172A',
-  },
-  docSub: {
-    fontSize: scale(11),
-    color: '#64748B',
-    marginTop: 2,
-  },
   packSection: {
     marginBottom: spacing.xl,
   },
@@ -449,10 +403,10 @@ const styles = StyleSheet.create({
     borderColor: '#CBD5E1',
   },
   packPillSelected: {
-    borderColor: '#0284C7',
-    backgroundColor: '#F0F9FF',
-    shadowColor: '#0284C7',
-    shadowOffset: {width: 0, height: 2},
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
@@ -463,7 +417,7 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   packPillTextSelected: {
-    color: '#0284C7',
+    color: colors.primary,
     fontWeight: '800',
   },
   bottomBar: {
@@ -473,24 +427,24 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
     paddingTop: scale(12),
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
-    gap: spacing.md,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: -3},
+    shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 6,
   },
   addRequestBtn: {
     flex: 1,
-    height: scale(47),
+    height: scale(40),
     borderRadius: radius.pill,
     borderWidth: 1.8,
-    borderColor: '#0284C7',
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
@@ -498,26 +452,8 @@ const styles = StyleSheet.create({
   addRequestText: {
     fontSize: scale(13.5),
     fontWeight: '700',
-    color: '#0284C7',
-  },
-  requestPriceBtn: {
-    flex: 1,
-    height: scale(47),
-    borderRadius: radius.pill,
-    backgroundColor: '#EA580C',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#EA580C',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  requestPriceText: {
-    fontSize: scale(13.5),
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+    color: colors.primary,
+  }
 });
 
 export default ProductDetailsScreen;

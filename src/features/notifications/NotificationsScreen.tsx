@@ -22,7 +22,7 @@ import {
 } from '../../api/services/documentsApi';
 import {AppNotification} from '../../api/types';
 import EmptyState from '../../components/ui/EmptyState';
-import ScreenHeader from '../../components/ui/ScreenHeader';
+import CommonHeader from '../../components/ui/CommonHeader';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 
 const ICONS: Record<AppNotification['type'], LucideIcon> = {
@@ -48,7 +48,7 @@ export const NotificationsScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader
+      <CommonHeader
         title="Notifications"
         right={
           hasUnread ? (

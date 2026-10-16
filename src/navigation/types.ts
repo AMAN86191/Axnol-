@@ -13,7 +13,7 @@ export type MainTabParamList = {
   Home: undefined;
   Products: NavigatorScreenParams<CatalogueStackParamList>;
   Orders: NavigatorScreenParams<OrdersStackParamList>;
-  Documents: undefined;
+  Industry: NavigatorScreenParams<CatalogueStackParamList>;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
@@ -50,9 +50,13 @@ export type ProfileStackParamList = {
   ContactUs: undefined;
 };
 
+export type MainDrawerParamList = {
+  HomeTabs: NavigatorScreenParams<MainTabParamList>;
+};
+
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainTabParamList>;
+  Main: NavigatorScreenParams<MainDrawerParamList>;
 };
 
 declare global {

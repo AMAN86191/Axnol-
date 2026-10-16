@@ -1,18 +1,19 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   Dimensions,
   FlatList,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ChevronLeft, ChevronRight} from 'lucide-react-native';
+import {ChevronLeft, ChevronRight, Search} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
-import {colors, fontSize, radius, scale, spacing, typography, verticalScale} from '../../theme';
+import {colors, fontSize, radius, scale, spacing} from '../../theme';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
@@ -21,37 +22,37 @@ const INDUSTRIES_DATA = [
   {
     id: 'ind2',
     name: 'Automotive',
-    subtitle: 'High performance lubricants',
-    image: 'industry_2',
+    subtitle: 'Engine & vehicle care',
+    image: 'ind_automotive',
   },
   {
     id: 'ind1',
     name: 'Industrial',
-    subtitle: 'Reliable industrial solutions',
-    image: 'industry_1',
+    subtitle: 'Machinery protection',
+    image: 'ind_industrial',
   },
   {
     id: 'ind4',
     name: 'Marine',
-    subtitle: 'Engine protection at sea',
-    image: 'industry_4',
+    subtitle: 'Marine engine care',
+    image: 'ind_marine',
   },
   {
     id: 'ind6',
     name: 'Construction',
-    subtitle: 'Heavy duty protection',
-    image: 'industry_6',
+    subtitle: 'Heavy equipment',
+    image: 'ind_construction',
   },
   {
     id: 'ind3',
     name: 'Agriculture',
-    subtitle: 'For farming equipment',
+    subtitle: 'Farm equipment',
     image: 'industry_3',
   },
   {
     id: 'ind8',
     name: 'Energy',
-    subtitle: 'Powering the future',
+    subtitle: 'Power generation',
     image: 'industry_8',
   },
 ];
@@ -59,6 +60,13 @@ const INDUSTRIES_DATA = [
 export const IndustriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const [search, setSearch] = useState('');
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const filtered = INDUSTRIES_DATA.filter(
+    item =>
+      !search || item.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   return (
     <View style={styles.container}>
@@ -70,14 +78,31 @@ export const IndustriesScreen: React.FC = () => {
           style={styles.backBtn}
           activeOpacity={0.7}
           onPress={() => navigation.goBack()}>
-          <ChevronLeft size={scale(24)} color="#1E293B" />
+          <ChevronLeft size={scale(24)} color="#172033" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Industries</Text>
+        <View style={styles.titleWrap}>
+          <Text style={styles.headerTitle}>Industries</Text>
+          <Text style={styles.headerSubtitle}>Solutions for every industry</Text>
+        </View>
         <View style={{width: scale(24)}} />
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchBarContainer}>
+        <View style={styles.searchBar}>
+          <Search size={scale(18)} color="#718096" strokeWidth={2} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search industries"
+            placeholderTextColor="#718096"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+      </View>
+
       <FlatList
-        data={INDUSTRIES_DATA}
+        data={filtered}
         keyExtractor={item => item.id}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
@@ -87,6 +112,8 @@ export const IndustriesScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.card}
             activeOpacity={0.85}
+            onPressIn={() => setActiveId(item.id)}
+            onPressOut={() => setActiveId(null)}
             onPress={() =>
               navigation.navigate('Products', {
                 title: item.name,
@@ -98,13 +125,13 @@ export const IndustriesScreen: React.FC = () => {
             </View>
 
             <View style={styles.cardContent}>
-              <View style={{flex: 1}}>
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardSubtitle} numberOfLines={2}>
-                  {item.subtitle}
-                </Text>
+              <Text style={styles.cardTitle}>{item.name}</Text>
+              <View style={styles.arrowBadge}>
+                <ChevronRight
+                  size={scale(14)}
+                  color={activeId === item.id ? '#0D4F82' : '#1264A3'}
+                />
               </View>
-              <ChevronRight size={scale(16)} color="#0284C7" style={styles.arrow} />
             </View>
           </TouchableOpacity>
         )}
@@ -116,12 +143,11 @@ export const IndustriesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F7F9FC',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
     backgroundColor: '#FFFFFF',
@@ -131,13 +157,46 @@ const styles = StyleSheet.create({
   backBtn: {
     padding: scale(4),
   },
+  titleWrap: {
+    flex: 1,
+    alignItems: 'center',
+  },
   headerTitle: {
     fontSize: fontSize.lg,
     fontWeight: '700',
-    color: '#0F172A',
+    color: '#172033',
+  },
+  headerSubtitle: {
+    fontSize: scale(11),
+    color: '#718096',
+    marginTop: scale(1),
+  },
+  searchBarContainer: {
+    // backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    height: scale(44),
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#E3E8EF',
+    paddingHorizontal: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    marginHorizontal: spacing.sm,
+    fontSize: scale(13),
+    color: '#172033',
+    paddingVertical: 0,
   },
   listContent: {
-    padding: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     gap: spacing.md,
   },
   columnWrapper: {
@@ -145,20 +204,15 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_WIDTH,
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E3E8EF',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
   },
   imageWrap: {
     width: '100%',
-    height: verticalScale(105),
+    height: scale(110),
     backgroundColor: '#F1F5F9',
   },
   image: {
@@ -167,25 +221,31 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.md,
-    minHeight: scale(65),
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    minHeight: scale(35),
   },
   cardTitle: {
-    fontSize: scale(13),
+    flex: 1,
+    fontSize: scale(12),
     fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 2,
+    color: '#172033',
   },
-  cardSubtitle: {
-    fontSize: scale(11),
-    color: '#64748B',
-    lineHeight: scale(15),
-  },
-  arrow: {
-    marginLeft: 4,
-    marginBottom: 2,
+  arrowBadge: {
+    width: scale(20),
+    height: scale(20),
+    borderRadius: scale(14),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    marginLeft: scale(4),
+    shadowColor: '#1264A3',
+    shadowOffset: {width: 0, height: scale(2)},
+    shadowOpacity: 0.15,
+    shadowRadius: scale(4),
+    elevation: 2,
   },
 });
 
