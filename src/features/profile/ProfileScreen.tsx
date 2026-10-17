@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Alert,
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -8,29 +9,63 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useDispatch} from 'react-redux';
 import {
-  Bell,
+  BadgeCheck,
   Building2,
   ChevronRight,
   HelpCircle,
   Info,
-  Lock,
+  LifeBuoy,
   LogOut,
-  MapPin,
+  Mail,
   Pencil,
-  Settings,
+  Phone,
+  ScrollText,
   ShieldCheck,
 } from 'lucide-react-native';
+import type {LucideIcon} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useLogoutMutation} from '../../api/services/authApi';
 import {logout} from '../auth/authSlice';
 import {useAppSelector} from '../../store';
 import AppImage from '../../components/ui/AppImage';
-import {radius, scale, spacing} from '../../theme';
-import CommonHeader from '../../components/ui/CommonHeader';
+import images from '../../assets/images';
+import {colors, radius, scale, shadows, spacing} from '../../theme';
+
+interface MenuItem {
+  title: string;
+  subtitle: string;
+  icon: LucideIcon;
+  onPress: () => void;
+}
+
+interface InfoRowProps {
+  label: string;
+  value: string;
+  isLast?: boolean;
+  showDot?: boolean;
+}
+
+const InfoRow: React.FC<InfoRowProps> = ({
+  label,
+  value,
+  isLast,
+  showDot,
+}) => (
+  <View style={[styles.infoRow, !isLast && styles.rowDivider]}>
+    <Text style={styles.infoLabel}>{label}</Text>
+    <View style={styles.infoValueWrap}>
+      {showDot ? <View style={styles.statusDot} /> : null}
+      <Text style={styles.infoValue} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  </View>
+);
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -58,178 +93,210 @@ export const ProfileScreen: React.FC = () => {
     ]);
   };
 
-  const MENU_ITEMS = [
-    {
-      title: 'Company Details',
-      icon: Building2,
-      onPress: () =>
-        Alert.alert(
-          'Company Details',
-          `${user?.company ?? 'Sharma Auto Traders'}\nGSTIN: 08AABCS1429B1Z6\nStatus: Verified Axnol Partner`,
-        ),
-    },
-    {
-      title: 'My Address',
-      icon: MapPin,
-      onPress: () =>
-        Alert.alert(
-          'My Address',
-          `${user?.address ?? 'Plot 12, Industrial Area Phase II'}\n${user?.city ?? 'Jaipur'}, ${user?.state ?? 'Rajasthan'} - ${user?.pincode ?? '302013'}`,
-        ),
-    },
-    {
-      title: 'Change Password',
-      icon: Lock,
-      onPress: () => navigation.navigate('EditProfile'),
-    },
-    {
-      title: 'Notification Settings',
-      icon: Bell,
-      onPress: () => Alert.alert('Notifications', 'Push & SMS order updates are active.'),
-    },
+  const MENU_ITEMS: MenuItem[] = [
     {
       title: 'Help & Support',
+      subtitle: 'Get in touch with our team',
       icon: HelpCircle,
       onPress: () => navigation.navigate('ContactUs'),
     },
     {
       title: 'About Us',
+      subtitle: 'Learn about Axnol Lubetech',
       icon: Info,
-      onPress: () =>
-        Alert.alert(
-          'About Axnol Lubetech',
-          'Axnol Lubetech India Pvt. Ltd.\nSolution of energy since 1959.\nHigh-performance lubricants & specialty greases.',
-        ),
+      onPress: () => navigation.navigate('About'),
+    },
+    {
+      title: 'Terms & Conditions',
+      subtitle: 'Terms of use & service',
+      icon: ScrollText,
+      onPress: () => navigation.navigate('TermsConditions'),
+    },
+    {
+      title: 'Privacy Policy',
+      subtitle: 'How we protect your data',
+      icon: ShieldCheck,
+      onPress: () => navigation.navigate('PrivacyPolicy'),
     },
   ];
 
-  const company = {
-    name: user?.company ?? 'Sharma Auto Traders',
-    gstin: '08AABCS1429B1Z6',
-    status: 'Verified Axnol Partner',
-    address: user?.address ?? 'Plot 12, Industrial Area Phase II',
-    location: `${user?.city ?? 'Jaipur'}, ${user?.state ?? 'Rajasthan'} - ${user?.pincode ?? '302013'}`,
-  };
+  const name = user?.name ?? 'Rahul Sharma';
+  const companyName = user?.company ?? 'Sharma Auto Traders';
+  const email = user?.email ?? 'rahul@sharmaauto.in';
+  const phone = user?.phone ?? '+91 98290 12345';
+  const location = `${user?.city ?? 'Jaipur'}, ${user?.state ?? 'Rajasthan'}`;
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-
-      <CommonHeader
-        title="My Profile"
-        right={
-          <TouchableOpacity
-            style={styles.settingsBtn}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('EditProfile')}>
-            <Settings size={scale(19)} color="#0F172A" />
-          </TouchableOpacity>
-        }
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
       />
+
+      {/* Ambient tint blobs so the frosted glass cards have light to catch */}
+      <View pointerEvents="none" style={styles.blobBlue} />
+      <View pointerEvents="none" style={styles.blobSky} />
+      <View pointerEvents="none" style={styles.blobBlueTwo} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {paddingBottom: insets.bottom + scale(85)},
-        ]}>
-        
-        {/* User Profile Card */}
-        <View style={styles.userCard}>
-          <View style={styles.avatarWrap}>
-            <AppImage uri="user_avatar" style={styles.avatar} resizeMode="cover" />
-          </View>
+        contentContainerStyle={{
+          paddingTop: insets.top + scale(14),
+          paddingBottom: insets.bottom + scale(96),
+        }}>
+        {/* Top-right corner art */}
+        <Image
+          source={images.register_corner_bg}
+          style={styles.cornerBg}
+          resizeMode="contain"
+        />
 
-          <View style={styles.userInfo}>
-            <View style={styles.userNameRow}>
-              <Text style={styles.userName}>{user?.name ?? 'Rahul Sharma'}</Text>
-              <ShieldCheck size={scale(15)} color="#1264A3" />
-            </View>
-            <Text style={styles.userCompany}>
-              {user?.company ?? 'Sharma Auto Traders'}
-            </Text>
-            <Text style={styles.userEmail}>
-              {user?.email ?? 'rahul@sharmaauto.in'}
-            </Text>
+        {/* Header */}
+        <View style={styles.headerRow}>
+          <View style={styles.headerTexts}>
+            <Text style={styles.eyebrow}>MY ACCOUNT</Text>
+            <Text style={styles.title}>My Profile</Text>
           </View>
-
           <TouchableOpacity
-            style={styles.editBtn}
-            activeOpacity={0.75}
+            style={styles.topEditBtn}
+            activeOpacity={0.85}
             onPress={() => navigation.navigate('EditProfile')}>
-            <Pencil size={scale(12)} color="#1264A3" />
-            <Text style={styles.editText}>Edit</Text>
+            <Pencil size={scale(14)} color={colors.textInverse} strokeWidth={2.6} />
+            <Text style={styles.topEditText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Company Details Card */}
-        <View style={styles.companyCard}>
-          <View style={styles.companyHeader}>
-            <View style={styles.companyIconWrap}>
-              <Building2 size={scale(20)} color="#0284C7" strokeWidth={2} />
+        {/* Profile hero card */}
+        <View style={styles.profileCard}>
+          <LinearGradient
+            colors={[
+              'rgba(255,255,255,0.85)',
+              'rgba(255,255,255,0.25)',
+              'rgba(255,255,255,0)',
+            ]}
+            start={{x: 0, y: 0}}
+            end={{x: 1, y: 1}}
+            style={styles.glassSheen}
+          />
+
+          <View style={styles.avatarBlock}>
+            <View style={styles.avatarRing}>
+              <AppImage
+                uri={user?.avatar ?? 'user_avatar'}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
             </View>
-            <View style={styles.companyHeaderText}>
-              <Text style={styles.companyName} numberOfLines={1}>
-                {company.name}
-              </Text>
-              <View style={styles.verifiedRow}>
-                <ShieldCheck size={scale(13)} color="#0284C7" />
-                <Text style={styles.verifiedText}>{company.status}</Text>
-              </View>
+            <View style={styles.avatarBadge}>
+              <BadgeCheck size={scale(14)} color="#FFFFFF" strokeWidth={2.6} />
             </View>
           </View>
 
-          <View style={styles.companyDivider} />
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>GSTIN</Text>
-            <Text style={styles.detailValue}>{company.gstin}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name} numberOfLines={1}>
+              {name}
+            </Text>
+            <BadgeCheck size={scale(16)} color="#0284C7" strokeWidth={2.4} />
           </View>
+          <Text style={styles.company} numberOfLines={1}>
+            {companyName}
+          </Text>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Business Address</Text>
-            <Text style={styles.detailValue} numberOfLines={2}>
-              {company.address}
+          <View style={styles.contactRow}>
+            <Mail size={scale(13)} color="#64748B" strokeWidth={2.2} />
+            <Text style={styles.contactText} numberOfLines={1}>
+              {email}
             </Text>
           </View>
-
-          <View style={[styles.detailRow, styles.detailRowLast]}>
-            <Text style={styles.detailLabel}>City & State</Text>
-            <Text style={styles.detailValue}>{company.location}</Text>
+          <View style={styles.contactRow}>
+            <Phone size={scale(13)} color="#64748B" strokeWidth={2.2} />
+            <Text style={styles.contactText} numberOfLines={1}>
+              {phone}
+            </Text>
           </View>
         </View>
 
-        {/* Menu Options Group */}
-        <View style={styles.menuCard}>
+        {/* Business Information */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionBadge, styles.badgeBlue]}>
+              <Building2 size={scale(19)} color="#0284C7" strokeWidth={2.2} />
+            </View>
+            <View style={styles.sectionHeaderTexts}>
+              <Text style={styles.sectionHeaderTitle}>Business Information</Text>
+              <Text style={styles.sectionHeaderSubtitle}>
+                Your registered business details
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.sectionDivider} />
+
+          <InfoRow label="GSTIN" value={user?.gstin ?? '08AABCS1429B1Z6'} />
+          <InfoRow
+            label="Business Address"
+            value={user?.address ?? 'Plot 12, Industrial Area Phase II'}
+          />
+          <InfoRow label="City & State" value={location} />
+        </View>
+
+        {/* Support & Legal */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeaderRow}>
+            <View style={[styles.sectionBadge, styles.badgeOrange]}>
+              <LifeBuoy size={scale(19)} color="#EA580C" strokeWidth={2.2} />
+            </View>
+            <View style={styles.sectionHeaderTexts}>
+              <Text style={styles.sectionHeaderTitle}>Support &amp; Legal</Text>
+              <Text style={styles.sectionHeaderSubtitle}>
+                Help, policies and more
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.sectionDivider} />
+
           {MENU_ITEMS.map((item, index) => {
             const isLast = index === MENU_ITEMS.length - 1;
             return (
               <TouchableOpacity
                 key={item.title}
-                style={[styles.menuRow, !isLast && styles.menuRowBorder]}
+                style={[styles.menuRow, !isLast && styles.rowDivider]}
                 activeOpacity={0.7}
                 onPress={item.onPress}>
                 <View style={styles.menuIconWrap}>
-                  <item.icon size={scale(19)} color="#1264A3" strokeWidth={2} />
+                  <item.icon
+                    size={scale(18)}
+                    color="#0284C7"
+                    strokeWidth={2.2}
+                  />
                 </View>
-
-                <Text style={styles.menuTitle}>{item.title}</Text>
-
-                <ChevronRight size={scale(17)} color="#94A3B8" />
+                <View style={styles.menuTextWrap}>
+                  <Text style={styles.menuTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.menuSubtitle} numberOfLines={1}>
+                    {item.subtitle}
+                  </Text>
+                </View>
+                <ChevronRight
+                  size={scale(17)}
+                  color="#94A3B8"
+                  strokeWidth={2.2}
+                />
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutBtn}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
           onPress={doLogout}>
-          <LogOut size={scale(18)} color="#EF4444" strokeWidth={2.2} />
-          <Text style={styles.logoutText}>Logout</Text>
+          <LogOut size={scale(16)} color={colors.danger} strokeWidth={2.4} />
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </View>
   );
@@ -240,206 +307,299 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  settingsBtn: {
-    padding: scale(4),
+
+  /* Ambient blobs */
+  blobBlue: {
+    position: 'absolute',
+    top: scale(90),
+    left: -scale(90),
+    width: scale(250),
+    height: scale(250),
+    borderRadius: scale(125),
+    backgroundColor: 'rgba(2,132,199,0.10)',
   },
-  scrollContent: {
-    padding: spacing.lg,
-    gap: scale(14),
+  blobSky: {
+    position: 'absolute',
+    top: scale(340),
+    right: -scale(80),
+    width: scale(230),
+    height: scale(230),
+    borderRadius: scale(115),
+    backgroundColor: 'rgba(57,184,253,0.10)',
   },
-  userCard: {
+  blobBlueTwo: {
+    position: 'absolute',
+    bottom: scale(60),
+    left: -scale(70),
+    width: scale(210),
+    height: scale(210),
+    borderRadius: scale(105),
+    backgroundColor: 'rgba(2,132,199,0.07)',
+  },
+  cornerBg: {
+    position: 'absolute',
+    top: 0,
+    right: -scale(13),
+    width: scale(210),
+    height: scale(200),
+    zIndex: 0,
+  },
+
+  /* Header */
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.lg,
-    padding: scale(14),
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    marginBottom: scale(16),
+   
   },
-  avatarWrap: {
-    width: scale(54),
-    height: scale(54),
-    borderRadius: scale(27),
+  headerTexts: {
+    flex: 1,
+  },
+  eyebrow: {
+    fontSize: scale(11.5),
+    fontWeight: '800',
+    color: '#0284C7',
+    letterSpacing: 1.5,
+    marginBottom: scale(3),
+  },
+  title: {
+    fontSize: scale(23),
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.4,
+  },
+
+  /* Profile hero card */
+  profileCard: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: 'rgba(255,255,255,0.6)',
+    borderRadius: radius.xxl,
+    paddingVertical: scale(22),
+    paddingHorizontal: scale(18),
+    borderWidth: 1.2,
+    borderColor: 'rgba(203,213,225,0.6)',
+    marginBottom: scale(18),
     overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#0284C7',
-    backgroundColor: '#F1F5F9',
-    marginRight: scale(12),
-    shadowColor: '#0284C7',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
+    alignItems: 'center',
+    // ...shadows.small,
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+  },
+  avatarBlock: {
+    marginBottom: scale(12),
+  },
+  avatarRing: {
+    width: scale(88),
+    height: scale(88),
+    borderRadius: scale(44),
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
+    ...shadows.small,
   },
   avatar: {
     width: '100%',
     height: '100%',
   },
-  userInfo: {
-    flex: 1,
+  avatarBadge: {
+    position: 'absolute',
+    bottom: scale(2),
+    right: scale(2),
+    width: scale(24),
+    height: scale(24),
+    borderRadius: scale(12),
+    backgroundColor: '#0284C7',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  userNameRow: {
+  nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: scale(6),
   },
-  userName: {
+  name: {
+    flexShrink: 1,
+    fontSize: scale(18),
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.4,
+  },
+  company: {
+    fontSize: scale(12.5),
+    fontWeight: '600',
+    color: '#475569',
+    marginTop: scale(3),
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(5),
+    marginTop: scale(5),
+  },
+  contactText: {
+    fontSize: scale(11.5),
+    fontWeight: '500',
+    color: '#64748B',
+  },
+  topEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(6),
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(9),
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    ...shadows.small,
+  },
+  topEditText: {
+    fontSize: scale(12.5),
+    fontWeight: '800',
+    color: colors.textInverse,
+    letterSpacing: 0.2,
+  },
+
+  /* Section cards */
+  sectionCard: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: 'rgba(255,255,255,0.72)',
+    borderRadius: radius.xl,
+    paddingVertical: scale(15),
+    paddingHorizontal: scale(13),
+    borderWidth: 1.2,
+    borderColor: 'rgba(203,213,225,0.5)',
+    marginBottom: scale(16),
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(10),
+  },
+  sectionBadge: {
+    width: scale(38),
+    height: scale(38),
+    borderRadius: scale(19),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeBlue: {
+    backgroundColor: '#EFF6FF',
+  },
+  badgeOrange: {
+    backgroundColor: '#FFF7ED',
+  },
+  sectionHeaderTexts: {
+    flex: 1,
+  },
+  sectionHeaderTitle: {
     fontSize: scale(15),
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: -0.2,
   },
-  userCompany: {
+  sectionHeaderSubtitle: {
     fontSize: scale(11.5),
     color: '#64748B',
-    marginTop: 2,
-    fontWeight: '500',
-  },
-  userEmail: {
-    fontSize: scale(11),
-    color: '#94A3B8',
     marginTop: 1,
   },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(5),
-    borderRadius: radius.pill,
-    backgroundColor: '#F0F9FF',
-    borderWidth: 1,
-    borderColor: '#BAE6FD',
-    gap: 3,
-  },
-  editText: {
-    fontSize: scale(11),
-    fontWeight: '700',
-    color: '#0284C7',
-  },
-  companyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.lg,
-    padding: scale(15),
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  companyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  companyIconWrap: {
-    width: scale(42),
-    height: scale(42),
-    borderRadius: scale(12),
-    backgroundColor: '#F0F9FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: scale(11),
-  },
-  companyHeaderText: {
-    flex: 1,
-  },
-  companyName: {
-    fontSize: scale(14.5),
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.2,
-  },
-  verifiedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(4),
-    marginTop: scale(2),
-  },
-  verifiedText: {
-    fontSize: scale(11),
-    color: '#0284C7',
-    fontWeight: '600',
-  },
-  companyDivider: {
+  sectionDivider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
-    marginVertical: scale(13),
+    backgroundColor: 'rgba(203,213,225,0.5)',
+    marginTop: scale(14),
+    marginBottom: scale(4),
   },
-  detailRow: {
+  rowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(226,232,240,0.8)',
+  },
+
+  /* Info rows */
+  infoRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: scale(12),
-    marginBottom: scale(11),
+    gap: spacing.md,
+    paddingVertical: scale(13),
   },
-  detailRowLast: {
-    marginBottom: 0,
-  },
-  detailLabel: {
+  infoLabel: {
     fontSize: scale(12),
-    color: '#64748B',
     fontWeight: '500',
+    color: '#64748B',
   },
-  detailValue: {
+  infoValueWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: scale(6),
     flex: 1,
+  },
+  statusDot: {
+    width: scale(7),
+    height: scale(7),
+    borderRadius: scale(4),
+    backgroundColor: '#16A34A',
+  },
+  infoValue: {
+    flexShrink: 1,
     fontSize: scale(12.5),
-    color: '#0F172A',
     fontWeight: '700',
+    color: '#0F172A',
     textAlign: 'right',
   },
-  menuCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 2,
-  },
+
+  /* Menu rows */
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: scale(14),
-  },
-  menuRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    paddingVertical: scale(11),
   },
   menuIconWrap: {
-    width: scale(30),
-    alignItems: 'flex-start',
+    width: scale(38),
+    height: scale(38),
+    borderRadius: scale(12),
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
     justifyContent: 'center',
+    marginRight: scale(13),
+  },
+  menuTextWrap: {
+    flex: 1,
   },
   menuTitle: {
-    flex: 1,
     fontSize: scale(13.5),
-    fontWeight: '600',
-    color: '#1E293B',
+    fontWeight: '700',
+    color: '#0F172A',
   },
+  menuSubtitle: {
+    fontSize: scale(11),
+    color: '#64748B',
+    marginTop: scale(2),
+  },
+
+  /* Logout */
   logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: scale(47),
-    backgroundColor: '#FEE2E2',
-    borderRadius: radius.pill,
     gap: spacing.sm,
-    marginTop: spacing.xs,
+    marginHorizontal: spacing.lg,
+    height: scale(50),
+    borderRadius: radius.md,
+    backgroundColor: colors.dangerLight,
+    marginTop: spacing.sm,
   },
   logoutText: {
     fontSize: scale(13.5),
-    fontWeight: '700',
-    color: '#EF4444',
+    fontWeight: '800',
+    color: colors.danger,
+    letterSpacing: 0.2,
   },
 });
 

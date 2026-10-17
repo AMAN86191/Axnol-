@@ -7,6 +7,7 @@ import PricingRequestsScreen from '../pricing/PricingRequestsScreen';
 import DocumentsScreen from '../documents/DocumentsScreen';
 import MyEnquiriesScreen from '../enquiries/MyEnquiriesScreen';
 import ContactUsScreen from '../enquiries/ContactUsScreen';
+import AboutScreen from '../about/AboutScreen';
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -18,6 +19,7 @@ export const ProfileNavigator: React.FC = () => (
     <Stack.Screen name="Documents" component={DocumentsScreen} />
     <Stack.Screen name="MyEnquiries" component={MyEnquiriesScreen} />
     <Stack.Screen name="ContactUs" component={ContactUsScreen} />
+    <Stack.Screen name="About" component={AboutScreen} />
   </Stack.Navigator>
 );
 

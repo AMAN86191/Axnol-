@@ -16,6 +16,7 @@ import {CatalogueStackParamList} from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
+import { formatPrice } from '../../utils/formatPrice';
 import { ALL_PRODUCTS } from '../home/homeData';
 import Button from '../../components/ui/Button';
 
@@ -53,6 +54,17 @@ const ProductGridCard: React.FC<{
     </View>
     <Text style={styles.gridName} numberOfLines={1}>{product.name}</Text>
     <Text style={styles.gridCode}>{product.code}</Text>
+    <View style={styles.gridPriceRow}>
+      <View style={styles.gridPriceMain}>
+        <Text style={styles.gridPrice}>{formatPrice(product.price)}</Text>
+        {product.unit ? (
+          <Text style={styles.gridUnit}> / {product.unit}</Text>
+        ) : null}
+      </View>
+      {product.mrp && product.mrp > product.price ? (
+        <Text style={styles.gridMrp}>{formatPrice(product.mrp)}</Text>
+      ) : null}
+    </View>
     <View style={styles.gridDivider} />
     <Button
       title="View Details"
@@ -78,7 +90,7 @@ export const ProductsScreen: React.FC = () => {
       : 'All',
   );
   const [search, setSearch] = useState(route.params?.search ?? '');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const filtered = ALL_PRODUCTS.filter(p => {
     const matchesSearch =
@@ -186,8 +198,14 @@ export const ProductsScreen: React.FC = () => {
                 </View>
               </View>
 
-              <View style={styles.chevronBox}>
-                <ChevronRight size={scale(17)} color="#94A3B8" />
+              <View style={styles.priceCol}>
+                <Text style={styles.price}>{formatPrice(item.price)}</Text>
+                {item.unit ? (
+                  <Text style={styles.priceUnit}>/ {item.unit}</Text>
+                ) : null}
+                {item.mrp && item.mrp > item.price ? (
+                  <Text style={styles.priceMrp}>{formatPrice(item.mrp)}</Text>
+                ) : null}
               </View>
             </TouchableOpacity>
           )}
@@ -331,14 +349,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   productName: {
-    fontSize: scale(14.5),
+    fontSize: scale(13.5),
     fontWeight: '700',
     color: '#0F172A',
     marginBottom: 2,
     letterSpacing: -0.2,
   },
   productSubtitle: {
-    fontSize: scale(12),
+    fontSize: scale(11),
     color: '#64748B',
     marginBottom: scale(8),
   },
@@ -357,8 +375,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
   },
-  chevronBox: {
-    paddingLeft: scale(6),
+  priceCol: {
+    alignItems: 'flex-end',
+    paddingLeft: scale(10),
+  },
+  price: {
+    fontSize: scale(15),
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: -0.3,
+  },
+  priceUnit: {
+    fontSize: scale(9.5),
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  priceMrp: {
+    fontSize: scale(10),
+    fontWeight: '600',
+    color: '#B0BEC5',
+    textDecorationLine: 'line-through',
+    marginTop: 1,
   },
 
   // Grid styles
@@ -407,6 +445,33 @@ const styles = StyleSheet.create({
     fontSize: scale(9.5),
     color: '#94A3B8',
     fontWeight: '600',
+  },
+  gridPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+       marginVertical: scale(5),
+  },
+  gridPriceMain: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  gridPrice: {
+   fontSize: scale(14),
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: -0.3,
+  },
+  gridUnit: {
+    fontSize: scale(9.5),
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  gridMrp: {
+    fontSize: scale(10),
+    fontWeight: '600',
+    color: '#B0BEC5',
+    textDecorationLine: 'line-through',
   },
   gridDivider: {
     height: 1,

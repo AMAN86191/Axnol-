@@ -697,6 +697,7 @@ const routes: Route[] = [
         'state',
         'pincode',
         'gstin',
+        'avatar',
       ] as const;
       editable.forEach(key => {
         if (typeof body?.[key] === 'string') {

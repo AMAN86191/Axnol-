@@ -7,25 +7,28 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   Building2,
-  ChevronDown,
   Hash,
   Map,
   MapPin,
   MessageSquare,
-  Package,
-  Wallet,
+  Minus,
+  Plus,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import Input from '../../components/ui/Input';
 import { colors, fontSize, radius, scale, spacing } from '../../theme';
+import { formatPrice } from '../../utils/formatPrice';
 import CommonHeader from '../../components/ui/CommonHeader';
+
+const MIN_QUANTITY = 1;
 
 export const PricingRequestsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -34,10 +37,20 @@ export const PricingRequestsScreen: React.FC = () => {
 
   const productName = route.params?.productName ?? 'Gear Oil AX-200';
   const category = route.params?.category ?? 'Extreme Pressure Gear Oil';
+  const price = route.params?.price as number | undefined;
+  const mrp = route.params?.mrp as number | undefined;
 
-  const [quantity, setQuantity] = useState('100');
-  const [unit, setUnit] = useState('Litre');
-  const [expectedPrice, setExpectedPrice] = useState('');
+  const availablePacks: string[] =
+    (route.params?.packSizes as string[] | undefined)?.length
+      ? (route.params.packSizes as string[])
+      : ['1L', '5L', '20L', '210L'];
+
+  const [quantity, setQuantity] = useState(
+    route.params?.quantity != null ? String(route.params.quantity) : '100',
+  );
+  const [packSize, setPackSize] = useState(
+    (route.params?.unit as string | undefined) ?? availablePacks[0],
+  );
   const [remark, setRemark] = useState('Need dealer price for our project');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
@@ -52,6 +65,19 @@ export const PricingRequestsScreen: React.FC = () => {
       delete next[key];
       return next;
     });
+
+  const adjustQuantity = (delta: number) => {
+    const current = Number(quantity);
+    const base = isNaN(current) ? 0 : Math.floor(current);
+    const next = Math.max(MIN_QUANTITY, base + delta);
+    setQuantity(String(next));
+    clearError('quantity');
+  };
+
+  const handleDecrement = () => adjustQuantity(-1);
+  const handleIncrement = () => adjustQuantity(1);
+
+  const canDecrement = !isNaN(Number(quantity)) && Number(quantity) > MIN_QUANTITY;
 
   const handleSubmit = () => {
     const e: Record<string, string> = {};
@@ -84,7 +110,7 @@ export const PricingRequestsScreen: React.FC = () => {
       .join(', ');
     Alert.alert(
       'Request Submitted',
-      `Your price request for ${productName} (${quantity} ${unit}) has been submitted successfully!${addressLine ? `\nDelivery to: ${addressLine}` : ''
+      `Your price request for ${productName} (${quantity} ${packSize}) has been submitted successfully!${addressLine ? `\nDelivery to: ${addressLine}` : ''
       }`,
       [
         {
@@ -124,6 +150,17 @@ export const PricingRequestsScreen: React.FC = () => {
           <View style={styles.productInfo}>
             <Text style={styles.productName}>{productName}</Text>
             <Text style={styles.productSubtitle}>{category}</Text>
+            {price != null ? (
+              <View style={styles.productPriceRow}>
+                <Text style={styles.productPrice}>{formatPrice(price)}</Text>
+                {packSize ? (
+                  <Text style={styles.productPriceUnit}> / {packSize}</Text>
+                ) : null}
+                {mrp != null && mrp > price ? (
+                  <Text style={styles.productPriceMrp}>{formatPrice(mrp)}</Text>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -131,46 +168,86 @@ export const PricingRequestsScreen: React.FC = () => {
         <View style={styles.formContainer}>
 
           {/* Required Quantity */}
-          <View style={styles.quantityRow}>
-            <Input
-              containerStyle={styles.quantityField}
-              keyboardType="numeric"
-              value={quantity}
-              onChangeText={v => {
-                setQuantity(v);
-                clearError('quantity');
-              }}
-              placeholder="100"
-              variant="clean"
-              label="Required Quantity"
-              leftIcon={Package}
-              required
-            />
-            <TouchableOpacity
-              style={styles.unitSelector}
-              activeOpacity={0.8}
-              onPress={() => {
-                setUnit(unit === 'Litre' ? 'Barrel' : unit === 'Barrel' ? 'Kg' : 'Litre');
-              }}>
-              <Text style={styles.unitText}>{unit}</Text>
-              <ChevronDown size={scale(16)} color="#64748B" />
-            </TouchableOpacity>
-          </View>
-          {errors.quantity ? (
-            <Text style={styles.errorText}>{errors.quantity}</Text>
-          ) : null}
+          <View style={styles.quantityBlock}>
+            <Text style={styles.qtyLabel}>
+              Required Quantity
+              <Text style={styles.requiredStar}> *</Text>
+            </Text>
 
-          {/* Expected Price (Optional) */}
-          <Input
-            label="Expected Price (Optional)"
-            placeholder="Enter expected price"
-            keyboardType="numeric"
-            variant="clean"
-            leftIcon={Wallet}
-            value={expectedPrice}
-            onChangeText={setExpectedPrice}
-            containerStyle={styles.field}
-          />
+            <View style={styles.quantityRow}>
+              <View
+                style={[
+                  styles.stepper,
+                  errors.quantity ? styles.stepperError : null,
+                ]}>
+                <TouchableOpacity
+                  style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
+                  activeOpacity={0.7}
+                  disabled={!canDecrement}
+                  onPress={handleDecrement}>
+                  <Minus
+                    size={scale(18)}
+                    color={canDecrement ? '#0F172A' : '#CBD5E1'}
+                    strokeWidth={2.5}
+                  />
+                </TouchableOpacity>
+
+                <TextInput
+                  style={styles.stepValue}
+                  value={quantity}
+                  onChangeText={v => {
+                    setQuantity(v.replace(/[^0-9]/g, ''));
+                    clearError('quantity');
+                  }}
+                  keyboardType="numeric"
+                  maxLength={7}
+                  selectTextOnFocus
+                  placeholder="0"
+                  placeholderTextColor="#94A3B8"
+                />
+
+                <TouchableOpacity
+                  style={styles.stepBtn}
+                  activeOpacity={0.7}
+                  onPress={handleIncrement}>
+                  <Plus size={scale(18)} color="#0F172A" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
+
+              
+            </View>
+
+            {errors.quantity ? (
+              <Text style={styles.errorText}>{errors.quantity}</Text>
+            ) : null}
+          </View>
+
+          {/* Available Pack Sizes */}
+          <View style={styles.packBlock}>
+            <Text style={styles.qtyLabel}>Pack Size</Text>
+            <View style={styles.packRow}>
+              {availablePacks.map(size => {
+                const selected = size === packSize;
+                return (
+                  <TouchableOpacity
+                    key={size}
+                    style={[styles.packPill, selected && styles.packPillSelected]}
+                    activeOpacity={0.8}
+                    onPress={() => setPackSize(size)}>
+                    <Text
+                      style={[
+                        styles.packPillText,
+                        selected && styles.packPillTextSelected,
+                      ]}>
+                      {size}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+        
 
           {/* Remark (Optional) */}
           <Input
@@ -323,6 +400,29 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 2,
   },
+  productPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: scale(5),
+  },
+  productPrice: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: -0.3,
+  },
+  productPriceUnit: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  productPriceMrp: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: '#B0BEC5',
+    textDecorationLine: 'line-through',
+    marginLeft: scale(7),
+  },
   formContainer: {
     gap: spacing.lg,
   },
@@ -346,14 +446,59 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 0,
   },
+  quantityBlock: {
+    gap: 0,
+  },
+  qtyLabel: {
+    fontSize: scale(13),
+    fontWeight: '600',
+    color: '#1E293B',
+    marginBottom: scale(6),
+  },
+  requiredStar: {
+    color: '#EF4444',
+    fontWeight: '700',
+  },
   quantityRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     gap: spacing.md,
   },
-  quantityField: {
+  stepper: {
     flex: 1,
-    marginBottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: scale(46),
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.md,
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  stepperError: {
+    borderColor: colors.danger,
+  },
+  stepBtn: {
+    width: scale(46),
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnDisabled: {
+    opacity: 0.55,
+  },
+  stepValue: {
+    flex: 1,
+    height: '100%',
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    fontSize: scale(15),
+    fontWeight: '700',
+    color: '#0F172A',
+    paddingVertical: 0,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#EEF2F6',
   },
   unitSelector: {
     width: scale(110),
@@ -377,6 +522,43 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     fontWeight: '500',
     color: colors.danger,
+  },
+  packBlock: {
+    gap: 0,
+  },
+  packRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  packPill: {
+    minWidth: scale(72),
+    height: scale(40),
+    paddingHorizontal: scale(16),
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#CBD5E1',
+  },
+  packPillSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  packPillText: {
+    fontSize: scale(13),
+    fontWeight: '600',
+    color: '#475569',
+  },
+  packPillTextSelected: {
+    color: colors.primary,
+    fontWeight: '800',
   },
   submitBtn: {
     height: scale(48),

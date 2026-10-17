@@ -16,6 +16,7 @@ export interface User {
   state: string;
   pincode: string;
   gstin: string;
+  avatar?: string;
   status: AccountStatus;
   profileCompleted: boolean;
   registeredAt: number;

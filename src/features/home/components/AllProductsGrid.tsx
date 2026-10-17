@@ -3,6 +3,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {ArrowRight, Heart} from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
 import {colors, scale} from '../../../theme';
+import {formatPrice} from '../../../utils/formatPrice';
 import {HomeProduct} from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 import Button from '../../../components/ui/Button';
@@ -55,6 +56,18 @@ const ProductGridCard: React.FC<{
       {product.name}
     </Text>
     <Text style={styles.code}>{product.code}</Text>
+
+    <View style={styles.priceRow}>
+      <View style={styles.priceMain}>
+        <Text style={styles.price}>{formatPrice(product.price)}</Text>
+        {product.unit ? (
+          <Text style={styles.unit}> / {product.unit}</Text>
+        ) : null}
+      </View>
+      {product.mrp && product.mrp > product.price ? (
+        <Text style={styles.mrp}>{formatPrice(product.mrp)}</Text>
+      ) : null}
+    </View>
 
     <View style={styles.divider} />
 
@@ -185,6 +198,34 @@ const styles = StyleSheet.create({
       color: '#94A3B8',
       fontWeight: '600',
       // marginBottom: scale(10),
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: scale(7),
+    marginBottom: scale(9),
+  },
+  priceMain: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  price: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: -0.3,
+  },
+  unit: {
+    fontSize: scale(9.5),
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  mrp: {
+    fontSize: scale(10),
+    fontWeight: '600',
+    color: '#B0BEC5',
+    textDecorationLine: 'line-through',
   },
   divider: {
      height: 1,

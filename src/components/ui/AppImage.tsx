@@ -15,7 +15,13 @@ export const AppImage: React.FC<AppImageProps> = ({
   resizeMode = 'cover',
   ...rest
 }) => {
-  const source = uri?.startsWith('http') ? {uri} : resolveImage(uri);
+  const isRemote =
+    !!uri &&
+    (uri.startsWith('http') ||
+      uri.startsWith('file://') ||
+      uri.startsWith('content://') ||
+      uri.startsWith('data:'));
+  const source = isRemote ? {uri: uri as string} : resolveImage(uri);
   if (!source) {
     return <View style={[style, styles.fallback]} />;
   }

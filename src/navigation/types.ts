@@ -32,7 +32,19 @@ export type CatalogueStackParamList = {
   Industries: undefined;
   Categories: {industryId: string; industryName: string};
   SubCategories: {categoryId: string; categoryName: string; industryId: string};
-  RequestPrice: {productId?: string; productName?: string; productImage?: string; category?: string} | undefined;
+  RequestPrice:
+    | {
+        productId?: string;
+        productName?: string;
+        productImage?: string;
+        category?: string;
+        price?: number;
+        mrp?: number;
+        unit?: string;
+        quantity?: number;
+        packSizes?: string[];
+      }
+    | undefined;
 };
 
 export type OrdersStackParamList = {
@@ -48,10 +60,13 @@ export type ProfileStackParamList = {
   Documents: undefined;
   MyEnquiries: undefined;
   ContactUs: undefined;
+  About: undefined;
 };
 
 export type MainDrawerParamList = {
   HomeTabs: NavigatorScreenParams<MainTabParamList>;
+  TermsConditions: undefined;
+  PrivacyPolicy: undefined;
 };
 
 export type RootStackParamList = {

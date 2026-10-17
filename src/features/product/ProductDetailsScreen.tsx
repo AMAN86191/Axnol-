@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   ScrollView,
   StatusBar,
@@ -12,16 +11,20 @@ import {
   ViewToken,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { FileText, Heart, ShieldCheck } from 'lucide-react-native';
+import { ArrowRight, Heart, Minus, Plus, ShieldCheck } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogueStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
+import { formatPrice } from '../../utils/formatPrice';
+import Button from '../../components/ui/Button';
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
 
 const { width: SCREEN_W } = Dimensions.get('window');
+
+const MIN_QUANTITY = 1;
 
 export const ProductDetailsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -29,8 +32,14 @@ export const ProductDetailsScreen: React.FC = () => {
   const route = useRoute<Route>();
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
   const [selectedPack, setSelectedPack] = useState('20L');
+  const [quantity, setQuantity] = useState(MIN_QUANTITY);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+
+  const adjustQuantity = (delta: number) =>
+    setQuantity(q => Math.max(MIN_QUANTITY, q + delta));
+
+  const canDecrement = quantity > MIN_QUANTITY;
 
   const onViewableItemsChanged = useRef((info: { viewableItems: ViewToken[] }) => {
     const item = info.viewableItems[0];
@@ -49,6 +58,9 @@ export const ProductDetailsScreen: React.FC = () => {
     description:
       'High-performance gear oil designed for industrial gear systems with excellent wear protection and thermal stability. Delivers prolonged machinery life and reduces friction.',
     packSizes: ['1L', '5L', '20L', '210L'],
+    price: 3200,
+    mrp: 3600,
+    unit: '20L',
     specs: [
       { label: 'Viscosity Grade', value: 'ISO VG 220' },
       { label: 'Flash Point', value: '230°C' },
@@ -57,6 +69,11 @@ export const ProductDetailsScreen: React.FC = () => {
       { label: 'Copper Corrosion', value: '1a (ASTM D130)' },
     ],
   };
+
+  const discount =
+    product.mrp > product.price
+      ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
+      : 0;
 
   return (
     <View style={styles.container}>
@@ -119,6 +136,7 @@ export const ProductDetailsScreen: React.FC = () => {
         <View style={styles.bodyContent}>
           <Text style={styles.productName}>{product.name}</Text>
           <Text style={styles.productSubtitle}>{product.subtitle}</Text>
+
 
           {/* Tags */}
           <View style={styles.tagsRow}>
@@ -202,24 +220,83 @@ export const ProductDetailsScreen: React.FC = () => {
               })}
             </View>
           </View>
+
+          {/* Quantity */}
+          <View style={styles.qtySection}>
+            <View style={styles.qtyInfo}>
+              <Text style={styles.qtyTitle}>Quantity</Text>
+              <Text style={styles.qtyHint}>Select number of packs</Text>
+            </View>
+
+            <View style={styles.stepper}>
+              <TouchableOpacity
+                style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
+                activeOpacity={0.7}
+                disabled={!canDecrement}
+                onPress={() => adjustQuantity(-1)}>
+                <Minus
+                  size={scale(17)}
+                  color={canDecrement ? '#0F172A' : '#CBD5E1'}
+                  strokeWidth={2.5}
+                />
+              </TouchableOpacity>
+
+              <View style={styles.stepValueWrap}>
+                <Text style={styles.stepValue}>{quantity}</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.stepBtn}
+                activeOpacity={0.7}
+                onPress={() => adjustQuantity(1)}>
+                <Plus size={scale(17)} color="#0F172A" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Action Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
-        <TouchableOpacity
-          style={styles.addRequestBtn}
-          activeOpacity={0.85}
+      {/* Sticky Bottom Checkout Bar */}
+      <View
+        style={[styles.bottomBar, { paddingBottom: scale(10) + insets.bottom }]}>
+        <View style={styles.bottomPriceCol}>
+          <View style={styles.bottomPriceRow}>
+            <Text style={styles.bottomPrice}>{formatPrice(product.price)}</Text>
+            {product.unit ? (
+              <Text style={styles.bottomUnit}>/ {product.unit}</Text>
+            ) : null}
+          </View>
+
+          <View style={styles.bottomMetaRow}>
+            {discount > 0 && (
+              <Text style={styles.bottomMrp}>{formatPrice(product.mrp)}</Text>
+            )}
+            {discount > 0 && (
+              <View style={styles.bottomDiscountBadge}>
+                <Text style={styles.bottomDiscountText}>{discount}% OFF</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <Button
+          title='Check Out'
+          variant='outline'
+          size='medium'
+          style={styles.checkoutBtn}
           onPress={() =>
             navigation.navigate('RequestPrice', {
               productId: product.id,
               productName: product.name,
               category: product.subtitle,
-            })}>
-          <Text style={styles.addRequestText}>Check Out</Text>
-        </TouchableOpacity>
-
-
+              price: product.price,
+              mrp: product.mrp,
+              unit: selectedPack,
+              quantity,
+              packSizes: product.packSizes,
+            })}
+            textStyle={styles.checkoutText}
+            iconRight={<ArrowRight size={scale(14)} color={colors.primary} strokeWidth={3.5} />}
+        />
       </View>
     </View>
   );
@@ -291,6 +368,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: spacing.md,
   },
+ 
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -390,13 +468,15 @@ const styles = StyleSheet.create({
   },
   packRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
   },
   packPill: {
-    flex: 1,
+    minWidth: scale(72),
+    height: scale(40),
+    paddingHorizontal: scale(16),
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: scale(10),
     borderRadius: radius.md,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.2,
@@ -420,6 +500,60 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '800',
   },
+  qtySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xl,
+  },
+  qtyInfo: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  qtyTitle: {
+    fontSize: scale(13),
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  qtyHint: {
+    fontSize: scale(11),
+    color: '#94A3B8',
+    marginTop: scale(2),
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: scale(44),
+    borderRadius: radius.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  stepBtn: {
+    width: scale(42),
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepBtnDisabled: {
+    opacity: 0.55,
+  },
+  stepValueWrap: {
+    minWidth: scale(44),
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#EEF2F6',
+    paddingHorizontal: scale(4),
+  },
+  stepValue: {
+    fontSize: scale(15),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -427,33 +561,71 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
-    paddingTop: scale(12),
+    paddingTop: scale(10),
+    paddingBottom: scale(10),
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.05,
+    borderTopColor: '#EAEFF5',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
   },
-  addRequestBtn: {
+  bottomPriceCol: {
     flex: 1,
-    height: scale(40),
-    borderRadius: radius.pill,
-    borderWidth: 1.8,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    marginRight: spacing.md,
   },
-  addRequestText: {
-    fontSize: scale(13.5),
+  bottomPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  bottomPrice: {
+    fontSize: scale(18),
     fontWeight: '700',
-    color: colors.primary,
-  }
+    color: '#102A43',
+    letterSpacing: -0.5,
+  },
+  bottomUnit: {
+    fontSize: scale(11),
+    fontWeight: '600',
+    color: '#94A3B8',
+    marginLeft: scale(4),
+  },
+  bottomMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: scale(2),
+    gap: scale(6),
+  },
+  bottomMrp: {
+    fontSize: scale(11.5),
+    fontWeight: '600',
+    color: '#94A3B8',
+    textDecorationLine: 'line-through',
+  },
+  bottomDiscountBadge: {
+    backgroundColor: '#E7F6EE',
+    borderRadius: radius.xs,
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(1),
+  },
+  bottomDiscountText: {
+    fontSize: scale(9.5),
+    fontWeight: '800',
+    color: '#0B7A3B',
+    letterSpacing: 0.2,
+  },
+  checkoutBtn: {
+    width: '50%'
+  },
+  checkoutText: {
+    fontSize: scale(14),
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
 });
 
 export default ProductDetailsScreen;

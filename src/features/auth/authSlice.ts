@@ -1,6 +1,7 @@
 import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {SafeUser} from '../../api/types';
 import {authApi} from '../../api/services/authApi';
+import {profileApi} from '../../api/services/profileApi';
 
 export interface AuthState {
   token: string | null;
@@ -56,7 +57,13 @@ const authSlice = createSlice({
       .addMatcher(authApi.endpoints.logout.matchFulfilled, state => {
         state.token = null;
         state.user = null;
-      });
+      })
+      .addMatcher(
+        profileApi.endpoints.updateProfile.matchFulfilled,
+        (state, action) => {
+          state.user = action.payload;
+        },
+      );
   },
 });
 

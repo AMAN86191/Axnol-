@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, {memo, useCallback, useMemo} from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,67 +7,104 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import {
   createDrawerNavigator,
   DrawerContentComponentProps,
 } from '@react-navigation/drawer';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
+  ChevronRight,
   Factory,
+  HelpCircle,
   Home,
+  Info,
   LucideIcon,
   Package,
+  Pencil,
   Receipt,
+  ScrollText,
+  ShieldCheck,
   UserRound,
-  ChevronRight,
 } from 'lucide-react-native';
 
 import AppImage from '../components/ui/AppImage';
-import { scale } from '../theme';
-import { MainDrawerParamList, MainTabParamList } from './types';
+import {colors, radius, scale, spacing, fontSize} from '../theme';
+import {useAppSelector} from '../store';
+import {
+  MainDrawerParamList,
+  MainTabParamList,
+  ProfileStackParamList,
+} from './types';
 import MainTabs from './MainTabs';
+import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
+import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
 
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
 
-const COLORS = {
-  primaryNavy: '#0B3D68',
-  primaryNavyDark: '#082E50',
-  secondaryBlue: '#1261A0',
-  background: '#FFFFFF',
-  activeBackground: '#EAF3FB',
-  activeIndicator: '#0B3D68',
-  iconContainerInactive: '#EAF3FB',
-  iconContainerActive: '#FFFFFF',
-  text: '#172338',
-  secondaryText: '#7B8798',
+const PALETTE = {
+  background: '#F8FAFC',
+  surface: colors.surface,
+  border: '#E8EEF4',
+  borderLight: '#EEF2F6',
+  text: '#0F172A',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  eyebrow: '#0284C7',
+  iconBadge: '#F1F5F9',
   iconInactive: '#5A7CA8',
-  iconActive: '#0B3D68',
-  divider: '#EDF1F5',
-  versionText: '#9AA4B2',
-  overlay: 'rgba(11, 61, 104, 0.45)',
+  activeBg: '#EFF6FF',
+  activeBorder: '#DBEAFE',
+  overlay: 'rgba(8, 30, 54, 0.5)',
 };
 
 const VERSION = 'Axnol · v1.0.0';
 
-interface SidebarLink {
-  key: keyof MainTabParamList;
+interface DrawerLink {
+  key: string;
   label: string;
   icon: LucideIcon;
 }
 
-const LINKS: SidebarLink[] = [
-  { key: 'Home', label: 'Home', icon: Home },
-  { key: 'Products', label: 'Products', icon: Package },
-  { key: 'Orders', label: 'Orders', icon: Receipt },
-  { key: 'Industry', label: 'Industry', icon: Factory },
-  { key: 'Profile', label: 'Profile', icon: UserRound },
+const LINKS: DrawerLink[] = [
+  {key: 'Home', label: 'Home', icon: Home},
+  {key: 'Products', label: 'Products', icon: Package},
+  {key: 'Orders', label: 'Orders', icon: Receipt},
+  {key: 'Industry', label: 'Industry', icon: Factory},
+  {key: 'Profile', label: 'Profile', icon: UserRound},
+];
+
+type ProfileKey = keyof ProfileStackParamList;
+
+interface ProfileLink {
+  key: ProfileKey;
+  label: string;
+  icon: LucideIcon;
+}
+
+const ACCOUNT_LINKS: ProfileLink[] = [
+  {key: 'EditProfile', label: 'Edit Profile', icon: Pencil},
+  {key: 'ContactUs', label: 'Help & Support', icon: HelpCircle},
+  {key: 'About', label: 'About Us', icon: Info},
+];
+
+type LegalKey = 'TermsConditions' | 'PrivacyPolicy';
+
+interface LegalLink {
+  key: LegalKey;
+  label: string;
+  icon: LucideIcon;
+}
+
+const LEGAL_LINKS: LegalLink[] = [
+  {key: 'TermsConditions', label: 'Terms & Conditions', icon: ScrollText},
+  {key: 'PrivacyPolicy', label: 'Privacy Policy', icon: ShieldCheck},
 ];
 
 type DrawerRoute = {
+  name?: string;
   state?: {
     index?: number;
-    routes?: Array<{ name: string }>;
+    routes?: Array<{name: string}>;
   };
 };
 
@@ -75,6 +112,11 @@ const getActiveTab = (
   state: DrawerContentComponentProps['state'],
 ): string => {
   const route = state.routes[state.index] as DrawerRoute | undefined;
+
+  if (route?.name && route.name !== 'HomeTabs') {
+    return route.name;
+  }
+
   const nestedState = route?.state;
 
   if (!nestedState?.routes?.length) {
@@ -85,37 +127,32 @@ const getActiveTab = (
 };
 
 interface NavigationItemProps {
-  item: SidebarLink;
+  item: DrawerLink;
   active: boolean;
   onPress: () => void;
 }
 
 const NavigationItem = memo(
-  ({ item, active, onPress }: NavigationItemProps) => {
+  ({item, active, onPress}: NavigationItemProps) => {
     const Icon = item.icon;
 
     return (
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={item.label}
-        accessibilityState={{ selected: active }}
-        activeOpacity={0.72}
+        accessibilityState={{selected: active}}
+        activeOpacity={0.75}
         onPress={onPress}
-        style={[
-          styles.navigationItem,
-          active && styles.navigationItemActive,
-        ]}>
-        {active && <View style={styles.activeIndicator} />}
-
+        style={[styles.navigationItem, active && styles.navigationItemActive]}>
         <View
           style={[
             styles.iconContainer,
             active && styles.iconContainerActive,
           ]}>
           <Icon
-            size={scale(21)}
-            color={active ? COLORS.iconActive : COLORS.iconInactive}
-            strokeWidth={active ? 2.2 : 1.8}
+            size={scale(18)}
+            color={active ? colors.textInverse : PALETTE.iconInactive}
+            strokeWidth={active ? 2.3 : 1.9}
           />
         </View>
 
@@ -131,8 +168,8 @@ const NavigationItem = memo(
         {active && (
           <ChevronRight
             size={scale(17)}
-            color={COLORS.primaryNavy}
-            strokeWidth={2}
+            color={colors.primary}
+            strokeWidth={2.4}
           />
         )}
       </TouchableOpacity>
@@ -148,10 +185,35 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const activeKey = getActiveTab(state);
+  const {user} = useAppSelector(s => s.auth);
 
-  const handleNavigate = useCallback(
-    (key: keyof MainTabParamList) => {
-      navigation.navigate('HomeTabs', { screen: key });
+  const name = user?.name ?? 'Rahul Sharma';
+  const company = user?.company ?? 'Sharma Auto Traders';
+
+  const handleTabNavigate = useCallback(
+    (key: string) => {
+      navigation.navigate('HomeTabs', {
+        screen: key as keyof MainTabParamList,
+      });
+      navigation.closeDrawer();
+    },
+    [navigation],
+  );
+
+  const handleProfileNavigate = useCallback(
+    (screen: ProfileKey) => {
+      navigation.navigate('HomeTabs', {
+        screen: 'Profile',
+        params: {screen},
+      });
+      navigation.closeDrawer();
+    },
+    [navigation],
+  );
+
+  const handleLegalNavigate = useCallback(
+    (key: LegalKey) => {
+      navigation.navigate(key);
       navigation.closeDrawer();
     },
     [navigation],
@@ -168,16 +230,12 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Brand header */}
-      <LinearGradient
-        colors={[COLORS.primaryNavyDark, COLORS.primaryNavy]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0.8 }}
-        style={[
-          styles.brandHeader,
-          { paddingTop: insets.top + scale(18) },
-        ]}>
-        <View style={styles.brandTopRow}>
+      {/* Header */}
+      <View style={[styles.header, {paddingTop: insets.top + scale(20)}]}>
+        <View style={styles.blobOne} />
+        <View style={styles.blobTwo} />
+
+        <View style={styles.brandRow}>
           <View style={styles.logoBadge}>
             <AppImage
               uri="axnol_round_logo"
@@ -187,13 +245,32 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
           </View>
 
           <View style={styles.brandIdentity}>
+            <Text style={styles.brandEyebrow}>SINCE 1959</Text>
             <Text style={styles.brandName}>AXNOL</Text>
-            <Text style={styles.brandTag}>
-              Industrial Lubricants
-            </Text>
+            <Text style={styles.brandTag}>Industrial Lubricants</Text>
           </View>
         </View>
-      </LinearGradient>
+
+        {/* Signed-in user */}
+        <View style={styles.userCard}>
+          <View style={styles.userAvatarRing}>
+            <AppImage
+              uri={user?.avatar ?? 'user_avatar'}
+              style={styles.userAvatar}
+              resizeMode="cover"
+            />
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={styles.userName} numberOfLines={1}>
+              {name}
+            </Text>
+            <Text style={styles.userCompany} numberOfLines={1}>
+              {company}
+            </Text>
+          </View>
+          <ChevronRight size={scale(16)} color={PALETTE.textMuted} strokeWidth={2} />
+        </View>
+      </View>
 
       {/* Navigation */}
       <ScrollView
@@ -207,7 +284,33 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
               key={item.key}
               item={item}
               active={item.active}
-              onPress={() => handleNavigate(item.key)}
+              onPress={() => handleTabNavigate(item.key)}
+            />
+          ))}
+        </View>
+
+        {/* Account */}
+        <View style={styles.sectionGroup}>
+          <Text style={styles.sectionHeading}>Account</Text>
+          {ACCOUNT_LINKS.map(item => (
+            <NavigationItem
+              key={item.key}
+              item={item}
+              active={activeKey === item.key}
+              onPress={() => handleProfileNavigate(item.key)}
+            />
+          ))}
+        </View>
+
+        {/* Legal */}
+        <View style={styles.sectionGroup}>
+          <Text style={styles.sectionHeading}>Legal</Text>
+          {LEGAL_LINKS.map(item => (
+            <NavigationItem
+              key={item.key}
+              item={item}
+              active={item.key === activeKey}
+              onPress={() => handleLegalNavigate(item.key)}
             />
           ))}
         </View>
@@ -217,26 +320,22 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
       <View
         style={[
           styles.footer,
-          { paddingBottom: Math.max(insets.bottom, scale(12)) },
+          {paddingBottom: Math.max(insets.bottom, scale(14))},
         ]}>
-        <View style={styles.footerDivider} />
         <Text style={styles.version}>{VERSION}</Text>
       </View>
     </View>
   );
 };
 
-const renderDrawerContent = (
-  props: DrawerContentComponentProps,
-) => <SidebarContent {...props} />;
+const renderDrawerContent = (props: DrawerContentComponentProps) => (
+  <SidebarContent {...props} />
+);
 
 export const MainDrawer: React.FC = () => {
-  const { width } = useWindowDimensions();
+  const {width} = useWindowDimensions();
 
-  const drawerWidth = Math.min(
-    width * 0.8,
-    scale(320),
-  );
+  const drawerWidth = Math.min(width * 0.82, scale(324));
 
   return (
     <Drawer.Navigator
@@ -245,19 +344,21 @@ export const MainDrawer: React.FC = () => {
         headerShown: false,
         drawerType: 'front',
         swipeEdgeWidth: scale(48),
-        overlayColor: COLORS.overlay,
+        overlayColor: PALETTE.overlay,
         drawerStyle: {
           width: drawerWidth,
-          backgroundColor: COLORS.background,
+          backgroundColor: PALETTE.background,
         },
         sceneStyle: {
-          backgroundColor: COLORS.background,
+          backgroundColor: PALETTE.background,
         },
       }}>
+      <Drawer.Screen name="HomeTabs" component={MainTabs} />
       <Drawer.Screen
-        name="HomeTabs"
-        component={MainTabs}
+        name="TermsConditions"
+        component={TermsConditionsScreen}
       />
+      <Drawer.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </Drawer.Navigator>
   );
 };
@@ -265,55 +366,132 @@ export const MainDrawer: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: PALETTE.background,
   },
 
-  // Brand
-  brandHeader: {
-    paddingHorizontal: scale(22),
-    paddingBottom: scale(16),
-    borderBottomLeftRadius: scale(24),
-    borderBottomRightRadius: scale(24),
+  // Header
+  header: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.lg,
+    backgroundColor: PALETTE.surface,
+    borderBottomLeftRadius: radius.xxl,
+    borderBottomRightRadius: radius.xxl,
+    borderBottomWidth: 1,
+    borderBottomColor: PALETTE.borderLight,
+    overflow: 'hidden',
   },
 
-  brandTopRow: {
+  blobOne: {
+    position: 'absolute',
+    top: -scale(60),
+    right: -scale(40),
+    width: scale(160),
+    height: scale(160),
+    borderRadius: scale(80),
+    backgroundColor: 'rgba(10, 77, 140, 0.06)',
+  },
+
+  blobTwo: {
+    position: 'absolute',
+    bottom: -scale(70),
+    left: -scale(40),
+    width: scale(150),
+    height: scale(150),
+    borderRadius: scale(75),
+    backgroundColor: 'rgba(245, 166, 35, 0.08)',
+  },
+
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
 
   logoBadge: {
-    width: scale(64),
-    height: scale(64),
-    borderRadius: scale(32),
-    backgroundColor: '#FFFFFF',
+    width: scale(56),
+    height: scale(56),
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)',
+    borderColor: PALETTE.border,
   },
 
   logo: {
-    width: scale(46),
-    height: scale(46),
+    width: scale(40),
+    height: scale(40),
   },
 
   brandIdentity: {
     flex: 1,
-    marginLeft: scale(15),
+    marginLeft: spacing.md,
+  },
+
+  brandEyebrow: {
+    fontSize: fontSize.xs,
+    fontWeight: '800',
+    letterSpacing: 1.4,
+    color: PALETTE.eyebrow,
   },
 
   brandName: {
-    fontSize: scale(22),
+    fontSize: scale(21),
     fontWeight: '800',
     letterSpacing: 1.2,
-    color: '#FFFFFF',
+    color: PALETTE.text,
+    marginTop: scale(1),
   },
 
   brandTag: {
     fontSize: scale(11.5),
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.78)',
-    marginTop: scale(4),
+    color: PALETTE.textSecondary,
+    marginTop: scale(1),
+  },
+
+  userCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.xl,
+    backgroundColor: PALETTE.surface,
+    borderWidth: 1,
+    borderColor: PALETTE.border,
+  },
+
+  userAvatarRing: {
+    width: scale(42),
+    height: scale(42),
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.primaryLight,
+    backgroundColor: colors.surfaceAlt,
+  },
+
+  userAvatar: {
+    width: '100%',
+    height: '100%',
+  },
+
+  userInfo: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+
+  userName: {
+    fontSize: scale(13.5),
+    fontWeight: '700',
+    color: PALETTE.text,
+  },
+
+  userCompany: {
+    fontSize: scale(11),
+    fontWeight: '500',
+    color: PALETTE.textSecondary,
+    marginTop: scale(2),
   },
 
   // Menu
@@ -322,87 +500,87 @@ const styles = StyleSheet.create({
   },
 
   menuContent: {
-    paddingHorizontal: scale(14),
-    paddingTop: scale(22),
-    paddingBottom: scale(18),
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
   },
 
   navigationGroup: {
-    gap: scale(6),
+    gap: scale(5),
+  },
+
+  sectionGroup: {
+    marginTop: spacing.xl,
+    gap: scale(5),
+  },
+
+  sectionHeading: {
+    fontSize: scale(10.5),
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    color: PALETTE.textMuted,
+    paddingHorizontal: spacing.sm,
+    marginBottom: scale(4),
   },
 
   navigationItem: {
-    minHeight: scale(40),
+    minHeight: scale(48),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: scale(12),
-    paddingVertical: scale(4),
-    borderRadius: scale(13),
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: 'transparent',
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
   },
 
   navigationItemActive: {
-    backgroundColor: COLORS.activeBackground,
-    borderColor: '#DCEAF7',
-  },
-
-  activeIndicator: {
-    position: 'absolute',
-    left: 0,
-    top: scale(10),
-    bottom: scale(10),
-    width: scale(3),
-    borderTopRightRadius: scale(3),
-    borderBottomRightRadius: scale(3),
-    backgroundColor: COLORS.activeIndicator,
+    backgroundColor: PALETTE.activeBg,
+    borderColor: PALETTE.activeBorder,
   },
 
   iconContainer: {
-    width: scale(32),
-    height: scale(32),
-    borderRadius: scale(11),
-    backgroundColor: COLORS.iconContainerInactive,
+    width: scale(34),
+    height: scale(34),
+    borderRadius: radius.md,
+    backgroundColor: PALETTE.iconBadge,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: scale(14),
+    marginRight: spacing.md,
   },
 
   iconContainerActive: {
-    backgroundColor: COLORS.iconContainerActive,
+    backgroundColor: colors.primary,
   },
 
   navigationLabel: {
     flex: 1,
-    fontSize: scale(14.5),
+    fontSize: scale(14),
     fontWeight: '600',
-    color: COLORS.text,
+    color: PALETTE.textSecondary,
     letterSpacing: 0.1,
   },
 
   navigationLabelActive: {
     fontWeight: '700',
-    color: COLORS.primaryNavy,
+    color: colors.primary,
   },
 
   // Footer
   footer: {
-    paddingHorizontal: scale(20),
-    paddingTop: scale(12),
-  },
-
-  footerDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: COLORS.divider,
-    marginBottom: scale(14),
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: PALETTE.borderLight,
   },
 
   version: {
     textAlign: 'center',
     fontSize: scale(10.5),
     fontWeight: '500',
-    color: COLORS.versionText,
+    color: PALETTE.textMuted,
     letterSpacing: 0.2,
   },
 });

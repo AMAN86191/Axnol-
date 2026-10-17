@@ -5,6 +5,7 @@ import {ArrowRight, Heart} from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
 import Button from '../../../components/ui/Button';
 import {colors, scale} from '../../../theme';
+import {formatPrice} from '../../../utils/formatPrice';
 import {HomeProduct} from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 
@@ -70,6 +71,18 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
             <Text style={styles.code} numberOfLines={1}>
               {prod.code}
             </Text>
+
+            <View style={styles.priceRow}>
+              <View style={styles.priceMain}>
+                <Text style={styles.price}>{formatPrice(prod.price)}</Text>
+                {prod.unit ? (
+                  <Text style={styles.unit}> / {prod.unit}</Text>
+                ) : null}
+              </View>
+              {prod.mrp && prod.mrp > prod.price ? (
+                <Text style={styles.mrp}>{formatPrice(prod.mrp)}</Text>
+              ) : null}
+            </View>
 
             <View style={styles.divider} />
 
@@ -163,6 +176,33 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     fontWeight: '600',
     // marginBottom: scale(10),
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginVertical: scale(5),
+  },
+  priceMain: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  price: {
+    fontSize: scale(14),
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: -0.3,
+  },
+  unit: {
+    fontSize: scale(9.5),
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  mrp: {
+    fontSize: scale(10),
+    fontWeight: '600',
+    color: '#B0BEC5',
+    textDecorationLine: 'line-through',
   },
   divider: {
     height: 1,

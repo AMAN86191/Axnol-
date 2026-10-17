@@ -2,48 +2,76 @@ import React, {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {
+  ArrowRight,
+  Building2,
+  Camera,
+  ChevronLeft,
+  Hash,
+  Map,
+  MapPin,
+  Percent,
+  Phone,
+  ShieldCheck,
+  User,
+} from 'lucide-react-native';
+import {
+  CameraOptions,
+  ImageLibraryOptions,
+  ImagePickerResponse,
+  launchCamera,
+  launchImageLibrary,
+} from 'react-native-image-picker';
 import {
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from '../../api/services/profileApi';
 import Button from '../../components/ui/Button';
-import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
-import CommonHeader from '../../components/ui/CommonHeader';
-import SectionHeader from '../../components/ui/SectionHeader';
-import {colors, spacing} from '../../theme';
+import AppImage from '../../components/ui/AppImage';
+import images from '../../assets/images';
+import {colors, fontSize, radius, scale, spacing} from '../../theme';
 
 type FormState = {
   name: string;
   phone: string;
-  designation: string;
   company: string;
   gstin: string;
   address: string;
   city: string;
   state: string;
   pincode: string;
+  avatar: string;
 };
 
 const EMPTY_FORM: FormState = {
   name: '',
   phone: '',
-  designation: '',
   company: '',
   gstin: '',
   address: '',
   city: '',
   state: '',
   pincode: '',
+  avatar: '',
 };
 
 export const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
   const {data, isLoading} = useGetProfileQuery();
   const [updateProfile, {isLoading: saving}] = useUpdateProfileMutation();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -53,19 +81,63 @@ export const EditProfileScreen: React.FC = () => {
       setForm({
         name: data.name ?? '',
         phone: data.phone ?? '',
-        designation: data.designation ?? '',
         company: data.company ?? '',
         gstin: data.gstin ?? '',
         address: data.address ?? '',
         city: data.city ?? '',
         state: data.state ?? '',
         pincode: data.pincode ?? '',
+        avatar: data.avatar ?? '',
       });
     }
   }, [data]);
 
   const setField = (key: keyof FormState) => (value: string) =>
     setForm(prev => ({...prev, [key]: value}));
+
+  const openPicker = async (
+    launcher: (
+      options: CameraOptions & ImageLibraryOptions,
+    ) => Promise<ImagePickerResponse>,
+  ) => {
+    try {
+      const result = await launcher({
+        mediaType: 'photo',
+        quality: 0.8,
+        selectionLimit: 1,
+        maxWidth: 800,
+        maxHeight: 800,
+        includeBase64: false,
+      });
+      if (result.didCancel) {
+        return;
+      }
+      if (result.errorCode) {
+        Alert.alert(
+          'Image error',
+          result.errorMessage ?? 'Could not open the image picker.',
+        );
+        return;
+      }
+      const asset = result.assets?.[0];
+      if (asset?.uri) {
+        setForm(prev => ({...prev, avatar: asset.uri as string}));
+      }
+    } catch {
+      Alert.alert('Image error', 'Could not open the image picker.');
+    }
+  };
+
+  const changePhoto = () => {
+    Alert.alert('Profile Photo', 'Choose an option', [
+      {text: 'Take Photo', onPress: () => openPicker(launchCamera)},
+      {
+        text: 'Choose from Gallery',
+        onPress: () => openPicker(launchImageLibrary),
+      },
+      {text: 'Cancel', style: 'cancel'},
+    ]);
+  };
 
   const onSave = async () => {
     if (!form.name.trim()) {
@@ -87,7 +159,11 @@ export const EditProfileScreen: React.FC = () => {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <CommonHeader title="Edit Profile" onBack={() => navigation.goBack()} />
+        <StatusBar
+          translucent
+          backgroundColor="transparent"
+          barStyle="dark-content"
+        />
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
@@ -97,92 +173,497 @@ export const EditProfileScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <CommonHeader title="Edit Profile" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Card>
-          <SectionHeader title="Personal" />
-          <Input
-            label="Full Name"
-            value={form.name}
-            onChangeText={setField('name')}
-            placeholder="Your name"
-          />
-          <Input
-            label="Phone"
-            value={form.phone}
-            onChangeText={setField('phone')}
-            placeholder="Your phone number"
-            keyboardType="phone-pad"
-          />
-          <Input
-            label="Designation"
-            value={form.designation}
-            onChangeText={setField('designation')}
-            placeholder="Your designation"
-          />
-        </Card>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
 
-        <Card>
-          <SectionHeader title="Company" />
-          <Input
-            label="Company Name"
-            value={form.company}
-            onChangeText={setField('company')}
-            placeholder="Company name"
-          />
-          <Input
-            label="GSTIN"
-            value={form.gstin}
-            onChangeText={setField('gstin')}
-            placeholder="GSTIN"
-            autoCapitalize="characters"
-          />
-        </Card>
+      {/* Ambient tint blobs so the frosted glass card has light to catch */}
+      <View pointerEvents="none" style={styles.blobBlue} />
+      <View pointerEvents="none" style={styles.blobSky} />
+      <View pointerEvents="none" style={styles.blobBlueTwo} />
 
-        <Card>
-          <SectionHeader title="Address" />
-          <Input
-            label="Address"
-            value={form.address}
-            onChangeText={setField('address')}
-            placeholder="Street address"
-            multiline
-            numberOfLines={2}
-          />
-          <Input
-            label="City"
-            value={form.city}
-            onChangeText={setField('city')}
-            placeholder="City"
-          />
-          <Input
-            label="State"
-            value={form.state}
-            onChangeText={setField('state')}
-            placeholder="State"
-          />
-          <Input
-            label="Pincode"
-            value={form.pincode}
-            onChangeText={setField('pincode')}
-            placeholder="Pincode"
-            keyboardType="number-pad"
-          />
-        </Card>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[
+            styles.scroll,
+            {
+              paddingTop: insets.top + scale(60),
+              paddingBottom: insets.bottom + scale(40),
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets>
+          {/* Fixed header */}
+          <View style={[styles.header, {paddingTop: insets.top + scale(6)}]}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.75}>
+              <ChevronLeft size={scale(20)} color="#1E293B" />
+            </TouchableOpacity>
+            <AppImage
+              uri="logo"
+              resizeMode="contain"
+              style={styles.headerLogo}
+            />
+            <View style={styles.headerSpacer} />
+          </View>
 
-        <Button title="Save Changes" onPress={onSave} loading={saving} />
-      </ScrollView>
+          {/* Top-right corner art */}
+          <Image
+            source={images.register_corner_bg}
+            style={styles.cornerBg}
+            resizeMode="contain"
+          />
+
+          {/* Title section */}
+          <View style={styles.titleSection}>
+            <Text style={styles.eyebrow}>ACCOUNT SETTINGS</Text>
+            <Text style={styles.title}>Edit Profile</Text>
+            <Text style={styles.subtitle}>
+              Keep your personal and business{'\n'}details up to date.
+            </Text>
+          </View>
+
+          {/* Frosted glass card */}
+          <View style={styles.mainCard}>
+            <LinearGradient
+              colors={[
+                'rgba(255,255,255,0.55)',
+                'rgba(255,255,255,0.08)',
+                'rgba(255,255,255,0)',
+              ]}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}
+              style={styles.glassSheen}
+            />
+
+            {/* Personal Details */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionBadge, styles.badgeBlue]}>
+                <User size={scale(19)} color="#0284C7" strokeWidth={2.2} />
+              </View>
+              <View style={styles.sectionHeaderTexts}>
+                <Text style={styles.sectionHeaderTitle}>Personal Details</Text>
+                <Text style={styles.sectionHeaderSubtitle}>
+                  Your basic contact information
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.avatarPickerWrap}>
+              <TouchableOpacity
+                style={styles.avatarPicker}
+                activeOpacity={0.85}
+                onPress={changePhoto}>
+                <AppImage
+                  uri={form.avatar || 'user_avatar'}
+                  style={styles.avatarImg}
+                  resizeMode="cover"
+                />
+                <View style={styles.avatarOverlay}>
+                  <Camera size={scale(16)} color="#FFFFFF" strokeWidth={2.6} />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.changePhotoBtn}
+                activeOpacity={0.7}
+                onPress={changePhoto}>
+                <Camera size={scale(13)} color="#0284C7" strokeWidth={2.4} />
+                <Text style={styles.changePhotoText}>Change Photo</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Input
+              variant="clean"
+              required
+              label="Full Name"
+              placeholder="Enter your full name"
+              value={form.name}
+              onChangeText={setField('name')}
+              leftIcon={User}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              label="Phone Number"
+              placeholder="Enter your phone number"
+              value={form.phone}
+              onChangeText={setField('phone')}
+              keyboardType="phone-pad"
+              leftIcon={Phone}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <View style={styles.sectionDivider} />
+
+            {/* Company Details */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionBadge, styles.badgeOrange]}>
+                <Building2 size={scale(19)} color="#EA580C" strokeWidth={2.2} />
+              </View>
+              <View style={styles.sectionHeaderTexts}>
+                <Text style={styles.sectionHeaderTitle}>Company Details</Text>
+                <Text style={styles.sectionHeaderSubtitle}>
+                  Your organization information
+                </Text>
+              </View>
+            </View>
+
+            <Input
+              variant="clean"
+              label="Company Name"
+              placeholder="Enter company name"
+              value={form.company}
+              onChangeText={setField('company')}
+              leftIcon={Building2}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              label="GST Number"
+              placeholder="Enter GST number"
+              value={form.gstin}
+              onChangeText={setField('gstin')}
+              autoCapitalize="characters"
+              leftIcon={Percent}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <View style={styles.sectionDivider} />
+
+            {/* Address Details */}
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionBadge, styles.badgeGreen]}>
+                <MapPin size={scale(19)} color="#16A34A" strokeWidth={2.2} />
+              </View>
+              <View style={styles.sectionHeaderTexts}>
+                <Text style={styles.sectionHeaderTitle}>Address Details</Text>
+                <Text style={styles.sectionHeaderSubtitle}>
+                  Where you operate from
+                </Text>
+              </View>
+            </View>
+
+            <Input
+              variant="clean"
+              label="Address"
+              placeholder="House no, street, area"
+              value={form.address}
+              onChangeText={setField('address')}
+              multiline
+              numberOfLines={2}
+              textAlignVertical="top"
+              leftIcon={MapPin}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              label="City"
+              placeholder="Enter city"
+              value={form.city}
+              onChangeText={setField('city')}
+              leftIcon={Building2}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              label="State"
+              placeholder="Enter state"
+              value={form.state}
+              onChangeText={setField('state')}
+              leftIcon={Map}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              label="Pincode"
+              placeholder="Enter pincode"
+              value={form.pincode}
+              onChangeText={setField('pincode')}
+              keyboardType="number-pad"
+              leftIcon={Hash}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Button
+              title="Save Changes"
+              variant="outline"
+              size="medium"
+              onPress={onSave}
+              loading={saving}
+              iconRight={
+                <ArrowRight
+                  size={scale(18)}
+                  color={colors.primary}
+                  strokeWidth={2.2}
+                />
+              }
+              textStyle={styles.saveBtnText}
+            />
+
+            <View style={styles.secureRow}>
+              <ShieldCheck size={scale(14)} color="#16A34A" />
+              <Text style={styles.secureText}>
+                Your details are safe and secure
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.lg,
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  flex: {
+    flex: 1,
+  },
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+  },
+
+  /* Ambient blobs */
+  blobBlue: {
+    position: 'absolute',
+    top: scale(120),
+    left: -scale(80),
+    width: scale(240),
+    height: scale(240),
+    borderRadius: scale(120),
+    backgroundColor: 'rgba(2,132,199,0.10)',
+  },
+  blobSky: {
+    position: 'absolute',
+    top: scale(360),
+    right: -scale(70),
+    width: scale(220),
+    height: scale(220),
+    borderRadius: scale(110),
+    backgroundColor: 'rgba(57,184,253,0.10)',
+  },
+  blobBlueTwo: {
+    position: 'absolute',
+    bottom: scale(40),
+    left: -scale(60),
+    width: scale(200),
+    height: scale(200),
+    borderRadius: scale(100),
+    backgroundColor: 'rgba(2,132,199,0.08)',
+  },
+
+  /* Fixed header */
+  cornerBg: {
+    position: 'absolute',
+    top: 0,
+    right: -spacing.lg,
+    width: scale(210),
+    height: scale(200),
+    zIndex: 0,
+  },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    zIndex: 10,
+  },
+  backBtn: {
+    width: scale(34),
+    height: scale(34),
+    borderRadius: scale(20),
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  headerLogo: {
+    width: scale(135),
+    height: scale(36),
+  },
+  headerSpacer: {
+    width: scale(34),
+  },
+
+  /* Title */
+  titleSection: {
+    marginTop: scale(10),
+    marginBottom: scale(16),
+  },
+  eyebrow: {
+    fontSize: scale(11.5),
+    fontWeight: '800',
+    color: '#0284C7',
+    letterSpacing: 1.5,
+    marginBottom: scale(4),
+  },
+  title: {
+    fontSize: scale(25),
+    fontWeight: '700',
+    color: '#0F172A',
+    letterSpacing: -0.4,
+    marginBottom: scale(4),
+  },
+  subtitle: {
+    fontSize: scale(13),
+    color: '#64748B',
+    lineHeight: scale(18.5),
+  },
+
+  /* Frosted glass card */
+  mainCard: {
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: radius.xl,
+    paddingVertical: scale(15),
+    paddingHorizontal: scale(10),
+    borderWidth: 1.2,
+    borderColor: 'rgba(203,213,225,0.5)',
+    marginBottom: scale(20),
+    overflow: 'hidden',
+  },
+  glassSheen: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radius.xl,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: scale(14),
+    gap: scale(10),
+  },
+  sectionBadge: {
+    width: scale(38),
+    height: scale(38),
+    borderRadius: scale(19),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeBlue: {
+    backgroundColor: '#EFF6FF',
+  },
+  badgeOrange: {
+    backgroundColor: '#FFF7ED',
+  },
+  badgeGreen: {
+    backgroundColor: '#F0FDF4',
+  },
+  sectionHeaderTexts: {
+    justifyContent: 'center',
+  },
+  sectionHeaderTitle: {
+    fontSize: scale(15),
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  sectionHeaderSubtitle: {
+    fontSize: scale(11.5),
+    color: '#64748B',
+    marginTop: 1,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: 'rgba(203,213,225,0.5)',
+    marginVertical: scale(16),
+  },
+  fieldSpacing: {
+    marginBottom: scale(14),
+  },
+  avatarPickerWrap: {
+    alignItems: 'center',
+    marginBottom: scale(18),
+  },
+  avatarPicker: {
+    width: scale(88),
+    height: scale(88),
+    borderRadius: scale(44),
+    overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.12,
+    shadowRadius: 7,
+    elevation: 3,
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: scale(28),
+    backgroundColor: 'rgba(2,132,199,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  changePhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(5),
+    marginTop: scale(9),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
+    borderRadius: radius.pill,
+    backgroundColor: '#EFF6FF',
+  },
+  changePhotoText: {
+    fontSize: scale(12),
+    fontWeight: '700',
+    color: '#0284C7',
+    letterSpacing: 0.1,
+  },
+  saveBtnText: {
+    fontSize: scale(13.5),
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  secureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(6),
+    marginTop: scale(16),
+  },
+  secureText: {
+    fontSize: fontSize.xs,
+    color: '#64748B',
+    fontWeight: '500',
   },
 });
 
