@@ -25,6 +25,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   Building2,
   Check,
+  ClipboardList,
   Home as HomeIcon,
   Map,
   MapPin,
@@ -199,7 +200,7 @@ const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
               style={[styles.modalBtn, styles.modalBtnPrimary]}
               activeOpacity={0.85}
               onPress={onOrderHistory}>
-              <Receipt size={scale(17)} color="#FFFFFF" strokeWidth={2.4} />
+              <ClipboardList size={scale(17)} color="#FFFFFF" strokeWidth={2.4} />
               <Text style={styles.modalBtnText}>Order History</Text>
             </TouchableOpacity>
 

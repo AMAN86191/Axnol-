@@ -27,7 +27,7 @@ const FILTER_TABS = ['All', 'Pending', 'Processing', 'Delivered', 'Canceled'];
 const MOCK_ORDERS = [
   {
     id: 'ord1',
-    orderNo: '#AX0001',
+    orderNo: 'AX0001',
     productName: 'Engine Oil AX-1000',
     quantity: 10,
     amount: 24000,
@@ -37,7 +37,7 @@ const MOCK_ORDERS = [
   },
   {
     id: 'ord2',
-    orderNo: '#AX0002',
+    orderNo: 'AX0002',
     productName: 'Hydraulic Oil AX-300',
     quantity: 5,
     amount: 18500,
@@ -47,7 +47,7 @@ const MOCK_ORDERS = [
   },
   {
     id: 'ord3',
-    orderNo: '#AX0003',
+    orderNo: 'AX0003',
     productName: 'Gear Oil AX-200',
     quantity: 20,
     amount: 45000,
@@ -57,7 +57,7 @@ const MOCK_ORDERS = [
   },
   {
     id: 'ord4',
-    orderNo: '#AX0004',
+    orderNo: 'AX0004',
     productName: 'Compressor Oil AX-400',
     quantity: 2,
     amount: 12000,

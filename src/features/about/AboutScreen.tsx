@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   Linking,
   ScrollView,
@@ -11,12 +11,15 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
+  ArrowDown,
   Award,
   Building2,
   Car,
   ChevronRight,
+  ClipboardCheck,
   Droplets,
   Factory,
+  FlaskConical,
   Fuel,
   Globe,
   Handshake,
@@ -30,6 +33,7 @@ import {
   Quote,
   ShieldCheck,
   Target,
+  Truck,
   Users,
   UtensilsCrossed,
   Wheat,
@@ -68,6 +72,26 @@ interface ContactRowProps {
   label: string;
   value: string;
   onPress?: () => void;
+}
+
+interface ProcessStepProps {
+  step: number;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+interface FaqItemProps {
+  question: string;
+  answer: string;
+}
+
+interface TeamMemberProps {
+  name: string;
+  role: string;
+  initials: string;
+  tint: string;
+  bg: string;
 }
 
 const OFFERINGS: OfferingProps[] = [
@@ -155,6 +179,118 @@ const STATS: StatProps[] = [
   },
 ];
 
+const PROCESS_STEPS: ProcessStepProps[] = [
+  {
+    step: 1,
+    icon: Droplets,
+    title: 'Raw Material Sourcing',
+    description:
+      'We source base oils, additives, and essential materials according to product specifications.',
+  },
+  {
+    step: 2,
+    icon: FlaskConical,
+    title: 'Formulation & Blending',
+    description:
+      'Materials are blended according to formulations and the requirements of each lubricant product.',
+  },
+  {
+    step: 3,
+    icon: ClipboardCheck,
+    title: 'Quality Control',
+    description:
+      'Products undergo relevant quality checks to assess compliance with defined specifications.',
+  },
+  {
+    step: 4,
+    icon: Package,
+    title: 'Packaging & Dispatch',
+    description:
+      'Approved products are packaged and prepared for safe handling and timely dispatch.',
+  },
+  {
+    step: 5,
+    icon: Truck,
+    title: 'Distribution & Delivery',
+    description:
+      'We supply products to customers and distribution partners across domestic and international markets.',
+  },
+];
+
+const FAQS: FaqItemProps[] = [
+  {
+    question: 'What products does Axnol manufacture?',
+    answer:
+      'Axnol manufactures specialty lubricants and greases for diverse industrial applications, supporting performance and operational requirements.',
+  },
+  {
+    question: 'Which industries does Axnol serve?',
+    answer:
+      'We serve automotive, steel, cement, aviation, agriculture, mining, food processing, and various other industrial sectors.',
+  },
+  {
+    question: 'Does Axnol supply industrial lubricants?',
+    answer:
+      'Yes, we offer lubrication solutions for industrial applications, including MRO, forging, punching, and metalworking.',
+  },
+  {
+    question: 'Does Axnol supply base oils and waxes?',
+    answer:
+      'Yes, we source and supply base oils and paraffin waxes according to customer demand and product specifications.',
+  },
+  {
+    question: 'Does Axnol serve international markets?',
+    answer:
+      'Yes, our business includes international sourcing and exports to markets including Nepal, Bangladesh, Sri Lanka, and African countries.',
+  },
+  {
+    question: 'Can Axnol develop customized lubricant solutions?',
+    answer:
+      'We work toward meeting specific customer and OEM requirements through technical development and product evaluation.',
+  },
+  {
+    question: 'How does Axnol approach product quality?',
+    answer:
+      'We focus on technical development, product specifications, and quality checks to support reliable industrial lubrication performance.',
+  },
+  {
+    question: 'How can I enquire about Axnol products?',
+    answer:
+      'Contact our team through the app to discuss your application, product requirements, and business enquiries.',
+  },
+];
+
+const TEAM: TeamMemberProps[] = [
+  {
+    name: 'Roman Amata',
+    role: 'Technical Lead',
+    initials: 'RA',
+    tint: '#0284C7',
+    bg: '#E4F1FC',
+  },
+  {
+    name: 'Monika Larson',
+    role: 'Industrial Engineer',
+    initials: 'ML',
+    tint: '#EA580C',
+    bg: '#FFF1E6',
+  },
+  {
+    name: 'Natalie Jones',
+    role: 'Team Leader',
+    initials: 'NJ',
+    tint: '#16A34A',
+    bg: '#E7F6EE',
+  },
+  {
+    name: 'David Green',
+    role: 'CEO',
+    initials: 'DG',
+    tint: '#7C3AED',
+    bg: '#F1EBFE',
+  },
+];
+
 const CONTACT_ROWS: ContactRowProps[] = [
   {
     icon: MapPin,
@@ -232,6 +368,80 @@ const StrengthRow: React.FC<StrengthProps & {isLast: boolean}> = ({
       <Text style={styles.strengthTitle}>{title}</Text>
       <Text style={styles.strengthDescription}>{description}</Text>
     </View>
+  </View>
+);
+
+const ProcessStepRow: React.FC<ProcessStepProps & {isLast: boolean}> = ({
+  step,
+  icon: Icon,
+  title,
+  description,
+  isLast,
+}) => (
+  <View style={styles.processRow}>
+    <View style={styles.processRail}>
+      <View style={styles.processDot}>
+        <Text style={styles.processDotText}>
+          {String(step).padStart(2, '0')}
+        </Text>
+      </View>
+      {!isLast && <View style={styles.processLine} />}
+    </View>
+    <View style={[styles.processCard, !isLast && styles.processCardSpacing]}>
+      <View style={styles.processCardHead}>
+        <View style={styles.processIconWrap}>
+          <Icon size={scale(15)} color={colors.primary} strokeWidth={2.3} />
+        </View>
+        <Text style={styles.processTitle}>{title}</Text>
+      </View>
+      <Text style={styles.processDescription}>{description}</Text>
+    </View>
+  </View>
+);
+
+const FaqRow: React.FC<FaqItemProps & {index: number}> = ({
+  question,
+  answer,
+  index,
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={styles.faqItem}>
+      <TouchableOpacity
+        style={styles.faqHeader}
+        activeOpacity={0.7}
+        onPress={() => setOpen(prev => !prev)}>
+        <Text style={styles.faqNumber}>{String(index + 1).padStart(2, '0')}</Text>
+        <Text style={styles.faqQuestion}>{question}</Text>
+        <ArrowDown
+          size={scale(16)}
+          color={colors.primary}
+          strokeWidth={2.4}
+          style={open ? styles.faqChevronOpen : undefined}
+        />
+      </TouchableOpacity>
+      {open && <Text style={styles.faqAnswer}>{answer}</Text>}
+    </View>
+  );
+};
+
+const TeamCard: React.FC<TeamMemberProps> = ({
+  name,
+  role,
+  initials,
+  tint,
+  bg,
+}) => (
+  <View style={styles.teamCard}>
+    <View style={[styles.teamAvatar, {backgroundColor: bg}]}>
+      <Text style={[styles.teamInitials, {color: tint}]}>{initials}</Text>
+    </View>
+    <Text style={styles.teamName} numberOfLines={1}>
+      {name}
+    </Text>
+    <Text style={styles.teamRole} numberOfLines={1}>
+      {role}
+    </Text>
   </View>
 );
 
@@ -467,6 +677,89 @@ export const AboutScreen: React.FC = () => {
                   {...item}
                   isLast={index === STRENGTHS.length - 1}
                 />
+              ))}
+            </View>
+          </View>
+
+          {/* Our Work Process */}
+          <View style={styles.card}>
+            <SectionHeading
+              title="Our Work Process"
+              subtitle="Every step reflects our commitment to quality"
+            />
+            <View>
+              {PROCESS_STEPS.map((item, index) => (
+                <ProcessStepRow
+                  key={item.step}
+                  {...item}
+                  isLast={index === PROCESS_STEPS.length - 1}
+                />
+              ))}
+            </View>
+          </View>
+
+          {/* Chairman's Message */}
+          <View style={styles.card}>
+            <SectionHeading
+              title="Chairman's Message"
+              subtitle="67+ years of leadership"
+            />
+            <View style={styles.chairmanBox}>
+              <Quote
+                size={scale(16)}
+                color={colors.accent}
+                strokeWidth={2.4}
+              />
+              <Text style={styles.chairmanText}>
+                Our aim is to meet the energy needs of society in ways that are
+                economically, socially and environmentally viable, now and in
+                the future. Our strategy seeks to reinforce our position as a
+                leader while helping to meet lubricants demand in a responsible
+                way. Safety, environmental and social responsibility are at the
+                heart of our activities.
+              </Text>
+              <Text style={styles.chairmanText}>
+                We are committed to consistency in quality products, regularity
+                in supply and services. We believe in developing relationships
+                with our customers on the basis of quality products with
+                best-in-class services.
+              </Text>
+              <View style={styles.chairmanFooter}>
+                <View style={styles.chairmanAvatar}>
+                  <Text style={styles.chairmanInitials}>RK</Text>
+                </View>
+                <View>
+                  <Text style={styles.chairmanName}>R. K. Sharma</Text>
+                  <Text style={styles.chairmanRole}>
+                    Chairman & Managing Director
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Leadership Team */}
+          <View style={styles.card}>
+            <SectionHeading
+              title="Meet Our Expert Team"
+              subtitle="The people driving Axnol forward"
+            />
+            <View style={styles.teamGrid}>
+              {TEAM.map(member => (
+                <TeamCard key={member.name} {...member} />
+              ))}
+            </View>
+          </View>
+
+          {/* FAQ */}
+          <View style={styles.card}>
+            <SectionHeading
+              title="Your Questions, Answered"
+              subtitle="Lubricants, applications & services"
+            />
+            <View style={styles.faqList}>
+              {FAQS.map((faq, index) => (
+                <FaqRow key={faq.question} {...faq} index={index} />
               ))}
             </View>
           </View>
@@ -804,6 +1097,201 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.primary,
     letterSpacing: 0.3,
+  },
+
+  /* Work process */
+  processRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  processRail: {
+    width: scale(34),
+    alignItems: 'center',
+  },
+  processDot: {
+    width: scale(30),
+    height: scale(30),
+    borderRadius: scale(15),
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  processDotText: {
+    fontSize: scale(10.5),
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.2,
+  },
+  processLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: colors.border,
+    marginVertical: scale(2),
+  },
+  processCard: {
+    flex: 1,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: scale(11),
+    marginLeft: spacing.sm,
+  },
+  processCardSpacing: {
+    marginBottom: scale(10),
+  },
+  processCardHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(8),
+    marginBottom: scale(3),
+  },
+  processIconWrap: {
+    width: scale(28),
+    height: scale(28),
+    borderRadius: scale(8),
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  processTitle: {
+    flex: 1,
+    fontSize: scale(12),
+    fontWeight: '800',
+    color: colors.text,
+    letterSpacing: -0.1,
+  },
+  processDescription: {
+    fontSize: scale(10.5),
+    lineHeight: scale(15),
+    color: colors.textSecondary,
+  },
+
+  /* Chairman */
+  chairmanBox: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: scale(12),
+    gap: scale(8),
+  },
+  chairmanText: {
+    fontSize: scale(11.5),
+    lineHeight: scale(17),
+    color: colors.textSecondary,
+  },
+  chairmanFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(10),
+    marginTop: scale(4),
+    paddingTop: scale(10),
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
+  },
+  chairmanAvatar: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(20),
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chairmanInitials: {
+    fontSize: scale(13),
+    fontWeight: '900',
+    color: colors.primary,
+  },
+  chairmanName: {
+    fontSize: scale(12.5),
+    fontWeight: '800',
+    color: colors.text,
+  },
+  chairmanRole: {
+    fontSize: scale(10.5),
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+
+  /* Team */
+  teamGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: scale(9),
+  },
+  teamCard: {
+    width: '48%',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingVertical: scale(14),
+    paddingHorizontal: scale(8),
+  },
+  teamAvatar: {
+    width: scale(48),
+    height: scale(48),
+    borderRadius: scale(24),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: scale(8),
+  },
+  teamInitials: {
+    fontSize: scale(15),
+    fontWeight: '900',
+  },
+  teamName: {
+    fontSize: scale(12),
+    fontWeight: '800',
+    color: colors.text,
+  },
+  teamRole: {
+    fontSize: scale(10.5),
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+
+  /* FAQ */
+  faqList: {
+    gap: scale(8),
+  },
+  faqItem: {
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: scale(11),
+  },
+  faqHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(9),
+  },
+  faqNumber: {
+    fontSize: scale(11),
+    fontWeight: '900',
+    color: colors.primary,
+    letterSpacing: 0.2,
+  },
+  faqQuestion: {
+    flex: 1,
+    fontSize: scale(11.5),
+    fontWeight: '700',
+    color: colors.text,
+    lineHeight: scale(16),
+  },
+  faqChevronOpen: {
+    transform: [{rotate: '180deg'}],
+  },
+  faqAnswer: {
+    fontSize: scale(11),
+    lineHeight: scale(16),
+    color: colors.textSecondary,
+    marginTop: scale(8),
+    paddingLeft: scale(24),
   },
 
   /* Why choose */

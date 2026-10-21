@@ -1,6 +1,8 @@
 import React, { useRef, useState } from 'react';
 import {
+  Alert,
   Dimensions,
+  Linking,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,7 +13,15 @@ import {
   ViewToken,
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { ArrowRight, Heart, Minus, Plus, ShieldCheck } from 'lucide-react-native';
+import {
+  ArrowRight,
+  Download,
+  FileText,
+  Heart,
+  Minus,
+  Plus,
+  ShieldCheck,
+} from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogueStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
@@ -37,6 +47,7 @@ export const ProductDetailsScreen: React.FC = () => {
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
   const loading = useSimulatedLoading();
 
   const adjustQuantity = (delta: number) =>
@@ -52,11 +63,16 @@ export const ProductDetailsScreen: React.FC = () => {
   }).current;
   const viewConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
+  const scrollToImage = (index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+    setActiveImage(index);
+  };
+
   const product = {
     id: route.params?.productId ?? 'p2',
     name: 'Gear Oil AX-200',
     subtitle: 'Extreme Pressure Gear Oil',
-    images: [ 'product_oil', 'product_generic', 'product_grease'],
+    images: ['product_oil', 'product_generic', 'product_grease'],
     tags: ['Automotive', 'Industrial', 'High Performance'],
     description:
       'High-performance gear oil designed for industrial gear systems with excellent wear protection and thermal stability. Delivers prolonged machinery life and reduces friction.',
@@ -77,6 +93,28 @@ export const ProductDetailsScreen: React.FC = () => {
     product.mrp > product.price
       ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
       : 0;
+
+  const totalPrice = product.price * quantity;
+  const totalMrp = product.mrp * quantity;
+  const totalSavings = totalMrp - totalPrice;
+
+  const openMsdsPdf = () => {
+    const url = 'https://axnol.in/pdf/sds.pdf';
+    Alert.alert(
+      'Material Safety Data Sheet',
+      'PDF • 1.1 MB\nTap download to view this document.',
+      [
+        {
+          text: 'Download & View',
+          onPress: () =>
+            Linking.openURL(url).catch(() =>
+              Alert.alert('Error', 'Unable to open PDF.'),
+            ),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -101,166 +139,214 @@ export const ProductDetailsScreen: React.FC = () => {
       {loading ? (
         <ProductDetailsSkeleton />
       ) : (
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(105) }]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(105) }]}>
 
-        {/* Image Gallery */}
-        <View style={styles.heroWrap}>
-          <FlatList
-            data={product.images}
-            keyExtractor={(item, index) => `${item}-${index}`}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewConfig}
-            renderItem={({ item }) => (
-              <View style={styles.heroSlide}>
-                {/* <View style={styles.heroAura} /> */}
-                <AppImage
-                  uri={item}
-                  style={styles.heroImage}
-                  resizeMode="contain"
-                />
-              </View>
-            )}
-          />
+          {/* Image Gallery */}
+          <View style={styles.heroWrap}>
+            <FlatList
+              ref={flatListRef}
+              data={product.images}
+              keyExtractor={(item, index) => `${item}-${index}`}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewConfig}
+              getItemLayout={(_, index) => ({
+                length: SCREEN_W,
+                offset: SCREEN_W * index,
+                index,
+              })}
+              onScrollToIndexFailed={() => { }}
+              renderItem={({ item }) => (
+                <View style={styles.heroSlide}>
+                  <AppImage
+                    uri={item}
+                    style={styles.heroImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              )}
+            />
+
+          </View>
           {product.images.length > 1 && (
-            <View style={styles.dotsRow}>
-              {product.images.map((_, index) => (
-                <View
-                  key={`dot-${index}`}
-                  style={[styles.dot, index === activeImage && styles.dotActive]}
-                />
+            <View style={styles.thumbRow}>
+              {product.images.map((img, index) => (
+                <TouchableOpacity
+                  key={`thumb-${img}-${index}`}
+                  activeOpacity={0.8}
+                  onPress={() => scrollToImage(index)}
+                  style={[
+                    styles.thumbBox,
+                    index === activeImage && styles.thumbBoxActive,
+                  ]}>
+                  <AppImage
+                    uri={img}
+                    style={styles.thumbImage}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
               ))}
             </View>
           )}
-        </View>
-
-        {/* Product Basic Info */}
-        <View style={styles.bodyContent}>
-          <Text style={styles.productName}>{product.name}</Text>
-          <Text style={styles.productSubtitle}>{product.subtitle}</Text>
+          {/* Product Basic Info */}
+          <View style={styles.bodyContent}>
+            <Text style={styles.productName}>{product.name}</Text>
+            <Text style={styles.productSubtitle}>{product.subtitle}</Text>
 
 
-          {/* Tags */}
-          <View style={styles.tagsRow}>
-            {product.tags.map(tag => (
-              <View key={tag} style={styles.tagPill}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Horizontal Underlined Tabs */}
-          <View style={styles.tabsRow}>
-            <TouchableOpacity
-              style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab('overview')}>
-              <Text
-                style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
-                Overview
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.tabItem, activeTab === 'specifications' && styles.tabItemActive]}
-              activeOpacity={0.7}
-              onPress={() => setActiveTab('specifications')}>
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === 'specifications' && styles.tabTextActive,
-                ]}>
-                Specifications
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Tab Content */}
-          {activeTab === 'overview' && (
-            <View style={styles.tabContentBlock}>
-              <Text style={styles.descriptionText}>{product.description}</Text>
-              <View style={styles.featureRow}>
-                <ShieldCheck size={scale(18)} color="#10B981" />
-                <Text style={styles.featureText}>ISO 9001:2015 Certified High Protection</Text>
-              </View>
-            </View>
-          )}
-
-          {activeTab === 'specifications' && (
-            <View style={styles.specBox}>
-              {product.specs.map(s => (
-                <View key={s.label} style={styles.specRow}>
-                  <Text style={styles.specLabel}>{s.label}</Text>
-                  <Text style={styles.specValue}>{s.value}</Text>
+            {/* Tags */}
+            <View style={styles.tagsRow}>
+              {product.tags.map(tag => (
+                <View key={tag} style={styles.tagPill}>
+                  <Text style={styles.tagText}>{tag}</Text>
                 </View>
               ))}
             </View>
-          )}
 
-
-          {/* Available Pack Sizes */}
-          <View style={styles.packSection}>
-            <Text style={styles.packHeading}>Available Pack Sizes</Text>
-            <View style={styles.packRow}>
-              {product.packSizes.map(size => {
-                const selected = size === selectedPack;
-                return (
-                  <TouchableOpacity
-                    key={size}
-                    style={[styles.packPill, selected && styles.packPillSelected]}
-                    activeOpacity={0.8}
-                    onPress={() => setSelectedPack(size)}>
-                    <Text
-                      style={[
-                        styles.packPillText,
-                        selected && styles.packPillTextSelected,
-                      ]}>
-                      {size}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Quantity */}
-          <View style={styles.qtySection}>
-            <View style={styles.qtyInfo}>
-              <Text style={styles.qtyTitle}>Quantity</Text>
-              <Text style={styles.qtyHint}>Select number of packs</Text>
-            </View>
-
-            <View style={styles.stepper}>
+            {/* Horizontal Underlined Tabs */}
+            <View style={styles.tabsRow}>
               <TouchableOpacity
-                style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
+                style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
                 activeOpacity={0.7}
-                disabled={!canDecrement}
-                onPress={() => adjustQuantity(-1)}>
-                <Minus
-                  size={scale(17)}
-                  color={canDecrement ? '#0F172A' : '#CBD5E1'}
-                  strokeWidth={2.5}
-                />
+                onPress={() => setActiveTab('overview')}>
+                <Text
+                  style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
+                  Overview
+                </Text>
               </TouchableOpacity>
 
-              <View style={styles.stepValueWrap}>
-                <Text style={styles.stepValue}>{quantity}</Text>
+              <TouchableOpacity
+                style={[styles.tabItem, activeTab === 'specifications' && styles.tabItemActive]}
+                activeOpacity={0.7}
+                onPress={() => setActiveTab('specifications')}>
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === 'specifications' && styles.tabTextActive,
+                  ]}>
+                  Specifications
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.tabItem, activeTab === 'documents' && styles.tabItemActive]}
+                activeOpacity={0.7}
+                onPress={() => setActiveTab('documents')}>
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === 'documents' && styles.tabTextActive,
+                  ]}>
+                  Documents
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
+              <View style={styles.tabContentBlock}>
+                <Text style={styles.descriptionText}>{product.description}</Text>
+                <View style={styles.featureRow}>
+                  <ShieldCheck size={scale(18)} color="#10B981" />
+                  <Text style={styles.featureText}>ISO 9001:2015 Certified High Protection</Text>
+                </View>
+              </View>
+            )}
+
+            {activeTab === 'specifications' && (
+              <View style={styles.specBox}>
+                {product.specs.map(s => (
+                  <View key={s.label} style={styles.specRow}>
+                    <Text style={styles.specLabel}>{s.label}</Text>
+                    <Text style={styles.specValue}>{s.value}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {activeTab === 'documents' && (
+              <View style={styles.msdsCard}>
+                <View style={styles.msdsIconWrap}>
+                  <FileText size={scale(22)} color="#EF4444" strokeWidth={2} />
+                </View>
+                <View style={styles.msdsInfo}>
+                  <Text style={styles.msdsTitle}>Material Safety Data Sheet</Text>
+                  <Text style={styles.msdsSubtitle}>MSDS • PDF • 1.1 MB</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.pdfBtn}
+                  activeOpacity={0.8}
+                  onPress={openMsdsPdf}>
+                  <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
+                  <Text style={styles.pdfBtnText}>PDF</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+
+            {/* Available Pack Sizes */}
+            <View style={styles.packSection}>
+              <Text style={styles.packHeading}>Available Pack Sizes</Text>
+              <View style={styles.packRow}>
+                {product.packSizes.map(size => {
+                  const selected = size === selectedPack;
+                  return (
+                    <TouchableOpacity
+                      key={size}
+                      style={[styles.packPill, selected && styles.packPillSelected]}
+                      activeOpacity={0.8}
+                      onPress={() => setSelectedPack(size)}>
+                      <Text
+                        style={[
+                          styles.packPillText,
+                          selected && styles.packPillTextSelected,
+                        ]}>
+                        {size}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Quantity */}
+            <View style={styles.qtySection}>
+              <View style={styles.qtyInfo}>
+                <Text style={styles.qtyTitle}>Quantity</Text>
+                <Text style={styles.qtyHint}>Select number of packs</Text>
               </View>
 
-              <TouchableOpacity
-                style={styles.stepBtn}
-                activeOpacity={0.7}
-                onPress={() => adjustQuantity(1)}>
-                <Plus size={scale(17)} color="#0F172A" strokeWidth={2.5} />
-              </TouchableOpacity>
+              <View style={styles.stepper}>
+                <TouchableOpacity
+                  style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
+                  activeOpacity={0.7}
+                  disabled={!canDecrement}
+                  onPress={() => adjustQuantity(-1)}>
+                  <Minus
+                    size={scale(17)}
+                    color={canDecrement ? '#0F172A' : '#CBD5E1'}
+                    strokeWidth={2.5}
+                  />
+                </TouchableOpacity>
+
+                <View style={styles.stepValueWrap}>
+                  <Text style={styles.stepValue}>{quantity}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.stepBtn}
+                  activeOpacity={0.7}
+                  onPress={() => adjustQuantity(1)}>
+                  <Plus size={scale(17)} color="#0F172A" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
       )}
 
       {/* Sticky Bottom Checkout Bar */}
@@ -268,22 +354,33 @@ export const ProductDetailsScreen: React.FC = () => {
         style={[styles.bottomBar, { paddingBottom: scale(10) + insets.bottom }]}>
         <View style={styles.bottomPriceCol}>
           <View style={styles.bottomPriceRow}>
-            <Text style={styles.bottomPrice}>{formatPrice(product.price)}</Text>
+            <Text style={styles.bottomPrice}>{formatPrice(totalPrice)}</Text>
             {product.unit ? (
-              <Text style={styles.bottomUnit}>/ {product.unit}</Text>
+              <Text style={styles.bottomUnit}>/ {selectedPack}</Text>
             ) : null}
           </View>
 
           <View style={styles.bottomMetaRow}>
             {discount > 0 && (
-              <Text style={styles.bottomMrp}>{formatPrice(product.mrp)}</Text>
+              <Text style={styles.bottomMrp}>{formatPrice(totalMrp)}</Text>
             )}
             {discount > 0 && (
               <View style={styles.bottomDiscountBadge}>
                 <Text style={styles.bottomDiscountText}>{discount}% OFF</Text>
               </View>
             )}
+            {quantity > 1 && (
+              <Text style={styles.bottomQtyText}>
+                {quantity} × {formatPrice(product.price)}
+              </Text>
+            )}
           </View>
+
+          {totalSavings > 0 && (
+            <Text style={styles.bottomSavingsText}>
+              You save {formatPrice(totalSavings)}
+            </Text>
+          )}
         </View>
         <Button
           title='Check Out'
@@ -301,8 +398,8 @@ export const ProductDetailsScreen: React.FC = () => {
               quantity,
               packSizes: product.packSizes,
             })}
-            textStyle={styles.checkoutText}
-            iconRight={<ArrowRight size={scale(14)} color={colors.primary} strokeWidth={3.5} />}
+          textStyle={styles.checkoutText}
+          iconRight={<ArrowRight size={scale(14)} color={colors.primary} strokeWidth={3.5} />}
         />
       </View>
     </View>
@@ -321,15 +418,42 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
   heroWrap: {
-    height: verticalScale(250),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F6F8',
     paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
   },
   heroSlide: {
     width: SCREEN_W,
     height: verticalScale(212),
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  thumbRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(10),
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  thumbBox: {
+    width: scale(35),
+    height: scale(35),
+    borderRadius: radius.sm,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.2,
+    borderColor: '#E2E8F0',
+    overflow: 'hidden',
+  },
+  thumbBoxActive: {
+    borderColor: colors.primary,
+    borderWidth: 1.8,
+  },
+  thumbImage: {
+    width: '100%',
+    height: '100%',
   },
   heroAura: {
     position: 'absolute',
@@ -339,25 +463,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(2, 132, 199, 0.06)',
   },
   heroImage: {
-    width: scale(175),
-    height: scale(205),
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: scale(6),
-    paddingVertical: scale(8),
-  },
-  dot: {
-    width: scale(7),
-    height: scale(7),
-    borderRadius: scale(4),
-    backgroundColor: '#CBD5E1',
-  },
-  dotActive: {
-    width: scale(16),
-    backgroundColor: colors.primary,
+    width: scale(165),
+    height: scale(195),
   },
   bodyContent: {
     paddingHorizontal: spacing.xl,
@@ -375,7 +482,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: spacing.md,
   },
- 
+
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -463,6 +570,58 @@ const styles = StyleSheet.create({
     fontSize: scale(12),
     fontWeight: '700',
     color: '#0F172A',
+  },
+  msdsCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  msdsIconWrap: {
+    width: scale(44),
+    height: scale(44),
+    borderRadius: radius.sm,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  msdsInfo: {
+    flex: 1,
+  },
+  msdsTitle: {
+    fontSize: scale(13),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  msdsSubtitle: {
+    fontSize: scale(11),
+    color: '#64748B',
+    marginTop: 2,
+  },
+  pdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(5),
+    backgroundColor: '#EF4444',
+    borderRadius: radius.md,
+    paddingHorizontal: scale(14),
+    paddingVertical: scale(8),
+  },
+  pdfBtnText: {
+    fontSize: scale(11),
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   packSection: {
     marginBottom: spacing.xl,
@@ -624,6 +783,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#0B7A3B',
     letterSpacing: 0.2,
+  },
+  bottomQtyText: {
+    fontSize: scale(10),
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  bottomSavingsText: {
+    fontSize: scale(10),
+    fontWeight: '700',
+    color: '#0B7A3B',
+    marginTop: scale(2),
   },
   checkoutBtn: {
     width: '50%'

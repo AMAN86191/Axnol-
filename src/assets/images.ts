@@ -62,6 +62,9 @@ const images = {
 
   // Home banners
   banner_industrial: require('../../assets/axnol/banner_industrial.png'),
+  banner_industrial_1: require('../../assets/axnol/banner_industrial_1.png'),
+  banner_industrial_2: require('../../assets/axnol/banner_industrial_2.png'),
+  banner_industrial_3: require('../../assets/axnol/banner_industrial_3.png'),
   banner_1: require('../../assets/axnol/banner_1.png'),
   banner_2: require('../../assets/axnol/banner_2.png'),
   banner_3: require('../../assets/axnol/banner_3.png'),

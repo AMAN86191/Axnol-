@@ -14,14 +14,13 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   ChevronRight,
+  ClipboardList,
   Factory,
   HelpCircle,
   Home,
   Info,
   LucideIcon,
   Package,
-  Pencil,
-  Receipt,
   ScrollText,
   ShieldCheck,
   UserRound,
@@ -32,11 +31,12 @@ import {colors, radius, scale, spacing, fontSize} from '../theme';
 import {
   MainDrawerParamList,
   MainTabParamList,
-  ProfileStackParamList,
 } from './types';
 import MainTabs from './MainTabs';
 import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
 import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
+import ContactUsScreen from '../features/enquiries/ContactUsScreen';
+import AboutScreen from '../features/about/AboutScreen';
 
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
 
@@ -75,21 +75,21 @@ interface TabLink {
 const LINKS: TabLink[] = [
   {key: 'Home', label: 'Home', icon: Home},
   {key: 'Products', label: 'Products', icon: Package},
-  {key: 'Orders', label: 'Orders', icon: Receipt},
+  {key: 'Orders', label: 'Orders', icon: ClipboardList},
   {key: 'Industry', label: 'Industry', icon: Factory},
   {key: 'Profile', label: 'Profile', icon: UserRound},
 ];
 
-type ProfileKey = keyof ProfileStackParamList;
+type AccountKey = 'ContactUs' | 'About';
 
 interface ProfileLink {
-  key: ProfileKey;
+  key: AccountKey;
   label: string;
   icon: LucideIcon;
 }
 
 const ACCOUNT_LINKS: ProfileLink[] = [
-  {key: 'EditProfile', label: 'Edit Profile', icon: Pencil},
+  // {key: 'EditProfile', label: 'Edit Profile', icon: Pencil},
   {key: 'ContactUs', label: 'Help & Support', icon: HelpCircle},
   {key: 'About', label: 'About Us', icon: Info},
 ];
@@ -240,11 +240,8 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
   );
 
   const handleProfileNavigate = useCallback(
-    (screen: ProfileKey) => {
-      navigation.navigate('HomeTabs', {
-        screen: 'Profile',
-        params: {screen, initial: false},
-      });
+    (screen: AccountKey) => {
+      navigation.navigate(screen);
       navigation.closeDrawer();
     },
     [navigation],
@@ -315,7 +312,7 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
             <NavigationItem
               key={item.key}
               item={item}
-              active={activeProfile === item.key}
+              active={activeProfile === item.key || activeTab === item.key}
               onPress={() => handleProfileNavigate(item.key)}
             />
           ))}
@@ -373,6 +370,8 @@ export const MainDrawer: React.FC = () => {
         },
       }}>
       <Drawer.Screen name="HomeTabs" component={MainTabs} />
+      <Drawer.Screen name="ContactUs" component={ContactUsScreen} />
+      <Drawer.Screen name="About" component={AboutScreen} />
       <Drawer.Screen
         name="TermsConditions"
         component={TermsConditionsScreen}

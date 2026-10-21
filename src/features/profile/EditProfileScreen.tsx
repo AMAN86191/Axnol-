@@ -1,9 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -12,6 +14,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -20,12 +31,13 @@ import {
   Building2,
   Camera,
   ChevronLeft,
-  Hash,
+  ChevronRight,
+  Image as ImageIcon,
   Map,
   MapPin,
-  Percent,
   Phone,
   ShieldCheck,
+  Trash2,
   User,
 } from 'lucide-react-native';
 import {
@@ -69,12 +81,232 @@ const EMPTY_FORM: FormState = {
   avatar: '',
 };
 
+const {height: SCREEN_H} = Dimensions.get('window');
+
+type SheetAction = {
+  key: string;
+  label: string;
+  hint: string;
+  icon: React.ComponentType<any>;
+  color: string;
+  bg: string;
+  danger?: boolean;
+  onPress: () => void;
+};
+
+type SheetActionRowProps = {
+  action: SheetAction;
+  index: number;
+  visible: boolean;
+  onRun: (action: SheetAction) => void;
+};
+
+const SheetActionRow: React.FC<SheetActionRowProps> = ({
+  action,
+  index,
+  visible,
+  onRun,
+}) => {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      progress.value = withDelay(
+        110 + index * 70,
+        withTiming(1, {duration: 260}),
+      );
+    } else {
+      progress.value = 0;
+    }
+  }, [visible, index, progress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [{translateY: (1 - progress.value) * 16}],
+  }));
+
+  const Icon = action.icon;
+
+  return (
+    <Animated.View style={animatedStyle}>
+      <TouchableOpacity
+        style={styles.sheetOption}
+        activeOpacity={0.75}
+        onPress={() => onRun(action)}>
+        <View style={[styles.sheetOptionIcon, {backgroundColor: action.bg}]}>
+          <Icon size={scale(18)} color={action.color} strokeWidth={2.2} />
+        </View>
+        <View style={styles.sheetOptionTexts}>
+          <Text
+            style={[
+              styles.sheetOptionLabel,
+              action.danger && styles.sheetOptionLabelDanger,
+            ]}>
+            {action.label}
+          </Text>
+          <Text style={styles.sheetOptionHint}>{action.hint}</Text>
+        </View>
+        <ChevronRight size={scale(16)} color="#94A3B8" />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
+
+type PhotoPickerSheetProps = {
+  visible: boolean;
+  hasPhoto: boolean;
+  onClose: () => void;
+  onCamera: () => void;
+  onGallery: () => void;
+  onRemove: () => void;
+};
+
+const PhotoPickerSheet: React.FC<PhotoPickerSheetProps> = ({
+  visible,
+  hasPhoto,
+  onClose,
+  onCamera,
+  onGallery,
+  onRemove,
+}) => {
+  const insets = useSafeAreaInsets();
+  const backdrop = useSharedValue(0);
+  const sheetY = useSharedValue(1);
+  const takenRef = useRef(false);
+
+  useEffect(() => {
+    if (visible) {
+      takenRef.current = false;
+      backdrop.value = withTiming(1, {duration: 220});
+      sheetY.value = withSpring(0, {
+        damping: 18,
+        stiffness: 190,
+        mass: 0.9,
+      });
+    }
+  }, [visible, backdrop, sheetY]);
+
+  const close = () => {
+    backdrop.value = withTiming(0, {duration: 180});
+    sheetY.value = withTiming(
+      1,
+      {duration: 240, easing: Easing.in(Easing.cubic)},
+      finished => {
+        if (finished) {
+          runOnJS(onClose)();
+        }
+      },
+    );
+  };
+
+  const runAction = (action: SheetAction) => {
+    if (takenRef.current) {
+      return;
+    }
+    takenRef.current = true;
+    action.onPress();
+    close();
+  };
+
+  const actions: SheetAction[] = [
+    {
+      key: 'camera',
+      label: 'Take Photo',
+      hint: 'Use your camera to capture a new photo',
+      icon: Camera,
+      color: '#0284C7',
+      bg: '#EFF6FF',
+      onPress: onCamera,
+    },
+    {
+      key: 'gallery',
+      label: 'Choose from Gallery',
+      hint: 'Pick an existing photo from your device',
+      icon: ImageIcon,
+      color: '#0EA5E9',
+      bg: '#F0F9FF',
+      onPress: onGallery,
+    },
+    ...(hasPhoto
+      ? [
+          {
+            key: 'remove',
+            label: 'Remove Photo',
+            hint: 'Remove current and use default avatar',
+            icon: Trash2,
+            color: '#EF4444',
+            bg: '#FEF2F2',
+            danger: true,
+            onPress: onRemove,
+          } as SheetAction,
+        ]
+      : []),
+  ];
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdrop.value,
+  }));
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: sheetY.value * SCREEN_H}],
+  }));
+
+  return (
+    <Modal
+      transparent
+      visible={visible}
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={close}>
+      <View style={styles.sheetOverlay}>
+        <Animated.View style={[styles.sheetBackdrop, backdropStyle]}>
+          <TouchableOpacity
+            style={styles.backdropTouch}
+            activeOpacity={1}
+            onPress={close}
+          />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.sheet,
+            sheetStyle,
+            {paddingBottom: insets.bottom + scale(16)},
+          ]}>
+          <View style={styles.sheetHandle} />
+          <Text style={styles.sheetTitle}>Profile Photo</Text>
+          <Text style={styles.sheetSubtitle}>
+            Choose how you'd like to update your picture
+          </Text>
+
+          {actions.map((action, index) => (
+            <SheetActionRow
+              key={action.key}
+              action={action}
+              index={index}
+              visible={visible}
+              onRun={runAction}
+            />
+          ))}
+
+          <TouchableOpacity
+            style={styles.sheetCancel}
+            activeOpacity={0.8}
+            onPress={close}>
+            <Text style={styles.sheetCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
 export const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const {data, isLoading} = useGetProfileQuery();
   const [updateProfile, {isLoading: saving}] = useUpdateProfileMutation();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -128,16 +360,10 @@ export const EditProfileScreen: React.FC = () => {
     }
   };
 
-  const changePhoto = () => {
-    Alert.alert('Profile Photo', 'Choose an option', [
-      {text: 'Take Photo', onPress: () => openPicker(launchCamera)},
-      {
-        text: 'Choose from Gallery',
-        onPress: () => openPicker(launchImageLibrary),
-      },
-      {text: 'Cancel', style: 'cancel'},
-    ]);
-  };
+  const changePhoto = () => setPhotoSheetVisible(true);
+
+  const removePhoto = () =>
+    setForm(prev => ({...prev, avatar: ''}));
 
   const onSave = async () => {
     if (!form.name.trim()) {
@@ -334,7 +560,7 @@ export const EditProfileScreen: React.FC = () => {
               value={form.gstin}
               onChangeText={setField('gstin')}
               autoCapitalize="characters"
-              leftIcon={Percent}
+              // leftIcon={Percent}
               containerStyle={styles.fieldSpacing}
             />
 
@@ -393,7 +619,7 @@ export const EditProfileScreen: React.FC = () => {
               value={form.pincode}
               onChangeText={setField('pincode')}
               keyboardType="number-pad"
-              leftIcon={Hash}
+              // leftIcon={Hash}
               containerStyle={styles.fieldSpacing}
             />
 
@@ -422,6 +648,15 @@ export const EditProfileScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <PhotoPickerSheet
+        visible={photoSheetVisible}
+        hasPhoto={!!form.avatar}
+        onClose={() => setPhotoSheetVisible(false)}
+        onCamera={() => openPicker(launchCamera)}
+        onGallery={() => openPicker(launchImageLibrary)}
+        onRemove={removePhoto}
+      />
     </View>
   );
 };
@@ -664,6 +899,99 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: '#64748B',
     fontWeight: '500',
+  },
+
+  /* Photo picker bottom sheet */
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.55)',
+  },
+  backdropTouch: {
+    flex: 1,
+  },
+  sheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingTop: scale(10),
+    paddingHorizontal: spacing.lg,
+    shadowColor: '#0F172A',
+    shadowOffset: {width: 0, height: -6},
+    shadowOpacity: 0.14,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: scale(40),
+    height: scale(4),
+    borderRadius: scale(2),
+    backgroundColor: '#E2E8F0',
+    marginBottom: scale(14),
+  },
+  sheetTitle: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  sheetSubtitle: {
+    fontSize: scale(12),
+    color: '#64748B',
+    marginTop: 3,
+    marginBottom: scale(14),
+  },
+  sheetOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(12),
+    backgroundColor: '#F8FAFC',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#EEF2F6',
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(11),
+    marginBottom: scale(9),
+  },
+  sheetOptionIcon: {
+    width: scale(40),
+    height: scale(40),
+    borderRadius: scale(13),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sheetOptionTexts: {
+    flex: 1,
+  },
+  sheetOptionLabel: {
+    fontSize: scale(13.5),
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  sheetOptionLabelDanger: {
+    color: '#EF4444',
+  },
+  sheetOptionHint: {
+    fontSize: scale(11),
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  sheetCancel: {
+    height: scale(46),
+    borderRadius: radius.md,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: scale(4),
+  },
+  sheetCancelText: {
+    fontSize: scale(13.5),
+    fontWeight: '700',
+    color: '#475569',
   },
 });
 

@@ -54,7 +54,7 @@ interface OrderItemData {
 }
 
 const ORDER = {
-  orderNo: '#AX0003',
+  orderNo: 'AX0003',
   date: '18 Sep 2026, 10:30 AM',
   status: 'Delivered',
   items: [
