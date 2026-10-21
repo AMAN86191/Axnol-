@@ -104,12 +104,6 @@ export const ProfileScreen: React.FC = () => {
       onPress: () => navigation.navigate('ContactUs'),
     },
     {
-      title: 'About Us',
-      subtitle: 'Learn about Axnol Lubetech',
-      icon: Info,
-      onPress: () => navigation.navigate('About'),
-    },
-    {
       title: 'Terms & Conditions',
       subtitle: 'Terms of use & service',
       icon: ScrollText,

@@ -32,21 +32,21 @@ export interface HomeBannerItem {
 }
 
 export const HOME_BANNERS: HomeBannerItem[] = [
-  {
-    id: 'industrial-1',
-    tagline: 'Premium Lubricants',
-    title: 'Powering *Every Industry* Forward',
-    description:
-      'High-performance lubricants.',
-    image: 'banner_industrial',
-  },
+  // {
+  //   id: 'industrial-1',
+  //   tagline: 'Premium Lubricants',
+  //   title: 'Powering *Every Industry* Forward',
+  //   description:
+  //     'High-performance lubricants.',
+  //   image: 'banner_industrial_1',
+  // },
   {
     id: 'industrial-2',
     tagline: 'Advanced Protection',
     title: 'Built to Keep You *Running Longer*',
     description:
       'Reliable lubrication solutions.',
-    image: 'banner_industrial',
+    image: 'banner_industrial_2',
   },
   {
     id: 'industrial-3',
@@ -54,7 +54,7 @@ export const HOME_BANNERS: HomeBannerItem[] = [
     title: 'One Range for *Every Machine*',
     description:
       'From engine oils to industrial fluids.',
-    image: 'banner_industrial',
+    image: 'banner_industrial_3',
   },
 ];
 

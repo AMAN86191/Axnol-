@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   FlatList,
+  Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
   StyleSheet,
@@ -9,20 +10,24 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {ArrowRight} from 'lucide-react-native';
+import {ArrowRight, Download} from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
 import {scale} from '../../../theme';
 import {HomeBannerItem} from '../homeData';
 
 export type {HomeBannerItem};
 
+const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
+
 interface HomeBannerProps {
   banners: HomeBannerItem[];
   height?: number;
   autoPlay?: boolean;
   buttonLabel?: string;
+  downloadLabel?: string;
   onPressItem?: (item: HomeBannerItem, index: number) => void;
   onPressButton?: (item: HomeBannerItem, index: number) => void;
+  onPressDownload?: (item: HomeBannerItem, index: number) => void;
 }
 
 /** Words wrapped in *asterisks* render in accent blue. */
@@ -44,8 +49,10 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
   height = scale(160),
   autoPlay = true,
   buttonLabel = 'Explore Products',
+  downloadLabel = 'Download',
   onPressItem,
   onPressButton,
+  onPressDownload,
 }) => {
   const listRef = useRef<FlatList<HomeBannerItem>>(null);
   const indexRef = useRef(0);
@@ -161,14 +168,40 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
                   {item.description}
                 </Text>
 
-                {/* Common CTA shared by every banner */}
-                <TouchableOpacity
-                  style={styles.button}
-                  activeOpacity={0.85}
-                  onPress={() => onPressButton?.(item, index)}>
-                  <Text style={styles.buttonText}>{buttonLabel}</Text>
-                  <ArrowRight size={scale(12)} color="#FFFFFF" strokeWidth={2.6} />
-                </TouchableOpacity>
+                {/* Common CTAs shared by every banner */}
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity
+                    style={styles.button}
+                    activeOpacity={0.85}
+                    onPress={() => onPressButton?.(item, index)}>
+                    <Text style={styles.buttonText} numberOfLines={1}>
+                      {buttonLabel}
+                    </Text>
+                    <ArrowRight
+                      size={scale(11)}
+                      color="#FFFFFF"
+                      strokeWidth={2.8}
+                    />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.buttonOutline}
+                    activeOpacity={0.85}
+                    onPress={() =>
+                      onPressDownload
+                        ? onPressDownload(item, index)
+                        : Linking.openURL(BROCHURE_URL).catch(() => {})
+                    }>
+                    <Download
+                      size={scale(11)}
+                      color="#0A4D8C"
+                      strokeWidth={2.8}
+                    />
+                    <Text style={styles.buttonOutlineText} numberOfLines={1}>
+                      {downloadLabel}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           )}
@@ -221,14 +254,14 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: '68%',
+    width: '82%',
   },
   contentPanel: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    width: '58%',
+    width: '72%',
     paddingHorizontal: scale(14),
     justifyContent: 'center',
   },
@@ -257,14 +290,14 @@ const styles = StyleSheet.create({
     marginBottom: scale(10),
   },
   button: {
-    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: scale(5),
+    height: scale(28),
     backgroundColor: '#0A4D8C',
     borderRadius: scale(999),
-    paddingVertical: scale(7.5),
-    paddingHorizontal: scale(14),
+    paddingHorizontal: scale(10),
     shadowColor: '#0A4D8C',
     shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.28,
@@ -273,9 +306,34 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: scale(10.5),
-    fontWeight: '800',
-    letterSpacing: 0.2,
+    fontSize: scale(10),
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: scale(8),
+    marginTop: scale(2),
+  },
+  buttonOutline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(5),
+    height: scale(28),
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: scale(999),
+    borderWidth: 1.3,
+    borderColor: '#0A4D8C',
+    paddingHorizontal: scale(10),
+  },
+  buttonOutlineText: {
+    color: '#0A4D8C',
+    fontSize: scale(10),
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
   dotsRow: {
     flexDirection: 'row',

@@ -195,7 +195,7 @@ export const ProductsScreen: React.FC = () => {
               {row.length === 1 && <View style={styles.gridCardPlaceholder} />}
             </View>
           ))}
-        </ScrollView>
+        </ScrollView> 
       )}
         </>
       )}

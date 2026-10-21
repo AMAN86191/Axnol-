@@ -139,7 +139,7 @@ export const HomeScreen: React.FC = () => {
           onPressButton={() => openAllProducts()}
         />
 
-        {/* 3. Industries */}
+        {/* 3. Industries */} 
         <View style={styles.sectionWrap}>
           <IndustriesSection
             industries={INDUSTRIES}

@@ -538,7 +538,7 @@ export const RegisterScreen: React.FC = () => {
                       onChangeText={onChange}
                       error={error?.message}
                       autoCapitalize="characters"
-                      leftIcon={Percent}
+                      // leftIcon={Percent}
                       containerStyle={styles.fieldSpacing}
                     />
                   )}
