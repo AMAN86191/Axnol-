@@ -9,12 +9,14 @@ interface HomeHeaderProps {
   userName?: string;
   onBellPress: () => void;
   onProfilePress: () => void;
+  hasUnreadNotifications?: boolean;
 }
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
   userName: _userName = 'Rahul Sharma',
   onBellPress,
   onProfilePress,
+  hasUnreadNotifications = false,
 }) => {
   const navigation = useNavigation<any>();
 
@@ -41,7 +43,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             activeOpacity={0.75}
             onPress={onBellPress}>
             <Bell size={scale(20)} color="#1E293B" strokeWidth={2.2} />
-            <View style={styles.bellDot} />
+            {hasUnreadNotifications ? <View style={styles.bellDot} /> : null}
           </TouchableOpacity>
 
           <TouchableOpacity

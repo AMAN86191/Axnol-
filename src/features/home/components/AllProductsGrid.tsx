@@ -133,10 +133,10 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    gap: scale(10),
+    justifyContent:"space-between",
   },
   card: {
-     width: scale(160),
+     width: '48.5%',
      // backgroundColor: '#FFFFFF',
      borderRadius: scale(18),
      borderWidth: 2,

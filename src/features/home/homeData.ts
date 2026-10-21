@@ -16,18 +16,10 @@ export interface HomeProduct {
   unit?: string;
 }
 
-export type CategoryIcon =
-  | 'grease'
-  | 'hydraulic'
-  | 'gear'
-  | 'cutting'
-  | 'rust'
-  | 'synthetic';
-
 export interface CategoryItem {
   id: string;
   name: string;
-  icon: CategoryIcon;
+  image: ImageKey;
 }
 
 export interface HomeBannerItem {
@@ -45,7 +37,7 @@ export const HOME_BANNERS: HomeBannerItem[] = [
     tagline: 'Premium Lubricants',
     title: 'Powering *Every Industry* Forward',
     description:
-      'High-performance lubricants engineered for superior efficiency and longer equipment life.',
+      'High-performance lubricants.',
     image: 'banner_industrial',
   },
   {
@@ -53,7 +45,7 @@ export const HOME_BANNERS: HomeBannerItem[] = [
     tagline: 'Advanced Protection',
     title: 'Built to Keep You *Running Longer*',
     description:
-      'Reliable lubrication solutions designed for the most demanding industrial applications.',
+      'Reliable lubrication solutions.',
     image: 'banner_industrial',
   },
   {
@@ -61,7 +53,7 @@ export const HOME_BANNERS: HomeBannerItem[] = [
     tagline: 'Trusted Quality',
     title: 'One Range for *Every Machine*',
     description:
-      'From engine oils to industrial fluids — complete coverage for every sector you serve.',
+      'From engine oils to industrial fluids.',
     image: 'banner_industrial',
   },
 ];
@@ -71,39 +63,40 @@ export const INDUSTRIES: IndustryItem[] = [
   {id: 'ind1', name: 'Industrial', image: 'ind_industrial'},
   {id: 'ind6', name: 'Construction', image: 'ind_construction'},
   {id: 'ind4', name: 'Marine', image: 'ind_marine'},
-  {id: 'ind5', name: 'Agricultural', image: 'cat_industrial'},
+  {id: 'ind3', name: 'Agriculture', image: 'ind_agricultural'},
+  {id: 'ind8', name: 'Energy', image: 'ind_energy'},
 ];
 
 export const CATEGORIES: CategoryItem[] = [
   {
     id: 'cat-grease',
     name: 'Industrial Greases',
-    icon: 'grease',
+    image: 'category_5',
   },
   {
     id: 'cat-hydraulic',
     name: 'Hydraulic Oils',
-    icon: 'hydraulic',
+    image: 'category_6',
   },
   {
     id: 'cat-gear',
     name: 'Gear Oils',
-    icon: 'gear',
+    image: 'category_2',
   },
   {
     id: 'cat-cutting',
     name: 'Cutting Fluids',
-    icon: 'cutting',
+    image: 'category_8',
   },
   {
     id: 'cat-rust',
     name: 'Rust Preventives',
-    icon: 'rust',
+    image: 'category_7',
   },
   {
     id: 'cat-synthetic',
     name: 'Synthetic Oils',
-    icon: 'synthetic',
+    image: 'category_1',
   },
 ];
 
@@ -130,7 +123,7 @@ export const FEATURED_PRODUCTS: HomeProduct[] = [
     id: 'p3',
     name: 'Gear Oil EP 90',
     code: 'AXN-GR-090',
-    image: 'feat_prod3_img',
+    image: 'feat_prod2_img',
     price: 3200,
     mrp: 3600,
     unit: '20L',
@@ -187,7 +180,7 @@ export const ALL_PRODUCTS: HomeProduct[] = [
     id: 'a5',
     name: 'Gear Oil EP 90',
     code: 'AXN-GR-090',
-    image: 'product_drum',
+    image: 'product_cutting',
     price: 3200,
     mrp: 3600,
     unit: '20L',

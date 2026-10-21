@@ -19,6 +19,8 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
+import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
+import OrdersSkeleton from './components/OrdersSkeleton';
 
 const FILTER_TABS = ['All', 'Pending', 'Processing', 'Delivered', 'Canceled'];
 
@@ -31,7 +33,7 @@ const MOCK_ORDERS = [
     amount: 24000,
     date: '25 Sep 2026',
     status: 'Pending',
-    image: 'product_drum',
+    image: 'product_cutting',
   },
   {
     id: 'ord2',
@@ -41,7 +43,7 @@ const MOCK_ORDERS = [
     amount: 18500,
     date: '22 Sep 2026',
     status: 'Processing',
-    image: 'product_drum',
+    image: 'product_cutting',
   },
   {
     id: 'ord3',
@@ -51,7 +53,7 @@ const MOCK_ORDERS = [
     amount: 45000,
     date: '18 Sep 2026',
     status: 'Delivered',
-    image: 'product_drum',
+    image: 'product_cutting',
   },
   {
     id: 'ord4',
@@ -61,7 +63,7 @@ const MOCK_ORDERS = [
     amount: 12000,
     date: '10 Sep 2026',
     status: 'Canceled',
-    image: 'product_drum',
+    image: 'product_cutting',
   },
 ];
 
@@ -88,6 +90,7 @@ export const OrdersScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [newestFirst, setNewestFirst] = useState(true);
+  const loading = useSimulatedLoading();
 
   const counts = useMemo(() => {
     const map: Record<string, number> = {All: MOCK_ORDERS.length};
@@ -124,17 +127,13 @@ export const OrdersScreen: React.FC = () => {
             <Menu size={scale(22)} color="#1E293B" strokeWidth={2.2} />
           </TouchableOpacity>
         }
-        right={
-          <TouchableOpacity
-            style={styles.headerBtn}
-            activeOpacity={0.7}
-            onPress={() => setNewestFirst(v => !v)}>
-            <ArrowUpDown size={scale(20)} color="#1E293B" strokeWidth={2.2} />
-          </TouchableOpacity>
-        }
       />
 
       {/* Horizontal Filter Tabs */}
+      {loading ? (
+        <OrdersSkeleton />
+      ) : (
+        <>
       <View style={styles.filterBar}>
         <FlatList
           horizontal
@@ -268,6 +267,8 @@ export const OrdersScreen: React.FC = () => {
           );
         }}
       />
+        </>
+      )}
     </View>
   );
 };
@@ -294,8 +295,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: scale(6),
-    paddingLeft: spacing.md,
-    paddingRight: spacing.sm,
+    paddingHorizontal: spacing.lg,
     paddingVertical: scale(7),
     borderRadius: radius.pill,
     backgroundColor: '#F1F5F9',

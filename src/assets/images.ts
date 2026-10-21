@@ -19,10 +19,12 @@ const images = {
 
   // New Home Screen Assets
   home_hero_new: require('../../assets/axnol/home_hero_new.png'),
-  ind_automotive: require('../../assets/axnol/ind_automotive.png'),
-  ind_industrial: require('../../assets/axnol/ind_industrial.png'),
-  ind_construction: require('../../assets/axnol/ind_construction.png'),
+  ind_automotive: require('../../assets/axnol/ind_automotive.jpg'),
+  ind_industrial: require('../../assets/axnol/ind_industrial.jpg'),
+  ind_construction: require('../../assets/axnol/ind_construction.jpg'),
   ind_marine: require('../../assets/axnol/ind_marine.png'),
+  ind_agricultural: require('../../assets/axnol/ind_agricultural.png'),
+  ind_energy: require('../../assets/axnol/ind_energy.png'),
   feat_prod1_img: require('../../assets/axnol/product1.png'),
   feat_prod2_img: require('../../assets/axnol/product1.png'),
   feat_prod3_img: require('../../assets/axnol/product1.png'),
@@ -85,16 +87,16 @@ const images = {
   industry_15: require('../../assets/axnol/industry_15.png'),
 
   // Categories 1..10
-  category_1: require('../../assets/axnol/category_1.png'),
-  category_2: require('../../assets/axnol/category_2.png'),
-  category_3: require('../../assets/axnol/category_3.png'),
-  category_4: require('../../assets/axnol/category_4.png'),
-  category_5: require('../../assets/axnol/category_5.png'),
-  category_6: require('../../assets/axnol/category_6.png'),
-  category_7: require('../../assets/axnol/category_7.png'),
-  category_8: require('../../assets/axnol/category_8.png'),
-  category_9: require('../../assets/axnol/category_9.png'),
-  category_10: require('../../assets/axnol/category_10.png'),
+  category_1: require('../../assets/axnol/category_1.jpg'),
+  category_2: require('../../assets/axnol/category_2.jpg'),
+  category_3: require('../../assets/axnol/category_3.jpg'),
+  category_4: require('../../assets/axnol/category_4.jpg'),
+  category_5: require('../../assets/axnol/category_5.jpg'),
+  category_6: require('../../assets/axnol/category_6.jpg'),
+  category_7: require('../../assets/axnol/category_7.jpg'),
+  category_8: require('../../assets/axnol/category_8.jpg'),
+  category_9: require('../../assets/axnol/category_9.jpg'),
+  category_10: require('../../assets/axnol/category_10.jpg'),
 
   // Products
   product_oil: require('../../assets/axnol/product1.png'),

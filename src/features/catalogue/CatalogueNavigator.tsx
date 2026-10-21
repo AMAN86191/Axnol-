@@ -4,18 +4,18 @@ import {CatalogueStackParamList} from '../../navigation/types';
 import IndustriesScreen from './IndustriesScreen';
 import CategoriesScreen from './CategoriesScreen';
 import SubCategoriesScreen from './SubCategoriesScreen';
+import CategoryProductsScreen from './CategoryProductsScreen';
 import ProductsScreen from './ProductsScreen';
 import ProductDetailsScreen from '../product/ProductDetailsScreen';
-
 import PricingRequestsScreen from '../pricing/PricingRequestsScreen';
 
 const Stack = createNativeStackNavigator<CatalogueStackParamList>();
 
-interface CatalogueNavigatorProps {
+interface CatalogueStackProps {
   initialRouteName: keyof CatalogueStackParamList;
 }
 
-const CatalogueNavigator: React.FC<CatalogueNavigatorProps> = ({
+export const CatalogueStack: React.FC<CatalogueStackProps> = ({
   initialRouteName,
 }) => (
   <Stack.Navigator
@@ -26,16 +26,13 @@ const CatalogueNavigator: React.FC<CatalogueNavigatorProps> = ({
     <Stack.Screen name="Industries" component={IndustriesScreen} />
     <Stack.Screen name="Categories" component={CategoriesScreen} />
     <Stack.Screen name="SubCategories" component={SubCategoriesScreen} />
+    <Stack.Screen name="CategoryProducts" component={CategoryProductsScreen} />
     <Stack.Screen name="RequestPrice" component={PricingRequestsScreen} />
   </Stack.Navigator>
 );
 
-export const CatalogueScreen: React.FC = () => (
-  <CatalogueNavigator initialRouteName="Products" />
+export const CatalogueNavigator: React.FC = () => (
+  <CatalogueStack initialRouteName="Products" />
 );
 
-export const IndustryStack: React.FC = () => (
-  <CatalogueNavigator initialRouteName="Industries" />
-);
-
-export default CatalogueScreen;
+export default CatalogueNavigator;

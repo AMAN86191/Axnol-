@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -11,15 +11,27 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   Building2,
-  Hash,
+  Check,
+  Home as HomeIcon,
   Map,
   MapPin,
   MessageSquare,
   Minus,
   Plus,
+  Receipt,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
@@ -30,6 +42,183 @@ import CommonHeader from '../../components/ui/CommonHeader';
 
 const MIN_QUANTITY = 1;
 
+interface SubmitSuccessModalProps {
+  visible: boolean;
+  onOrderHistory: () => void;
+  onHome: () => void;
+}
+
+const CONFETTI_COLORS = [
+  '#F59E0B',
+  '#EF4444',
+  '#10B981',
+  '#3B82F6',
+  '#8B5CF6',
+  '#EC4899',
+];
+const CONFETTI_COUNT = 16;
+
+interface ConfettiParticleProps {
+  active: boolean;
+  index: number;
+  color: string;
+}
+
+const ConfettiParticle: React.FC<ConfettiParticleProps> = ({
+  active,
+  index,
+  color,
+}) => {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    if (active) {
+      progress.value = withDelay(
+        160 + index * 22,
+        withRepeat(
+          withTiming(1, { duration: 1100, easing: Easing.out(Easing.quad) }),
+          -1,
+          false,
+        ),
+      );
+    }
+    return () => {
+      cancelAnimation(progress);
+    };
+  }, [active, index, progress]);
+
+  const angle = (index / CONFETTI_COUNT) * Math.PI * 2;
+  const distance = scale(52 + (index % 3) * 12);
+
+  const particleStyle = useAnimatedStyle(() => {
+    const p = progress.value;
+    return {
+      opacity: p === 0 ? 0 : 1 - p,
+      transform: [
+        { translateX: Math.cos(angle) * distance * p },
+        { translateY: Math.sin(angle) * distance * p },
+        { scale: 1 - p * 0.5 },
+        { rotate: `${p * 320}deg` },
+      ],
+    };
+  });
+
+  const shape =
+    index % 3 === 0
+      ? styles.confettiCircle
+      : index % 3 === 1
+      ? styles.confettiSquare
+      : styles.confettiSliver;
+
+  return (
+    <Animated.View
+      style={[
+        styles.confettiPiece,
+        shape,
+        { backgroundColor: color },
+        particleStyle,
+      ]}
+    />
+  );
+};
+
+const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
+  visible,
+  onOrderHistory,
+  onHome,
+}) => {
+  const overlayOpacity = useSharedValue(0);
+  const cardOpacity = useSharedValue(0);
+  const cardScale = useSharedValue(0.8);
+  const iconScale = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) {
+      overlayOpacity.value = withTiming(1, { duration: 220 });
+      cardOpacity.value = withTiming(1, { duration: 240 });
+      cardScale.value = withSpring(1, {
+        damping: 15,
+        stiffness: 180,
+        mass: 0.8,
+      });
+      iconScale.value = withDelay(
+        140,
+        withSpring(1, { damping: 9, stiffness: 220 }),
+      );
+    } else {
+      overlayOpacity.value = withTiming(0, { duration: 180 });
+      cardOpacity.value = withTiming(0, { duration: 180 });
+      cardScale.value = 0.8;
+      iconScale.value = 0;
+    }
+  }, [visible, overlayOpacity, cardOpacity, cardScale, iconScale]);
+
+  const overlayStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ scale: cardScale.value }],
+  }));
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+
+  return (
+    <Modal
+      transparent
+      visible={visible}
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onHome}>
+      <Animated.View style={[styles.modalOverlay, overlayStyle]}>
+        <Animated.View style={[styles.modalCard, cardStyle]}>
+          <View style={styles.modalIconArea}>
+            <Animated.View style={[styles.modalIconWrap, iconStyle]}>
+              <Check size={scale(34)} color="#FFFFFF" strokeWidth={3} />
+            </Animated.View>
+            {visible
+              ? Array.from({ length: CONFETTI_COUNT }).map((_, i) => (
+                  <ConfettiParticle
+                    key={i}
+                    index={i}
+                    active={visible}
+                    color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
+                  />
+                ))
+              : null}
+          </View>
+
+          <Text style={styles.modalTitle}>Order Submitted</Text>
+          <Text style={styles.modalMessage}>
+            Your order has been successfully submitted.
+          </Text>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.modalBtnPrimary]}
+              activeOpacity={0.85}
+              onPress={onOrderHistory}>
+              <Receipt size={scale(17)} color="#FFFFFF" strokeWidth={2.4} />
+              <Text style={styles.modalBtnText}>Order History</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.modalBtnSecondary]}
+              activeOpacity={0.85}
+              onPress={onHome}>
+              <HomeIcon size={scale(17)} color={colors.primary} strokeWidth={2.4} />
+              <Text style={[styles.modalBtnText, styles.modalBtnTextSecondary]}>
+                Home
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Animated.View>
+    </Modal>
+  );
+};
+
 export const PricingRequestsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -38,7 +227,6 @@ export const PricingRequestsScreen: React.FC = () => {
   const productName = route.params?.productName ?? 'Gear Oil AX-200';
   const category = route.params?.category ?? 'Extreme Pressure Gear Oil';
   const price = route.params?.price as number | undefined;
-  const mrp = route.params?.mrp as number | undefined;
 
   const availablePacks: string[] =
     (route.params?.packSizes as string[] | undefined)?.length
@@ -57,6 +245,8 @@ export const PricingRequestsScreen: React.FC = () => {
   const [addressState, setAddressState] = useState('');
   const [pincode, setPincode] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const clearError = (key: string) =>
     setErrors(prev => {
@@ -72,6 +262,7 @@ export const PricingRequestsScreen: React.FC = () => {
     const next = Math.max(MIN_QUANTITY, base + delta);
     setQuantity(String(next));
     clearError('quantity');
+    clearError('calculatedPrice');
   };
 
   const handleDecrement = () => adjustQuantity(-1);
@@ -79,12 +270,20 @@ export const PricingRequestsScreen: React.FC = () => {
 
   const canDecrement = !isNaN(Number(quantity)) && Number(quantity) > MIN_QUANTITY;
 
+  const qtyNum = Number(quantity);
+  const validQty = !quantity.trim() || isNaN(qtyNum) || qtyNum <= 0 ? 0 : qtyNum;
+  const calculatedPrice =
+    price != null && validQty > 0 ? price * validQty : null;
+
   const handleSubmit = () => {
     const e: Record<string, string> = {};
     if (!quantity.trim()) {
       e.quantity = 'Quantity is required';
     } else if (isNaN(Number(quantity)) || Number(quantity) <= 0) {
       e.quantity = 'Enter a valid quantity';
+    }
+    if (calculatedPrice == null) {
+      e.calculatedPrice = 'Calculated price is not available';
     }
     if (!address.trim()) {
       e.address = 'Full address is required';
@@ -105,20 +304,20 @@ export const PricingRequestsScreen: React.FC = () => {
       return;
     }
 
-    const addressLine = [address, city, addressState, pincode]
-      .filter(Boolean)
-      .join(', ');
-    Alert.alert(
-      'Request Submitted',
-      `Your price request for ${productName} (${quantity} ${packSize}) has been submitted successfully!${addressLine ? `\nDelivery to: ${addressLine}` : ''
-      }`,
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ],
-    );
+    setSubmitted(true);
+    setShowSuccess(true);
+  };
+
+  const handleOrderHistory = () => {
+    setShowSuccess(false);
+    navigation.popToTop();
+    navigation.navigate('Orders', { screen: 'OrdersList' });
+  };
+
+  const handleHome = () => {
+    setShowSuccess(false);
+    navigation.popToTop();
+    navigation.navigate('Home');
   };
 
 
@@ -126,101 +325,106 @@ export const PricingRequestsScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
 
-      <CommonHeader title="Request Price" />
+      <CommonHeader title="Request a qoute" />
       <ScrollView
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + scale(40) },
+          { paddingBottom: insets.bottom + scale(50) },
         ]}>
 
         {/* Selected Product Card */}
         <View style={styles.productCard}>
-          <View style={styles.productImgWrap}>
-            <AppImage
-              uri="product_drum"
-              style={styles.productImg}
-              resizeMode="contain"
-            />
+          <View style={styles.productTop}>
+            <View style={styles.productImgWrap}>
+              <AppImage
+                uri="product_cutting"
+                style={styles.productImg}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.productInfo}>
+              <Text style={styles.productName}>{productName}</Text>
+              <Text style={styles.productSubtitle}>{category}</Text>
+              {price != null ? (
+                <View style={styles.productPriceRow}>
+                  <View style={styles.productPriceLeft}>
+                    <Text style={styles.productPrice}>
+                      {formatPrice(calculatedPrice ?? price)}
+                    </Text>
+                    {validQty > 0 ? (
+                      <Text style={styles.productPriceUnit}>
+                        {' '}
+                        / {quantity} {packSize}
+                      </Text>
+                    ) : packSize ? (
+                      <Text style={styles.productPriceUnit}> / {packSize}</Text>
+                    ) : null}
+                  </View>
+                  <View
+                    style={[
+                      styles.stepper,
+                      errors.quantity ? styles.stepperError : null,
+                    ]}>
+                    <TouchableOpacity
+                      style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
+                      activeOpacity={0.7}
+                      disabled={!canDecrement}
+                      onPress={handleDecrement}>
+                      <Minus
+                        size={scale(16)}
+                        color={canDecrement ? '#0F172A' : '#CBD5E1'}
+                        strokeWidth={2.5}
+                      />
+                    </TouchableOpacity>
+
+                    <TextInput
+                      style={styles.stepValue}
+                      value={quantity}
+                      onChangeText={v => {
+                        setQuantity(v.replace(/[^0-9]/g, ''));
+                        clearError('quantity');
+                        clearError('calculatedPrice');
+                      }}
+                      keyboardType="numeric"
+                      maxLength={7}
+                      selectTextOnFocus
+                      placeholder="0"
+                      placeholderTextColor="#94A3B8"
+                    />
+
+                    <TouchableOpacity
+                      style={styles.stepBtn}
+                      activeOpacity={0.7}
+                      onPress={handleIncrement}>
+                      <Plus size={scale(16)} color="#0F172A" strokeWidth={2.5} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.productPriceMissing}>Price not available</Text>
+              )}
+            </View>
           </View>
-          <View style={styles.productInfo}>
-            <Text style={styles.productName}>{productName}</Text>
-            <Text style={styles.productSubtitle}>{category}</Text>
-            {price != null ? (
-              <View style={styles.productPriceRow}>
-                <Text style={styles.productPrice}>{formatPrice(price)}</Text>
-                {packSize ? (
-                  <Text style={styles.productPriceUnit}> / {packSize}</Text>
-                ) : null}
-                {mrp != null && mrp > price ? (
-                  <Text style={styles.productPriceMrp}>{formatPrice(mrp)}</Text>
-                ) : null}
-              </View>
-            ) : null}
-          </View>
+
+       
+
+          {errors.quantity ? (
+            <Text style={styles.errorText}>{errors.quantity}</Text>
+          ) : null}
+          {errors.calculatedPrice ? (
+            <Text style={styles.errorText}>{errors.calculatedPrice}</Text>
+          ) : null}
         </View>
 
         {/* Form Fields */}
         <View style={styles.formContainer}>
-
-          {/* Required Quantity */}
-          <View style={styles.quantityBlock}>
-            <Text style={styles.qtyLabel}>
-              Required Quantity
-              <Text style={styles.requiredStar}> *</Text>
-            </Text>
-
-            <View style={styles.quantityRow}>
-              <View
-                style={[
-                  styles.stepper,
-                  errors.quantity ? styles.stepperError : null,
-                ]}>
-                <TouchableOpacity
-                  style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
-                  activeOpacity={0.7}
-                  disabled={!canDecrement}
-                  onPress={handleDecrement}>
-                  <Minus
-                    size={scale(18)}
-                    color={canDecrement ? '#0F172A' : '#CBD5E1'}
-                    strokeWidth={2.5}
-                  />
-                </TouchableOpacity>
-
-                <TextInput
-                  style={styles.stepValue}
-                  value={quantity}
-                  onChangeText={v => {
-                    setQuantity(v.replace(/[^0-9]/g, ''));
-                    clearError('quantity');
-                  }}
-                  keyboardType="numeric"
-                  maxLength={7}
-                  selectTextOnFocus
-                  placeholder="0"
-                  placeholderTextColor="#94A3B8"
-                />
-
-                <TouchableOpacity
-                  style={styles.stepBtn}
-                  activeOpacity={0.7}
-                  onPress={handleIncrement}>
-                  <Plus size={scale(18)} color="#0F172A" strokeWidth={2.5} />
-                </TouchableOpacity>
-              </View>
-
-              
-            </View>
-
-            {errors.quantity ? (
-              <Text style={styles.errorText}>{errors.quantity}</Text>
-            ) : null}
-          </View>
 
           {/* Available Pack Sizes */}
           <View style={styles.packBlock}>
@@ -322,7 +526,6 @@ export const PricingRequestsScreen: React.FC = () => {
               label="Pincode"
               placeholder="Pincode"
               variant="clean"
-              leftIcon={Hash}
               required
               error={errors.pincode}
               keyboardType="numeric"
@@ -338,14 +541,28 @@ export const PricingRequestsScreen: React.FC = () => {
 
           {/* Submit Request Button */}
           <TouchableOpacity
-            style={styles.submitBtn}
+            style={[styles.submitBtn, submitted && styles.submitBtnDone]}
             activeOpacity={0.85}
+            disabled={submitted}
             onPress={handleSubmit}>
-            <Text style={styles.submitBtnText}>Check Out</Text>
+            {submitted ? (
+              <>
+                <Check size={scale(18)} color="#FFFFFF" strokeWidth={3} />
+                <Text style={styles.submitBtnText}>Request Submitted</Text>
+              </>
+            ) : (
+              <Text style={styles.submitBtnText}>Check Out</Text>
+            )}
           </TouchableOpacity>
 
         </View>
       </ScrollView>
+
+      <SubmitSuccessModal
+        visible={showSuccess}
+        onOrderHistory={handleOrderHistory}
+        onHome={handleHome}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -359,8 +576,6 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   productCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: radius.md,
     padding: spacing.md,
@@ -372,6 +587,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 3,
     elevation: 1,
+  },
+  productTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   productImgWrap: {
     width: scale(56),
@@ -402,8 +621,15 @@ const styles = StyleSheet.create({
   },
   productPriceRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: scale(8),
+    gap: spacing.sm,
+  },
+  productPriceLeft: {
+    flexDirection: 'row',
     alignItems: 'baseline',
-    marginTop: scale(5),
+    flexShrink: 1,
   },
   productPrice: {
     fontSize: scale(16),
@@ -416,12 +642,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#94A3B8',
   },
-  productPriceMrp: {
+  productPriceMissing: {
     fontSize: fontSize.xs,
     fontWeight: '600',
-    color: '#B0BEC5',
-    textDecorationLine: 'line-through',
-    marginLeft: scale(7),
+    color: '#94A3B8',
+    marginTop: scale(5),
   },
   formContainer: {
     gap: spacing.lg,
@@ -446,8 +671,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 0,
   },
-  quantityBlock: {
-    gap: 0,
+  qtyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  qtyRowLabel: {
+    fontSize: scale(13),
+    fontWeight: '600',
+    color: '#1E293B',
   },
   qtyLabel: {
     fontSize: scale(13),
@@ -459,27 +695,27 @@ const styles = StyleSheet.create({
     color: '#EF4444',
     fontWeight: '700',
   },
-  quantityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
   stepper: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: scale(46),
+    height: scale(33),
+    width: scale(132),
     backgroundColor: '#FFFFFF',
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderWidth: 1.2,
     borderColor: '#E2E8F0',
     overflow: 'hidden',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
   stepperError: {
     borderColor: colors.danger,
   },
   stepBtn: {
-    width: scale(46),
+    width: scale(36),
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -564,8 +800,10 @@ const styles = StyleSheet.create({
     height: scale(48),
     backgroundColor: colors.primary,
     borderRadius: radius.sm,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: scale(8),
     marginTop: spacing.md,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
@@ -573,10 +811,126 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  submitBtnDone: {
+    backgroundColor: '#16A34A',
+    shadowColor: '#16A34A',
+  },
   submitBtnText: {
     fontSize: fontSize.md,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.22,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  modalIconArea: {
+    width: scale(150),
+    height: scale(130),
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  modalIconWrap: {
+    width: scale(72),
+    height: scale(72),
+    borderRadius: scale(36),
+    backgroundColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  confettiPiece: {
+    position: 'absolute',
+    left: '50%',
+    top: '50%',
+    marginLeft: -scale(5),
+    marginTop: -scale(5),
+  },
+  confettiCircle: {
+    width: scale(10),
+    height: scale(10),
+    borderRadius: scale(5),
+  },
+  confettiSquare: {
+    width: scale(9),
+    height: scale(9),
+    borderRadius: scale(2),
+  },
+  confettiSliver: {
+    width: scale(5),
+    height: scale(13),
+    borderRadius: scale(2),
+  },
+  modalTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+    marginBottom: scale(8),
+  },
+  modalMessage: {
+    fontSize: fontSize.sm,
+    color: '#475569',
+    textAlign: 'center',
+    lineHeight: scale(20),
+    paddingHorizontal: scale(6),
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: scale(10),
+    marginTop: spacing.xl,
+    width: '100%',
+  },
+  modalBtn: {
+    flex: 1,
+    height: scale(48),
+    borderRadius: radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(8),
+  },
+  modalBtnPrimary: {
+    backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  modalBtnSecondary: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.4,
+    borderColor: colors.primary,
+  },
+  modalBtnText: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  modalBtnTextSecondary: {
+    color: colors.primary,
   },
 });
 

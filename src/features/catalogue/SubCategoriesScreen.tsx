@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   StyleSheet,
   Text,
@@ -8,14 +9,12 @@ import {
   View,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import {ChevronRight, Layers} from 'lucide-react-native';
+import {Layers} from 'lucide-react-native';
 import {CatalogueStackParamList} from '../../navigation/types';
 import {useGetSubCategoriesQuery} from '../../api/services/catalogueApi';
-import EmptyState from '../../components/ui/EmptyState';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {
   colors,
-  fontSize,
   radius,
   scale,
   shadows,
@@ -25,60 +24,62 @@ import {
 
 type Route = RouteProp<CatalogueStackParamList, 'SubCategories'>;
 
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
+
+const CARD_GAP = spacing.md;
+const CARD_WIDTH = Math.floor(
+  (SCREEN_WIDTH - spacing.lg * 2 - CARD_GAP * 2) / 3,
+);
+
 export const SubCategoriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const {params} = useRoute<Route>();
   const {data, isLoading} = useGetSubCategoriesQuery({
     categoryId: params.categoryId,
   });
-  const isEmpty = !isLoading && (data?.length ?? 0) === 0;
+
   return (
     <View style={styles.container}>
       <CommonHeader
-        title="Sub Categories"
+        title={params?.categoryName ?? 'Sub Categories'}
         onBack={() => navigation.goBack()}
       />
       {isLoading ? (
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
-      ) : isEmpty ? (
-        <EmptyState
-          icon={Layers}
-          title="No subcategories"
-          subtitle="Browse all products in this category"
-          actionLabel="Browse Products"
-          onAction={() =>
-            navigation.navigate('Products', {
-              categoryId: params.categoryId,
-              title: params.categoryName,
-            })
-          }
-        />
       ) : (
         <FlatList
           data={data}
           keyExtractor={i => i.id}
+          numColumns={3}
+          columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
           renderItem={({item}) => (
             <TouchableOpacity
-              style={styles.row}
-              activeOpacity={0.8}
+              style={styles.card}
+              activeOpacity={0.85}
               onPress={() =>
-                navigation.navigate('Products', {
-                  subCategoryId: item.id,
+                navigation.navigate('CategoryProducts', {
                   categoryId: params.categoryId,
+                  subCategoryId: item.id,
                   title: item.name,
                   industryId: params.industryId,
                 })
               }>
-              <View style={styles.iconWrap}>
-                <Layers size={scale(18)} color={colors.primary} />
+              <View style={styles.imageWrap}>
+                <Layers
+                  size={scale(30)}
+                  color={colors.primary}
+                  strokeWidth={1.8}
+                />
               </View>
-              <Text style={styles.name} numberOfLines={2}>
-                {item.name}
-              </Text>
-              <ChevronRight size={scale(18)} color={colors.textMuted} />
+              <View style={styles.body}>
+                <Text style={styles.name} numberOfLines={2}>
+                  {item.name}
+                </Text>
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -93,32 +94,41 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: spacing.md,
+  },
+  columnWrapper: {
+    gap: CARD_GAP,
+  },
+  card: {
+    width: CARD_WIDTH,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.borderLight,
-    padding: spacing.md,
+    overflow: 'hidden',
     ...shadows.small,
   },
-  iconWrap: {
-    width: scale(36),
-    height: scale(36),
-    borderRadius: radius.sm,
+  imageWrap: {
+    width: '100%',
+    height: scale(95),
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  body: {
+    width: '100%',
+    height: scale(40),
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
   },
   name: {
     ...typography.semibold,
-    fontSize: fontSize.md,
+    fontSize: scale(11.5),
     color: colors.text,
-    flex: 1,
+    textAlign: 'center',
+    lineHeight: scale(15),
   },
 });
 export default SubCategoriesScreen;

@@ -18,7 +18,9 @@ import CommonHeader from '../../components/ui/CommonHeader';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import { ALL_PRODUCTS } from '../home/homeData';
-import Button from '../../components/ui/Button';
+import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
+import ProductsSkeleton from './components/ProductsSkeleton';
+import ProductGridCard from './components/ProductGridCard';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
 
@@ -41,45 +43,6 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
   return rows;
 };
 
-const ProductGridCard: React.FC<{
-  product: typeof ALL_PRODUCTS[0];
-  onPress: (product: typeof ALL_PRODUCTS[0]) => void;
-}> = ({product, onPress}) => (
-  <TouchableOpacity
-    style={styles.gridCard}
-    activeOpacity={0.85}
-    onPress={() => onPress(product)}>
-    <View style={styles.gridImgArea}>
-      <AppImage uri={product.image} style={styles.gridImg} resizeMode="contain" />
-    </View>
-    <Text style={styles.gridName} numberOfLines={1}>{product.name}</Text>
-    <Text style={styles.gridCode}>{product.code}</Text>
-    <View style={styles.gridPriceRow}>
-      <View style={styles.gridPriceMain}>
-        <Text style={styles.gridPrice}>{formatPrice(product.price)}</Text>
-        {product.unit ? (
-          <Text style={styles.gridUnit}> / {product.unit}</Text>
-        ) : null}
-      </View>
-      {product.mrp && product.mrp > product.price ? (
-        <Text style={styles.gridMrp}>{formatPrice(product.mrp)}</Text>
-      ) : null}
-    </View>
-    <View style={styles.gridDivider} />
-    <Button
-      title="View Details"
-      variant="outline"
-      size="small"
-      fullWidth
-      onPress={() => onPress(product)}
-      iconRight={
-        <ChevronRight size={scale(13)} color={colors.primary} strokeWidth={2.6} />
-      }
-      textStyle={styles.gridDetailsText}
-    />
-  </TouchableOpacity>
-);
-
 export const ProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -91,6 +54,7 @@ export const ProductsScreen: React.FC = () => {
   );
   const [search, setSearch] = useState(route.params?.search ?? '');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const loading = useSimulatedLoading();
 
   const filtered = ALL_PRODUCTS.filter(p => {
     const matchesSearch =
@@ -127,6 +91,10 @@ export const ProductsScreen: React.FC = () => {
         }
       />
 
+      {loading ? (
+        <ProductsSkeleton />
+      ) : (
+        <>
       {/* Search Input Bar */}
       <View style={styles.searchBar}>
         <Search size={scale(16)} color="#94A3B8" strokeWidth={2.2} />
@@ -218,12 +186,18 @@ export const ProductsScreen: React.FC = () => {
           {chunk(filtered, 2).map((row, rowIndex) => (
             <View key={`row-${rowIndex}`} style={styles.gridRow}>
               {row.map(prod => (
-                <ProductGridCard key={prod.id} product={prod} onPress={handlePress} />
+                <ProductGridCard
+                  key={prod.id}
+                  product={prod}
+                  onPress={() => handlePress(prod)}
+                />
               ))}
               {row.length === 1 && <View style={styles.gridCardPlaceholder} />}
             </View>
           ))}
         </ScrollView>
+      )}
+        </>
       )}
     </View>
   );
@@ -409,78 +383,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: scale(10),
   },
-  gridCard: {
-    width: scale(160),
-    borderRadius: scale(18),
-    borderWidth: 2,
-    borderColor: colors.border,
-    padding: scale(6),
-  },
   gridCardPlaceholder: {
     flex: 1,
-  },
-  gridImgArea: {
-    height: scale(122),
-    borderRadius: scale(14),
-    borderWidth: 1,
-    borderColor: '#E9F1FA',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: scale(10),
-    overflow: 'hidden',
-  },
-  gridImg: {
-    width: scale(112),
-    height: scale(104),
-  },
-  gridName: {
-    fontSize: scale(13),
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.2,
-    lineHeight: scale(17),
-    marginBottom: scale(3),
-  },
-  gridCode: {
-    fontSize: scale(9.5),
-    color: '#94A3B8',
-    fontWeight: '600',
-  },
-  gridPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
-       marginVertical: scale(5),
-  },
-  gridPriceMain: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  gridPrice: {
-   fontSize: scale(14),
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: -0.3,
-  },
-  gridUnit: {
-    fontSize: scale(9.5),
-    fontWeight: '600',
-    color: '#94A3B8',
-  },
-  gridMrp: {
-    fontSize: scale(10),
-    fontWeight: '600',
-    color: '#B0BEC5',
-    textDecorationLine: 'line-through',
-  },
-  gridDivider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginBottom: scale(10),
-  },
-  gridDetailsText: {
-    fontSize: scale(11),
-    fontWeight: '700',
   },
   scrollFlex: {
     flex: 1,

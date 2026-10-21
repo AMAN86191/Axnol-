@@ -41,7 +41,7 @@ const renderHighlightedTitle = (title: string) => {
 
 export const HomeBanner: React.FC<HomeBannerProps> = ({
   banners,
-  height = scale(195),
+  height = scale(160),
   autoPlay = true,
   buttonLabel = 'Explore Products',
   onPressItem,

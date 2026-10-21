@@ -24,16 +24,13 @@ const DS = {
   container: '#EAEDFF',
 };
 
-export const SplashScreen: React.FC = () => {
-  const navigation = useNavigation<Nav>();
+export const SplashScreenView: React.FC = () => {
   const insets = useSafeAreaInsets();
   const progress = useSharedValue(0);
 
   useEffect(() => {
     progress.value = withTiming(1, {duration: 2200, easing: Easing.linear});
-    const t = setTimeout(() => navigation.replace('Onboarding'), 2400);
-    return () => clearTimeout(t);
-  }, [navigation, progress]);
+  }, [progress]);
 
   const barStyle = useAnimatedStyle(() => ({
     width: `${Math.min(100, Math.max(0, progress.value * 100))}%`,
@@ -68,6 +65,17 @@ export const SplashScreen: React.FC = () => {
       </View>
     </View>
   );
+};
+
+export const SplashScreen: React.FC = () => {
+  const navigation = useNavigation<Nav>();
+
+  useEffect(() => {
+    const t = setTimeout(() => navigation.replace('Onboarding'), 2400);
+    return () => clearTimeout(t);
+  }, [navigation]);
+
+  return <SplashScreenView />;
 };
 
 const styles = StyleSheet.create({

@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale } from '../../theme';
 import { useAppSelector } from '../../store';
+import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
+import HomeSkeleton from './components/HomeSkeleton';
 import {
   ALL_PRODUCTS,
-  CATEGORIES,
+  CategoryItem,
   FEATURED_PRODUCTS,
   HOME_BANNERS,
   HomeProduct,
   INDUSTRIES,
 } from './homeData';
+import { ImageKey } from '../../assets/images';
+import {
+  useGetCategoriesQuery,
+  useGetSubCategoriesQuery,
+} from '../../api/services/catalogueApi';
+import { useGetNotificationsQuery } from '../../api/services/documentsApi';
 import HomeHeader from './components/HomeHeader';
 import HomeBanner from './components/HomeBanner';
 import IndustriesSection from './components/IndustriesSection';
@@ -24,6 +32,31 @@ export const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const user = useAppSelector(s => s.auth.user);
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const loading = useSimulatedLoading();
+  const { data: categoriesData } = useGetCategoriesQuery({});
+  const { data: subCategoriesData } = useGetSubCategoriesQuery({});
+  const {
+    data: notificationsData,
+    refetch: refetchNotifications,
+  } = useGetNotificationsQuery();
+
+  const hasUnreadNotifications = (notificationsData ?? []).some(
+    notification => !notification.read,
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchNotifications();
+    }, [refetchNotifications]),
+  );
+
+  const homeCategories: CategoryItem[] = (categoriesData ?? []).map(
+    category => ({
+      id: category.id,
+      name: category.name,
+      image: category.image as ImageKey,
+    }),
+  );
 
   const toggleFavorite = (id: string) => {
     setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
@@ -33,6 +66,7 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate('Products', {
       screen: 'ProductDetails',
       params: { productId: product.id },
+      initial: false,
     });
   };
 
@@ -40,8 +74,32 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate('Products', {
       screen: 'Products',
       params: { title: 'Products', ...params },
+      initial: false,
     });
   };
+
+  const openCategory = (category: CategoryItem) => {
+    const hasSubCategories = (subCategoriesData ?? []).some(
+      sub => sub.categoryId === category.id,
+    );
+    if (hasSubCategories) {
+      navigation.navigate('Products', {
+        screen: 'SubCategories',
+        params: { categoryId: category.id, categoryName: category.name },
+        initial: false,
+      });
+    } else {
+      navigation.navigate('Products', {
+        screen: 'CategoryProducts',
+        params: { categoryId: category.id, title: category.name },
+        initial: false,
+      });
+    }
+  };
+
+  if (loading) {
+    return <HomeSkeleton />;
+  }
 
   return (
     <View style={styles.container}>
@@ -63,10 +121,14 @@ export const HomeScreen: React.FC = () => {
         {/* 1. Header (logo + notifications + profile + search + scan) */}
         <HomeHeader
           userName={user?.name ?? 'Rahul Sharma'}
-          onBellPress={() =>
-            navigation.navigate('Orders', { screen: 'OrdersList' })
+          onBellPress={() => navigation.navigate('Notifications')}
+          onProfilePress={() =>
+            navigation.navigate('Profile', {
+              screen: 'ProfileMain',
+              initial: false,
+            })
           }
-          onProfilePress={() => navigation.navigate('Profile')}
+          hasUnreadNotifications={hasUnreadNotifications}
         />
 
         {/* 2. Hero banner carousel */}
@@ -81,9 +143,7 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.sectionWrap}>
           <IndustriesSection
             industries={INDUSTRIES}
-            onSeeAll={() =>
-              navigation.navigate('Products', { screen: 'Industries' })
-            }
+            onSeeAll={() => navigation.navigate('Industry')}
             onSelect={ind =>
               openAllProducts({ title: ind.name, industryId: ind.id })
             }
@@ -106,13 +166,15 @@ export const HomeScreen: React.FC = () => {
         {/* 5. Categories */}
         <View style={styles.sectionWrap}>
           <CategoriesSection
-            categories={CATEGORIES}
+            categories={homeCategories}
             onSeeAll={() =>
-              navigation.navigate('Products', { screen: 'Categories', params: {} })
+              navigation.navigate('Products', {
+                screen: 'Categories',
+                params: {},
+                initial: false,
+              })
             }
-            onSelect={cat =>
-              openAllProducts({ title: cat.name, categoryId: cat.id })
-            }
+            onSelect={openCategory}
           />
         </View>
 
@@ -132,7 +194,6 @@ export const HomeScreen: React.FC = () => {
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

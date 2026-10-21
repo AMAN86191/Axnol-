@@ -35,6 +35,8 @@ import {useAppSelector} from '../../store';
 import AppImage from '../../components/ui/AppImage';
 import images from '../../assets/images';
 import {colors, radius, scale, shadows, spacing} from '../../theme';
+import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
+import ProfileSkeleton from './components/ProfileSkeleton';
 
 interface MenuItem {
   title: string;
@@ -73,6 +75,7 @@ export const ProfileScreen: React.FC = () => {
   const {user} = useAppSelector(s => s.auth);
   const [logoutApi] = useLogoutMutation();
   const dispatch = useDispatch();
+  const loading = useSimulatedLoading();
 
   const doLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
@@ -126,6 +129,10 @@ export const ProfileScreen: React.FC = () => {
   const phone = user?.phone ?? '+91 98290 12345';
   const location = `${user?.city ?? 'Jaipur'}, ${user?.state ?? 'Rajasthan'}`;
 
+  if (loading) {
+    return <ProfileSkeleton />;
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar
@@ -162,7 +169,7 @@ export const ProfileScreen: React.FC = () => {
             style={styles.topEditBtn}
             activeOpacity={0.85}
             onPress={() => navigation.navigate('EditProfile')}>
-            <Pencil size={scale(14)} color={colors.textInverse} strokeWidth={2.6} />
+            <Pencil size={scale(12)} color={colors.textInverse} strokeWidth={2.6} />
             <Text style={styles.topEditText}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -188,32 +195,29 @@ export const ProfileScreen: React.FC = () => {
                 resizeMode="cover"
               />
             </View>
-            <View style={styles.avatarBadge}>
-              <BadgeCheck size={scale(14)} color="#FFFFFF" strokeWidth={2.6} />
-            </View>
+        
           </View>
 
-          <View style={styles.nameRow}>
+          <View style={styles.profileInfo}>
             <Text style={styles.name} numberOfLines={1}>
               {name}
             </Text>
-            <BadgeCheck size={scale(16)} color="#0284C7" strokeWidth={2.4} />
-          </View>
-          <Text style={styles.company} numberOfLines={1}>
-            {companyName}
-          </Text>
+            <Text style={styles.company} numberOfLines={1}>
+              {companyName}
+            </Text>
 
-          <View style={styles.contactRow}>
-            <Mail size={scale(13)} color="#64748B" strokeWidth={2.2} />
-            <Text style={styles.contactText} numberOfLines={1}>
-              {email}
-            </Text>
-          </View>
-          <View style={styles.contactRow}>
-            <Phone size={scale(13)} color="#64748B" strokeWidth={2.2} />
-            <Text style={styles.contactText} numberOfLines={1}>
-              {phone}
-            </Text>
+            <View style={styles.contactRow}>
+              <Mail size={scale(13)} color="#64748B" strokeWidth={2.2} />
+              <Text style={styles.contactText} numberOfLines={1}>
+                {email}
+              </Text>
+            </View>
+            <View style={styles.contactRow}>
+              <Phone size={scale(13)} color="#64748B" strokeWidth={2.2} />
+              <Text style={styles.contactText} numberOfLines={1}>
+                {phone}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -382,6 +386,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(203,213,225,0.6)',
     marginBottom: scale(18),
     overflow: 'hidden',
+    flexDirection: 'row',
     alignItems: 'center',
     // ...shadows.small,
   },
@@ -391,12 +396,12 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.xxl,
   },
   avatarBlock: {
-    marginBottom: scale(12),
+    marginRight: scale(16),
   },
   avatarRing: {
-    width: scale(88),
-    height: scale(88),
-    borderRadius: scale(44),
+    width: scale(76),
+    height: scale(76),
+    borderRadius: scale(38),
     borderWidth: 3,
     borderColor: '#FFFFFF',
     overflow: 'hidden',
@@ -409,25 +414,23 @@ const styles = StyleSheet.create({
   },
   avatarBadge: {
     position: 'absolute',
-    bottom: scale(2),
-    right: scale(2),
-    width: scale(24),
-    height: scale(24),
-    borderRadius: scale(12),
+    bottom: scale(0),
+    right: scale(0),
+    width: scale(22),
+    height: scale(22),
+    borderRadius: scale(11),
     backgroundColor: '#0284C7',
     borderWidth: 2,
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(6),
+  profileInfo: {
+    flex: 1,
   },
   name: {
     flexShrink: 1,
-    fontSize: scale(18),
+    fontSize: scale(17),
     fontWeight: '800',
     color: '#0F172A',
     letterSpacing: -0.4,
@@ -452,16 +455,17 @@ const styles = StyleSheet.create({
   topEditBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: scale(6),
-    paddingHorizontal: scale(14),
-    paddingVertical: scale(9),
+    gap: scale(3),
+    paddingHorizontal: scale(12),
+    paddingVertical: scale(6),
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
+    opacity:0.9,
     ...shadows.small,
   },
   topEditText: {
-    fontSize: scale(12.5),
-    fontWeight: '800',
+    fontSize: scale(12),
+    fontWeight: '700',
     color: colors.textInverse,
     letterSpacing: 0.2,
   },

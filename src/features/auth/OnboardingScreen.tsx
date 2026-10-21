@@ -309,7 +309,7 @@ export const OnboardingScreen: React.FC = () => {
           onPress={handleNext}
           activeOpacity={0.85}
           style={styles.nextButton}>
-          <ArrowRight size={scale(22)} color="#FFFFFF" strokeWidth={2.6} />
+          <ArrowRight size={scale(20)} color="#FFFFFF" strokeWidth={2.6} />
         </TouchableOpacity>
       </View>
     </View>
@@ -460,8 +460,8 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   nextButton: {
-    width: scale(45),
-    height: scale(45),
+    width: scale(40),
+    height: scale(40),
     borderRadius: scale(28),
     backgroundColor: colors.primary,
     alignItems: 'center',

@@ -29,7 +29,6 @@ import {
 
 import AppImage from '../components/ui/AppImage';
 import {colors, radius, scale, spacing, fontSize} from '../theme';
-import {useAppSelector} from '../store';
 import {
   MainDrawerParamList,
   MainTabParamList,
@@ -65,7 +64,15 @@ interface DrawerLink {
   icon: LucideIcon;
 }
 
-const LINKS: DrawerLink[] = [
+type TabKey = keyof MainTabParamList;
+
+interface TabLink {
+  key: TabKey;
+  label: string;
+  icon: LucideIcon;
+}
+
+const LINKS: TabLink[] = [
   {key: 'Home', label: 'Home', icon: Home},
   {key: 'Products', label: 'Products', icon: Package},
   {key: 'Orders', label: 'Orders', icon: Receipt},
@@ -104,26 +111,37 @@ type DrawerRoute = {
   name?: string;
   state?: {
     index?: number;
-    routes?: Array<{name: string}>;
+    routes?: Array<{
+      name: string;
+      state?: {index?: number; routes?: Array<{name: string}>};
+    }>;
   };
 };
 
-const getActiveTab = (
+interface ActiveRoute {
+  activeTab: string;
+  activeProfile?: string;
+}
+
+const getActiveRoute = (
   state: DrawerContentComponentProps['state'],
-): string => {
+): ActiveRoute => {
   const route = state.routes[state.index] as DrawerRoute | undefined;
 
   if (route?.name && route.name !== 'HomeTabs') {
-    return route.name;
+    return {activeTab: route.name};
   }
 
-  const nestedState = route?.state;
+  const tabState = route?.state;
+  const tabRoute = tabState?.routes?.[tabState.index ?? 0];
+  const activeTab = tabRoute?.name ?? 'Home';
 
-  if (!nestedState?.routes?.length) {
-    return 'Home';
-  }
+  const activeProfile =
+    activeTab === 'Profile'
+      ? tabRoute?.state?.routes?.[tabRoute.state.index ?? 0]?.name
+      : undefined;
 
-  return nestedState.routes[nestedState.index ?? 0]?.name ?? 'Home';
+  return {activeTab, activeProfile};
 };
 
 interface NavigationItemProps {
@@ -184,17 +202,38 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
   state,
 }) => {
   const insets = useSafeAreaInsets();
-  const activeKey = getActiveTab(state);
-  const {user} = useAppSelector(s => s.auth);
-
-  const name = user?.name ?? 'Rahul Sharma';
-  const company = user?.company ?? 'Sharma Auto Traders';
+  const {activeTab, activeProfile} = getActiveRoute(state);
 
   const handleTabNavigate = useCallback(
-    (key: string) => {
-      navigation.navigate('HomeTabs', {
-        screen: key as keyof MainTabParamList,
-      });
+    (key: TabKey) => {
+      switch (key) {
+        case 'Products':
+          navigation.navigate('HomeTabs', {
+            screen: 'Products',
+            params: {screen: 'Products', initial: false},
+          });
+          break;
+        case 'Orders':
+          navigation.navigate('HomeTabs', {
+            screen: 'Orders',
+            params: {screen: 'OrdersList', initial: false},
+          });
+          break;
+        case 'Industry':
+          navigation.navigate('HomeTabs', {
+            screen: 'Industry',
+            params: {screen: 'Industries', initial: false},
+          });
+          break;
+        case 'Profile':
+          navigation.navigate('HomeTabs', {
+            screen: 'Profile',
+            params: {screen: 'ProfileMain', initial: false},
+          });
+          break;
+        default:
+          navigation.navigate('HomeTabs', {screen: 'Home'});
+      }
       navigation.closeDrawer();
     },
     [navigation],
@@ -204,7 +243,7 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
     (screen: ProfileKey) => {
       navigation.navigate('HomeTabs', {
         screen: 'Profile',
-        params: {screen},
+        params: {screen, initial: false},
       });
       navigation.closeDrawer();
     },
@@ -223,9 +262,9 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
     () =>
       LINKS.map(item => ({
         ...item,
-        active: item.key === activeKey,
+        active: item.key === activeTab,
       })),
-    [activeKey],
+    [activeTab],
   );
 
   return (
@@ -249,26 +288,6 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
             <Text style={styles.brandName}>AXNOL</Text>
             <Text style={styles.brandTag}>Industrial Lubricants</Text>
           </View>
-        </View>
-
-        {/* Signed-in user */}
-        <View style={styles.userCard}>
-          <View style={styles.userAvatarRing}>
-            <AppImage
-              uri={user?.avatar ?? 'user_avatar'}
-              style={styles.userAvatar}
-              resizeMode="cover"
-            />
-          </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {name}
-            </Text>
-            <Text style={styles.userCompany} numberOfLines={1}>
-              {company}
-            </Text>
-          </View>
-          <ChevronRight size={scale(16)} color={PALETTE.textMuted} strokeWidth={2} />
         </View>
       </View>
 
@@ -296,7 +315,7 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
             <NavigationItem
               key={item.key}
               item={item}
-              active={activeKey === item.key}
+              active={activeProfile === item.key}
               onPress={() => handleProfileNavigate(item.key)}
             />
           ))}
@@ -309,7 +328,7 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
             <NavigationItem
               key={item.key}
               item={item}
-              active={item.key === activeKey}
+              active={item.key === activeTab}
               onPress={() => handleLegalNavigate(item.key)}
             />
           ))}
@@ -447,51 +466,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: PALETTE.textSecondary,
     marginTop: scale(1),
-  },
-
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.xl,
-    backgroundColor: PALETTE.surface,
-    borderWidth: 1,
-    borderColor: PALETTE.border,
-  },
-
-  userAvatarRing: {
-    width: scale(42),
-    height: scale(42),
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: colors.primaryLight,
-    backgroundColor: colors.surfaceAlt,
-  },
-
-  userAvatar: {
-    width: '100%',
-    height: '100%',
-  },
-
-  userInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-
-  userName: {
-    fontSize: scale(13.5),
-    fontWeight: '700',
-    color: PALETTE.text,
-  },
-
-  userCompany: {
-    fontSize: scale(11),
-    fontWeight: '500',
-    color: PALETTE.textSecondary,
-    marginTop: scale(2),
   },
 
   // Menu

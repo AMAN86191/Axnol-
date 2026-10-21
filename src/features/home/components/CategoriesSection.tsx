@@ -6,17 +6,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  Cog,
-  Droplet,
-  Droplets,
-  FlaskConical,
-  LucideIcon,
-  ShieldCheck,
-  Wrench,
-} from 'lucide-react-native';
 import {colors, scale} from '../../../theme';
-import {CategoryIcon, CategoryItem} from '../homeData';
+import {CategoryItem} from '../homeData';
+import AppImage from '../../../components/ui/AppImage';
 import HomeSectionHeader from './HomeSectionHeader';
 
 interface CategoriesSectionProps {
@@ -24,15 +16,6 @@ interface CategoriesSectionProps {
   onSeeAll?: () => void;
   onSelect: (category: CategoryItem) => void;
 }
-
-const ICONS: Record<CategoryIcon, LucideIcon> = {
-  grease: Droplets,
-  hydraulic: Droplet,
-  gear: Cog,
-  cutting: Wrench,
-  rust: ShieldCheck,
-  synthetic: FlaskConical,
-};
 
 export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
   categories,
@@ -53,14 +36,17 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
       keyExtractor={item => item.id}
       contentContainerStyle={styles.listPad}
       renderItem={({item}) => {
-        const Icon = ICONS[item.icon];
         return (
           <TouchableOpacity
             style={styles.item}
             activeOpacity={0.85}
             onPress={() => onSelect(item)}>
             <View style={styles.circle}>
-              <Icon size={scale(23)} color={colors.primary} strokeWidth={1.8} />
+              <AppImage
+                uri={item.image}
+                style={styles.image}
+                resizeMode="cover"
+              />
             </View>
 
             <Text style={styles.name} numberOfLines={2}>
@@ -97,6 +83,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   name: {
     fontSize: scale(10.5),

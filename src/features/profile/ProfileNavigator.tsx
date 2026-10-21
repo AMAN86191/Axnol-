@@ -12,7 +12,9 @@ import AboutScreen from '../about/AboutScreen';
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
 export const ProfileNavigator: React.FC = () => (
-  <Stack.Navigator screenOptions={{headerShown: false}}>
+  <Stack.Navigator
+    initialRouteName="ProfileMain"
+    screenOptions={{headerShown: false}}>
     <Stack.Screen name="ProfileMain" component={ProfileScreen} />
     <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     <Stack.Screen name="PricingRequests" component={PricingRequestsScreen} />

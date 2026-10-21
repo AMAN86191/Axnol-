@@ -9,8 +9,13 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
 };
 
-export type MainTabParamList = {
+export type HomeStackParamList = {
   Home: undefined;
+  Notifications: undefined;
+};
+
+export type MainTabParamList = {
+  Home: NavigatorScreenParams<HomeStackParamList>;
   Products: NavigatorScreenParams<CatalogueStackParamList>;
   Orders: NavigatorScreenParams<OrdersStackParamList>;
   Industry: NavigatorScreenParams<CatalogueStackParamList>;
@@ -30,8 +35,18 @@ export type CatalogueStackParamList = {
     | undefined;
   ProductDetails: {productId: string};
   Industries: undefined;
-  Categories: {industryId: string; industryName: string};
-  SubCategories: {categoryId: string; categoryName: string; industryId: string};
+  Categories: {industryId?: string; industryName?: string} | undefined;
+  SubCategories: {
+    categoryId: string;
+    categoryName: string;
+    industryId?: string;
+  };
+  CategoryProducts: {
+    categoryId?: string;
+    subCategoryId?: string;
+    industryId?: string;
+    title?: string;
+  };
   RequestPrice:
     | {
         productId?: string;

@@ -19,6 +19,8 @@ import CommonHeader from '../../components/ui/CommonHeader';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import Button from '../../components/ui/Button';
+import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
+import ProductDetailsSkeleton from './components/ProductDetailsSkeleton';
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
 
@@ -35,6 +37,7 @@ export const ProductDetailsScreen: React.FC = () => {
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const loading = useSimulatedLoading();
 
   const adjustQuantity = (delta: number) =>
     setQuantity(q => Math.max(MIN_QUANTITY, q + delta));
@@ -53,7 +56,7 @@ export const ProductDetailsScreen: React.FC = () => {
     id: route.params?.productId ?? 'p2',
     name: 'Gear Oil AX-200',
     subtitle: 'Extreme Pressure Gear Oil',
-    images: ['product_drum', 'product_oil', 'product_generic', 'product_grease'],
+    images: [ 'product_oil', 'product_generic', 'product_grease'],
     tags: ['Automotive', 'Industrial', 'High Performance'],
     description:
       'High-performance gear oil designed for industrial gear systems with excellent wear protection and thermal stability. Delivers prolonged machinery life and reduces friction.',
@@ -95,6 +98,9 @@ export const ProductDetailsScreen: React.FC = () => {
         }
       />
 
+      {loading ? (
+        <ProductDetailsSkeleton />
+      ) : (
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(105) }]}>
@@ -255,6 +261,7 @@ export const ProductDetailsScreen: React.FC = () => {
           </View>
         </View>
       </ScrollView>
+      )}
 
       {/* Sticky Bottom Checkout Bar */}
       <View

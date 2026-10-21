@@ -14,6 +14,9 @@ import {ChevronLeft, ChevronRight, Search} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
+import CommonHeader from '../../components/ui/CommonHeader';
+import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
+import IndustriesSkeleton from './components/IndustriesSkeleton';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
@@ -47,13 +50,13 @@ const INDUSTRIES_DATA = [
     id: 'ind3',
     name: 'Agriculture',
     subtitle: 'Farm equipment',
-    image: 'industry_3',
+    image: 'ind_agricultural',
   },
   {
     id: 'ind8',
     name: 'Energy',
     subtitle: 'Power generation',
-    image: 'industry_8',
+    image: 'ind_energy',
   },
 ];
 
@@ -62,6 +65,7 @@ export const IndustriesScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
+  const loading = useSimulatedLoading();
 
   const filtered = INDUSTRIES_DATA.filter(
     item =>
@@ -72,21 +76,12 @@ export const IndustriesScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <View style={[styles.header, {paddingTop: insets.top + spacing.sm}]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          activeOpacity={0.7}
-          onPress={() => navigation.goBack()}>
-          <ChevronLeft size={scale(24)} color="#172033" />
-        </TouchableOpacity>
-        <View style={styles.titleWrap}>
-          <Text style={styles.headerTitle}>Industries</Text>
-          <Text style={styles.headerSubtitle}>Solutions for every industry</Text>
-        </View>
-        <View style={{width: scale(24)}} />
-      </View>
+   <CommonHeader title='Industries' />
 
+      {loading ? (
+        <IndustriesSkeleton />
+      ) : (
+        <>
       {/* Search Bar */}
       <View style={styles.searchBarContainer}>
         <View style={styles.searchBar}>
@@ -136,6 +131,8 @@ export const IndustriesScreen: React.FC = () => {
           </TouchableOpacity>
         )}
       />
+        </>
+      )}
     </View>
   );
 };
@@ -144,32 +141,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F7F9FC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF2F6',
-  },
-  backBtn: {
-    padding: scale(4),
-  },
-  titleWrap: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    color: '#172033',
-  },
-  headerSubtitle: {
-    fontSize: scale(11),
-    color: '#718096',
-    marginTop: scale(1),
   },
   searchBarContainer: {
     // backgroundColor: '#FFFFFF',

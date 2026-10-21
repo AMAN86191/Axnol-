@@ -12,19 +12,20 @@ import {
 } from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {MainTabParamList} from './types';
-import HomeScreen from '../features/home/HomeScreen';
-import CatalogueScreen, {
-  IndustryStack,
-} from '../features/catalogue/CatalogueScreen';
+import HomeNavigator from '../features/home/HomeNavigator';
+import CatalogueNavigator from '../features/catalogue/CatalogueNavigator';
+import IndustryNavigator from '../features/catalogue/IndustryNavigator';
 import OrdersNavigator from '../features/orders/OrdersNavigator';
 import ProfileNavigator from '../features/profile/ProfileNavigator';
-import {fontSize, scale, verticalScale} from '../theme';
+import {fontSize, scale} from '../theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const ACTIVE_TINT = '#087FD1';
 const INACTIVE_TINT = '#8E9BAE';
 const ACTIVE_PILL = '#E4F1FC';
+
+const TAB_BAR_BASE_HEIGHT = 70;
 
 const getTabBarStyle = (
   focusedRouteName: string | undefined,
@@ -81,9 +82,9 @@ export const MainTabs: React.FC = () => {
           paddingVertical: 0,
         },
         tabBarStyle: {
-          height: verticalScale(62) + insets.bottom,
-          paddingTop: verticalScale(9),
-          paddingBottom: insets.bottom > 0 ? insets.bottom : verticalScale(10),
+          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 8,
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E8EDF3',
@@ -106,18 +107,21 @@ export const MainTabs: React.FC = () => {
       }}>
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
-        options={{
+        component={HomeNavigator}
+        options={({route}) => ({
           tabBarLabel: 'Home',
           tabBarIcon: renderTabIcon(Home),
-        }}
+          popToTopOnBlur: true,
+          ...getTabBarStyle(getFocusedRouteNameFromRoute(route), 'Home'),
+        })}
       />
       <Tab.Screen
         name="Products"
-        component={CatalogueScreen}
+        component={CatalogueNavigator}
         options={({route}) => ({
           tabBarLabel: 'Products',
           tabBarIcon: renderTabIcon(Package),
+          popToTopOnBlur: true,
           ...getTabBarStyle(getFocusedRouteNameFromRoute(route), 'Products'),
         })}
       />
@@ -127,15 +131,17 @@ export const MainTabs: React.FC = () => {
         options={({route}) => ({
           tabBarLabel: 'Orders',
           tabBarIcon: renderTabIcon(ClipboardList),
+          popToTopOnBlur: true,
           ...getTabBarStyle(getFocusedRouteNameFromRoute(route), 'OrdersList'),
         })}
       />
       <Tab.Screen
         name="Industry"
-        component={IndustryStack}
+        component={IndustryNavigator}
         options={({route}) => ({
           tabBarLabel: 'Industry',
           tabBarIcon: renderTabIcon(Factory),
+          popToTopOnBlur: true,
           ...getTabBarStyle(getFocusedRouteNameFromRoute(route), 'Industries'),
         })}
       />
@@ -145,6 +151,7 @@ export const MainTabs: React.FC = () => {
         options={({route}) => ({
           tabBarLabel: 'Profile',
           tabBarIcon: renderTabIcon(User),
+          popToTopOnBlur: true,
           ...getTabBarStyle(getFocusedRouteNameFromRoute(route), 'ProfileMain'),
         })}
       />

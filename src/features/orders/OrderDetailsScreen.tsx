@@ -34,6 +34,8 @@ import { OrdersStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import { colors, radius, scale, shadows, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
+import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
+import OrderDetailsSkeleton from './components/OrderDetailsSkeleton';
 
 type Route = RouteProp<OrdersStackParamList, 'OrderDetails'>;
 
@@ -60,7 +62,7 @@ const ORDER = {
       name: 'Gear Oil AX-200',
       quantity: 20,
       unitPrice: 2250,
-      image: 'product_drum',
+      image: 'product_cutting',
     },
   ] as OrderItemData[],
   subtotal: 45000,
@@ -202,6 +204,7 @@ export const OrderDetailsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   useRoute<Route>();
+  const loading = useSimulatedLoading();
 
   const order = ORDER;
   const badge = statusStyle(order.status);
@@ -213,6 +216,9 @@ export const OrderDetailsScreen: React.FC = () => {
 
       {/* Header */}
       <CommonHeader title='Order Details' />
+      {loading ? (
+        <OrderDetailsSkeleton />
+      ) : (
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
@@ -355,14 +361,9 @@ export const OrderDetailsScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Trust footer */}
-        <View style={styles.trustRow}>
-          <BadgeCheck size={scale(14)} color="#16A34A" strokeWidth={2.4} />
-          <Text style={styles.trustText}>
-            Genuine Axnol products • Secure order
-          </Text>
-        </View>
+      
       </ScrollView>
+      )}
     </View>
   );
 };
@@ -681,21 +682,7 @@ const styles = StyleSheet.create({
     fontSize: scale(12.5),
     lineHeight: scale(19),
     color: '#475569',
-  },
-
-  // Trust
-  trustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: scale(6),
-    marginTop: scale(30),
-  },
-  trustText: {
-    fontSize: scale(11),
-    fontWeight: '500',
-    color: '#94A3B8',
-  },
+  }
 });
 
 export default OrderDetailsScreen;
