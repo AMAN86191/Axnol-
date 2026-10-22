@@ -1,67 +1,85 @@
-import React, {useEffect} from 'react';
-import {StatusBar, StyleSheet, Text, View} from 'react-native';
+import React, { useEffect } from 'react';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {AuthStackParamList} from '../../navigation/types';
-import {fontSize, scale, spacing, typography} from '../../theme';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../../navigation/types';
+import { scale, spacing } from '../../theme';
 import AppImage from '../../components/ui/AppImage';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
 const DS = {
-  surface: '#FAF8FF',
+  surface: '#FFFFFF',
   primary: '#00288E',
-  secondary: '#006591',
-  onSurface: '#131B2E',
-  onVariant: '#444653',
-  container: '#EAEDFF',
+};
+
+const DOT_COUNT = 3;
+const DOT_LIFT = scale(6);
+
+const Dot: React.FC<{ index: number }> = ({ index }) => {
+  const v = useSharedValue(0);
+
+  useEffect(() => {
+    v.value = withDelay(
+      index * 160,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 350, easing: Easing.out(Easing.quad) }),
+          withTiming(0, { duration: 350, easing: Easing.in(Easing.quad) }),
+          withTiming(0, { duration: 300 }),
+        ),
+        -1,
+        false,
+      ),
+    );
+  }, [index, v]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: 0.35 + v.value * 0.65,
+    transform: [{ translateY: -v.value * DOT_LIFT }],
+  }));
+
+  return <Animated.View style={[styles.dot, style]} />;
 };
 
 export const SplashScreenView: React.FC = () => {
-  const insets = useSafeAreaInsets();
-  const progress = useSharedValue(0);
+  const enter = useSharedValue(0);
 
   useEffect(() => {
-    progress.value = withTiming(1, {duration: 2200, easing: Easing.linear});
-  }, [progress]);
+    enter.value = withTiming(1, {
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [enter]);
 
-  const barStyle = useAnimatedStyle(() => ({
-    width: `${Math.min(100, Math.max(0, progress.value * 100))}%`,
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: enter.value,
+    transform: [{ scale: 0.9 + enter.value * 0.1 }],
   }));
 
   return (
     <View style={styles.container}>
-      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View
-        style={[
-          styles.content,
-          {
-            paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xl,
-          },
-        ]}>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle="dark-content"
+      />
+      <Animated.View style={logoStyle}>
         <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
-
-        <Text style={styles.tagline}>
-          High Performance Lubricants{'\n'}for a{' '}
-          <Text style={styles.highlight}>Better Tomorrow</Text>
-        </Text>
-
-        <View style={styles.progressTrack}>
-          <Animated.View style={[styles.progressBar, barStyle]} />
-        </View>
-        <Text style={styles.loading}>Setting up your terminal…</Text>
-      </View>
-
-      <View style={[styles.footer, {paddingBottom: insets.bottom + spacing.lg}]}>
-        <Text style={styles.brand}>Specialty Lubricants & Greases since 1959</Text>
+      </Animated.View>
+      <View style={styles.dots}>
+        {Array.from({ length: DOT_COUNT }).map((_, i) => (
+          <Dot key={i} index={i} />
+        ))}
       </View>
     </View>
   );
@@ -82,56 +100,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: DS.surface,
-  },
-  content: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.xxl,
   },
   logo: {
-    width: scale(190),
-    height: scale(40),
+    width: scale(80),
+    height: scale(80),
   },
-  tagline: {
-    ...typography.bold,
-    fontSize: fontSize.xl,
-    color: DS.onSurface,
-    textAlign: 'center',
-    lineHeight: fontSize.xxl * 1.3,
-    marginTop: spacing.xl,
-  },
-  highlight: {
-    color: DS.primary,
-  },
-  progressTrack: {
-    width: '60%',
-    height: scale(5),
-    borderRadius: scale(3),
-    backgroundColor: DS.container,
-    marginTop: spacing.xl,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: scale(3),
-    backgroundColor: DS.secondary,
-  },
-  loading: {
-    ...typography.regular,
-    fontSize: fontSize.xs,
-    color: DS.onVariant,
-    marginTop: spacing.sm,
-  },
-  footer: {
+  dots: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.xxl,
+    height: scale(20),
+    marginTop: spacing.xl,
   },
-  brand: {
-    ...typography.medium,
-    fontSize: fontSize.xs,
-    color: DS.onVariant,
-    letterSpacing: 0.4,
+  dot: {
+    width: scale(7),
+    height: scale(7),
+    borderRadius: scale(4),
+    backgroundColor: DS.primary,
+    marginHorizontal: scale(4),
   },
 });
 

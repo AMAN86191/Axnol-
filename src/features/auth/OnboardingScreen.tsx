@@ -82,7 +82,7 @@ const slideImageStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-     width: '100%',
+    width: '100%',
     height: '85%',
   },
 });
@@ -95,36 +95,36 @@ const ONBOARDING_SLIDES: SlideItem[] = [
     titleLine1: 'A Complete Range of',
     titleLine2: 'Lubricants',
     categories: [
-      { id: 'c1', title: 'Engine\nOils', icon: Car, color: '#0084FF' },
-      { id: 'c2', title: 'Gear\nOils', icon: Cog, color: '#F59E0B' },
-      { id: 'c3', title: 'Base\nOils', icon: Database, color: '#0084FF' },
-      { id: 'c4', title: 'Speciality\nProducts', icon: FlaskConical, color: '#F59E0B' },
+      { id: 'c1', title: 'Engine Oils', icon: Car, color: '#0084FF' },
+      { id: 'c2', title: 'Gear Oils', icon: Cog, color: '#F59E0B' },
+      { id: 'c3', title: 'Base Oils', icon: Database, color: '#0084FF' },
+      // { id: 'c4', title: 'Speciality\nProducts', icon: FlaskConical, color: '#F59E0B' },
     ],
   },
   {
     id: 'slide_2',
     bgUri: 'onboard_slide2_bg',
     imageStyle: slideImageStyles.slide2,
-    titleLine1: 'Maximum Engine',
-    titleLine2: 'Protection & Life',
+    titleLine1: 'Excellence in Engine ',
+    titleLine2: 'Care',
     categories: [
-      { id: 'c1', title: 'Wear\nGuard', icon: ShieldCheck, color: '#0084FF' },
-      { id: 'c2', title: 'High\nMileage', icon: Gauge, color: '#F59E0B' },
-      { id: 'c3', title: 'Thermal\nStability', icon: Flame, color: '#0084FF' },
-      { id: 'c4', title: 'Smooth\nDrive', icon: Zap, color: '#F59E0B' },
+      // { id: 'c1', title: 'Wear\nGuard', icon: ShieldCheck, color: '#0084FF' },
+      { id: 'c2', title: 'High Mileage', icon: Gauge, color: '#F59E0B' },
+      { id: 'c3', title: 'Thermal Stability', icon: Flame, color: '#0084FF' },
+      { id: 'c4', title: 'Smooth Drive', icon: Zap, color: '#F59E0B' },
     ],
   },
   {
     id: 'slide_3',
     bgUri: 'onboard_slide3_bg',
     imageStyle: slideImageStyles.slide3,
-    titleLine1: 'Nationwide Bulk',
-    titleLine2: 'Supply Chain',
+    titleLine1: 'A Nationwide Supply  ',
+    titleLine2: 'Network',
     categories: [
-      { id: 'c1', title: 'Refinery\nDirect', icon: Factory, color: '#0084FF' },
-      { id: 'c2', title: 'Bulk\nOrders', icon: Package, color: '#F59E0B' },
-      { id: 'c3', title: 'Express\nDispatch', icon: Truck, color: '#0084FF' },
-      { id: 'c4', title: 'Certified\nQuality', icon: Award, color: '#F59E0B' },
+      { id: 'c1', title: 'Refinery Direct', icon: Factory, color: '#0084FF' },
+      { id: 'c2', title: 'Bulk Orders', icon: Package, color: '#F59E0B' },
+      { id: 'c3', title: 'Express Dispatch', icon: Truck, color: '#0084FF' },
+      // { id: 'c4', title: 'Certified\nQuality', icon: Award, color: '#F59E0B' },
     ],
   },
 ];
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
 
   logo: {
     width: scale(140),
-    height: scale(80),
+    height: scale(60),
   },
   titleSection: {
     alignItems: 'center',
@@ -361,6 +361,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: -0.2,
     lineHeight: scale(35),
+    paddingTop: scale(25)
   },
   titleLine2: {
     fontSize: scale(28),
