@@ -10,16 +10,16 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ChevronLeft, ChevronRight, Search} from 'lucide-react-native';
+import {ChevronRight, Search} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
-import {colors, fontSize, radius, scale, spacing} from '../../theme';
+import {radius, scale, spacing} from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
 import IndustriesSkeleton from './components/IndustriesSkeleton';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md * 2) / 3;
 
 const INDUSTRIES_DATA = [
   {
@@ -99,7 +99,7 @@ export const IndustriesScreen: React.FC = () => {
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
-        numColumns={2}
+        numColumns={3}
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={[styles.listContent, {paddingBottom: insets.bottom + scale(80)}]}
         showsVerticalScrollIndicator={false}
@@ -120,10 +120,12 @@ export const IndustriesScreen: React.FC = () => {
             </View>
 
             <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {item.name}
+              </Text>
               <View style={styles.arrowBadge}>
                 <ChevronRight
-                  size={scale(14)}
+                  size={scale(12)}
                   color={activeId === item.id ? '#0D4F82' : '#1264A3'}
                 />
               </View>
@@ -174,7 +176,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   card: {
-    width: CARD_WIDTH,
+    flex: 1,
+    maxWidth: CARD_WIDTH,
     backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: radius.lg,
     borderWidth: 1,
@@ -183,7 +186,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     width: '100%',
-    height: scale(110),
+    height: scale(88),
     backgroundColor: '#F1F5F9',
   },
   image: {
@@ -191,18 +194,18 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   cardContent: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: scale(35),
+    flexDirection:"row",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: scale(6),
+    gap: scale(5),
   },
   cardTitle: {
-    flex: 1,
-    fontSize: scale(12),
+    fontSize: scale(10.5),
     fontWeight: '700',
     color: '#172033',
+    textAlign: 'center',
   },
   arrowBadge: {
     width: scale(20),
@@ -211,7 +214,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    marginLeft: scale(4),
     shadowColor: '#1264A3',
     shadowOffset: {width: 0, height: scale(2)},
     shadowOpacity: 0.15,

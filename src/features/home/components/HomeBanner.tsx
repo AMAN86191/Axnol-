@@ -25,6 +25,8 @@ interface HomeBannerProps {
   autoPlay?: boolean;
   buttonLabel?: string;
   downloadLabel?: string;
+  showPrimaryButton?: boolean;
+  showDownloadButton?: boolean;
   onPressItem?: (item: HomeBannerItem, index: number) => void;
   onPressButton?: (item: HomeBannerItem, index: number) => void;
   onPressDownload?: (item: HomeBannerItem, index: number) => void;
@@ -50,6 +52,8 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
   autoPlay = true,
   buttonLabel = 'Explore Products',
   downloadLabel = 'Download',
+  showPrimaryButton = true,
+  showDownloadButton = true,
   onPressItem,
   onPressButton,
   onPressDownload,
@@ -144,7 +148,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
               <LinearGradient
                 pointerEvents="none"
                 colors={[
-                  'rgba(241,247,252,0.97)',
+                  'rgba(241,247,252,0.91)',
                   'rgba(241,247,252,0.86)',
                   'rgba(241,247,252,0)',
                 ]}
@@ -170,37 +174,41 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
 
                 {/* Common CTAs shared by every banner */}
                 <View style={styles.buttonRow}>
-                  <TouchableOpacity
-                    style={styles.button}
-                    activeOpacity={0.85}
-                    onPress={() => onPressButton?.(item, index)}>
-                    <Text style={styles.buttonText} numberOfLines={1}>
-                      {buttonLabel}
-                    </Text>
-                    <ArrowRight
-                      size={scale(11)}
-                      color="#FFFFFF"
-                      strokeWidth={2.8}
-                    />
-                  </TouchableOpacity>
+                  {showPrimaryButton && (
+                    <TouchableOpacity
+                      style={styles.button}
+                      activeOpacity={0.85}
+                      onPress={() => onPressButton?.(item, index)}>
+                      <Text style={styles.buttonText} numberOfLines={1}>
+                        {buttonLabel}
+                      </Text>
+                      <ArrowRight
+                        size={scale(11)}
+                        color="#FFFFFF"
+                        strokeWidth={2.8}
+                      />
+                    </TouchableOpacity>
+                  )}
 
-                  <TouchableOpacity
-                    style={styles.buttonOutline}
-                    activeOpacity={0.85}
-                    onPress={() =>
-                      onPressDownload
-                        ? onPressDownload(item, index)
-                        : Linking.openURL(BROCHURE_URL).catch(() => {})
-                    }>
-                    <Download
-                      size={scale(11)}
-                      color="#0A4D8C"
-                      strokeWidth={2.8}
-                    />
-                    <Text style={styles.buttonOutlineText} numberOfLines={1}>
-                      {downloadLabel}
-                    </Text>
-                  </TouchableOpacity>
+                  {showDownloadButton && (
+                    <TouchableOpacity
+                      style={styles.buttonOutline}
+                      activeOpacity={0.85}
+                      onPress={() =>
+                        onPressDownload
+                          ? onPressDownload(item, index)
+                          : Linking.openURL(BROCHURE_URL).catch(() => {})
+                      }>
+                      <Download
+                        size={scale(11)}
+                        color="#0A4D8C"
+                        strokeWidth={2.8}
+                      />
+                      <Text style={styles.buttonOutlineText} numberOfLines={1}>
+                        {downloadLabel}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </View>

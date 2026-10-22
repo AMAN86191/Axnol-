@@ -17,20 +17,24 @@ import {
   ArrowRight,
   Download,
   FileText,
-  Heart,
-  Minus,
-  Plus,
   ShieldCheck,
+  ShoppingCart,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogueStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
+import Button from '../../components/ui/Button';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
-import Button from '../../components/ui/Button';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import ProductDetailsSkeleton from './components/ProductDetailsSkeleton';
+import { useCart } from '../cart/useCart';
+import EditableQuantity from '../cart/components/EditableQuantity';
+import { selectCartItemCount } from '../cart/cartSelectors';
+import WishlistButton from '../wishlist/components/WishlistButton';
+import { useAppSelector } from '../../store';
+
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
 
@@ -45,15 +49,11 @@ export const ProductDetailsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
   const [selectedPack, setSelectedPack] = useState('20L');
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
-  const [isFavorite, setIsFavorite] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const loading = useSimulatedLoading();
-
-  const adjustQuantity = (delta: number) =>
-    setQuantity(q => Math.max(MIN_QUANTITY, q + delta));
-
-  const canDecrement = quantity > MIN_QUANTITY;
+  const { add, items } = useCart();
+  const cartCount = useAppSelector(selectCartItemCount);
 
   const onViewableItemsChanged = useRef((info: { viewableItems: ViewToken[] }) => {
     const item = info.viewableItems[0];
@@ -95,8 +95,23 @@ export const ProductDetailsScreen: React.FC = () => {
       : 0;
 
   const totalPrice = product.price * quantity;
-  const totalMrp = product.mrp * quantity;
-  const totalSavings = totalMrp - totalPrice;
+
+  const inCart = items.some(item => item.id === product.id);
+
+  const handleAddToCart = () => {
+    add(
+      {
+        id: product.id,
+        name: product.name,
+        code: product.name,
+        image: product.images[0],
+        price: product.price,
+        mrp: product.mrp,
+        unit: selectedPack,
+      },
+      quantity,
+    );
+  };
 
   const openMsdsPdf = () => {
     const url = 'https://axnol.in/pdf/sds.pdf';
@@ -123,16 +138,36 @@ export const ProductDetailsScreen: React.FC = () => {
       <CommonHeader
         title="Product Details"
         right={
-          <TouchableOpacity
-            style={styles.headerBtn}
-            activeOpacity={0.7}
-            onPress={() => setIsFavorite(!isFavorite)}>
-            <Heart
-              size={scale(20)}
-              color={isFavorite ? '#EF4444' : '#0F172A'}
-              fill={isFavorite ? '#EF4444' : 'none'}
+          <>
+            <TouchableOpacity
+              style={styles.headerBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Cart')}>
+              <ShoppingCart size={scale(20)} color="#0F172A" strokeWidth={2.1} />
+              {cartCount > 0 ? (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+            <WishlistButton
+              product={{
+                id: product.id,
+                name: product.name,
+                code: product.name,
+                image: product.images[0],
+                price: product.price,
+                mrp: product.mrp,
+                unit: selectedPack,
+              }}
+              size={20}
+              containerSize={30}
+              showBackground={false}
+              style={styles.headerBtn}
             />
-          </TouchableOpacity>
+          </>
         }
       />
 
@@ -141,6 +176,7 @@ export const ProductDetailsScreen: React.FC = () => {
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(105) }]}>
 
           {/* Image Gallery */}
@@ -320,30 +356,11 @@ export const ProductDetailsScreen: React.FC = () => {
                 <Text style={styles.qtyHint}>Select number of packs</Text>
               </View>
 
-              <View style={styles.stepper}>
-                <TouchableOpacity
-                  style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
-                  activeOpacity={0.7}
-                  disabled={!canDecrement}
-                  onPress={() => adjustQuantity(-1)}>
-                  <Minus
-                    size={scale(17)}
-                    color={canDecrement ? '#0F172A' : '#CBD5E1'}
-                    strokeWidth={2.5}
-                  />
-                </TouchableOpacity>
-
-                <View style={styles.stepValueWrap}>
-                  <Text style={styles.stepValue}>{quantity}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.stepBtn}
-                  activeOpacity={0.7}
-                  onPress={() => adjustQuantity(1)}>
-                  <Plus size={scale(17)} color="#0F172A" strokeWidth={2.5} />
-                </TouchableOpacity>
-              </View>
+              <EditableQuantity
+                size="regular"
+                value={quantity}
+                onChange={setQuantity}
+              />
             </View>
           </View>
         </ScrollView>
@@ -351,8 +368,9 @@ export const ProductDetailsScreen: React.FC = () => {
 
       {/* Sticky Bottom Checkout Bar */}
       <View
-        style={[styles.bottomBar, { paddingBottom: scale(10) + insets.bottom }]}>
+        style={[styles.bottomBar, { paddingBottom: insets.bottom + scale(10) }]}>
         <View style={styles.bottomPriceCol}>
+          <Text style={styles.bottomPriceLabel}>Total Price</Text>
           <View style={styles.bottomPriceRow}>
             <Text style={styles.bottomPrice}>{formatPrice(totalPrice)}</Text>
             {product.unit ? (
@@ -361,9 +379,6 @@ export const ProductDetailsScreen: React.FC = () => {
           </View>
 
           <View style={styles.bottomMetaRow}>
-            {discount > 0 && (
-              <Text style={styles.bottomMrp}>{formatPrice(totalMrp)}</Text>
-            )}
             {discount > 0 && (
               <View style={styles.bottomDiscountBadge}>
                 <Text style={styles.bottomDiscountText}>{discount}% OFF</Text>
@@ -375,32 +390,52 @@ export const ProductDetailsScreen: React.FC = () => {
               </Text>
             )}
           </View>
-
-          {totalSavings > 0 && (
-            <Text style={styles.bottomSavingsText}>
-              You save {formatPrice(totalSavings)}
-            </Text>
-          )}
         </View>
-        <Button
-          title='Check Out'
-          variant='outline'
-          size='medium'
-          style={styles.checkoutBtn}
-          onPress={() =>
-            navigation.navigate('RequestPrice', {
-              productId: product.id,
-              productName: product.name,
-              category: product.subtitle,
-              price: product.price,
-              mrp: product.mrp,
-              unit: selectedPack,
-              quantity,
-              packSizes: product.packSizes,
-            })}
-          textStyle={styles.checkoutText}
-          iconRight={<ArrowRight size={scale(14)} color={colors.primary} strokeWidth={3.5} />}
-        />
+
+        {inCart ? (
+          <Button
+            title='Go to Cart'
+            onPress={() => navigation.navigate('Cart')}
+            variant='outline'
+            size='medium'
+            style={styles.goToCartBtn}
+            textStyle={styles.goToCartText}
+            iconLeft={
+              <ShoppingCart size={scale(16)} color={colors.primary} strokeWidth={2.3} />
+            }
+          />
+        ) : (
+          <View style={styles.bottomActions}>
+            <TouchableOpacity
+              style={styles.cartIconBtn}
+              activeOpacity={0.8}
+              onPress={handleAddToCart}>
+              <ShoppingCart
+                size={scale(19)}
+                color={colors.primary}
+                strokeWidth={2.3}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.checkoutBtn}
+              activeOpacity={0.9}
+              onPress={() =>
+                navigation.navigate('RequestPrice', {
+                  productId: product.id,
+                  productName: product.name,
+                  category: product.subtitle,
+                  price: product.price,
+                  mrp: product.mrp,
+                  unit: selectedPack,
+                  quantity,
+                  packSizes: product.packSizes,
+                })}>
+              <Text style={styles.checkoutText}>Check Out</Text>
+              <ArrowRight size={scale(15)} color={colors.textInverse} strokeWidth={3} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -413,6 +448,23 @@ const styles = StyleSheet.create({
   },
   headerBtn: {
     padding: scale(4),
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: 0,
+    right: -scale(2),
+    minWidth: scale(15),
+    height: scale(15),
+    borderRadius: scale(7.5),
+    paddingHorizontal: scale(3),
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: scale(9),
+    fontWeight: '800',
   },
   scrollContent: {
     paddingTop: spacing.xs,
@@ -596,7 +648,7 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   msdsInfo: {
-    flex: 1,
+    flex: 1,  
   },
   msdsTitle: {
     fontSize: scale(13),
@@ -686,40 +738,6 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: scale(2),
   },
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: scale(44),
-    borderRadius: radius.md,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
-    overflow: 'hidden',
-  },
-  stepBtn: {
-    width: scale(42),
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepBtnDisabled: {
-    opacity: 0.55,
-  },
-  stepValueWrap: {
-    minWidth: scale(44),
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: '#EEF2F6',
-    paddingHorizontal: scale(4),
-  },
-  stepValue: {
-    fontSize: scale(15),
-    fontWeight: '700',
-    color: '#0F172A',
-  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
@@ -742,15 +760,24 @@ const styles = StyleSheet.create({
   },
   bottomPriceCol: {
     flex: 1,
+    flexShrink: 1,
     marginRight: spacing.md,
+  },
+  bottomPriceLabel: {
+    fontSize: scale(10),
+    fontWeight: '600',
+    color: '#94A3B8',
+    letterSpacing: 0.2,
+    marginBottom: scale(1),
   },
   bottomPriceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    flexShrink: 1,
   },
   bottomPrice: {
-    fontSize: scale(18),
-    fontWeight: '700',
+    fontSize: scale(19),
+    fontWeight: '800',
     color: '#102A43',
     letterSpacing: -0.5,
   },
@@ -763,7 +790,7 @@ const styles = StyleSheet.create({
   bottomMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: scale(2),
+    marginTop: scale(3),
     gap: scale(6),
   },
   bottomMrp: {
@@ -789,19 +816,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#94A3B8',
   },
-  bottomSavingsText: {
-    fontSize: scale(10),
-    fontWeight: '700',
-    color: '#0B7A3B',
-    marginTop: scale(2),
+  bottomActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: scale(8),
+  },
+  cartIconBtn: {
+    width: scale(48),
+    height: scale(40),
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goToCartBtn: {
+    width: '70%',
+    height: scale(44),
+    paddingHorizontal: scale(10),
+    borderRadius: radius.md,
+  },
+  goToCartText: {
+    fontSize: scale(13.5),
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
   checkoutBtn: {
-    width: '50%'
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(6),
+    height: scale(44),
+    paddingHorizontal: scale(24),
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
   },
   checkoutText: {
     fontSize: scale(14),
     fontWeight: '800',
     letterSpacing: 0.2,
+    color: colors.textInverse,
   },
 });
 

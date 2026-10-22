@@ -5,6 +5,7 @@ import AuthStack from './AuthStack';
 import MainDrawer from './MainDrawer';
 import {RootStackParamList} from './types';
 import {useAppDispatch, useAppSelector} from '../store';
+import {hydrateCart, hydrateWishlist} from '../store';
 import {setCredentials, setHydrated} from '../features/auth/authSlice';
 import {useMeQuery} from '../api/services/authApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -44,6 +45,8 @@ export const RootNavigator: React.FC = () => {
       }
     };
     hydrate();
+    hydrateCart();
+    hydrateWishlist();
   }, [dispatch]);
 
   useEffect(() => {

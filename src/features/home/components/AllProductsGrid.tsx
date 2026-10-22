@@ -1,17 +1,17 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {ArrowRight, Heart} from 'lucide-react-native';
+import {ChevronRight} from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
 import {colors, scale} from '../../../theme';
 import {formatPrice} from '../../../utils/formatPrice';
 import {HomeProduct} from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 import Button from '../../../components/ui/Button';
+import AddToCartButton from '../../cart/components/AddToCartButton';
+import WishlistButton from '../../wishlist/components/WishlistButton';
 
 interface AllProductsGridProps {
   products: HomeProduct[];
-  favorites: Record<string, boolean>;
-  onToggleFavorite: (id: string) => void;
   onSeeAll?: () => void;
   onPress: (product: HomeProduct) => void;
 }
@@ -26,11 +26,9 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 
 const ProductGridCard: React.FC<{
   product: HomeProduct;
-  isFav: boolean;
-   onToggleFavorite: (id: string) => void;
-  onSeeAll?: () => void;
+   onSeeAll?: () => void;
   onPress: (product: HomeProduct) => void;
-}> = ({product, isFav, onToggleFavorite, onPress}) => (
+}> = ({product, onPress}) => (
   <TouchableOpacity
     style={styles.card}
     activeOpacity={0.85}
@@ -38,17 +36,18 @@ const ProductGridCard: React.FC<{
     {/* Image area */}
     <View style={styles.imgArea}>
       <AppImage uri={product.image} style={styles.img} resizeMode="contain" />
-      <TouchableOpacity
+      <WishlistButton
+        product={{
+          id: product.id,
+          name: product.name,
+          code: product.code,
+          image: product.image,
+          price: product.price,
+          mrp: product.mrp,
+          unit: product.unit,
+        }}
         style={styles.favBtn}
-        activeOpacity={0.7}
-        onPress={() => onToggleFavorite(product.id)}>
-        <Heart
-          size={scale(14)}
-          color={isFav ? '#EF4444' : '#64748B'}
-          fill={isFav ? '#EF4444' : 'none'}
-          strokeWidth={2}
-        />
-      </TouchableOpacity>
+      />
     </View>
 
     {/* Info */}
@@ -72,28 +71,42 @@ const ProductGridCard: React.FC<{
     <View style={styles.divider} />
 
       {/* CTA */}
-                <Button
-                  title="View Details"
-                  variant="outline"
-                  size="small"
-                  fullWidth
-                  onPress={() => onPress(product)}
-                  iconRight={
-                    <ArrowRight
-                      size={scale(13)}
-                      color={colors.primary}
-                      strokeWidth={2.6}
-                    />
-                  }
-                  textStyle={styles.detailsText}
-                />
+      <View style={styles.ctaRow}>
+        <Button
+          title="Details"
+          variant="outline"
+          size="small"
+          fullWidth={false}
+          style={styles.detailsBtn}
+          onPress={() => onPress(product)}
+          iconRight={
+            <ChevronRight
+              size={scale(13)}
+              color={colors.primary}
+              strokeWidth={2.6}
+            />
+          }
+          textStyle={styles.detailsText}
+        />
+        <AddToCartButton
+          product={{
+            id: product.id,
+            name: product.name,
+            code: product.code,
+            image: product.image,
+            price: product.price,
+            mrp: product.mrp,
+            unit: product.unit,
+          }}
+          compact
+          style={styles.addBtn}
+        />
+      </View>
   </TouchableOpacity>
 );
 
 export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
   products,
-  favorites,
-  onToggleFavorite,
   onSeeAll,
   onPress,
 }) => {
@@ -114,8 +127,6 @@ export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
               <ProductGridCard
                 key={prod.id}
                 product={prod}
-                isFav={Boolean(favorites[prod.id])}
-                onToggleFavorite={onToggleFavorite}
                 onPress={onPress}
               />
             ))}
@@ -232,9 +243,23 @@ const styles = StyleSheet.create({
       backgroundColor: '#F1F5F9',
       marginBottom: scale(10),
   },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: scale(6),
+  },
+  detailsBtn: {
+    flex: 1,
+    paddingHorizontal: scale(4),
+    gap: scale(2),
+  },
+  addBtn: {
+    flex: 1,
+  },
   detailsText: {
-    fontSize: scale(11),
+    fontSize: scale(10),
     fontWeight: '700',
+    flexShrink: 1,
   },
 });
 

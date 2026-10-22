@@ -1,14 +1,17 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scale } from '../../theme';
 import { useAppSelector } from '../../store';
+import { selectCartItemCount } from '../cart/cartSelectors';
+import { selectWishlistCount } from '../wishlist/wishlistSelectors';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import HomeSkeleton from './components/HomeSkeleton';
 import {
   ALL_PRODUCTS,
   CategoryItem,
+  Catgory_BANNERS,
   FEATURED_PRODUCTS,
   HOME_BANNERS,
   HomeProduct,
@@ -22,6 +25,7 @@ import {
 import { useGetNotificationsQuery } from '../../api/services/documentsApi';
 import HomeHeader from './components/HomeHeader';
 import HomeBanner from './components/HomeBanner';
+import AdSlider from './components/AdSlider';
 import IndustriesSection from './components/IndustriesSection';
 import FeaturedProductsSection from './components/FeaturedProductsSection';
 import CategoriesSection from './components/CategoriesSection';
@@ -31,7 +35,8 @@ export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const user = useAppSelector(s => s.auth.user);
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const cartCount = useAppSelector(selectCartItemCount);
+  const wishlistCount = useAppSelector(selectWishlistCount);
   const loading = useSimulatedLoading();
   const { data: categoriesData } = useGetCategoriesQuery({});
   const { data: subCategoriesData } = useGetSubCategoriesQuery({});
@@ -57,10 +62,6 @@ export const HomeScreen: React.FC = () => {
       image: category.image as ImageKey,
     }),
   );
-
-  const toggleFavorite = (id: string) => {
-    setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const openProduct = (product: HomeProduct) => {
     navigation.navigate('Products', {
@@ -115,7 +116,7 @@ export const HomeScreen: React.FC = () => {
           styles.scrollContent,
           {
             paddingTop: insets.top + scale(8),
-            paddingBottom: insets.bottom + scale(85),
+            paddingBottom: insets.bottom,
           },
         ]}>
         {/* 1. Header (logo + notifications + profile + search + scan) */}
@@ -128,6 +129,10 @@ export const HomeScreen: React.FC = () => {
               initial: false,
             })
           }
+          onCartPress={() => navigation.navigate('Cart')}
+          cartCount={cartCount}
+          onWishlistPress={() => navigation.navigate('Wishlist')}
+          wishlistCount={wishlistCount}
           hasUnreadNotifications={hasUnreadNotifications}
         />
 
@@ -154,8 +159,6 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.sectionWrap}>
           <FeaturedProductsSection
             products={FEATURED_PRODUCTS}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
             onSeeAll={() =>
               openAllProducts({ featured: true, title: 'Featured Products' })
             }
@@ -177,13 +180,23 @@ export const HomeScreen: React.FC = () => {
             onSelect={openCategory}
           />
         </View>
+        <View style={styles.sectionWrap}>
+          <AdSlider
+            banners={Catgory_BANNERS}
+            onPressItem={() =>
+              navigation.navigate('Products', {
+                screen: 'Categories',
+                params: {},
+                initial: false,
+              })
+            }
+          />
+        </View>
 
         {/* 6. All products grid */}
         <View style={styles.sectionWrap}>
           <AllProductsGrid
             products={ALL_PRODUCTS}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
             onSeeAll={() => openAllProducts()}
             onPress={openProduct}
           />
