@@ -27,7 +27,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>gaumatatrust</string>
+				<string>axnol</string>
 			</array>
 			<key>CFBundleURLName</key>
 			<string>com.axnolapp</string>

@@ -16,7 +16,7 @@ if linkage != nil
   $RNFirebaseAsStaticFramework = true
 end
 
-target 'gaumatatrust' do
+target 'axnol' do
   config = use_native_modules!
 
   use_react_native!(

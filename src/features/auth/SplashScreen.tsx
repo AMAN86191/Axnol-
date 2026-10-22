@@ -13,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../navigation/types';
 import { scale, spacing } from '../../theme';
-import AppImage from '../../components/ui/AppImage';
+import Logo from '../../components/ui/Logo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Splash'>;
 
@@ -51,21 +51,10 @@ const Dot: React.FC<{ index: number }> = ({ index }) => {
   return <Animated.View style={[styles.dot, style]} />;
 };
 
+// The logo is shown at full opacity from the first frame: this view is mounted
+// twice in a row (RootNavigator, then the Auth stack), so any fade-in here would
+// replay and look like a flicker.
 export const SplashScreenView: React.FC = () => {
-  const enter = useSharedValue(0);
-
-  useEffect(() => {
-    enter.value = withTiming(1, {
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [enter]);
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: enter.value,
-    transform: [{ scale: 0.9 + enter.value * 0.1 }],
-  }));
-
   return (
     <View style={styles.container}>
       <StatusBar
@@ -73,9 +62,7 @@ export const SplashScreenView: React.FC = () => {
         backgroundColor="transparent"
         barStyle="dark-content"
       />
-      <Animated.View style={logoStyle}>
-        <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
-      </Animated.View>
+      <Logo showText={false} width={scale(96)} />
       <View style={styles.dots}>
         {Array.from({ length: DOT_COUNT }).map((_, i) => (
           <Dot key={i} index={i} />
@@ -102,10 +89,6 @@ const styles = StyleSheet.create({
     backgroundColor: DS.surface,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  logo: {
-    width: scale(80),
-    height: scale(80),
   },
   dots: {
     flexDirection: 'row',

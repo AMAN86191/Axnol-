@@ -56,6 +56,7 @@ import Input from '../../components/ui/Input';
 import AppImage from '../../components/ui/AppImage';
 import images from '../../assets/images';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
+import Logo from '../../components/ui/Logo';
 
 type FormState = {
   name: string;
@@ -433,11 +434,7 @@ export const EditProfileScreen: React.FC = () => {
               activeOpacity={0.75}>
               <ChevronLeft size={scale(20)} color="#1E293B" />
             </TouchableOpacity>
-            <AppImage
-              uri="logo"
-              resizeMode="contain"
-              style={styles.headerLogo}
-            />
+            <Logo height={scale(36)} />
             <View style={styles.headerSpacer} />
           </View>
 
@@ -742,10 +739,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
-  },
-  headerLogo: {
-    width: scale(135),
-    height: scale(36),
   },
   headerSpacer: {
     width: scale(34),

@@ -1,9 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {ChevronRight} from 'lucide-react-native';
 import {colors, scale} from '../../../theme';
 import AppImage from '../../../components/ui/AppImage';
-import Button from '../../../components/ui/Button';
 import {formatPrice} from '../../../utils/formatPrice';
 import AddToCartButton from '../../cart/components/AddToCartButton';
 import WishlistButton from '../../wishlist/components/WishlistButton';
@@ -63,18 +61,6 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({
     </View>
     <View style={styles.gridDivider} />
     <View style={styles.ctaRow}>
-      <Button
-        title="Details"
-        variant="outline"
-        size="small"
-        fullWidth={false}
-        style={styles.detailsBtn}
-        onPress={onPress}
-        iconRight={
-          <ChevronRight size={scale(13)} color={colors.primary} strokeWidth={2.6} />
-        }
-        textStyle={styles.gridDetailsText}
-      />
       <AddToCartButton
         product={{
           id: product.id,
@@ -169,18 +155,8 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: scale(6),
   },
-  detailsBtn: {
-    flex: 1,
-    paddingHorizontal: scale(4),
-    gap: scale(2),
-  },
   addBtn: {
     flex: 1,
-  },
-  gridDetailsText: {
-    fontSize: scale(10),
-    fontWeight: '700',
-    flexShrink: 1,
   },
 });
 export default ProductGridCard;

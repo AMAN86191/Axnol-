@@ -16,7 +16,6 @@ import {
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {
   Check,
-  ChevronRight,
   Grid,
   List,
   PackageOpen,
@@ -384,11 +383,6 @@ export const ProductsScreen: React.FC = () => {
                 <Text style={styles.productSubtitle} numberOfLines={1}>
                   {item.code}
                 </Text>
-
-                <View style={styles.viewDetailsBtn}>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                  <ChevronRight size={scale(13)} color={colors.primary} strokeWidth={2.5} />
-                </View>
               </View>
 
               <View style={styles.priceCol}>
@@ -983,21 +977,6 @@ const styles = StyleSheet.create({
     fontSize: scale(11),
     color: '#64748B',
     marginBottom: scale(8),
-  },
-  viewDetailsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#F0F9FF',
-    paddingHorizontal: scale(8),
-    paddingVertical: scale(3),
-    borderRadius: radius.pill,
-    gap: 2,
-  },
-  viewDetailsText: {
-    fontSize: scale(11),
-    fontWeight: '700',
-    color: colors.primary,
   },
   priceCol: {
     alignItems: 'flex-end',

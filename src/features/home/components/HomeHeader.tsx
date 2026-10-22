@@ -2,8 +2,8 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {DrawerActions, useNavigation} from '@react-navigation/native';
 import {Bell, Heart, Menu, ShoppingCart} from 'lucide-react-native';
-import AppImage from '../../../components/ui/AppImage';
 import {colors, scale} from '../../../theme';
+import Logo from '../../../components/ui/Logo';
 
 interface HomeHeaderProps {
   userName?: string;
@@ -41,7 +41,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
           </TouchableOpacity>
 
           <View style={styles.logoWrap}>
-            <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
+            <Logo height={scale(36)} />
           </View>
         </View>
 
@@ -118,10 +118,6 @@ const styles = StyleSheet.create({
   },
   logoWrap: {
     justifyContent: 'center',
-  },
-  logo: {
-    width: scale(115),
-    height: scale(36),
   },
   headerRight: {
     flexDirection: 'row',

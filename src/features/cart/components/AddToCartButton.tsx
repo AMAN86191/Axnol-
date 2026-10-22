@@ -4,9 +4,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  View,
   ViewStyle,
 } from 'react-native';
-import { Check, ShoppingCart } from 'lucide-react-native';
+import { Minus, Plus, ShoppingCart } from 'lucide-react-native';
 import { colors, radius, scale } from '../../../theme';
 import { CartItem } from '../cartSlice';
 import { useCart } from '../useCart';
@@ -24,7 +25,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   onAdded,
   style,
 }) => {
-  const { add, items } = useCart();
+  const { add, increment, decrement, remove, items } = useCart();
   const quantity = items.find(item => item.id === product.id)?.quantity ?? 0;
 
   const handleAdd = () => {
@@ -33,20 +34,31 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   };
 
   if (quantity > 0) {
+    // Going below 1 takes the item out of the cart, which brings back "Add".
+    const handleMinus = () =>
+      quantity > 1 ? decrement(product.id) : remove(product.id);
+
     return (
-      <TouchableOpacity
-        style={[
-          styles.addedBtn,
-          compact && styles.addedBtnCompact,
-          style,
-        ]}
-        activeOpacity={0.85}
-        onPress={handleAdd}>
-        <Check size={scale(13)} color="#0B7A3B" strokeWidth={3} />
-        <Text style={[styles.addedText, compact && styles.addedTextCompact]}>
-          Added
+      <View
+        style={[styles.stepper, compact && styles.stepperCompact, style]}>
+        <TouchableOpacity
+          style={styles.stepBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          onPress={handleMinus}>
+          <Minus size={scale(14)} color={colors.primary} strokeWidth={3} />
+        </TouchableOpacity>
+        <Text style={[styles.qtyText, compact && styles.qtyTextCompact]}>
+          {quantity}
         </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.stepBtn}
+          activeOpacity={0.7}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          onPress={() => increment(product.id)}>
+          <Plus size={scale(14)} color={colors.primary} strokeWidth={3} />
+        </TouchableOpacity>
+      </View>
     );
   }
 
@@ -92,31 +104,34 @@ const styles = StyleSheet.create({
   addTextCompact: {
     fontSize: scale(10.5),
   },
-  addedBtn: {
+  stepper: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: scale(6),
-    backgroundColor: '#E7F6EE',
+    justifyContent: 'space-between',
+    backgroundColor: '#F0F9FF',
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: '#0B7A3B',
-    paddingVertical: scale(9),
-    paddingHorizontal: scale(12),
-  },
-  addedBtnCompact: {
-    paddingVertical: scale(7),
+    borderColor: colors.primary,
+    paddingVertical: scale(5),
     paddingHorizontal: scale(8),
-    gap: scale(4),
   },
-  addedText: {
-    color: '#0B7A3B',
-    fontSize: scale(12),
+  stepperCompact: {
+    paddingVertical: scale(4),
+    paddingHorizontal: scale(6),
+  },
+  stepBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: scale(22),
+    minHeight: scale(22),
+  },
+  qtyText: {
+    color: colors.primary,
+    fontSize: scale(13),
     fontWeight: '800',
-    letterSpacing: 0.1,
   },
-  addedTextCompact: {
-    fontSize: scale(10.5),
+  qtyTextCompact: {
+    fontSize: scale(12),
   },
 });
 

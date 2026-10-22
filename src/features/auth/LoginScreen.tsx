@@ -16,7 +16,6 @@ import { AuthStackParamList } from '../../navigation/types';
 import { colors, fontSize, radius, scale, spacing, typography } from '../../theme';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import AppImage from '../../components/ui/AppImage';
 import { AppleIcon, GoogleIcon } from '../../components/ui/BrandIcons';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,6 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch } from '../../store';
 import { ArrowRight, ChevronLeft, Lock, User } from 'lucide-react-native';
 import { logout, setCredentials } from './authSlice';
+import Logo from '../../components/ui/Logo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -97,7 +97,7 @@ export const LoginScreen: React.FC = () => {
           activeOpacity={0.75}>
           <ChevronLeft size={scale(22)} color="#1E293B" />
         </TouchableOpacity>
-        <AppImage uri="logo" resizeMode="contain" style={styles.headerLogo} />
+        <Logo showText={false} height={scale(52)} />
         <View style={styles.headerSpacer} />
       </View>
 
@@ -274,10 +274,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
-  },
-  headerLogo: {
-    width: scale(135),
-    height: scale(36),
   },
   headerSpacer: {
     width: scale(40),

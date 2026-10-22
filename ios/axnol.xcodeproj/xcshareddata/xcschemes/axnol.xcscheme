@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "gaumatatrust.app"
-               BlueprintName = "gaumatatrust"
-               ReferencedContainer = "container:gaumatatrust.xcodeproj">
+               BuildableName = "axnol.app"
+               BlueprintName = "axnol"
+               ReferencedContainer = "container:axnol.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "gaumatatrustTests.xctest"
-               BlueprintName = "gaumatatrustTests"
-               ReferencedContainer = "container:gaumatatrust.xcodeproj">
+               BuildableName = "axnolTests.xctest"
+               BlueprintName = "axnolTests"
+               ReferencedContainer = "container:axnol.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "gaumatatrust.app"
-            BlueprintName = "gaumatatrust"
-            ReferencedContainer = "container:gaumatatrust.xcodeproj">
+            BuildableName = "axnol.app"
+            BlueprintName = "axnol"
+            ReferencedContainer = "container:axnol.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "gaumatatrust.app"
-            BlueprintName = "gaumatatrust"
-            ReferencedContainer = "container:gaumatatrust.xcodeproj">
+            BuildableName = "axnol.app"
+            BlueprintName = "axnol"
+            ReferencedContainer = "container:axnol.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -40,8 +40,8 @@ import {
 } from 'lucide-react-native';
 import type {LucideIcon} from 'lucide-react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
-import AppImage from '../../components/ui/AppImage';
 import {colors, fontSize, radius, scale, shadows, spacing} from '../../theme';
+import Logo from '../../components/ui/Logo';
 
 interface OfferingProps {
   icon: LucideIcon;
@@ -508,11 +508,7 @@ export const AboutScreen: React.FC = () => {
         <View style={styles.hero}>
           <View style={styles.heroContent}>
             <View style={styles.logoShadow}>
-              <AppImage
-                uri="logo"
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <Logo height={scale(50)} />
             </View>
 
             <Text style={styles.heroTagline}>
@@ -818,10 +814,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 3,
-  },
-  logo: {
-    width: scale(160),
-    height: scale(50),
   },
   heroTagline: {
     fontSize: scale(9),

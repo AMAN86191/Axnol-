@@ -27,8 +27,7 @@ import {
   UserRound,
 } from 'lucide-react-native';
 
-import AppImage from '../components/ui/AppImage';
-import {colors, radius, scale, spacing, fontSize} from '../theme';
+import {colors, radius, scale, spacing} from '../theme';
 import {
   MainDrawerParamList,
   MainTabParamList,
@@ -40,6 +39,7 @@ import ContactUsScreen from '../features/enquiries/ContactUsScreen';
 import AboutScreen from '../features/about/AboutScreen';
 import CartScreen from '../features/cart/CartScreen';
 import WishlistScreen from '../features/wishlist/WishlistScreen';
+import Logo from '../components/ui/Logo';
 
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
 
@@ -295,19 +295,7 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
         <View style={styles.blobTwo} />
 
         <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <AppImage
-              uri="axnol_round_logo"
-              style={styles.logo}
-              resizeMode="contain"
-            />
-          </View>
-
-          <View style={styles.brandIdentity}>
-            <Text style={styles.brandEyebrow}>SINCE 1959</Text>
-            <Text style={styles.brandName}>AXNOL</Text>
-            <Text style={styles.brandTag}>Industrial Lubricants</Text>
-          </View>
+          <Logo height={scale(44)} />
         </View>
       </View>
 
@@ -458,51 +446,7 @@ const styles = StyleSheet.create({
   },
 
   brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  logoBadge: {
-    width: scale(56),
-    height: scale(56),
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: PALETTE.border,
-  },
-
-  logo: {
-    width: scale(40),
-    height: scale(40),
-  },
-
-  brandIdentity: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-
-  brandEyebrow: {
-    fontSize: fontSize.xs,
-    fontWeight: '800',
-    letterSpacing: 1.4,
-    color: PALETTE.eyebrow,
-  },
-
-  brandName: {
-    fontSize: scale(21),
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    color: PALETTE.text,
-    marginTop: scale(1),
-  },
-
-  brandTag: {
-    fontSize: scale(11.5),
-    fontWeight: '500',
-    color: PALETTE.textSecondary,
-    marginTop: scale(1),
+    alignItems: 'flex-start',
   },
 
   // Menu

@@ -33,6 +33,7 @@ import {
 import { AuthStackParamList } from '../../navigation/types';
 import { colors, scale } from '../../theme';
 import AppImage from '../../components/ui/AppImage';
+import Logo from '../../components/ui/Logo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
 
@@ -188,11 +189,7 @@ export const OnboardingScreen: React.FC = () => {
             {/* Logo */}
             <View style={styles.header}>
 
-              <AppImage
-                uri="logo"
-                style={styles.logo}
-                resizeMode="contain"
-              />
+              <Logo showText={false} height={scale(60)} />
 
             </View>
 
@@ -343,11 +340,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: -scale(10),
-  },
-
-  logo: {
-    width: scale(140),
-    height: scale(60),
   },
   titleSection: {
     alignItems: 'center',

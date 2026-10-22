@@ -41,7 +41,6 @@ import { AuthStackParamList } from '../../navigation/types';
 import { colors, fontSize, radius, scale, spacing, typography } from '../../theme';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import AppImage from '../../components/ui/AppImage';
 import images from '../../assets/images';
 import {
   useRegisterMutation,
@@ -51,6 +50,7 @@ import {
 import { useAppDispatch } from '../../store';
 import { logout, setCredentials } from './authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Logo from '../../components/ui/Logo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -309,7 +309,7 @@ export const RegisterScreen: React.FC = () => {
                 <ChevronLeft size={scale(20)} color="#1E293B" />
               )}
             </TouchableOpacity>
-            <AppImage uri="logo" resizeMode="contain" style={styles.headerLogo} />
+            <Logo height={scale(36)} />
             <View style={styles.headerSpacer} />
           </View>
           {/* Top Right Background Art (Gears and Oil Splash) */}
@@ -815,10 +815,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
-  },
-  headerLogo: {
-    width: scale(135),
-    height: scale(36),
   },
   headerSpacer: {
     width: scale(40),

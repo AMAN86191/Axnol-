@@ -14,13 +14,13 @@ import {ArrowLeft, Building2, MapPin, Tag, UserCircle} from 'lucide-react-native
 import {colors, fontSize, scale, spacing, typography, verticalScale} from '../../theme';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
-import AppImage from '../../components/ui/AppImage';
 import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useUpdateProfileMutation} from '../../api/services/profileApi';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {setCredentials} from './authSlice';
+import Logo from '../../components/ui/Logo';
 
 const schema = z.object({
   company: z.string().trim().min(2, 'Required'),
@@ -70,7 +70,7 @@ export const ProfileSetupScreen: React.FC = () => {
           onPress={() => navigation.goBack()}>
           <ArrowLeft size={scale(24)} color={colors.primary} />
         </TouchableOpacity>
-        <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
+        <Logo height={verticalScale(40)} />
         <View style={styles.placeholder} />
       </View>
 
@@ -222,10 +222,6 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     padding: spacing.xs,
-  },
-  logo: {
-    width: scale(120),
-    height: verticalScale(40),
   },
   placeholder: {
     width: scale(32),

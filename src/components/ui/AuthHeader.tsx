@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, TouchableOpacity, View} from 'react-native';
 import {ArrowLeft} from 'lucide-react-native';
 import {colors, scale, spacing} from '../../theme';
-import AppImage from './AppImage';
+import Logo from './Logo';
 
 interface AuthHeaderProps {
   onBack?: () => void;
@@ -22,7 +22,7 @@ export const AuthHeader: React.FC<AuthHeaderProps> = ({onBack, right}) => (
       <View style={styles.iconBtn} />
     )}
 
-    <AppImage uri="logo" resizeMode="contain" style={styles.logo} />
+    <Logo height={scale(42)} />
 
     <View style={[styles.iconBtn, styles.right]}>{right}</View>
   </View>
@@ -45,10 +45,6 @@ const styles = StyleSheet.create({
   },
   right: {
     alignItems: 'flex-end',
-  },
-  logo: {
-    width: scale(130),
-    height: scale(42),
   },
 });
 
