@@ -7,20 +7,26 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {Download} from 'lucide-react-native';
+import { Download } from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
-import {ImageKey} from '../../../assets/images';
-import {colors, radius, scale, spacing} from '../../../theme';
+import { ImageKey } from '../../../assets/images';
+import { colors, radius, scale, spacing } from '../../../theme';
 
 const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
 
 interface IndustryBannerProps {
   title: string;
-  description: string;
+  description?: string;
   image: ImageKey;
   tags?: string[];
   downloadLabel?: string;
   onDownload?: () => void;
+  /** Banner height; defaults to the full-size banner. */
+  height?: number;
+  /** Small accent line above the title. */
+  showAccentLine?: boolean;
+  /** Which side the brochure button sits on. */
+  buttonAlign?: 'left' | 'right';
 }
 
 export const IndustryBanner: React.FC<IndustryBannerProps> = ({
@@ -30,6 +36,9 @@ export const IndustryBanner: React.FC<IndustryBannerProps> = ({
   tags = [],
   downloadLabel = 'Download Brochure',
   onDownload,
+  height = scale(228),
+  showAccentLine = true,
+  buttonAlign = 'right',
 }) => {
   const handleDownload = () => {
     if (onDownload) {
@@ -40,7 +49,7 @@ export const IndustryBanner: React.FC<IndustryBannerProps> = ({
   };
 
   return (
-    <View style={styles.hero}>
+    <View style={[styles.hero, { height }]}>
       <AppImage uri={image} style={styles.image} resizeMode="cover" />
 
       <LinearGradient
@@ -54,32 +63,37 @@ export const IndustryBanner: React.FC<IndustryBannerProps> = ({
         style={StyleSheet.absoluteFill}
       />
 
-    
-
       <View style={styles.content}>
-        <View style={styles.accentLine} />
+        {showAccentLine ? <View style={styles.accentLine} /> : null}
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
-        <Text style={styles.description} numberOfLines={3}>
-          {description}
-        </Text>
+        {description ? (
+          <Text style={styles.description} numberOfLines={3}>
+            {description}
+          </Text>
+        ) : null}
 
-        <View style={styles.footer}>
-          <View style={styles.tagRow}>
-            {tags.slice(0, 3).map(tag => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText} numberOfLines={1}>
-                  {tag}
-                </Text>
-              </View>
-            ))}
-          </View>
+        <View
+          style={[styles.footer, buttonAlign === 'left' && styles.footerLeft]}
+        >
+          {tags.length > 0 ? (
+            <View style={styles.tagRow}>
+              {tags.slice(0, 3).map(tag => (
+                <View key={tag} style={styles.tag}>
+                  <Text style={styles.tagText} numberOfLines={1}>
+                    {tag}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           <TouchableOpacity
             style={styles.downloadBtn}
             activeOpacity={0.85}
-            onPress={handleDownload}>
+            onPress={handleDownload}
+          >
             <Download
               size={scale(12)}
               color={colors.primary}
@@ -102,7 +116,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#0B2A46',
     shadowColor: '#0A3B74',
-    shadowOffset: {width: 0, height: 6},
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.18,
     shadowRadius: 14,
     elevation: 5,
@@ -175,6 +189,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: scale(8),
     marginTop: scale(10),
+  },
+  footerLeft: {
+    justifyContent: 'flex-start',
+    marginTop: scale(14),
   },
   tagRow: {
     flex: 1,

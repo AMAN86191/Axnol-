@@ -1,15 +1,7 @@
 import React from 'react';
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import Skeleton from '../../../components/ui/Skeleton';
 import { radius, scale, spacing } from '../../../theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.lg * 2 - spacing.md) / 2;
 
 const IndustriesSkeleton: React.FC = () => (
   <View style={styles.container}>
@@ -21,16 +13,14 @@ const IndustriesSkeleton: React.FC = () => (
     {/* Industry cards */}
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.listContent}>
-      {[0, 1, 2].map(row => (
+      contentContainerStyle={styles.listContent}
+    >
+      {[0, 1].map(row => (
         <View key={`row-${row}`} style={styles.row}>
-          {[0, 1].map(col => (
-            <View key={`card-${row}-${col}`} style={styles.card}>
-              <Skeleton height={scale(110)} borderRadius={0} />
-              <View style={styles.cardContent}>
-                <Skeleton width="60%" height={scale(11)} />
-                <Skeleton width={scale(20)} height={scale(20)} circle />
-              </View>
+          {[0, 1, 2].map(col => (
+            <View key={`tile-${row}-${col}`} style={styles.tile}>
+              <Skeleton height={scale(78)} borderRadius={radius.md} />
+              <Skeleton width="60%" height={scale(10)} style={styles.title} />
             </View>
           ))}
         </View>
@@ -52,27 +42,19 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    gap: spacing.md,
   },
   row: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  card: {
-    width: CARD_WIDTH,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: '#E3E8EF',
-    overflow: 'hidden',
-    backgroundColor: '#FFFFFF',
-  },
-  cardContent: {
-    flexDirection: 'row',
+  tile: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.sm,
-    paddingHorizontal: spacing.md,
-    minHeight: scale(35),
+  },
+  title: {
+    marginTop: scale(8),
+    marginBottom: scale(2),
   },
 });
 

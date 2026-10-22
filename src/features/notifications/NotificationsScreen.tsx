@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {
@@ -30,6 +31,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {useAppDispatch} from '../../store';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+import {useRefresh} from '../../hooks/useRefresh';
 
 const ICONS: Record<AppNotification['type'], LucideIcon> = {
   account: User,
@@ -50,6 +52,8 @@ export const NotificationsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const dispatch = useAppDispatch();
   const {data, isLoading, refetch} = useGetNotificationsQuery();
+  const {refreshing, onRefresh} = useRefresh(refetch);
+
   const [markAll, {isLoading: markingAll}] = useMarkAllReadMutation();
   const [markRead] = useMarkReadMutation();
   const notifications = data ?? [];
@@ -151,6 +155,14 @@ export const NotificationsScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
           data={notifications}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}

@@ -12,12 +12,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {
   Check,
-  Grid,
-  List,
   PackageOpen,
   Search,
   SlidersHorizontal,
@@ -25,22 +24,18 @@ import {
 } from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
-import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import IndustryBanner from './components/IndustryBanner';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
-import { formatPrice } from '../../utils/formatPrice';
 import { ALL_PRODUCTS } from '../home/homeData';
 import { ImageKey } from '../../assets/images';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import ProductsSkeleton from './components/ProductsSkeleton';
-import ProductGridCard from './components/ProductGridCard';
-import AddToCartButton from '../cart/components/AddToCartButton';
-import WishlistButton from '../wishlist/components/WishlistButton';
+import ProductCard from '../../components/ui/ProductCard';
+import {useRefresh} from '../../hooks/useRefresh';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
 
-type ViewMode = 'list' | 'grid';
 type SortKey = 'newest' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
 
 interface SortOption {
@@ -145,6 +140,8 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 export const ProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const {refreshing, onRefresh} = useRefresh();
+
   const route = useRoute<Route>();
   const initialCategory =
     route.params?.title && CATEGORY_FILTERS.includes(route.params.title)
@@ -154,7 +151,6 @@ export const ProductsScreen: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState('All');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [search, setSearch] = useState(route.params?.search ?? '');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [filterVisible, setFilterVisible] = useState(false);
   const [pendingCategory, setPendingCategory] = useState(selectedCategory);
   const [pendingUnit, setPendingUnit] = useState(selectedUnit);
@@ -301,21 +297,6 @@ export const ProductsScreen: React.FC = () => {
             ) : null}
           </TouchableOpacity>
         </View>
-
-        <View style={styles.viewToggle}>
-          <TouchableOpacity
-            style={[styles.viewBtn, viewMode === 'list' && styles.viewBtnActive]}
-            activeOpacity={0.7}
-            onPress={() => setViewMode('list')}>
-            <List size={scale(16)} color={viewMode === 'list' ? '#0F172A' : '#94A3B8'} strokeWidth={2.2} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.viewBtn, viewMode === 'grid' && styles.viewBtnActive]}
-            activeOpacity={0.7}
-            onPress={() => setViewMode('grid')}>
-            <Grid size={scale(16)} color={viewMode === 'grid' ? '#0F172A' : '#94A3B8'} strokeWidth={2.2} />
-          </TouchableOpacity>
-        </View>
       </View>
 
       {/* Category Horizontal Filter Pills */}
@@ -359,82 +340,24 @@ export const ProductsScreen: React.FC = () => {
             <Text style={styles.emptyResetText}>Reset Filters</Text>
           </TouchableOpacity>
         </View>
-      ) : viewMode === 'list' ? (
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.id}
-          contentContainerStyle={[styles.productList, {paddingBottom: insets.bottom + scale(85)}]}
-          showsVerticalScrollIndicator={false}
-          renderItem={({item}) => (
-            <TouchableOpacity
-              style={styles.productCard}
-              activeOpacity={0.85}
-              onPress={() => handlePress(item)}>
-              <View style={styles.productImgWrap}>
-                <AppImage
-                  uri={item.image}
-                  style={styles.productImg}
-                  resizeMode="contain"
-                />
-              </View>
-
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{item.name}</Text>
-                <Text style={styles.productSubtitle} numberOfLines={1}>
-                  {item.code}
-                </Text>
-              </View>
-
-              <View style={styles.priceCol}>
-                <Text style={styles.price}>{formatPrice(item.price)}</Text>
-                {item.unit ? (
-                  <Text style={styles.priceUnit}>/ {item.unit}</Text>
-                ) : null}
-                {item.mrp && item.mrp > item.price ? (
-                  <Text style={styles.priceMrp}>{formatPrice(item.mrp)}</Text>
-                ) : null}
-                <View style={styles.listAddWrap}>
-                  <AddToCartButton
-                    product={{
-                      id: item.id,
-                      name: item.name,
-                      code: item.code,
-                      image: item.image,
-                      price: item.price,
-                      mrp: item.mrp,
-                      unit: item.unit,
-                    }}
-                    compact
-                  />
-                </View>
-              </View>
-
-              <WishlistButton
-                product={{
-                  id: item.id,
-                  name: item.name,
-                  code: item.code,
-                  image: item.image,
-                  price: item.price,
-                  mrp: item.mrp,
-                  unit: item.unit,
-                }}
-                size={13}
-                containerSize={24}
-                style={styles.listFavBtn}
-              />
-            </TouchableOpacity>
-          )}
-        />
       ) : (
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
           style={styles.scrollFlex}
           contentContainerStyle={[styles.gridContainer, {paddingBottom: insets.bottom + scale(85)}]}
           showsVerticalScrollIndicator={false}>
           {chunk(filtered, 2).map((row, rowIndex) => (
             <View key={`row-${rowIndex}`} style={styles.gridRow}>
               {row.map(prod => (
-                <ProductGridCard
+                <ProductCard
+                  style={styles.gridCard}
                   key={prod.id}
                   product={prod}
                   onPress={() => handlePress(prod)}
@@ -827,31 +750,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.2,
   },
-  viewToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#EDF1F7',
-    borderRadius: radius.pill,
-    padding: scale(2),
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    height:scale(38),
-    alignItems:"center"
-  },
-  viewBtn: {
-    width: scale(30),
-    height: scale(30),
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  viewBtnActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
-  },
   industryBannerWrap: {
     marginTop: spacing.md,
     marginHorizontal: spacing.lg,
@@ -921,89 +819,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
   },
-  productList: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    gap: scale(11),
-  },
-  productCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: radius.lg,
-    padding: scale(13),
-    paddingRight: scale(40),
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 1.5,
-  },
-  listFavBtn: {
-    position: 'absolute',
-    top: scale(10),
-    right: scale(10),
-  },
-  productImgWrap: {
-    width: scale(64),
-    height: scale(64),
-    borderRadius: radius.md,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: scale(4),
-    marginRight: scale(13),
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  productImg: {
-    width: '100%',
-    height: '100%',
-  },
-  productInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  productName: {
-    fontSize: scale(13.5),
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 2,
-    letterSpacing: -0.2,
-  },
-  productSubtitle: {
-    fontSize: scale(11),
-    color: '#64748B',
-    marginBottom: scale(8),
-  },
-  priceCol: {
-    alignItems: 'flex-end',
-    paddingLeft: scale(10),
-  },
-  price: {
-    fontSize: scale(15),
-    fontWeight: '700',
-    color: colors.primary,
-    letterSpacing: -0.3,
-  },
-  priceUnit: {
-    fontSize: scale(9.5),
-    fontWeight: '600',
-    color: '#94A3B8',
-    marginTop: 1,
-  },
-  priceMrp: {
-    fontSize: scale(10),
-    fontWeight: '600',
-    color: '#B0BEC5',
-    textDecorationLine: 'line-through',
-    marginTop: 1,
-  },
-  listAddWrap: {
-    marginTop: scale(8),
-  },
 
   // Grid styles
   gridContainer: {
@@ -1014,6 +829,9 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     gap: scale(10),
+  },
+  gridCard: {
+    flex: 1,
   },
   gridCardPlaceholder: {
     flex: 1,

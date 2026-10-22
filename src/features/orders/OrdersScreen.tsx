@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import {DrawerActions, useNavigation} from '@react-navigation/native';
 import {
@@ -21,6 +22,7 @@ import CommonHeader from '../../components/ui/CommonHeader';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
 import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
 import OrdersSkeleton from './components/OrdersSkeleton';
+import {useRefresh} from '../../hooks/useRefresh';
 
 const FILTER_TABS = ['All', 'Pending', 'Processing', 'Delivered', 'Canceled'];
 
@@ -88,6 +90,8 @@ const formatMoney = (value: number) =>
 export const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const {refreshing, onRefresh} = useRefresh();
+
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [newestFirst, setNewestFirst] = useState(true);
   const loading = useSimulatedLoading();
@@ -176,6 +180,14 @@ export const OrdersScreen: React.FC = () => {
 
       {/* Orders List */}
       <FlatList
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
         data={filteredOrders}
         keyExtractor={item => item.id}
         contentContainerStyle={[

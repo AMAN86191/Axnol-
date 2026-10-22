@@ -35,6 +35,7 @@ export type CatalogueStackParamList = {
     | undefined;
   ProductDetails: {productId: string};
   Industries: undefined;
+  IndustryDetails: {industryId: string};
   Categories: {industryId?: string; industryName?: string} | undefined;
   SubCategories: {
     categoryId: string;

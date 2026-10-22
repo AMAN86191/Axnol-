@@ -2,6 +2,7 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {CatalogueStackParamList} from '../../navigation/types';
 import IndustriesScreen from './IndustriesScreen';
+import IndustryDetailsScreen from './IndustryDetailsScreen';
 import CategoriesScreen from './CategoriesScreen';
 import SubCategoriesScreen from './SubCategoriesScreen';
 import CategoryProductsScreen from './CategoryProductsScreen';
@@ -24,6 +25,7 @@ export const CatalogueStack: React.FC<CatalogueStackProps> = ({
     <Stack.Screen name="Products" component={ProductsScreen} />
     <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
     <Stack.Screen name="Industries" component={IndustriesScreen} />
+    <Stack.Screen name="IndustryDetails" component={IndustryDetailsScreen} />
     <Stack.Screen name="Categories" component={CategoriesScreen} />
     <Stack.Screen name="SubCategories" component={SubCategoriesScreen} />
     <Stack.Screen name="CategoryProducts" component={CategoryProductsScreen} />

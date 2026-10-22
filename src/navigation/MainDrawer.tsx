@@ -13,7 +13,6 @@ import {
 } from '@react-navigation/drawer';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
-  ChevronRight,
   ClipboardList,
   Factory,
   HelpCircle,
@@ -44,22 +43,14 @@ import Logo from '../components/ui/Logo';
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
 
 const PALETTE = {
-  background: '#F8FAFC',
-  surface: colors.surface,
-  border: '#E8EEF4',
-  borderLight: '#EEF2F6',
+  background: colors.surface,
+  divider: '#EEF2F6',
   text: '#0F172A',
-  textSecondary: '#64748B',
+  textSecondary: '#475569',
   textMuted: '#94A3B8',
-  eyebrow: '#0284C7',
-  iconBadge: '#F1F5F9',
-  iconInactive: '#5A7CA8',
-  activeBg: '#EFF6FF',
-  activeBorder: '#DBEAFE',
+  activeBg: '#F1F6FC',
   overlay: 'rgba(8, 30, 54, 0.5)',
 };
-
-const VERSION = 'Axnol · v1.0.0';
 
 interface DrawerLink {
   key: string;
@@ -177,17 +168,11 @@ const NavigationItem = memo(
         activeOpacity={0.75}
         onPress={onPress}
         style={[styles.navigationItem, active && styles.navigationItemActive]}>
-        <View
-          style={[
-            styles.iconContainer,
-            active && styles.iconContainerActive,
-          ]}>
-          <Icon
-            size={scale(18)}
-            color={active ? colors.textInverse : PALETTE.iconInactive}
-            strokeWidth={active ? 2.3 : 1.9}
-          />
-        </View>
+        <Icon
+          size={scale(20)}
+          color={active ? colors.primary : PALETTE.textSecondary}
+          strokeWidth={active ? 2.2 : 1.7}
+        />
 
         <Text
           numberOfLines={1}
@@ -197,14 +182,6 @@ const NavigationItem = memo(
           ]}>
           {item.label}
         </Text>
-
-        {active && (
-          <ChevronRight
-            size={scale(17)}
-            color={colors.primary}
-            strokeWidth={2.4}
-          />
-        )}
       </TouchableOpacity>
     );
   },
@@ -291,18 +268,16 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, {paddingTop: insets.top + scale(20)}]}>
-        <View style={styles.blobOne} />
-        <View style={styles.blobTwo} />
-
-        <View style={styles.brandRow}>
-          <Logo height={scale(44)} />
-        </View>
+        <Logo height={scale(40)} />
       </View>
 
       {/* Navigation */}
       <ScrollView
         style={styles.menuScroll}
-        contentContainerStyle={styles.menuContent}
+        contentContainerStyle={[
+          styles.menuContent,
+          {paddingBottom: insets.bottom + spacing.lg},
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <View style={styles.navigationGroup}>
@@ -355,15 +330,6 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
           ))}
         </View>
       </ScrollView>
-
-      {/* Footer */}
-      <View
-        style={[
-          styles.footer,
-          {paddingBottom: Math.max(insets.bottom, scale(14))},
-        ]}>
-        <Text style={styles.version}>{VERSION}</Text>
-      </View>
     </View>
   );
 };
@@ -417,36 +383,9 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
-    backgroundColor: PALETTE.surface,
-    borderBottomLeftRadius: radius.xxl,
-    borderBottomRightRadius: radius.xxl,
-    borderBottomWidth: 1,
-    borderBottomColor: PALETTE.borderLight,
-    overflow: 'hidden',
-  },
-
-  blobOne: {
-    position: 'absolute',
-    top: -scale(60),
-    right: -scale(40),
-    width: scale(160),
-    height: scale(160),
-    borderRadius: scale(80),
-    backgroundColor: 'rgba(10, 77, 140, 0.06)',
-  },
-
-  blobTwo: {
-    position: 'absolute',
-    bottom: -scale(70),
-    left: -scale(40),
-    width: scale(150),
-    height: scale(150),
-    borderRadius: scale(75),
-    backgroundColor: 'rgba(245, 166, 35, 0.08)',
-  },
-
-  brandRow: {
     alignItems: 'flex-start',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: PALETTE.divider,
   },
 
   // Menu
@@ -455,88 +394,56 @@ const styles = StyleSheet.create({
   },
 
   menuContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
     paddingBottom: spacing.lg,
   },
 
   navigationGroup: {
-    gap: scale(5),
+    gap: scale(2),
   },
 
   sectionGroup: {
-    marginTop: spacing.xl,
-    gap: scale(5),
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: PALETTE.divider,
+    gap: scale(2),
   },
 
   sectionHeading: {
     fontSize: scale(10.5),
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontWeight: '600',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
     color: PALETTE.textMuted,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     marginBottom: scale(4),
   },
 
   navigationItem: {
-    minHeight: scale(48),
+    minHeight: scale(44),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: 'transparent',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
   },
 
   navigationItemActive: {
     backgroundColor: PALETTE.activeBg,
-    borderColor: PALETTE.activeBorder,
-  },
-
-  iconContainer: {
-    width: scale(34),
-    height: scale(34),
-    borderRadius: radius.md,
-    backgroundColor: PALETTE.iconBadge,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-
-  iconContainerActive: {
-    backgroundColor: colors.primary,
   },
 
   navigationLabel: {
     flex: 1,
     fontSize: scale(14),
-    fontWeight: '600',
+    fontWeight: '500',
     color: PALETTE.textSecondary,
-    letterSpacing: 0.1,
   },
 
   navigationLabelActive: {
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.primary,
-  },
-
-  // Footer
-  footer: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: PALETTE.borderLight,
-  },
-
-  version: {
-    textAlign: 'center',
-    fontSize: scale(10.5),
-    fontWeight: '500',
-    color: PALETTE.textMuted,
-    letterSpacing: 0.2,
   },
 });
 

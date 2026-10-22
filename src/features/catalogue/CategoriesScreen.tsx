@@ -7,6 +7,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {CatalogueStackParamList} from '../../navigation/types';
@@ -24,6 +25,7 @@ import {
   spacing,
   typography,
 } from '../../theme';
+import {useRefresh} from '../../hooks/useRefresh';
 
 type Route = RouteProp<CatalogueStackParamList, 'Categories'>;
 
@@ -37,10 +39,13 @@ const CARD_WIDTH = Math.floor(
 export const CategoriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const {params} = useRoute<Route>();
-  const {data, isLoading} = useGetCategoriesQuery({
+  const {data, isLoading, refetch} = useGetCategoriesQuery({
     industryId: params?.industryId,
   });
-  const {data: subCategories} = useGetSubCategoriesQuery({});
+  const {data: subCategories, refetch: refetchSubs} =
+    useGetSubCategoriesQuery({});
+  const {refreshing, onRefresh} = useRefresh(refetch, refetchSubs);
+
 
   const hasSubCategories = (categoryId: string) =>
     (subCategories ?? []).some(s => s.categoryId === categoryId);
@@ -74,6 +79,14 @@ export const CategoriesScreen: React.FC = () => {
         </View>
       ) : (
         <FlatList
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
           data={data}
           keyExtractor={i => i.id}
           numColumns={3}

@@ -1,8 +1,8 @@
 import React, { useCallback } from 'react';
-import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, View, RefreshControl} from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { scale } from '../../theme';
+import { colors, scale } from '../../theme';
 import { useAppSelector } from '../../store';
 import { selectCartItemCount } from '../cart/cartSelectors';
 import { selectWishlistCount } from '../wishlist/wishlistSelectors';
@@ -30,6 +30,7 @@ import IndustriesSection from './components/IndustriesSection';
 import FeaturedProductsSection from './components/FeaturedProductsSection';
 import CategoriesSection from './components/CategoriesSection';
 import AllProductsGrid from './components/AllProductsGrid';
+import { useRefresh } from '../../hooks/useRefresh';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -38,12 +39,20 @@ export const HomeScreen: React.FC = () => {
   const cartCount = useAppSelector(selectCartItemCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
   const loading = useSimulatedLoading();
-  const { data: categoriesData } = useGetCategoriesQuery({});
-  const { data: subCategoriesData } = useGetSubCategoriesQuery({});
+  const { data: categoriesData, refetch: refetchCategories } =
+    useGetCategoriesQuery({});
+  const { data: subCategoriesData, refetch: refetchSubCategories } =
+    useGetSubCategoriesQuery({});
   const {
     data: notificationsData,
     refetch: refetchNotifications,
   } = useGetNotificationsQuery();
+
+  const { refreshing, onRefresh } = useRefresh(
+    refetchCategories,
+    refetchSubCategories,
+    refetchNotifications,
+  );
 
   const hasUnreadNotifications = (notificationsData ?? []).some(
     notification => !notification.read,
@@ -111,6 +120,15 @@ export const HomeScreen: React.FC = () => {
       />
 
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+            progressViewOffset={insets.top}
+          />
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,

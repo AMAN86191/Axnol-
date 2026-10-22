@@ -4,6 +4,7 @@ import {
   ScrollView,
   StyleSheet,
   View,
+  RefreshControl,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {PackageSearch} from 'lucide-react-native';
@@ -14,9 +15,8 @@ import {Product} from '../../api/types';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import {colors, scale, spacing} from '../../theme';
-import ProductGridCard, {
-  ProductGridCardData,
-} from './components/ProductGridCard';
+import ProductCard, {ProductCardData} from '../../components/ui/ProductCard';
+import {useRefresh} from '../../hooks/useRefresh';
 
 type Route = RouteProp<CatalogueStackParamList, 'CategoryProducts'>;
 
@@ -28,7 +28,7 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
   return rows;
 };
 
-const toCard = (product: Product): ProductGridCardData => ({
+const toCard = (product: Product): ProductCardData => ({
   id: product.id,
   name: product.name,
   image: product.images?.[0],
@@ -41,11 +41,12 @@ export const CategoryProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const {params} = useRoute<Route>();
-  const {data, isLoading} = useGetProductsQuery({
+  const {data, isLoading, refetch} = useGetProductsQuery({
     categoryId: params?.categoryId,
     subCategoryId: params?.subCategoryId,
     industryId: params?.industryId,
   });
+  const {refreshing, onRefresh} = useRefresh(refetch);
 
   const products = data ?? [];
   const isEmpty = !isLoading && products.length === 0;
@@ -71,6 +72,14 @@ export const CategoryProductsScreen: React.FC = () => {
         />
       ) : (
         <ScrollView
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
           style={styles.scrollFlex}
           contentContainerStyle={[
             styles.gridContainer,
@@ -80,7 +89,8 @@ export const CategoryProductsScreen: React.FC = () => {
           {chunk(products, 2).map((row, rowIndex) => (
             <View key={`row-${rowIndex}`} style={styles.gridRow}>
               {row.map(product => (
-                <ProductGridCard
+                <ProductCard
+                  style={styles.gridCard}
                   key={product.id}
                   product={toCard(product)}
                   onPress={() => handlePress(product)}
@@ -107,6 +117,9 @@ const styles = StyleSheet.create({
   gridRow: {
     flexDirection: 'row',
     gap: scale(10),
+  },
+  gridCard: {
+    flex: 1,
   },
   gridCardPlaceholder: {
     flex: 1,
