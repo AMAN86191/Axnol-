@@ -148,7 +148,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
               <LinearGradient
                 pointerEvents="none"
                 colors={[
-                  'rgba(241,247,252,0.97)',
+                  'rgba(241,247,252,0.91)',
                   'rgba(241,247,252,0.86)',
                   'rgba(241,247,252,0)',
                 ]}

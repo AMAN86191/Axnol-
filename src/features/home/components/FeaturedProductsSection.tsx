@@ -1,26 +1,24 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {ArrowRight, Heart} from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
 import Button from '../../../components/ui/Button';
-import {colors, scale} from '../../../theme';
-import {formatPrice} from '../../../utils/formatPrice';
-import {HomeProduct} from '../homeData';
+import { colors, scale } from '../../../theme';
+import { formatPrice } from '../../../utils/formatPrice';
+import { HomeProduct } from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
+import AddToCartButton from '../../cart/components/AddToCartButton';
+import WishlistButton from '../../wishlist/components/WishlistButton';
 
 interface FeaturedProductsSectionProps {
   products: HomeProduct[];
-  favorites: Record<string, boolean>;
-  onToggleFavorite: (id: string) => void;
   onSeeAll?: () => void;
   onPress: (product: HomeProduct) => void;
 }
 
 export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = ({
   products,
-  favorites,
-  onToggleFavorite,
   onSeeAll,
   onPress,
 }) => (
@@ -36,7 +34,6 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.scrollPad}>
       {products.map(prod => {
-        const isFav = Boolean(favorites[prod.id]);
         return (
           <TouchableOpacity
             key={prod.id}
@@ -46,20 +43,21 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
             {/* Image panel */}
             <LinearGradient
               colors={['#F8FBFF', '#E8F2FB']}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 1}}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
               style={styles.imgArea}>
-              <TouchableOpacity
+              <WishlistButton
+                product={{
+                  id: prod.id,
+                  name: prod.name,
+                  code: prod.code,
+                  image: prod.image,
+                  price: prod.price,
+                  mrp: prod.mrp,
+                  unit: prod.unit,
+                }}
                 style={styles.favBtn}
-                activeOpacity={0.7}
-                onPress={() => onToggleFavorite(prod.id)}>
-                <Heart
-                  size={scale(13)}
-                  color={isFav ? '#EF4444' : '#94A3B8'}
-                  fill={isFav ? '#EF4444' : 'none'}
-                  strokeWidth={2}
-                />
-              </TouchableOpacity>
+              />
 
               <AppImage uri={prod.image} style={styles.img} resizeMode="contain" />
             </LinearGradient>
@@ -87,21 +85,37 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
             <View style={styles.divider} />
 
             {/* CTA */}
-            <Button
-              title="View Details"
-              variant="outline"
-              size="small"
-              fullWidth
-              onPress={() => onPress(prod)}
-              iconRight={
-                <ArrowRight
-                  size={scale(13)}
-                  color={colors.primary}
-                  strokeWidth={2.6}
-                />
-              }
-              textStyle={styles.detailsText}
-            />
+            <View style={styles.ctaRow}>
+              <Button
+                title="Details"
+                variant="outline"
+                size="small"
+                fullWidth={false}
+                style={styles.detailsBtn}
+                onPress={() => onPress(prod)}
+                iconRight={
+                  <ChevronRight
+                    size={scale(13)}
+                    color={colors.primary}
+                    strokeWidth={2.6}
+                  />
+                }
+                textStyle={styles.detailsText}
+              />
+              <AddToCartButton
+                product={{
+                  id: prod.id,
+                  name: prod.name,
+                  code: prod.code,
+                  image: prod.image,
+                  price: prod.price,
+                  mrp: prod.mrp,
+                  unit: prod.unit,
+                }}
+                compact
+                style={styles.addBtn}
+              />
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -156,7 +170,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 1,
@@ -209,9 +223,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     marginBottom: scale(10),
   },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: scale(6),
+  },
+  detailsBtn: {
+    flex: 1,
+    paddingHorizontal: scale(4),
+    gap: scale(2),
+  },
+  addBtn: {
+    flex: 1,
+  },
   detailsText: {
-    fontSize: scale(11),
+    fontSize: scale(10),
     fontWeight: '700',
+    flexShrink: 1,
   },
 });
 

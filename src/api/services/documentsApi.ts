@@ -12,6 +12,9 @@ export const documentsApi = createApi({
     markAllRead: builder.mutation<{message: string}, void>({
       query: () => ({url: 'notifications/read-all', method: 'POST'}),
     }),
+    markRead: builder.mutation<{message: string}, string>({
+      query: id => ({url: `notifications/${id}/read`, method: 'POST'}),
+    }),
     getDocuments: builder.query<
       DocumentItem[],
       {category?: string; search?: string}
@@ -24,5 +27,6 @@ export const documentsApi = createApi({
 export const {
   useGetNotificationsQuery,
   useMarkAllReadMutation,
+  useMarkReadMutation,
   useGetDocumentsQuery,
 } = documentsApi;

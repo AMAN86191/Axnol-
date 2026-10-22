@@ -1,15 +1,18 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useNavigation} from '@react-navigation/native';
 import {
   Bell,
   BellOff,
+  ChevronRight,
   FileText,
   LucideIcon,
   ReceiptText,
@@ -17,12 +20,15 @@ import {
   User,
 } from 'lucide-react-native';
 import {
+  documentsApi,
   useGetNotificationsQuery,
   useMarkAllReadMutation,
+  useMarkReadMutation,
 } from '../../api/services/documentsApi';
 import {AppNotification} from '../../api/types';
 import EmptyState from '../../components/ui/EmptyState';
 import CommonHeader from '../../components/ui/CommonHeader';
+import {useAppDispatch} from '../../store';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 
 const ICONS: Record<AppNotification['type'], LucideIcon> = {
@@ -41,10 +47,84 @@ const formatDate = (ts: number) =>
   });
 
 export const NotificationsScreen: React.FC = () => {
-  const {data, isLoading} = useGetNotificationsQuery();
-  const [markAll] = useMarkAllReadMutation();
+  const navigation = useNavigation<any>();
+  const dispatch = useAppDispatch();
+  const {data, isLoading, refetch} = useGetNotificationsQuery();
+  const [markAll, {isLoading: markingAll}] = useMarkAllReadMutation();
+  const [markRead] = useMarkReadMutation();
   const notifications = data ?? [];
   const hasUnread = notifications.some(n => !n.read);
+
+  const patchNotifications = (updater: (item: AppNotification) => void) => {
+    dispatch(
+      documentsApi.util.updateQueryData(
+        'getNotifications',
+        undefined,
+        draft => {
+          draft.forEach(updater);
+        },
+      ),
+    );
+  };
+
+  const handleMarkAll = async () => {
+    patchNotifications(item => {
+      item.read = true;
+    });
+    try {
+      await markAll().unwrap();
+    } catch {
+      Alert.alert('Something went wrong', 'Could not mark notifications as read.');
+      refetch();
+    }
+  };
+
+  const handleMarkRead = (id: string) => {
+    patchNotifications(item => {
+      if (item.id === id) {
+        item.read = true;
+      }
+    });
+    markRead(id).catch(() => refetch());
+  };
+
+  const openNotification = (item: AppNotification) => {
+    if (!item.read) {
+      handleMarkRead(item.id);
+    }
+
+    switch (item.type) {
+      case 'account':
+        navigation.navigate('Profile', {
+          screen: 'ProfileMain',
+          initial: false,
+        });
+        break;
+      case 'pricing':
+        navigation.navigate('Profile', {
+          screen: 'PricingRequests',
+          initial: false,
+        });
+        break;
+      case 'order':
+        navigation.navigate('Orders', {
+          screen: 'OrdersList',
+          initial: false,
+        });
+        break;
+      case 'invoice':
+        navigation.navigate('Orders', {
+          screen: 'Invoice',
+          initial: false,
+        });
+        break;
+      default:
+        navigation.navigate('Profile', {
+          screen: 'MyEnquiries',
+          initial: false,
+        });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -55,8 +135,12 @@ export const NotificationsScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.7}
               hitSlop={8}
-              onPress={() => markAll()}>
-              <Text style={styles.markRead}>Mark All Read</Text>
+              disabled={markingAll}
+              style={markingAll && styles.markReadDisabled}
+              onPress={handleMarkAll}>
+              <Text style={styles.markRead}>
+                {markingAll ? 'Marking...' : 'Mark All Read'}
+              </Text>
             </TouchableOpacity>
           ) : null
         }
@@ -80,7 +164,10 @@ export const NotificationsScreen: React.FC = () => {
           renderItem={({item}) => {
             const Icon = ICONS[item.type] ?? Bell;
             return (
-              <View style={[styles.card, !item.read && styles.unread]}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => openNotification(item)}
+                style={[styles.card, !item.read && styles.unread]}>
                 <View
                   style={[
                     styles.iconCircle,
@@ -89,15 +176,25 @@ export const NotificationsScreen: React.FC = () => {
                   <Icon size={scale(18)} color={colors.primary} />
                 </View>
                 <View style={styles.body}>
-                  <Text style={styles.title} numberOfLines={1}>
-                    {item.title}
-                  </Text>
+                  <View style={styles.titleRow}>
+                    <Text style={styles.title} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    {!item.read ? <View style={styles.unreadDot} /> : null}
+                  </View>
                   <Text style={styles.text} numberOfLines={2}>
                     {item.body}
                   </Text>
                   <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
                 </View>
-              </View>
+                <View style={styles.chevronWrap}>
+                  <ChevronRight
+                    size={scale(15)}
+                    color="#CBD5E1"
+                    strokeWidth={2.4}
+                  />
+                </View>
+              </TouchableOpacity>
             );
           }}
         />
@@ -114,6 +211,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.primary,
   },
+  markReadDisabled: {opacity: 0.5},
   list: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,
@@ -121,6 +219,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
@@ -143,10 +242,22 @@ const styles = StyleSheet.create({
   },
   iconCircleUnread: {backgroundColor: colors.surface},
   body: {flex: 1},
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(6),
+  },
   title: {
     ...typography.semibold,
+    flex: 1,
     fontSize: fontSize.sm,
     color: colors.text,
+  },
+  unreadDot: {
+    width: scale(7),
+    height: scale(7),
+    borderRadius: scale(4),
+    backgroundColor: colors.accent,
   },
   text: {
     ...typography.regular,
@@ -160,6 +271,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     color: colors.textMuted,
     marginTop: spacing.xs,
+  },
+  chevronWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

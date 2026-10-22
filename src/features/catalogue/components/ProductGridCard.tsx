@@ -5,6 +5,8 @@ import {colors, scale} from '../../../theme';
 import AppImage from '../../../components/ui/AppImage';
 import Button from '../../../components/ui/Button';
 import {formatPrice} from '../../../utils/formatPrice';
+import AddToCartButton from '../../cart/components/AddToCartButton';
+import WishlistButton from '../../wishlist/components/WishlistButton';
 
 export interface ProductGridCardData {
   id: string;
@@ -31,6 +33,18 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({
     onPress={onPress}>
     <View style={styles.gridImgArea}>
       <AppImage uri={product.image} style={styles.gridImg} resizeMode="contain" />
+      <WishlistButton
+        product={{
+          id: product.id,
+          name: product.name,
+          code: product.code,
+          image: product.image,
+          price: product.price,
+          mrp: product.mrp,
+          unit: product.unit,
+        }}
+        style={styles.favBtn}
+      />
     </View>
     <Text style={styles.gridName} numberOfLines={1}>
       {product.name}
@@ -48,17 +62,33 @@ export const ProductGridCard: React.FC<ProductGridCardProps> = ({
       ) : null}
     </View>
     <View style={styles.gridDivider} />
-    <Button
-      title="View Details"
-      variant="outline"
-      size="small"
-      fullWidth
-      onPress={onPress}
-      iconRight={
-        <ChevronRight size={scale(13)} color={colors.primary} strokeWidth={2.6} />
-      }
-      textStyle={styles.gridDetailsText}
-    />
+    <View style={styles.ctaRow}>
+      <Button
+        title="Details"
+        variant="outline"
+        size="small"
+        fullWidth={false}
+        style={styles.detailsBtn}
+        onPress={onPress}
+        iconRight={
+          <ChevronRight size={scale(13)} color={colors.primary} strokeWidth={2.6} />
+        }
+        textStyle={styles.gridDetailsText}
+      />
+      <AddToCartButton
+        product={{
+          id: product.id,
+          name: product.name,
+          code: product.code,
+          image: product.image,
+          price: product.price,
+          mrp: product.mrp,
+          unit: product.unit,
+        }}
+        compact
+        style={styles.addBtn}
+      />
+    </View>
   </TouchableOpacity>
 );
 
@@ -83,6 +113,11 @@ const styles = StyleSheet.create({
   gridImg: {
     width: scale(112),
     height: scale(104),
+  },
+  favBtn: {
+    position: 'absolute',
+    top: scale(6),
+    right: scale(6),
   },
   gridName: {
     fontSize: scale(13),
@@ -129,9 +164,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     marginBottom: scale(10),
   },
+  ctaRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: scale(6),
+  },
+  detailsBtn: {
+    flex: 1,
+    paddingHorizontal: scale(4),
+    gap: scale(2),
+  },
+  addBtn: {
+    flex: 1,
+  },
   gridDetailsText: {
-    fontSize: scale(11),
+    fontSize: scale(10),
     fontWeight: '700',
+    flexShrink: 1,
   },
 });
 export default ProductGridCard;

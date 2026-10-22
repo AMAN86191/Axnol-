@@ -80,6 +80,8 @@ export type ProfileStackParamList = {
 
 export type MainDrawerParamList = {
   HomeTabs: NavigatorScreenParams<MainTabParamList>;
+  Cart: undefined;
+  Wishlist: undefined;
   ContactUs: undefined;
   About: undefined;
   TermsConditions: undefined;

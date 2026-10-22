@@ -57,6 +57,16 @@ export const HOME_BANNERS: HomeBannerItem[] = [
     image: 'banner_industrial_3',
   },
 ];
+export const Catgory_BANNERS: HomeBannerItem[] = [
+  {
+    id: 'cat-banner-1',
+    tagline: 'Specialty Lubricants',
+    title: 'Explore *All Categories*',
+    description:
+      'Industrial greases, oils, and automotive fluids.',
+    image: 'banner_category_1',
+  }
+];
 
 export const INDUSTRIES: IndustryItem[] = [
   {id: 'ind2', name: 'Automotive', image: 'ind_automotive'},

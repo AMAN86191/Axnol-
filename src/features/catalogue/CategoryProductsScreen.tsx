@@ -34,6 +34,7 @@ const toCard = (product: Product): ProductGridCardData => ({
   image: product.images?.[0],
   code: product.brand,
   price: product.price,
+  unit: product.packSizes?.[0],
 });
 
 export const CategoryProductsScreen: React.FC = () => {

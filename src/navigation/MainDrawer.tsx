@@ -17,6 +17,7 @@ import {
   ClipboardList,
   Factory,
   HelpCircle,
+  Heart,
   Home,
   Info,
   LucideIcon,
@@ -37,6 +38,8 @@ import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
 import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
 import ContactUsScreen from '../features/enquiries/ContactUsScreen';
 import AboutScreen from '../features/about/AboutScreen';
+import CartScreen from '../features/cart/CartScreen';
+import WishlistScreen from '../features/wishlist/WishlistScreen';
 
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
 
@@ -92,6 +95,18 @@ const ACCOUNT_LINKS: ProfileLink[] = [
   // {key: 'EditProfile', label: 'Edit Profile', icon: Pencil},
   {key: 'ContactUs', label: 'Help & Support', icon: HelpCircle},
   {key: 'About', label: 'About Us', icon: Info},
+];
+
+type ShoppingKey = 'Wishlist';
+
+interface ShoppingLink {
+  key: ShoppingKey;
+  label: string;
+  icon: LucideIcon;
+}
+
+const SHOPPING_LINKS: ShoppingLink[] = [
+  {key: 'Wishlist', label: 'Wishlist', icon: Heart},
 ];
 
 type LegalKey = 'TermsConditions' | 'PrivacyPolicy';
@@ -255,6 +270,14 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
     [navigation],
   );
 
+  const handleShoppingNavigate = useCallback(
+    (key: ShoppingKey) => {
+      navigation.navigate(key);
+      navigation.closeDrawer();
+    },
+    [navigation],
+  );
+
   const menuItems = useMemo(
     () =>
       LINKS.map(item => ({
@@ -301,6 +324,19 @@ const SidebarContent: React.FC<DrawerContentComponentProps> = ({
               item={item}
               active={item.active}
               onPress={() => handleTabNavigate(item.key)}
+            />
+          ))}
+        </View>
+
+        {/* Shopping */}
+        <View style={styles.sectionGroup}>
+          <Text style={styles.sectionHeading}>Shopping</Text>
+          {SHOPPING_LINKS.map(item => (
+            <NavigationItem
+              key={item.key}
+              item={item}
+              active={activeTab === item.key}
+              onPress={() => handleShoppingNavigate(item.key)}
             />
           ))}
         </View>
@@ -370,6 +406,8 @@ export const MainDrawer: React.FC = () => {
         },
       }}>
       <Drawer.Screen name="HomeTabs" component={MainTabs} />
+      <Drawer.Screen name="Cart" component={CartScreen} />
+      <Drawer.Screen name="Wishlist" component={WishlistScreen} />
       <Drawer.Screen name="ContactUs" component={ContactUsScreen} />
       <Drawer.Screen name="About" component={AboutScreen} />
       <Drawer.Screen

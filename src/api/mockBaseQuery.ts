@@ -751,6 +751,20 @@ const routes: Route[] = [
     },
   },
   {
+    method: 'POST',
+    segments: ['notifications', ':id', 'read'],
+    handler: async ({params, user, query}) => {
+      requireUser({params, query, body: undefined, user});
+      await delay(120);
+      const notification = db.notifications.find(n => n.id === params.id);
+      if (!notification) {
+        apiError(404, 'Notification not found.');
+      }
+      notification!.read = true;
+      return {data: {message: 'Notification marked as read.'}};
+    },
+  },
+  {
     method: 'GET',
     segments: ['documents'],
     handler: async ({query}) => {
