@@ -4,7 +4,7 @@
 import type {ImageSourcePropType} from 'react-native';
 
 const images = {
-  logo: require('../assets/logo_blue.png'),
+  logo: require('../assets/logo_blue-sm-logo.png'),
   user_avatar: require('../../assets/axnol/rahul_avatar.png'),
   product_drum: require('../../assets/axnol/mock_drum.png'),
   hero_banner: require('../../assets/axnol/hero_banner.png'),
