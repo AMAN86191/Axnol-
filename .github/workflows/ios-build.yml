@@ -49,6 +49,8 @@ jobs:
 
       - name: Install pods
         working-directory: ios
+        env:
+          USE_FRAMEWORKS: static
         run: bundle exec pod install
 
       - name: Check signing secrets
