@@ -12,6 +12,8 @@ linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
+  # Firebase (Swift pods) needs static frameworks
+  $RNFirebaseAsStaticFramework = true
 end
 
 target 'gaumatatrust' do
@@ -30,5 +32,11 @@ target 'gaumatatrust' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    if linkage != nil
+      installer.pods_project.build_configurations.each do |config|
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+    end
   end
 end
