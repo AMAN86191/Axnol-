@@ -15,9 +15,11 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
+import HomeBanner from '../home/components/HomeBanner';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import { ALL_PRODUCTS } from '../home/homeData';
+import { ImageKey } from '../../assets/images';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import ProductsSkeleton from './components/ProductsSkeleton';
 import ProductGridCard from './components/ProductGridCard';
@@ -34,6 +36,58 @@ const FILTER_CATEGORIES = [
   'Compressor Oil',
   'Turbine Oil',
 ];
+
+interface IndustryBanner {
+  title: string;
+  description: string;
+  image: ImageKey;
+  tags: string[];
+}
+
+const INDUSTRY_BANNERS: Record<string, IndustryBanner> = {
+  ind1: {
+    title: 'Industrial',
+    description:
+      'Heavy-duty lubricants built for machinery.',
+    image: 'ind_industrial',
+    tags: ['Machinery', 'Manufacturing', 'MRO'],
+  },
+  ind2: {
+    title: 'Automotive',
+    description:
+      'Engine oils, gear oils and greases engineered for vehicles.',
+    image: 'ind_automotive',
+    tags: ['Engine Oil', 'Gear Oil', 'Fleets'],
+  },
+  ind3: {
+    title: 'Agriculture',
+    description:
+      'Reliable lubrication for tractors, harvesters and farm equipment working in demanding conditios.',
+    image: 'ind_agricultural',
+    tags: ['Tractors', 'Harvesters', 'Farm Gear'],
+  },
+  ind4: {
+    title: 'Marine',
+    description:
+      'Corrosion-resistant marine lubricants for engines and equipment.',
+    image: 'ind_marine',
+    tags: ['Marine Engines', 'Offshore', 'Corrosion'],
+  },
+  ind6: {
+    title: 'Construction',
+    description:
+      'High-performance fluids for excavators, cranes and heavy construction.',
+    image: 'ind_construction',
+    tags: ['Excavators', 'Cranes', 'Heavy Duty'],
+  },
+  ind8: {
+    title: 'Energy',
+    description:
+      'Specialty lubricants for power generation, turbines and energy infrastructure operating non-stop.',
+    image: 'ind_energy',
+    tags: ['Power', 'Turbines', 'Generation'],
+  },
+};
 
 const chunk = <T,>(list: T[], size: number): T[][] => {
   const rows: T[][] = [];
@@ -56,6 +110,14 @@ export const ProductsScreen: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const loading = useSimulatedLoading();
 
+  const industryBanner = route.params?.industryId
+    ? INDUSTRY_BANNERS[route.params.industryId]
+    : undefined;
+
+  const pageTitle = route.params?.title ?? 'Products';
+  const showIndustryBanner =
+    !!industryBanner && pageTitle.toLowerCase() === industryBanner.title.toLowerCase();
+
   const filtered = ALL_PRODUCTS.filter(p => {
     const matchesSearch =
       !search ||
@@ -72,7 +134,7 @@ export const ProductsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <CommonHeader
-        title="Products"
+        title={pageTitle}
         right={
           <View style={styles.viewToggle}>
             <TouchableOpacity
@@ -95,6 +157,27 @@ export const ProductsScreen: React.FC = () => {
         <ProductsSkeleton />
       ) : (
         <>
+      {showIndustryBanner && industryBanner && (
+        <View style={styles.industryBannerWrap}>
+          <HomeBanner
+            banners={[
+              {
+                id: `industry-${industryBanner.title}`,
+                tagline: 'Industry',
+                title: `*${industryBanner.title}*`,
+                description: industryBanner.description,
+                image: industryBanner.image,
+              },
+            ]}
+            height={scale(168)}
+            autoPlay={false}
+            showPrimaryButton={false}
+            showDownloadButton
+            downloadLabel="Download Brochure"
+          />
+        </View>
+      )}
+
       {/* Search Input Bar */}
       <View style={styles.searchBar}>
         <Search size={scale(16)} color="#94A3B8" strokeWidth={2.2} />
@@ -223,6 +306,10 @@ const styles = StyleSheet.create({
   },
   viewBtnActive: {
     backgroundColor: '#F0F9FF',
+  },
+  industryBannerWrap: {
+    marginTop: spacing.md,
+    marginHorizontal: spacing.lg,
   },
   searchBar: {
     flexDirection: 'row',
