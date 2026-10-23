@@ -21,7 +21,7 @@ interface AdSliderProps {
 
 export const AdSlider: React.FC<AdSliderProps> = ({
   banners,
-  height = scale(155),
+  height = scale(165),
   autoPlay = true,
   interval = 4000,
   onPressItem,
