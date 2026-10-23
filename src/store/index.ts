@@ -9,7 +9,7 @@ import {ordersApi} from '../api/services/ordersApi';
 import {profileApi} from '../api/services/profileApi';
 import {documentsApi} from '../api/services/documentsApi';
 import {enquiriesApi} from '../api/services/enquiriesApi';
-import authReducer from '../features/auth/authSlice';
+import authReducer from '../redux/AuthSlice';
 import cartReducer from '../features/cart/cartSlice';
 import wishlistReducer from '../features/wishlist/wishlistSlice';
 

@@ -7,6 +7,8 @@ export type AuthStackParamList = {
   Register: undefined;
   ProfileSetup: undefined;
   ForgotPassword: undefined;
+  TermsConditions: undefined;
+  PrivacyPolicy: undefined;
 };
 
 export type HomeStackParamList = {

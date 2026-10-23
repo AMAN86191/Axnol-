@@ -1,6 +1,5 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  Alert,
   Image,
   ScrollView,
   StatusBar,
@@ -29,9 +28,9 @@ import {
 } from 'lucide-react-native';
 import type {LucideIcon} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useLogoutMutation} from '../../api/services/authApi';
-import {logout} from '../auth/authSlice';
-import {useAppSelector} from '../../store';
+import {clearAuth} from '../../redux/AuthSlice';
+import {useAppSelector} from '../../redux/hooks';
+import {toast} from '../../components/ui/ToastProvider';
 import AppImage from '../../components/ui/AppImage';
 import images from '../../assets/images';
 import {colors, radius, scale, shadows, spacing} from '../../theme';
@@ -72,28 +71,41 @@ const InfoRow: React.FC<InfoRowProps> = ({
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const {user} = useAppSelector(s => s.auth);
-  const [logoutApi] = useLogoutMutation();
+  const reduxUser = useAppSelector(s => s.auth.user);
+  const [storedUser, setStoredUser] = useState<any>(null);
   const dispatch = useDispatch();
   const loading = useSimulatedLoading();
 
+  useEffect(() => {
+    let active = true;
+    AsyncStorage.getItem('axnol_user')
+      .then(raw => {
+        if (!active || !raw) return;
+        try {
+          setStoredUser(JSON.parse(raw));
+        } catch {
+          // ignore malformed cache
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [reduxUser]);
+
+  const user = storedUser ?? reduxUser;
+
   const doLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to log out?', [
-      {text: 'Cancel', style: 'cancel'},
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await logoutApi().unwrap();
-          } catch {
-            // ignore
-          }
-          await AsyncStorage.clear();
-          dispatch(logout());
-        },
+    toast.confirm(
+      'Logout',
+      'Are you sure you want to log out?',
+      async () => {
+        await AsyncStorage.clear();
+        dispatch(clearAuth());
+        toast.success('Logged Out', 'You have been logged out successfully.');
       },
-    ]);
+      'Logout',
+    );
   };
 
   const MENU_ITEMS: MenuItem[] = [
@@ -117,11 +129,32 @@ export const ProfileScreen: React.FC = () => {
     },
   ];
 
-  const name = user?.name ?? 'Rahul Sharma';
-  const companyName = user?.company ?? 'Sharma Auto Traders';
-  const email = user?.email ?? 'rahul@sharmaauto.in';
-  const phone = user?.phone ?? '+91 98290 12345';
-  const location = `${user?.city ?? 'Jaipur'}, ${user?.state ?? 'Rajasthan'}`;
+  const company = user?.company;
+  const name = user?.name || '—';
+  const companyName =
+    (typeof company === 'string' ? company : company?.company_name) || '—';
+  const email = user?.email || '—';
+  const rawPhone = user?.phone || '';
+  const phone = rawPhone
+    ? /^\d{10}$/.test(rawPhone)
+      ? `+91 ${rawPhone}`
+      : rawPhone
+    : '—';
+  const gstNumber =
+    user?.gst_number || user?.gstin || company?.gst_number || '—';
+  const cityState = [user?.city, user?.state].filter(Boolean).join(', ');
+  const location = [cityState, user?.pincode].filter(Boolean).join(' - ') || '—';
+  const avatarUri =
+    user?.profile_pic_url || user?.profile_pic || user?.avatar || 'user_avatar';
+  const status = user?.status || '—';
+  const statusLabel =
+    status === 'active'
+      ? 'Active'
+      : status === 'pending'
+      ? 'Pending Approval'
+      : status === 'inactive'
+      ? 'Inactive'
+      : status;
 
   if (loading) {
     return <ProfileSkeleton />;
@@ -184,7 +217,7 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.avatarBlock}>
             <View style={styles.avatarRing}>
               <AppImage
-                uri={user?.avatar ?? 'user_avatar'}
+                uri={avatarUri}
                 style={styles.avatar}
                 resizeMode="cover"
               />
@@ -231,12 +264,16 @@ export const ProfileScreen: React.FC = () => {
 
           <View style={styles.sectionDivider} />
 
-          <InfoRow label="GSTIN" value={user?.gstin ?? '08AABCS1429B1Z6'} />
-          <InfoRow
-            label="Business Address"
-            value={user?.address ?? 'Plot 12, Industrial Area Phase II'}
-          />
-          <InfoRow label="City & State" value={location} />
+          <InfoRow label="Company Name" value={companyName} />
+          <InfoRow label="GSTIN" value={gstNumber} />
+          <InfoRow label="Address" value={user?.address || '—'} />
+          <InfoRow label="City & State" value={location} isLast />
+          {/* <InfoRow
+            label="Account Status"
+            value={statusLabel}
+            showDot={status === 'active'}
+            isLast
+          /> */}
         </View>
 
         {/* Support & Legal */}

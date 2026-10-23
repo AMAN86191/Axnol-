@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   Linking,
   ScrollView,
@@ -25,6 +24,7 @@ import { CatalogueStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import Button from '../../components/ui/Button';
+import { toast } from '../../components/ui/ToastProvider';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
@@ -115,20 +115,18 @@ export const ProductDetailsScreen: React.FC = () => {
 
   const openMsdsPdf = () => {
     const url = 'https://axnol.in/pdf/sds.pdf';
-    Alert.alert(
-      'Material Safety Data Sheet',
-      'PDF • 1.1 MB\nTap download to view this document.',
-      [
-        {
-          text: 'Download & View',
-          onPress: () =>
-            Linking.openURL(url).catch(() =>
-              Alert.alert('Error', 'Unable to open PDF.'),
-            ),
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ],
-    );
+    toast.show({
+      type: 'info',
+      title: 'Material Safety Data Sheet',
+      message: 'PDF • 1.1 MB • Tap download to view this document.',
+      action: {
+        label: 'Download & View',
+        onPress: () =>
+          Linking.openURL(url).catch(() =>
+            toast.error('Error', 'Unable to open PDF.'),
+          ),
+      },
+    });
   };
 
   return (

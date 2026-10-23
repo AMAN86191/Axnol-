@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -20,12 +20,12 @@ import { AppleIcon, GoogleIcon } from '../../components/ui/BrandIcons';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLoginMutation } from '../../api/services/authApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppDispatch } from '../../store';
+import { useAppDispatch } from '../../redux/hooks';
 import { ArrowRight, ChevronLeft, Lock, User } from 'lucide-react-native';
-import { logout, setCredentials } from './authSlice';
+import { clearAuth, loginUserSlice } from '../../redux/AuthSlice';
 import Logo from '../../components/ui/Logo';
+import { toast } from '../../components/ui/ToastProvider';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -40,35 +40,39 @@ export const LoginScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
-  const [login, { isLoading }] = useLoginMutation();
+  const [isLoading, setIsLoading] = useState(false);
 
   const {
     control,
     handleSubmit,
-    setError,
-    formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: 'demo@axnol.in', password: 'axnol123' },
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = async (values: FormValues) => {
+    setIsLoading(true);
     try {
-      const res = await login(values).unwrap();
-      await AsyncStorage.setItem('axnol_token', res.token);
-      await AsyncStorage.setItem('axnol_user', JSON.stringify(res.user));
-      dispatch(setCredentials({ token: res.token, user: res.user }));
-      if (res.user.status === 'active' && res.user.profileCompleted) {
+      const res: any = await dispatch(loginUserSlice(values)).unwrap();
+      if (res?.user?.status === 'active') {
+        setIsLoading(false);
+        toast.success(
+          'Login Successful',
+          `Welcome back, ${res?.user?.name || 'there'}!`,
+        );
         return; // RootNavigator switches to Main automatically
       }
       await AsyncStorage.removeItem('axnol_token');
       await AsyncStorage.removeItem('axnol_user');
-      dispatch(logout());
-      setError('root', {
-        message: `Welcome ${res.user.name}! Your account is pending administrator approval. You will be notified once it is activated.`,
-      });
+      dispatch(clearAuth());
+      toast.warning(
+        'Approval Pending',
+        `Welcome ${res?.user?.name || 'there'}! Your account is pending administrator approval. You will be notified once it is activated.`,
+      );
+      setIsLoading(false);
     } catch (err: any) {
-      setError('root', { message: err?.data?.message || 'Login failed' });
+      setIsLoading(false);
+      toast.error('Login Failed', err?.message || 'Login failed');
     }
   };
 
@@ -128,12 +132,6 @@ export const LoginScreen: React.FC = () => {
 
           {/* Main Glass Card Container */}
           <View style={styles.mainCard}>
-            {errors.root?.message ? (
-              <View style={styles.errorBox}>
-                <Text style={styles.errorText}>{errors.root.message}</Text>
-              </View>
-            ) : null}
-
             <Controller
               name="email"
               control={control}

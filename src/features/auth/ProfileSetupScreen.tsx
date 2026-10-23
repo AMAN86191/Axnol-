@@ -18,8 +18,8 @@ import {Controller, useForm} from 'react-hook-form';
 import {z} from 'zod';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {useUpdateProfileMutation} from '../../api/services/profileApi';
-import {useAppDispatch, useAppSelector} from '../../store';
-import {setCredentials} from './authSlice';
+import {useAppDispatch, useAppSelector} from '../../redux/hooks';
+import {setAuth} from '../../redux/AuthSlice';
 import Logo from '../../components/ui/Logo';
 
 const schema = z.object({
@@ -56,7 +56,7 @@ export const ProfileSetupScreen: React.FC = () => {
 
   const onSubmit = async (values: FormValues) => {
     const res = await update({...values, completeProfile: true}).unwrap();
-    dispatch(setCredentials({token, user: res}));
+    dispatch(setAuth({token, user: res}));
   };
 
   return (

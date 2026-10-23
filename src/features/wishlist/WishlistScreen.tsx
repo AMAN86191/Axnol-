@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +13,7 @@ import AppImage from '../../components/ui/AppImage';
 import Button from '../../components/ui/Button';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
+import {toast} from '../../components/ui/ToastProvider';
 import {colors, radius, scale, spacing} from '../../theme';
 import {formatPrice} from '../../utils/formatPrice';
 import {useAppSelector} from '../../store';
@@ -35,10 +35,15 @@ export const WishlistScreen: React.FC = () => {
   );
 
   const handleClear = () => {
-    Alert.alert('Clear wishlist?', 'This will remove all saved items.', [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Clear', style: 'destructive', onPress: () => clear()},
-    ]);
+    toast.confirm(
+      'Clear wishlist?',
+      'This will remove all saved items.',
+      () => {
+        clear();
+        toast.success('Wishlist Cleared', 'All saved items have been removed.');
+      },
+      'Clear',
+    );
   };
 
   const handleAddAllToCart = () => {
@@ -57,12 +62,17 @@ export const WishlistScreen: React.FC = () => {
       });
     });
 
-    Alert.alert(
-      'Added to cart',
-      toAdd.length > 0
-        ? `${toAdd.length} item(s) added to your cart.`
-        : 'All wishlist items are already in your cart.',
-    );
+    if (toAdd.length > 0) {
+      toast.success(
+        'Added to Cart',
+        `${toAdd.length} item(s) added to your cart.`,
+      );
+    } else {
+      toast.info(
+        'Already in Cart',
+        'All wishlist items are already in your cart.',
+      );
+    }
   };
 
   const openProduct = (id: string) => {

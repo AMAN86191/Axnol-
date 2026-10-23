@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
+import {toast} from '../../components/ui/ToastProvider';
 import {colors, radius, scale, spacing} from '../../theme';
 import {formatPrice} from '../../utils/formatPrice';
 import {useAppSelector} from '../../store';
@@ -27,10 +27,10 @@ export const CartScreen: React.FC = () => {
   const {setQuantity, remove} = useCart();
 
   const handleCheckout = () => {
-    // Alert.alert(
-    //   'Checkout',
-    //   'Checkout flow coming soon. Your cart is saved for later.',
-    // );
+    toast.info(
+      'Checkout',
+      'Checkout flow coming soon. Your cart is saved for later.',
+    );
   };
 
   if (items.length === 0) {

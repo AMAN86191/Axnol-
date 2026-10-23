@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {
-  Alert,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -13,6 +12,7 @@ import {ChevronRight, FileText} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
+import {toast} from '../../components/ui/ToastProvider';
 
 const FILTER_TABS = ['All', 'Technical Data', 'Safety Data', 'Brochure'];
 
@@ -72,14 +72,16 @@ export const DocumentsScreen: React.FC = () => {
   });
 
   const handleOpenDoc = (doc: (typeof MOCK_DOCUMENTS)[0]) => {
-    Alert.alert(
-      doc.title,
-      `${doc.size}\nTap download to view this document.`,
-      [
-        {text: 'Download & View', onPress: () => Alert.alert('Downloading', `${doc.title}.pdf is opening...`)},
-        {text: 'Cancel'},
-      ],
-    );
+    toast.show({
+      type: 'info',
+      title: doc.title,
+      message: `${doc.size} • Tap download to view this document.`,
+      action: {
+        label: 'Download & View',
+        onPress: () =>
+          toast.success('Downloading', `${doc.title}.pdf is opening...`),
+      },
+    });
   };
 
   return (

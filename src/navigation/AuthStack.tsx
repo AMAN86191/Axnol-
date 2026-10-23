@@ -7,6 +7,8 @@ import LoginScreen from '../features/auth/LoginScreen';
 import RegisterScreen from '../features/auth/RegisterScreen';
 import ProfileSetupScreen from '../features/auth/ProfileSetupScreen';
 import ForgotPasswordScreen from '../features/auth/ForgotPasswordScreen';
+import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
+import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
 import {useAppSelector} from '../store';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -26,6 +28,8 @@ export const AuthStack: React.FC = () => {
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />
+      <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </Stack.Navigator>
   );
 };
