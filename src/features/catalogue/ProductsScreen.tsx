@@ -84,50 +84,50 @@ interface IndustryBanner {
   tags: string[];
 }
 
-const INDUSTRY_BANNERS: Record<string, IndustryBanner> = {
-  ind1: {
-    title: 'Industrial',
-    description:
-      'Heavy-duty lubricants built for machinery.',
-    image: 'ind_industrial',
-    tags: ['Machinery', 'Manufacturing', 'MRO'],
-  },
-  ind2: {
-    title: 'Automotive',
-    description:
-      'Engine oils, gear oils and greases engineered for vehicles.',
-    image: 'ind_automotive',
-    tags: ['Engine Oil', 'Gear Oil', 'Fleets'],
-  },
-  ind3: {
-    title: 'Agriculture',
-    description:
-      'Reliable lubrication for tractors, harvesters and farm equipment working in demanding conditios.',
-    image: 'ind_agricultural',
-    tags: ['Tractors', 'Harvesters', 'Farm Gear'],
-  },
-  ind4: {
-    title: 'Marine',
-    description:
-      'Corrosion-resistant marine lubricants for engines and equipment.',
-    image: 'ind_marine',
-    tags: ['Marine Engines', 'Offshore', 'Corrosion'],
-  },
-  ind6: {
-    title: 'Construction',
-    description:
-      'High-performance fluids for excavators, cranes and heavy construction.',
-    image: 'ind_construction',
-    tags: ['Excavators', 'Cranes', 'Heavy Duty'],
-  },
-  ind8: {
-    title: 'Energy',
-    description:
-      'Specialty lubricants for power generation, turbines and energy infrastructure operating non-stop.',
-    image: 'ind_energy',
-    tags: ['Power', 'Turbines', 'Generation'],
-  },
-};
+// const INDUSTRY_BANNERS: Record<string, IndustryBanner> = {
+//   ind1: {
+//     title: 'Industrial',
+//     description:
+//       'Heavy-duty lubricants built for machinery.',
+//     image: 'ind_industrial',
+//     tags: ['Machinery', 'Manufacturing', 'MRO'],
+//   },
+//   ind2: {
+//     title: 'Automotive',
+//     description:
+//       'Engine oils, gear oils and greases engineered for vehicles.',
+//     image: 'ind_automotive',
+//     tags: ['Engine Oil', 'Gear Oil', 'Fleets'],
+//   },
+//   ind3: {
+//     title: 'Agriculture',
+//     description:
+//       'Reliable lubrication for tractors, harvesters and farm equipment working in demanding conditios.',
+//     image: 'ind_agricultural',
+//     tags: ['Tractors', 'Harvesters', 'Farm Gear'],
+//   },
+//   ind4: {
+//     title: 'Marine',
+//     description:
+//       'Corrosion-resistant marine lubricants for engines and equipment.',
+//     image: 'ind_marine',
+//     tags: ['Marine Engines', 'Offshore', 'Corrosion'],
+//   },
+//   ind6: {
+//     title: 'Construction',
+//     description:
+//       'High-performance fluids for excavators, cranes and heavy construction.',
+//     image: 'ind_construction',
+//     tags: ['Excavators', 'Cranes', 'Heavy Duty'],
+//   },
+//   ind8: {
+//     title: 'Energy',
+//     description:
+//       'Specialty lubricants for power generation, turbines and energy infrastructure operating non-stop.',
+//     image: 'ind_energy',
+//     tags: ['Power', 'Turbines', 'Generation'],
+//   },
+// };
 
 const chunk = <T,>(list: T[], size: number): T[][] => {
   const rows: T[][] = [];
@@ -158,13 +158,14 @@ export const ProductsScreen: React.FC = () => {
   const slideAnim = useRef(new Animated.Value(-FILTER_PANEL_WIDTH)).current;
   const loading = useSimulatedLoading();
 
-  const industryBanner = route.params?.industryId
-    ? INDUSTRY_BANNERS[route.params.industryId]
-    : undefined;
+  // const industryBanner = route.params?.industryId
+  //   ? INDUSTRY_BANNERS[route.params.industryId]
+  //   : undefined;
 
-  const pageTitle = route.params?.title ?? 'Products';
-  const showIndustryBanner =
-    !!industryBanner && pageTitle.toLowerCase() === industryBanner.title.toLowerCase();
+  // const pageTitle = route.params?.title ?? 'Products';
+  const pageTitle = 'Products';
+  // const showIndustryBanner =
+  //   !!industryBanner && pageTitle.toLowerCase() === industryBanner.title.toLowerCase();
 
   const openFilter = () => {
     setPendingCategory(selectedCategory);
@@ -259,17 +260,6 @@ export const ProductsScreen: React.FC = () => {
         <ProductsSkeleton />
       ) : (
         <>
-      {showIndustryBanner && industryBanner && (
-        <View style={styles.industryBannerWrap}>
-          <IndustryBanner
-            title={industryBanner.title}
-            description={industryBanner.description}
-            image={industryBanner.image}
-            tags={industryBanner.tags}
-          />
-        </View>
-      )}
-
       {/* Search Input Bar + View Toggle */}
       <View style={styles.searchBarRow}>
         <View style={styles.searchBar}>
