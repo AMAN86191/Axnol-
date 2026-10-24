@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect } from 'react';
-import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking, ActivityIndicator} from 'react-native';
+import { stripHtml } from '../../utils/stripHtml';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, scale } from '../../theme';
@@ -8,7 +9,7 @@ import { useAppDispatch } from '../../redux/hooks';
 import { fetchSlidersSlice } from '../../redux/HomeSlice';
 import { fetchIndustriesSlice } from '../../redux/IndustrySlice';
 import { fetchCategoriesSlice } from '../../redux/CategorySlice';
-import { fetchProductsSlice } from '../../redux/ProductSlice';
+import { clearProducts, fetchProductsSlice } from '../../redux/ProductSlice';
 import { selectCartItemCount } from '../cart/cartSelectors';
 import { selectWishlistCount } from '../wishlist/wishlistSelectors';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
@@ -34,18 +35,6 @@ import { useRefresh } from '../../hooks/useRefresh';
 
 let hasLoggedSliders = false;
 
-const stripHtml = (html: string) =>
-  html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -63,21 +52,31 @@ export const HomeScreen: React.FC = () => {
   const categoriesLoading = useAppSelector(s => s.category.loading);
   const apiProducts = useAppSelector(s => s.product.products);
   const productsLoading = useAppSelector(s => s.product.loading);
+  const productsPagination = useAppSelector(s => s.product.pagination);
   const cartCount = useAppSelector(selectCartItemCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
   const loading = useSimulatedLoading();
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
+  const [homeProductsPage, setHomeProductsPage] = useState(1);
+
   const {
     data: notificationsData,
     refetch: refetchNotifications,
   } = useGetNotificationsQuery();
 
-  const { refreshing, onRefresh } = useRefresh(
-    () => dispatch(fetchIndustriesSlice()),
-    () => dispatch(fetchCategoriesSlice()),
-    () => dispatch(fetchProductsSlice()),
-    refetchNotifications,
-    () => dispatch(fetchSlidersSlice()),
-  );
+  const handleHomeRefresh = useCallback(async () => {
+    setHomeProductsPage(1);
+    dispatch(clearProducts());
+    await Promise.all([
+      dispatch(fetchIndustriesSlice()),
+      dispatch(fetchCategoriesSlice()),
+      dispatch(fetchProductsSlice({ page: 1 })),
+      refetchNotifications(),
+      dispatch(fetchSlidersSlice()),
+    ]);
+  }, [dispatch, refetchNotifications]);
+
+  const { refreshing, onRefresh } = useRefresh(handleHomeRefresh);
 
   const hasUnreadNotifications = (notificationsData ?? []).some(
     notification => !notification.read,
@@ -88,10 +87,14 @@ export const HomeScreen: React.FC = () => {
       refetchNotifications();
       dispatch(fetchIndustriesSlice());
       dispatch(fetchCategoriesSlice());
-      dispatch(fetchProductsSlice())
-        .unwrap()
-        .then(res => console.log('Products API Response:', res))
-        .catch(err => console.log('Products API Error:', err));
+      if (!(apiProducts && apiProducts.length)) {
+        dispatch(clearProducts());
+        setHomeProductsPage(1);
+        dispatch(fetchProductsSlice({ page: 1 }))
+          .unwrap()
+          .then(res => console.log('Products API Response:', res))
+          .catch(err => console.log('Products API Error:', err));
+      }
       dispatch(fetchSlidersSlice())
         .unwrap()
         .then(res => {
@@ -167,21 +170,76 @@ export const HomeScreen: React.FC = () => {
     }),
   );
 
-  const banners = sliderBanners.length
-    ? sliderBanners
-    : slidersLoading
-    ? []
-    : HOME_BANNERS;
+  const banners = sliderBanners.length > 0 ? sliderBanners : HOME_BANNERS;
 
-  const homeProducts = (apiProducts ?? []).map((product, index) => ({
-    id: String(product.id ?? index),
-    name: product.name ?? '',
-    code: product.category?.title ?? product.category?.name ?? '',
-    image: product.thumbnail_url ?? product.image_urls?.[0] ?? 'product_generic',
-    price: 0,
-    mrp: 0,
-    unit: '',
-  }));
+  const getProductPrice = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const price =
+        first?.price ??
+        first?.rate ??
+        first?.amount ??
+        first?.selling_price ??
+        first?.dealer_price ??
+        first?.mrp_price ??
+        first?.mrp ??
+        first?.list_price ??
+        0;
+      return Number(price) || 0;
+    }
+    return Number(product?.price ?? product?.selling_price ?? 0) || 0;
+  };
+
+  const getProductUnitAndQty = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const unit =
+        first?.unit ??
+        first?.pack_size_unit ??
+        first?.packing_unit ??
+        first?.uom ??
+        first?.unit_name ??
+        product?.unit;
+      const qty =
+        first?.qty ??
+        first?.quantity ??
+        first?.pack_size ??
+        first?.pack_qty ??
+        first?.min_qty ??
+        product?.qty ??
+        product?.quantity;
+      return {
+        unit: unit ? String(unit).trim() : 'Unit',
+        qty: qty !== undefined && qty !== null && qty !== '' ? qty : undefined,
+      };
+    }
+    return {
+      unit: product?.unit ? String(product.unit).trim() : 'Unit',
+      qty: product?.qty ?? product?.quantity,
+    };
+  };
+
+  const homeProducts = (apiProducts ?? []).map((product: any, index) => {
+    const price = getProductPrice(product);
+    const {unit, qty} = getProductUnitAndQty(product);
+    return {
+      id: String(product.id ?? index),
+      name: product.name ?? '',
+      code:
+        product.category?.title ??
+        product.category?.name ??
+        product.sub_category?.title ??
+        product.sub_category?.name ??
+        '',
+      image: product.thumbnail_url ?? product.image_urls?.[0] ?? 'product_generic',
+      price,
+      mrp: price > 0 ? Math.round(price * 1.1) : 0,
+      unit,
+      qty,
+    };
+  });
 
   return (
     <View style={styles.container}>
@@ -201,12 +259,35 @@ export const HomeScreen: React.FC = () => {
             progressViewOffset={insets.top}
           />
         }
+        onScroll={({nativeEvent}) => {
+          const paddingToBottom = scale(400);
+          if (
+            !isLoadingMoreProducts &&
+            !productsLoading &&
+            productsPagination?.last_page &&
+            homeProductsPage < productsPagination.last_page
+          ) {
+            const offsetY = nativeEvent.contentOffset.y;
+            const layoutHeight = nativeEvent.layoutMeasurement.height;
+            const contentHeight = nativeEvent.contentSize.height;
+            if (offsetY + layoutHeight + paddingToBottom >= contentHeight) {
+              const nextPage = homeProductsPage + 1;
+              setIsLoadingMoreProducts(true);
+              setHomeProductsPage(nextPage);
+              dispatch(fetchProductsSlice({ page: nextPage }))
+                .unwrap()
+                .catch(err => console.log('Products API Error:', err))
+                .finally(() => setIsLoadingMoreProducts(false));
+            }
+          }
+        }}
+        scrollEventThrottle={400}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
           {
             paddingTop: insets.top + scale(8),
-            paddingBottom: insets.bottom,
+            paddingBottom: insets.bottom + scale(40),
           },
         ]}>
         {/* 1. Header (logo + notifications + profile + search + scan) */}
@@ -304,9 +385,14 @@ export const HomeScreen: React.FC = () => {
             onSeeAll={() => openAllProducts()}
             onPress={openProduct}
           />
+          {isLoadingMoreProducts || (productsLoading && homeProductsPage > 1) ? (
+            <View style={styles.loadMoreWrap}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null}
         </View>
 
-     
+      
       </ScrollView>
     </View>
   );
@@ -321,6 +407,11 @@ const styles = StyleSheet.create({
   },
   sectionWrap: {
     marginBottom: scale(20),
+  },
+  loadMoreWrap: {
+    marginTop: scale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

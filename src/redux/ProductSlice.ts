@@ -29,6 +29,7 @@ const productSlice = createSlice({
     loading: false,
     error: null as any,
     products: [] as ProductApi[],
+    pagination: null as any,
     detailLoading: false,
     detailError: null as any,
     productDetail: null as ProductApi | null,
@@ -36,6 +37,10 @@ const productSlice = createSlice({
   reducers: {
     clearProductDetail: state => {
       state.productDetail = null;
+    },
+    clearProducts: state => {
+      state.products = [];
+      state.pagination = null;
     },
   },
   extraReducers: builder => {
@@ -47,10 +52,27 @@ const productSlice = createSlice({
       .addCase(fetchProductsSlice.fulfilled, (state, action) => {
         state.loading = false;
         const data: any = action.payload?.data ?? action.payload;
+        const params: any = action.meta?.arg ?? {};
+        const page = Number(params?.page ?? params?.pageNumber ?? 1);
         if (Array.isArray(data)) {
-          state.products = data;
+          if (page > 1) {
+            state.products = [...(state.products ?? []), ...data];
+          } else {
+            state.products = data;
+          }
+          state.pagination = null;
         } else {
-          state.products = data?.products ?? data?.items ?? [];
+          const list = data?.products ?? data?.items ?? data?.data ?? [];
+          if (page > 1) {
+            state.products = [...(state.products ?? []), ...list];
+          } else {
+            state.products = list;
+          }
+          state.pagination =
+            data?.pagination ??
+            data?.meta?.pagination ??
+            data?.meta ??
+            null;
         }
       })
       .addCase(fetchProductsSlice.rejected, (state, action) => {
@@ -73,5 +95,5 @@ const productSlice = createSlice({
   },
 });
 
-export const { clearProductDetail } = productSlice.actions;
+export const { clearProductDetail, clearProducts } = productSlice.actions;
 export default productSlice.reducer;

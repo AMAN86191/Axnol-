@@ -10,7 +10,9 @@ import {
   View,
   FlatList,
   ViewToken,
+  useWindowDimensions,
 } from 'react-native';
+import RenderHtml from 'react-native-render-html';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import {
   ArrowRight,
@@ -36,6 +38,7 @@ import WishlistButton from '../wishlist/components/WishlistButton';
 import { useAppDispatch } from '../../redux/hooks';
 import { fetchProductDetailsSlice } from '../../redux/ProductSlice';
 import { useAppSelector } from '../../store';
+import { stripHtml } from '../../utils/stripHtml';
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
 
@@ -45,37 +48,16 @@ const { width: SCREEN_W } = Dimensions.get('window');
 
 const MIN_QUANTITY = 1;
 
-const FALLBACK_IMAGES = ['product_oil', 'product_generic', 'product_grease'];
-const FALLBACK_PACK_SIZES = ['1L', '5L', '20L', '210L'];
-const FALLBACK_SPECS = [
-  { label: 'Viscosity Grade', value: 'ISO VG 220' },
-  { label: 'Flash Point', value: '230°C' },
-  { label: 'Pour Point', value: '-18°C' },
-  { label: 'Density @ 15°C', value: '0.892 g/cm³' },
-  { label: 'Copper Corrosion', value: '1a (ASTM D130)' },
-];
-
-const stripHtml = (html?: string | null) =>
-  (html ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-
 export const ProductDetailsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const route = useRoute<Route>();
+  const { width } = useWindowDimensions();
   const dispatch = useAppDispatch();
   const productDetail = useAppSelector(s => s.product.productDetail);
   const detailLoading = useAppSelector(s => s.product.detailLoading);
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
-  const [selectedPack, setSelectedPack] = useState('20L');
+  const [selectedPack, setSelectedPack] = useState('');
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -126,26 +108,84 @@ export const ProductDetailsScreen: React.FC = () => {
     productDetail?.industry?.title,
     productDetail?.sub_category?.title,
   ].filter(Boolean) as string[];
-  const apiDescription = stripHtml(productDetail?.description);
+  const apiDescription = productDetail?.description ?? '';
+  const apiExtraInfo = productDetail?.extra_information ?? '';
+
+  const getProductPriceInfo = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const price =
+        first?.price ??
+        first?.rate ??
+        first?.amount ??
+        first?.selling_price ??
+        first?.dealer_price ??
+        first?.mrp_price ??
+        first?.mrp ??
+        0;
+      const unit =
+        first?.unit ??
+        first?.pack_size_unit ??
+        first?.uom ??
+        first?.unit_name ??
+        product?.unit;
+      const qty = first?.qty ?? first?.quantity ?? first?.pack_size ?? first?.pack_qty;
+      return {
+        price: Number(price) || 0,
+        unit: unit ? String(unit).trim() : 'Unit',
+        pack: qty !== undefined && qty !== null && qty !== '' ? `${qty}${unit ? String(unit).trim() : ''}`.replace(/\s+/g, '') : undefined,
+        qty,
+      };
+    }
+    return {
+      price: Number(product?.price ?? 0) || 0,
+      unit: product?.unit ? String(product.unit).trim() : 'Unit',
+    };
+  };
+
+  const priceInfo = getProductPriceInfo(productDetail);
+  const price = priceInfo.price;
+  const mrp = price > 0 ? Math.round(price * 1.1) : 0;
+  const defaultPack = priceInfo.pack || (priceInfo.unit ? `1${priceInfo.unit}` : '1L');
+  const packSizesFromApi = Array.isArray(productDetail?.rate_charts)
+    ? productDetail.rate_charts
+        .map((rc: any) => {
+          const unit = rc?.unit ?? priceInfo.unit;
+          const qty = rc?.qty ?? rc?.quantity ?? rc?.pack_size;
+          if (qty !== undefined && qty !== null && qty !== '') {
+            return `${qty}${unit ? String(unit).trim() : ''}`.replace(/\s+/g, '');
+          }
+          if (unit) return String(unit).trim();
+          return null;
+        })
+        .filter((size): size is string => typeof size === 'string')
+    : [];
 
   const product = {
     id: String(productDetail?.id ?? productId ?? ''),
     name: productDetail?.name ?? 'Product',
-    subtitle: categoryName || 'Product Details',
-    images: hasApiImages ? apiImages : FALLBACK_IMAGES,
-    tags: apiTags.length ? apiTags : ['Automotive', 'Industrial', 'High Performance'],
-    description:
-      apiDescription ||
-      'High-performance lubricant designed for industrial applications with excellent wear protection and thermal stability.',
-    packSizes: FALLBACK_PACK_SIZES,
-    price: 3200,
-    mrp: 3600,
-    unit: '20L',
-    specs: FALLBACK_SPECS,
+    subtitle: categoryName || productDetail?.sub_category?.title || 'Product Details',
+    images: hasApiImages ? apiImages : ['product_generic'],
+    tags: apiTags.length ? apiTags : [],
+    description: apiDescription || '',
+    packSizes: packSizesFromApi.length ? packSizesFromApi : [defaultPack],
+    price,
+    mrp,
+    unit: priceInfo.unit,
+    extraInfo: apiExtraInfo,
   };
 
+  useEffect(() => {
+    if (product.packSizes.length > 0) {
+      if (!product.packSizes.includes(selectedPack)) {
+        setSelectedPack(product.packSizes[0] ?? '');
+      }
+    }
+  }, [product.packSizes]);
+
   const discount =
-    product.mrp > product.price
+    product.mrp > product.price && product.price > 0
       ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
       : 0;
 
@@ -162,29 +202,50 @@ export const ProductDetailsScreen: React.FC = () => {
         image: product.images[0],
         price: product.price,
         mrp: product.mrp,
-        unit: selectedPack,
+        unit: selectedPack || product.unit,
       },
       quantity,
     );
   };
 
-  const openMsdsPdf = () => {
-    const url =
-      productDetail?.msds_url ||
-      productDetail?.technical_datasheet_url ||
-      'https://axnol.in/pdf/sds.pdf';
-    toast.show({
-      type: 'info',
-      title: 'Material Safety Data Sheet',
-      message: 'PDF • 1.1 MB • Tap download to view this document.',
-      action: {
-        label: 'Download & View',
-        onPress: () =>
-          Linking.openURL(url).catch(() =>
-            toast.error('Error', 'Unable to open PDF.'),
-          ),
-      },
-    });
+  const documents = [
+    productDetail?.technical_datasheet_url
+      ? {
+          key: 'technical',
+          title: productDetail?.technical_datasheet_name || 'Technical Datasheet',
+          url: productDetail.technical_datasheet_url,
+          color: '#2563EB',
+          bg: '#DBEAFE',
+        }
+      : null,
+    productDetail?.msds_url
+      ? {
+          key: 'msds',
+          title: productDetail?.msds_name || 'Material Safety Data Sheet',
+          url: productDetail.msds_url,
+          color: '#EF4444',
+          bg: '#FEE2E2',
+        }
+      : null,
+    productDetail?.brochure_url
+      ? {
+          key: 'brochure',
+          title: 'Product Brochure',
+          url: productDetail.brochure_url,
+          color: '#22C55E',
+          bg: '#DCFCE7',
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    key: string;
+    title: string;
+    url: string;
+    color: string;
+    bg: string;
+  }>;
+
+  const openDocument = (url: string) => {
+    Linking.openURL(url).catch(() => toast.error('Error', 'Unable to open document.'));
   };
 
   return (
@@ -216,13 +277,13 @@ export const ProductDetailsScreen: React.FC = () => {
                 image: product.images[0],
                 price: product.price,
                 mrp: product.mrp,
-                unit: selectedPack,
-              }}
-              size={20}
-              containerSize={30}
-              showBackground={false}
-              style={styles.headerBtn}
-            />
+              unit: selectedPack || product.unit,
+            }}
+            size={20}
+            containerSize={30}
+            showBackground={false}
+            style={styles.headerBtn}
+          />
           </>
         }
       />
@@ -291,13 +352,15 @@ export const ProductDetailsScreen: React.FC = () => {
 
 
             {/* Tags */}
-            <View style={styles.tagsRow}>
-              {product.tags.map(tag => (
-                <View key={tag} style={styles.tagPill}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
+            {product.tags.length > 0 ? (
+              <View style={styles.tagsRow}>
+                {product.tags.map(tag => (
+                  <View key={tag} style={styles.tagPill}>
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
 
             {/* Horizontal Underlined Tabs */}
             <View style={styles.tabsRow}>
@@ -341,69 +404,105 @@ export const ProductDetailsScreen: React.FC = () => {
             {/* Tab Content */}
             {activeTab === 'overview' && (
               <View style={styles.tabContentBlock}>
-                <Text style={styles.descriptionText}>{product.description}</Text>
-                <View style={styles.featureRow}>
-                  <ShieldCheck size={scale(18)} color="#10B981" />
-                  <Text style={styles.featureText}>ISO 9001:2015 Certified High Protection</Text>
-                </View>
+                {product.description ? (
+                  <RenderHtml
+                    contentWidth={width - scale(48)}
+                    source={{ html: product.description }}
+                    tagsStyles={{
+                      body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
+                      p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
+                      h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700' },
+                      h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700' },
+                      h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700' },
+                      li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
+                      ul: { marginLeft: scale(4) },
+                      strong: { fontWeight: '700', color: '#0F172A' },
+                    }}
+                  />
+                ) : null}
               </View>
             )}
 
             {activeTab === 'specifications' && (
-              <View style={styles.specBox}>
-                {product.specs.map(s => (
-                  <View key={s.label} style={styles.specRow}>
-                    <Text style={styles.specLabel}>{s.label}</Text>
-                    <Text style={styles.specValue}>{s.value}</Text>
-                  </View>
-                ))}
+              <View style={styles.tabContentBlock}>
+                {product.extraInfo ? (
+                  <RenderHtml
+                    contentWidth={width - scale(48)}
+                    source={{ html: product.extraInfo }}
+                    tagsStyles={{
+                      body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
+                      p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
+                      h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700' },
+                      h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700' },
+                      h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700' },
+                      li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
+                      ul: { marginLeft: scale(4) },
+                      ol: { marginLeft: scale(4) },
+                      strong: { fontWeight: '700', color: '#0F172A' },
+                    }}
+                  />
+                ) : (
+                  <Text style={styles.specLabel}>No specifications available.</Text>
+                )}
               </View>
             )}
 
             {activeTab === 'documents' && (
-              <View style={styles.msdsCard}>
-                <View style={styles.msdsIconWrap}>
-                  <FileText size={scale(22)} color="#EF4444" strokeWidth={2} />
-                </View>
-                <View style={styles.msdsInfo}>
-                  <Text style={styles.msdsTitle}>Material Safety Data Sheet</Text>
-                  <Text style={styles.msdsSubtitle}>MSDS • PDF • 1.1 MB</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.pdfBtn}
-                  activeOpacity={0.8}
-                  onPress={openMsdsPdf}>
-                  <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
-                  <Text style={styles.pdfBtnText}>PDF</Text>
-                </TouchableOpacity>
+              <View style={styles.documentsWrap}>
+                {documents.length > 0 ? (
+                  documents.map(doc => (
+                    <View key={doc.key} style={styles.msdsCard}>
+                      <View style={[styles.msdsIconWrap, { backgroundColor: doc.bg }]}>
+                        <FileText size={scale(22)} color={doc.color} strokeWidth={2} />
+                      </View>
+                      <View style={styles.msdsInfo}>
+                        <Text style={styles.msdsTitle} numberOfLines={2}>
+                          {doc.title}
+                        </Text>
+                        <Text style={styles.msdsSubtitle}>PDF</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.pdfBtn, { backgroundColor: doc.color }]}
+                        activeOpacity={0.8}
+                        onPress={() => openDocument(doc.url)}>
+                        <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
+                        <Text style={styles.pdfBtnText}>View</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.specLabel}>No documents available.</Text>
+                )}
               </View>
             )}
 
 
             {/* Available Pack Sizes */}
-            <View style={styles.packSection}>
-              <Text style={styles.packHeading}>Available Pack Sizes</Text>
-              <View style={styles.packRow}>
-                {product.packSizes.map(size => {
-                  const selected = size === selectedPack;
-                  return (
-                    <TouchableOpacity
-                      key={size}
-                      style={[styles.packPill, selected && styles.packPillSelected]}
-                      activeOpacity={0.8}
-                      onPress={() => setSelectedPack(size)}>
-                      <Text
-                        style={[
-                          styles.packPillText,
-                          selected && styles.packPillTextSelected,
-                        ]}>
-                        {size}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+            {product.packSizes.length > 0 ? (
+              <View style={styles.packSection}>
+                <Text style={styles.packHeading}>Available Pack Sizes</Text>
+                <View style={styles.packRow}>
+                  {product.packSizes.map(size => {
+                    const selected = size === selectedPack;
+                    return (
+                      <TouchableOpacity
+                        key={size}
+                        style={[styles.packPill, selected && styles.packPillSelected]}
+                        activeOpacity={0.8}
+                        onPress={() => setSelectedPack(size)}>
+                        <Text
+                          style={[
+                            styles.packPillText,
+                            selected && styles.packPillTextSelected,
+                          ]}>
+                          {size}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
+            ) : null}
 
             {/* Quantity */}
             <View style={styles.qtySection}>
@@ -429,8 +528,8 @@ export const ProductDetailsScreen: React.FC = () => {
           <Text style={styles.bottomPriceLabel}>Total Price</Text>
           <View style={styles.bottomPriceRow}>
             <Text style={styles.bottomPrice}>{formatPrice(totalPrice)}</Text>
-            {product.unit ? (
-              <Text style={styles.bottomUnit}>/ {selectedPack}</Text>
+            {(selectedPack || product.unit) ? (
+              <Text style={styles.bottomUnit}>/ {selectedPack || product.unit}</Text>
             ) : null}
           </View>
 
@@ -477,13 +576,13 @@ export const ProductDetailsScreen: React.FC = () => {
               style={styles.checkoutBtn}
               activeOpacity={0.9}
               onPress={() =>
-                navigation.navigate('RequestPrice', {
+                navigation.navigate('RequestPrice',                 {
                   productId: product.id,
                   productName: product.name,
                   category: product.subtitle,
                   price: product.price,
                   mrp: product.mrp,
-                  unit: selectedPack,
+                  unit: selectedPack || product.unit,
                   quantity,
                   packSizes: product.packSizes,
                 })}>
@@ -679,13 +778,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0F172A',
   },
+  documentsWrap: {
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
   msdsCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: radius.lg,
     padding: spacing.md,
-    marginBottom: spacing.xl,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#0F172A',

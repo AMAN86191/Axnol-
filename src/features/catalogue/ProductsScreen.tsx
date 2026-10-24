@@ -1,10 +1,12 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Dimensions,
   FlatList,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,27 +14,20 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  RefreshControl,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
-import {
-  Check,
-  PackageOpen,
-  Search,
-  SlidersHorizontal,
-  X,
-} from 'lucide-react-native';
+import {Check, PackageOpen, Search, SlidersHorizontal, X} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
 import CommonHeader from '../../components/ui/CommonHeader';
-import IndustryBanner from './components/IndustryBanner';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
-import { ALL_PRODUCTS } from '../home/homeData';
-import { ImageKey } from '../../assets/images';
-import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
+import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
 import ProductsSkeleton from './components/ProductsSkeleton';
 import ProductCard from '../../components/ui/ProductCard';
 import {useRefresh} from '../../hooks/useRefresh';
+import {useAppDispatch} from '../../redux/hooks';
+import {useAppSelector} from '../../store';
+import {fetchProductsSlice} from '../../redux/ProductSlice';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
 
@@ -52,37 +47,15 @@ const SORT_OPTIONS: SortOption[] = [
   {key: 'name-desc', label: 'Name: Z to A', description: 'Reverse alphabetical'},
 ];
 
-const CATEGORY_BY_CODE: Record<string, string> = {
-  EN: 'Engine Oil',
-  GR: 'Gear Oil',
-  HY: 'Hydraulic Oil',
-  CT: 'Cutting Fluid',
-  SL: 'Solvent',
-  MR: 'MRO Kit',
-  WX: 'Protective Wax',
+const FILTER_PANEL_WIDTH = Math.min(Dimensions.get('window').width * 0.82, scale(320));
+
+const chunk = <T,>(list: T[], size: number): T[][] => {
+  const rows: T[][] = [];
+  for (let i = 0; i < list.length; i += size) {
+    rows.push(list.slice(i, i + size));
+  }
+  return rows;
 };
-
-const getProductCategory = (code: string): string =>
-  CATEGORY_BY_CODE[code.split('-')[1]] ?? 'Other';
-
-const CATEGORY_FILTERS = ['All', ...Object.values(CATEGORY_BY_CODE)];
-
-const UNIT_FILTERS = [
-  'All',
-  ...Array.from(
-    new Set(ALL_PRODUCTS.map(product => product.unit).filter(Boolean)),
-  ),
-] as string[];
-
-const FILTER_PANEL_WIDTH = Math.min(Dimensions.get('window').width * 0.84, 340);
-
-
-interface IndustryBanner {
-  title: string;
-  description: string;
-  image: ImageKey;
-  tags: string[];
-}
 
 // const INDUSTRY_BANNERS: Record<string, IndustryBanner> = {
 //   ind1: {
@@ -129,24 +102,17 @@ interface IndustryBanner {
 //   },
 // };
 
-const chunk = <T,>(list: T[], size: number): T[][] => {
-  const rows: T[][] = [];
-  for (let i = 0; i < list.length; i += size) {
-    rows.push(list.slice(i, i + size));
-  }
-  return rows;
-};
-
 export const ProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const {refreshing, onRefresh} = useRefresh();
+  const dispatch = useAppDispatch();
+  const apiProducts = useAppSelector(s => s.product.products);
+  const productsLoading = useAppSelector(s => s.product.loading);
+  const pagination = useAppSelector(s => s.product.pagination);
+  const loading = useSimulatedLoading();
 
   const route = useRoute<Route>();
-  const initialCategory =
-    route.params?.title && CATEGORY_FILTERS.includes(route.params.title)
-      ? route.params.title
-      : 'All';
+  const initialCategory = route.params?.title ? route.params.title : 'All';
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedUnit, setSelectedUnit] = useState('All');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
@@ -155,8 +121,130 @@ export const ProductsScreen: React.FC = () => {
   const [pendingCategory, setPendingCategory] = useState(selectedCategory);
   const [pendingUnit, setPendingUnit] = useState(selectedUnit);
   const [pendingSort, setPendingSort] = useState<SortKey>(sortBy);
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const slideAnim = useRef(new Animated.Value(-FILTER_PANEL_WIDTH)).current;
-  const loading = useSimulatedLoading();
+
+  const getProductPrice = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const price =
+        first?.price ??
+        first?.rate ??
+        first?.amount ??
+        first?.selling_price ??
+        first?.dealer_price ??
+        first?.mrp_price ??
+        first?.mrp ??
+        first?.list_price ??
+        0;
+      return Number(price) || 0;
+    }
+    return Number(product?.price ?? product?.selling_price ?? 0) || 0;
+  };
+
+  const getProductUnitAndQty = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const unit =
+        first?.unit ??
+        first?.pack_size_unit ??
+        first?.packing_unit ??
+        first?.uom ??
+        first?.unit_name ??
+        product?.unit;
+      const qty =
+        first?.qty ??
+        first?.quantity ??
+        first?.pack_size ??
+        first?.pack_qty ??
+        product?.qty ??
+        product?.quantity;
+      return {
+        unit: unit ? String(unit).trim() : 'Unit',
+        qty: qty !== undefined && qty !== null && qty !== '' ? qty : undefined,
+      };
+    }
+    return {
+      unit: product?.unit ? String(product.unit).trim() : 'Unit',
+      qty: product?.qty ?? product?.quantity,
+    };
+  };
+
+  const allProducts = useMemo(
+    () =>
+      (apiProducts ?? []).map((product: any, index) => {
+        const price = getProductPrice(product);
+        const {unit, qty} = getProductUnitAndQty(product);
+        return {
+          id: String(product.id ?? index),
+          name: product.name ?? '',
+          code:
+            product.category?.title ??
+            product.category?.name ??
+            product.sub_category?.title ??
+            product.sub_category?.name ??
+            '',
+          image: product.thumbnail_url ?? product.image_urls?.[0] ?? 'product_generic',
+          price,
+          mrp: price > 0 ? Math.round(price * 1.1) : 0,
+          unit,
+          qty,
+        };
+      }),
+    [apiProducts],
+  );
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    allProducts.forEach((p: any) => {
+      if (p.code) set.add(p.code);
+    });
+    return ['All', ...Array.from(set)];
+  }, [allProducts]);
+
+  const units = useMemo(() => {
+    const set = new Set<string>();
+    allProducts.forEach((p: any) => {
+      if (p.unit) set.add(p.unit);
+    });
+    return ['All', ...Array.from(set)];
+  }, [allProducts]);
+
+  const loadProducts = useCallback(
+    (pageNum = 1) => {
+      if (pageNum === 1) {
+        setPage(1);
+        dispatch(fetchProductsSlice({ page: 1 }))
+          .unwrap()
+          .then(res => console.log('Products List API Response:', res))
+          .catch(err => console.log('Products List API Error:', err));
+        return;
+      }
+      setIsLoadingMore(true);
+      dispatch(fetchProductsSlice({ page: pageNum }))
+        .unwrap()
+        .then(res => console.log('Products List API Response:', res))
+        .catch(err => console.log('Products List API Error:', err))
+        .finally(() => setIsLoadingMore(false));
+    },
+    [dispatch],
+  );
+
+  const handleRefresh = useCallback(() => {
+    dispatch({ type: 'product/clearProducts' } as any);
+    loadProducts(1);
+  }, [dispatch, loadProducts]);
+
+  const {refreshing, onRefresh} = useRefresh(handleRefresh);
+
+  useEffect(() => {
+    if (!apiProducts || apiProducts.length === 0) {
+      loadProducts(1);
+    }
+  }, [loadProducts, apiProducts]);
 
   // const industryBanner = route.params?.industryId
   //   ? INDUSTRY_BANNERS[route.params.industryId]
@@ -193,12 +281,31 @@ export const ProductsScreen: React.FC = () => {
     }
   }, [filterVisible, slideAnim]);
 
-  const applyFilters = () => {
-    setSelectedCategory(pendingCategory);
-    setSelectedUnit(pendingUnit);
-    setSortBy(pendingSort);
-    closeFilter();
+  const loadMore = () => {
+    if (isLoadingMore || productsLoading) {
+      return;
+    }
+    if (pagination?.current_page && pagination?.last_page) {
+      if (pagination.current_page >= pagination.last_page) {
+        return;
+      }
+      const nextPage = pagination.current_page + 1;
+      setPage(nextPage);
+      setIsLoadingMore(true);
+      dispatch(fetchProductsSlice({ page: nextPage }))
+        .unwrap()
+        .then(res => console.log('Products List API Response:', res))
+        .catch(err => console.log('Products List API Error:', err))
+        .finally(() => setIsLoadingMore(false));
+      return;
+    }
   };
+
+  useEffect(() => {
+    if (pagination?.current_page) {
+      setPage(pagination.current_page);
+    }
+  }, [pagination?.current_page]);
 
   const resetFilters = () => {
     setPendingCategory('All');
@@ -220,34 +327,38 @@ export const ProductsScreen: React.FC = () => {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const list = ALL_PRODUCTS.filter(product => {
+    const list = allProducts.filter((product: any) => {
       const matchesSearch =
         !query ||
         product.name.toLowerCase().includes(query) ||
         product.code.toLowerCase().includes(query);
-      const matchesCategory =
-        selectedCategory === 'All' ||
-        getProductCategory(product.code) === selectedCategory;
-      const matchesUnit =
-        selectedUnit === 'All' || product.unit === selectedUnit;
+      const matchesCategory = selectedCategory === 'All' || product.code === selectedCategory;
+      const matchesUnit = selectedUnit === 'All' || product.unit === selectedUnit;
       return matchesSearch && matchesCategory && matchesUnit;
     });
 
     switch (sortBy) {
       case 'price-asc':
-        return [...list].sort((a, b) => a.price - b.price);
+        return [...list].sort((a: any, b: any) => a.price - b.price);
       case 'price-desc':
-        return [...list].sort((a, b) => b.price - a.price);
+        return [...list].sort((a: any, b: any) => b.price - a.price);
       case 'name-asc':
-        return [...list].sort((a, b) => a.name.localeCompare(b.name));
+        return [...list].sort((a: any, b: any) => a.name.localeCompare(b.name));
       case 'name-desc':
-        return [...list].sort((a, b) => b.name.localeCompare(a.name));
+        return [...list].sort((a: any, b: any) => b.name.localeCompare(a.name));
       default:
         return list;
     }
-  }, [search, selectedCategory, selectedUnit, sortBy]);
+  }, [search, selectedCategory, selectedUnit, sortBy, allProducts]);
 
-  const handlePress = (product: typeof ALL_PRODUCTS[0]) =>
+  const applyFilters = () => {
+    setSelectedCategory(pendingCategory);
+    setSelectedUnit(pendingUnit);
+    setSortBy(pendingSort);
+    closeFilter();
+  };
+
+  const handlePress = (product: any) =>
     navigation.navigate('ProductDetails', { productId: product.id });
 
   return (
@@ -294,10 +405,10 @@ export const ProductsScreen: React.FC = () => {
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={CATEGORY_FILTERS}
+          data={categories.length ? categories : ['All']}
           keyExtractor={item => item}
           contentContainerStyle={styles.filterList}
-          renderItem={({item}) => {
+          renderItem={({item}: {item: string}) => {
             const active = item === selectedCategory;
             return (
               <TouchableOpacity
@@ -314,7 +425,9 @@ export const ProductsScreen: React.FC = () => {
       </View>
 
       {/* Product List / Grid */}
-      {filtered.length === 0 ? (
+      {productsLoading && allProducts.length === 0 ? (
+        <ProductsSkeleton />
+      ) : filtered.length === 0 ? (
         <View style={styles.emptyWrap}>
           <View style={styles.emptyIconWrap}>
             <PackageOpen size={scale(30)} color={colors.primary} strokeWidth={1.8} />
@@ -436,7 +549,7 @@ export const ProductsScreen: React.FC = () => {
 
               {/* <Text style={styles.sectionLabel}>CATEGORY</Text>
               <View style={styles.chipWrap}>
-                {CATEGORY_FILTERS.map(item => {
+                {(categories.length ? categories : ['All']).map((item: string) => {
                   const active = pendingCategory === item;
                   return (
                     <TouchableOpacity
@@ -458,7 +571,7 @@ export const ProductsScreen: React.FC = () => {
 
               <Text style={styles.sectionLabel}>PACK SIZE / WEIGHT</Text>
               <View style={styles.chipWrap}>
-                {UNIT_FILTERS.map(item => {
+                {(units.length ? units : ['All']).map((item: string) => {
                   const active = pendingUnit === item;
                   return (
                     <TouchableOpacity
@@ -820,11 +933,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: scale(10),
   },
-  gridCard: {
-    flex: 1,
+  footerLoader: {
+    paddingVertical: scale(16),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gridCardPlaceholder: {
     flex: 1,
+  },
+  gridCard: {
+    width: '48.5%',
   },
   scrollFlex: {
     flex: 1,

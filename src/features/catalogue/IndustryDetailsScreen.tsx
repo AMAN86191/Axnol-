@@ -1,11 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import MaskedView from '@react-native-masked-view/masked-view';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {ArrowRight} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -57,6 +60,7 @@ export const IndustryDetailsScreen: React.FC = () => {
   const industryDetail = useAppSelector(s => s.industry.industryDetail);
   const detailLoading = useAppSelector(s => s.industry.detailLoading);
   const {industryId, industryTitle} = params;
+  const [expanded, setExpanded] = useState(false);
 
   const {data, isLoading} = useGetProductsQuery({
     industryId,
@@ -115,7 +119,42 @@ export const IndustryDetailsScreen: React.FC = () => {
         )}
 
         {!!description && (
-          <Text style={styles.description}>{description}</Text>
+          <View style={styles.descWrap}>
+            <Text
+              style={styles.description}
+              numberOfLines={expanded ? undefined : 4}>
+              {description}
+            </Text>
+            {!expanded && description.split(/\s+/).length > 60 ? (
+              <LinearGradient
+                colors={['rgba(247,249,252,0)', '#F7F9FC']}
+                style={styles.fade}
+                pointerEvents="none"
+              />
+            ) : null}
+            {description.split(/\s+/).length > 60 ? (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setExpanded(v => !v)}
+                style={styles.readMoreBtn}>
+                <MaskedView
+                  maskElement={
+                    <Text style={styles.readMoreMaskText}>
+                      {expanded ? 'Read less' : 'Read more'}
+                    </Text>
+                  }>
+                  <LinearGradient
+                    colors={['#0F172A', '#CBD5E1']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}>
+                    <Text style={[styles.readMoreMaskText, { opacity: 0 }]}>
+                      {expanded ? 'Read less' : 'Read more'}
+                    </Text>
+                  </LinearGradient>
+                </MaskedView>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         )}
 
         <Text style={styles.sectionTitle}>Recommended Products</Text>
@@ -167,11 +206,28 @@ const styles = StyleSheet.create({
   bannerSkeleton: {
     marginBottom: scale(2),
   },
+  descWrap: {
+    marginTop: spacing.md,
+  },
   description: {
     fontSize: scale(13.5),
     lineHeight: scale(21),
     color: '#475569',
-    marginTop: spacing.md,
+  },
+  fade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: scale(24),
+    height: scale(36),
+  },
+  readMoreBtn: {
+    alignSelf: 'flex-end',
+    marginTop: scale(6),
+  },
+  readMoreMaskText: {
+    fontSize: scale(12),
+    fontWeight: '700',
   },
   sectionTitle: {
     fontSize: scale(15),
