@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -12,7 +12,7 @@ import {
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {Layers} from 'lucide-react-native';
 import {CatalogueStackParamList} from '../../navigation/types';
-import {useGetSubCategoriesQuery} from '../../api/services/catalogueApi';
+import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {
   colors,
@@ -23,6 +23,9 @@ import {
   typography,
 } from '../../theme';
 import {useRefresh} from '../../hooks/useRefresh';
+import {useAppDispatch} from '../../redux/hooks';
+import {useAppSelector} from '../../store';
+import {fetchCategoryDetailsSlice} from '../../redux/CategorySlice';
 
 type Route = RouteProp<CatalogueStackParamList, 'SubCategories'>;
 
@@ -33,14 +36,53 @@ const CARD_WIDTH = Math.floor(
   (SCREEN_WIDTH - spacing.lg * 2 - CARD_GAP * 2) / 3,
 );
 
+const loggedSubCategories = new Set<string>();
+
 export const SubCategoriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const {params} = useRoute<Route>();
-  const {data, isLoading, refetch} = useGetSubCategoriesQuery({
-    categoryId: params.categoryId,
-  });
-  const {refreshing, onRefresh} = useRefresh(refetch);
+  const dispatch = useAppDispatch();
+  const categoryId = params.categoryId;
+  const categoryDetail = useAppSelector(s => s.category.categoryDetail);
+  const detailLoading = useAppSelector(s => s.category.detailLoading);
 
+  const loadSubCategories = useCallback(() => {
+    const request = dispatch(fetchCategoryDetailsSlice(categoryId));
+    request
+      .unwrap()
+      .then(res => {
+        if (!loggedSubCategories.has(String(categoryId))) {
+          loggedSubCategories.add(String(categoryId));
+          console.log('Sub Categories API Response:', res);
+        }
+      })
+      .catch(err => console.log('Sub Categories API Error:', err));
+    return request;
+  }, [dispatch, categoryId]);
+
+  useEffect(() => {
+    loadSubCategories();
+  }, [loadSubCategories]);
+
+  const {refreshing, onRefresh} = useRefresh(loadSubCategories);
+
+  const subCategories = useMemo(() => {
+    const detail: any = categoryDetail;
+    const list = Array.isArray(detail)
+      ? detail
+      : detail?.subcategories ??
+        detail?.sub_categories ??
+        detail?.subCategories ??
+        detail?.categories ??
+        [];
+    return (Array.isArray(list) ? list : []).map((item: any, index: number) => ({
+      id: String(item?.id ?? item?.slug ?? `${categoryId}-${index}`),
+      name: item?.title ?? item?.name ?? '',
+      image: item?.icon_url ?? item?.image ?? '',
+    }));
+  }, [categoryDetail, categoryId]);
+
+  const loading = detailLoading && !categoryDetail;
 
   return (
     <View style={styles.container}>
@@ -48,7 +90,7 @@ export const SubCategoriesScreen: React.FC = () => {
         title={params?.categoryName ?? 'Sub Categories'}
         onBack={() => navigation.goBack()}
       />
-      {isLoading ? (
+      {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
@@ -62,7 +104,7 @@ export const SubCategoriesScreen: React.FC = () => {
               tintColor={colors.primary}
             />
           }
-          data={data}
+          data={subCategories}
           keyExtractor={i => i.id}
           numColumns={3}
           columnWrapperStyle={styles.columnWrapper}
@@ -81,11 +123,19 @@ export const SubCategoriesScreen: React.FC = () => {
                 })
               }>
               <View style={styles.imageWrap}>
-                <Layers
-                  size={scale(30)}
-                  color={colors.primary}
-                  strokeWidth={1.8}
-                />
+                {item.image ? (
+                  <AppImage
+                    uri={item.image}
+                    style={styles.img}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Layers
+                    size={scale(30)}
+                    color={colors.primary}
+                    strokeWidth={1.8}
+                  />
+                )}
               </View>
               <View style={styles.body}>
                 <Text style={styles.name} numberOfLines={2}>
@@ -127,6 +177,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  img: {
+    width: '100%',
+    height: '100%',
   },
   body: {
     width: '100%',

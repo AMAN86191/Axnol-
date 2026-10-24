@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Linking,
@@ -33,27 +33,71 @@ import { useCart } from '../cart/useCart';
 import EditableQuantity from '../cart/components/EditableQuantity';
 import { selectCartItemCount } from '../cart/cartSelectors';
 import WishlistButton from '../wishlist/components/WishlistButton';
+import { useAppDispatch } from '../../redux/hooks';
+import { fetchProductDetailsSlice } from '../../redux/ProductSlice';
 import { useAppSelector } from '../../store';
 
-
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
+
+const loggedProductDetails = new Set<string>();
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
 const MIN_QUANTITY = 1;
 
+const FALLBACK_IMAGES = ['product_oil', 'product_generic', 'product_grease'];
+const FALLBACK_PACK_SIZES = ['1L', '5L', '20L', '210L'];
+const FALLBACK_SPECS = [
+  { label: 'Viscosity Grade', value: 'ISO VG 220' },
+  { label: 'Flash Point', value: '230°C' },
+  { label: 'Pour Point', value: '-18°C' },
+  { label: 'Density @ 15°C', value: '0.892 g/cm³' },
+  { label: 'Copper Corrosion', value: '1a (ASTM D130)' },
+];
+
+const stripHtml = (html?: string | null) =>
+  (html ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+
 export const ProductDetailsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const route = useRoute<Route>();
+  const dispatch = useAppDispatch();
+  const productDetail = useAppSelector(s => s.product.productDetail);
+  const detailLoading = useAppSelector(s => s.product.detailLoading);
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
   const [selectedPack, setSelectedPack] = useState('20L');
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-  const loading = useSimulatedLoading();
   const { add, items } = useCart();
   const cartCount = useAppSelector(selectCartItemCount);
+  const productId = route.params?.productId;
+  const loading = useSimulatedLoading() || (detailLoading && !productDetail);
+
+  useEffect(() => {
+    if (!productId) {
+      return;
+    }
+    dispatch(fetchProductDetailsSlice(productId))
+      .unwrap()
+      .then(res => {
+        if (!loggedProductDetails.has(String(productId))) {
+          loggedProductDetails.add(String(productId));
+          console.log('Product Details API Response:', res);
+        }
+      })
+      .catch(err => console.log('Product Details API Error:', err));
+  }, [dispatch, productId]);
 
   const onViewableItemsChanged = useRef((info: { viewableItems: ViewToken[] }) => {
     const item = info.viewableItems[0];
@@ -68,25 +112,36 @@ export const ProductDetailsScreen: React.FC = () => {
     setActiveImage(index);
   };
 
+  const categoryName =
+    productDetail?.category?.title ?? productDetail?.category?.name ?? '';
+  const hasApiImages = !!(productDetail?.image_urls?.length || productDetail?.thumbnail_url);
+  const apiImages =
+    productDetail?.image_urls?.length
+      ? productDetail.image_urls
+      : productDetail?.thumbnail_url
+      ? [productDetail.thumbnail_url]
+      : [];
+  const apiTags = [
+    categoryName,
+    productDetail?.industry?.title,
+    productDetail?.sub_category?.title,
+  ].filter(Boolean) as string[];
+  const apiDescription = stripHtml(productDetail?.description);
+
   const product = {
-    id: route.params?.productId ?? 'p2',
-    name: 'Gear Oil AX-200',
-    subtitle: 'Extreme Pressure Gear Oil',
-    images: ['product_oil', 'product_generic', 'product_grease'],
-    tags: ['Automotive', 'Industrial', 'High Performance'],
+    id: String(productDetail?.id ?? productId ?? ''),
+    name: productDetail?.name ?? 'Product',
+    subtitle: categoryName || 'Product Details',
+    images: hasApiImages ? apiImages : FALLBACK_IMAGES,
+    tags: apiTags.length ? apiTags : ['Automotive', 'Industrial', 'High Performance'],
     description:
-      'High-performance gear oil designed for industrial gear systems with excellent wear protection and thermal stability. Delivers prolonged machinery life and reduces friction.',
-    packSizes: ['1L', '5L', '20L', '210L'],
+      apiDescription ||
+      'High-performance lubricant designed for industrial applications with excellent wear protection and thermal stability.',
+    packSizes: FALLBACK_PACK_SIZES,
     price: 3200,
     mrp: 3600,
     unit: '20L',
-    specs: [
-      { label: 'Viscosity Grade', value: 'ISO VG 220' },
-      { label: 'Flash Point', value: '230°C' },
-      { label: 'Pour Point', value: '-18°C' },
-      { label: 'Density @ 15°C', value: '0.892 g/cm³' },
-      { label: 'Copper Corrosion', value: '1a (ASTM D130)' },
-    ],
+    specs: FALLBACK_SPECS,
   };
 
   const discount =
@@ -114,7 +169,10 @@ export const ProductDetailsScreen: React.FC = () => {
   };
 
   const openMsdsPdf = () => {
-    const url = 'https://axnol.in/pdf/sds.pdf';
+    const url =
+      productDetail?.msds_url ||
+      productDetail?.technical_datasheet_url ||
+      'https://axnol.in/pdf/sds.pdf';
     toast.show({
       type: 'info',
       title: 'Material Safety Data Sheet',

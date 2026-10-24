@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -15,10 +15,14 @@ import AppImage from '../../components/ui/AppImage';
 import { radius, scale, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
-import { INDUSTRIES_DATA } from './industriesData';
+import { useAppDispatch } from '../../redux/hooks';
+import { useAppSelector } from '../../store';
+import { fetchIndustriesSlice } from '../../redux/IndustrySlice';
 import IndustriesSkeleton from './components/IndustriesSkeleton';
 
 const COLUMNS = 3;
+
+let hasLoggedIndustries = false;
 
 const chunk = <T,>(list: T[], size: number): T[][] => {
   const rows: T[][] = [];
@@ -31,10 +35,34 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 export const IndustriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
   const [search, setSearch] = useState('');
-  const loading = useSimulatedLoading();
+  const apiIndustries = useAppSelector(s => s.industry.industries);
+  const industriesLoading = useAppSelector(s => s.industry.loading);
+  const simulatedLoading = useSimulatedLoading();
+  const loading =
+    simulatedLoading || (industriesLoading && !apiIndustries.length);
 
-  const filtered = INDUSTRIES_DATA.filter(
+  useEffect(() => {
+    if (hasLoggedIndustries) {
+      return;
+    }
+    dispatch(fetchIndustriesSlice())
+      .unwrap()
+      .then(res => {
+        hasLoggedIndustries = true;
+        console.log('Industries API Response:', res);
+      })
+      .catch(err => console.log('Industries API Error:', err));
+  }, [dispatch]);
+
+  const industries = apiIndustries.map(item => ({
+    id: String(item.id),
+    name: item.title,
+    image: item.image_url ?? '',
+  }));
+
+  const filtered = industries.filter(
     item => !search || item.name.toLowerCase().includes(search.toLowerCase()),
   );
 
@@ -82,6 +110,7 @@ export const IndustriesScreen: React.FC = () => {
                       onPress={() =>
                         navigation.navigate('IndustryDetails', {
                           industryId: item.id,
+                          industryTitle: item.name,
                         })
                       }
                     >

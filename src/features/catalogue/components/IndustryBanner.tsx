@@ -9,7 +9,6 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { Download } from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
-import { ImageKey } from '../../../assets/images';
 import { colors, radius, scale, spacing } from '../../../theme';
 
 const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
@@ -17,7 +16,7 @@ const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
 interface IndustryBannerProps {
   title: string;
   description?: string;
-  image: ImageKey;
+  image: string;
   tags?: string[];
   downloadLabel?: string;
   onDownload?: () => void;
