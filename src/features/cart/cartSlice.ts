@@ -2,43 +2,56 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
 export interface CartItem {
   id: string;
+  cartItemId?: string | number;
+  productId?: string | number;
   name: string;
   code?: string;
   image?: string;
   price: number;
   mrp?: number;
   unit?: string;
+  size?: string;
   quantity: number;
 }
 
 export interface CartState {
   items: CartItem[];
   isHydrated: boolean;
+  loading: boolean;
 }
 
 const initialState: CartState = {
   items: [],
   isHydrated: false,
+  loading: false,
 };
 
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
+    setCartItems: (state, action: PayloadAction<CartItem[]>) => {
+      state.items = action.payload;
+    },
     addToCart: (
       state,
       action: PayloadAction<Omit<CartItem, 'quantity'> & {quantity?: number}>,
     ) => {
       const {quantity = 1, ...product} = action.payload;
-      const existing = state.items.find(item => item.id === product.id);
+      const existing = state.items.find(
+        item => item.id === product.id && item.size === (product as any).size,
+      );
       if (existing) {
         existing.quantity += quantity;
       } else {
-        state.items.push({...product, quantity});
+        state.items.push({...product, quantity} as CartItem);
       }
     },
     removeFromCart: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter(item => item.id !== action.payload);
+    },
+    removeCartItemByCartId: (state, action: PayloadAction<string | number>) => {
+      state.items = state.items.filter(item => String(item.cartItemId) !== String(action.payload));
     },
     setQuantity: (
       state,
@@ -71,18 +84,24 @@ const cartSlice = createSlice({
     setCartHydrated: (state, action: PayloadAction<boolean>) => {
       state.isHydrated = action.payload;
     },
+    setCartLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
   },
 });
 
 export const {
+  setCartItems,
   addToCart,
   removeFromCart,
+  removeCartItemByCartId,
   setQuantity,
   incrementQuantity,
   decrementQuantity,
   clearCart,
   hydrateCart,
   setCartHydrated,
+  setCartLoading,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

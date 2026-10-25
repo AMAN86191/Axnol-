@@ -193,22 +193,7 @@ export const WishlistScreen: React.FC = () => {
               <View style={styles.divider} />
 
               <View style={styles.ctaRow}>
-                <Button
-                  title="Details"
-                  variant="outline"
-                  size="small"
-                  fullWidth={false}
-                  style={styles.detailsBtn}
-                  onPress={() => openProduct(item.id)}
-                  iconRight={
-                    <ChevronRight
-                      size={scale(13)}
-                      color={colors.primary}
-                      strokeWidth={2.6}
-                    />
-                  }
-                  textStyle={styles.detailsText}
-                />
+               
                 <AddToCartButton
                   product={{
                     id: item.id,

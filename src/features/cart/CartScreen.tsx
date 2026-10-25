@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,8 +25,21 @@ export const CartScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectCartItems);
   const totals = useAppSelector(selectCartTotals);
-  const {setQuantity, remove} = useCart();
+  const {setQuantity, remove, fetchCart} = useCart();
+  const [refreshing, setRefreshing] = React.useState(false);
 
+  React.useEffect(() => {
+    fetchCart();
+  }, [fetchCart]);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetchCart();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchCart]);
   const handleCheckout = () => {
     toast.info(
       'Checkout',
@@ -54,7 +68,10 @@ export const CartScreen: React.FC = () => {
         style={styles.scrollFlex}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }>
 
         {/* <View style={styles.itemsHeader}>
           <Text style={styles.itemsCount}>
@@ -97,8 +114,8 @@ export const CartScreen: React.FC = () => {
 
                   <View style={styles.priceRow}>
                     <Text style={styles.price}>{formatPrice(item.price)}</Text>
-                    {item.unit ? (
-                      <Text style={styles.unit}> / {item.unit}</Text>
+                    {(item.size || item.unit) ? (
+                      <Text style={styles.unit}> / {item.size || item.unit}</Text>
                     ) : null}
                     {item.mrp && item.mrp > item.price ? (
                       <Text style={styles.mrp}>{formatPrice(item.mrp)}</Text>

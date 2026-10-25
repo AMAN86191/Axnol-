@@ -193,17 +193,19 @@ export const ProductDetailsScreen: React.FC = () => {
 
   const inCart = items.some(item => item.id === product.id);
 
-  const handleAddToCart = () => {
-    add(
+  const handleAddToCart = async () => {
+    await add(
       {
         id: product.id,
+        productId: productDetail?.id ?? product.id,
         name: product.name,
         code: product.name,
         image: product.images[0],
         price: product.price,
         mrp: product.mrp,
         unit: selectedPack || product.unit,
-      },
+        size: selectedPack || product.unit,
+      } as any,
       quantity,
     );
   };

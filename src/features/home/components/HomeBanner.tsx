@@ -18,7 +18,7 @@ import {HomeBannerItem} from '../homeData';
 
 export type {HomeBannerItem};
 
-const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
+const BROCHURE_URL = '';
 
 interface HomeBannerProps {
   banners: HomeBannerItem[];
@@ -183,7 +183,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
 
                 {!!item.description && (
                   <Text style={styles.description} numberOfLines={3}>
-                    {item.description}
+                    {/* {item.description} */}
                   </Text>
                 )}
 

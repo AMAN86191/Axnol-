@@ -26,17 +26,19 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   style,
 }) => {
   const { add, increment, decrement, remove, items } = useCart();
-  const quantity = items.find(item => item.id === product.id)?.quantity ?? 0;
+  const existing = items.find(
+    item => item.id === product.id && item.size === (product as any).size,
+  );
+  const quantity = existing?.quantity ?? 0;
 
-  const handleAdd = () => {
-    add(product, 1);
+  const handleAdd = async () => {
+    await add({ ...(product as any), size: (product as any).size ?? product.unit }, 1);
     onAdded?.();
   };
 
   if (quantity > 0) {
-    // Going below 1 takes the item out of the cart, which brings back "Add".
     const handleMinus = () =>
-      quantity > 1 ? decrement(product.id) : remove(product.id);
+      quantity > 1 ? decrement(existing?.id || product.id) : remove(existing?.id || product.id);
 
     return (
       <View
@@ -55,7 +57,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           style={styles.stepBtn}
           activeOpacity={0.7}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          onPress={() => increment(product.id)}>
+          onPress={() => increment(existing?.id || product.id)}>
           <Plus size={scale(14)} color={colors.primary} strokeWidth={3} />
         </TouchableOpacity>
       </View>

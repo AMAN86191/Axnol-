@@ -48,7 +48,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     price: product.price,
     mrp: product.mrp,
     unit: product.unit,
-  };
+    size: product.unit,
+  } as any;
 
   const image = (
     <>
