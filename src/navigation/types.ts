@@ -14,6 +14,44 @@ export type AuthStackParamList = {
 export type HomeStackParamList = {
   Home: undefined;
   Notifications: undefined;
+  ProductDetails: {productId: string};
+  Products:
+    | {
+        categoryId?: string;
+        subCategoryId?: string;
+        industryId?: string;
+        title?: string;
+        featured?: boolean;
+        search?: string;
+      }
+    | undefined;
+  SubCategories: {
+    categoryId: string;
+    categoryName: string;
+    industryId?: string;
+  };
+  CategoryProducts: {
+    categoryId?: string;
+    subCategoryId?: string;
+    industryId?: string;
+    title?: string;
+  };
+  RequestPrice:
+    | {
+        productId?: string;
+        productName?: string;
+        productImage?: string;
+        category?: string;
+        price?: number;
+        mrp?: number;
+        unit?: string;
+        quantity?: number;
+        packSizes?: string[];
+      }
+    | undefined;
+  Industries: undefined;
+  IndustryDetails: {industryId: string; industryTitle?: string};
+  Categories: {industryId?: string; industryName?: string} | undefined;
 };
 
 export type MainTabParamList = {
@@ -83,6 +121,10 @@ export type ProfileStackParamList = {
 
 export type MainDrawerParamList = {
   HomeTabs: NavigatorScreenParams<MainTabParamList>;
+};
+
+export type MainStackParamList = {
+  Drawer: NavigatorScreenParams<MainDrawerParamList>;
   Cart: undefined;
   Wishlist: undefined;
   ContactUs: undefined;
@@ -93,7 +135,7 @@ export type MainDrawerParamList = {
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
-  Main: NavigatorScreenParams<MainDrawerParamList>;
+  Main: NavigatorScreenParams<MainStackParamList>;
 };
 
 declare global {

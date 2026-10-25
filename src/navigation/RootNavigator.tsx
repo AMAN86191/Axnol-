@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import AuthStack from './AuthStack';
-import MainDrawer from './MainDrawer';
+import MainStack from './MainStack';
 import {RootStackParamList} from './types';
 import {useAppDispatch, useAppSelector} from '../redux/hooks';
 import {setAuth} from '../redux/AuthSlice';
@@ -47,7 +47,7 @@ export const RootNavigator: React.FC = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {ready ? (
-          <Stack.Screen name="Main" component={MainDrawer} />
+          <Stack.Screen name="Main" component={MainStack} />
         ) : (
           <Stack.Screen name="Auth" component={AuthStack} />
         )}
