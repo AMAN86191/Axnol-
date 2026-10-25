@@ -18,7 +18,7 @@ import {HomeBannerItem} from '../homeData';
 
 export type {HomeBannerItem};
 
-const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
+const BROCHURE_URL = null;
 
 interface HomeBannerProps {
   banners: HomeBannerItem[];
@@ -50,7 +50,7 @@ const renderHighlightedTitle = (title: string) => {
 
 export const HomeBanner: React.FC<HomeBannerProps> = ({
   banners,
-  height = scale(175),
+  height = scale(155),
   autoPlay = true,      
   loading = false,
   buttonLabel = 'Explore Products',
@@ -107,7 +107,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
     setActiveIndex(index);
   };
 
-  if (loading && !banners.length) {
+  if (loading) {
     return (
       <View style={styles.container}>
         <Skeleton height={height} borderRadius={scale(16)} />
@@ -123,7 +123,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
     <View
       style={styles.container}
       onLayout={event => setWidth(event.nativeEvent.layout.width)}>
-      {width > 0 && (
+              {width > 0 && (
         <FlatList
           ref={listRef}
           data={banners}
@@ -131,7 +131,8 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           bounces={false}
-          keyExtractor={item => item.id}
+          removeClippedSubviews={false}
+          keyExtractor={(item, index) => item.id || String(index)}
           getItemLayout={(_, index) => ({
             length: width,
             offset: width * index,
@@ -159,8 +160,8 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
               <LinearGradient
                 pointerEvents="none"
                 colors={[
-                  'rgba(241,247,252,0.91)',
-                  'rgba(241,247,252,0.86)',
+                  'rgba(241,247,252,0.7)',
+                  'rgba(241,247,252,0.7)',
                   'rgba(241,247,252,0)',
                 ]}
                 locations={[0, 0.55, 1]}
@@ -183,13 +184,13 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
 
                 {!!item.description && (
                   <Text style={styles.description} numberOfLines={3}>
-                    {item.description}
+                    {/* {item.description} */}
                   </Text>
                 )}
 
                 {/* Common CTAs shared by every banner */}
                 <View style={styles.buttonRow}>
-                  {showPrimaryButton && (
+                  {/* {showPrimaryButton && (
                     <TouchableOpacity
                       style={styles.button}
                       activeOpacity={0.85}
@@ -203,26 +204,20 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
                         strokeWidth={2.8}
                       />
                     </TouchableOpacity>
-                  )}
+                  )} */}
 
                   {showDownloadButton && (
                     <TouchableOpacity
                       style={styles.buttonOutline}
                       activeOpacity={0.85}
-                      onPress={() =>
-                        onPressDownload
-                          ? onPressDownload(item, index)
-                          : Linking.openURL(
-                              item.pdfUrl || BROCHURE_URL,
-                            ).catch(() => {})
-                      }>
+                      onPress={() => onPressDownload?.(item, index)}>
                       <Download
                         size={scale(11)}
                         color="#0A4D8C"
                         strokeWidth={2.8}
                       />
                       <Text style={styles.buttonOutlineText} numberOfLines={1}>
-                        {item.secondaryLabel || downloadLabel}
+                        {downloadLabel}
                       </Text>
                     </TouchableOpacity>
                   )}

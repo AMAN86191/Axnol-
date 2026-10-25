@@ -56,11 +56,13 @@ export const IndustriesScreen: React.FC = () => {
       .catch(err => console.log('Industries API Error:', err));
   }, [dispatch]);
 
-  const industries = apiIndustries.map(item => ({
-    id: String(item.id),
-    name: item.title,
-    image: item.image_url ?? '',
-  }));
+  const industries = apiIndustries
+    .map(item => ({
+      id: String(item.id),
+      name: item.title,
+      image: item.image_url ?? '',
+    }))
+    .filter(item => Boolean(item.image && item.image.trim()));
 
   const filtered = industries.filter(
     item => !search || item.name.toLowerCase().includes(search.toLowerCase()),
