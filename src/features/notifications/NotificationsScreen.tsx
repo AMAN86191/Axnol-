@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -29,6 +28,7 @@ import {
 import {AppNotification} from '../../api/types';
 import EmptyState from '../../components/ui/EmptyState';
 import CommonHeader from '../../components/ui/CommonHeader';
+import {toast} from '../../components/ui/ToastProvider';
 import {useAppDispatch} from '../../store';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
 import {useRefresh} from '../../hooks/useRefresh';
@@ -78,7 +78,10 @@ export const NotificationsScreen: React.FC = () => {
     try {
       await markAll().unwrap();
     } catch {
-      Alert.alert('Something went wrong', 'Could not mark notifications as read.');
+      toast.error(
+        'Something Went Wrong',
+        'Could not mark notifications as read.',
+      );
       refetch();
     }
   };

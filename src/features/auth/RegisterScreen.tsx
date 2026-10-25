@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   Easing,
   Image,
@@ -42,15 +41,16 @@ import { colors, fontSize, radius, scale, spacing, typography } from '../../them
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import images from '../../assets/images';
+import { useAppDispatch } from '../../redux/hooks';
 import {
-  useRegisterMutation,
-  useResendOtpMutation,
-  useVerifyOtpMutation,
-} from '../../api/services/authApi';
-import { useAppDispatch } from '../../store';
-import { logout, setCredentials } from './authSlice';
+  clearAuth,
+  registerUserSlice,
+  resendOtpSlice,
+  verifyOtpSlice,
+} from '../../redux/AuthSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '../../components/ui/Logo';
+import { toast } from '../../components/ui/ToastProvider';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -73,7 +73,7 @@ const STEPS = [
 
 const STEP1_FIELDS: (keyof FormValues)[] = ['name', 'phone', 'email'];
 
-const OTP_LENGTH = 6;
+const OTP_LENGTH = 4;
 
 const maskContact = (value?: string): string => {
   if (!value) return '';
@@ -91,23 +91,20 @@ export const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
-  const [register, { isLoading }] = useRegisterMutation();
-  const [verify, { isLoading: verifying }] = useVerifyOtpMutation();
-  const [resendOtp, { isLoading: resending }] = useResendOtpMutation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [step, setStep] = useState<number>(1);
   const scrollRef = useRef<ScrollView>(null);
   const otpInputRef = useRef<TextInput>(null);
 
-  // Credentials returned by the register API, used for the OTP step
+  // Contact details captured at registration, used for the OTP step
   const [otpData, setOtpData] = useState<{
-    userId: string;
     email: string;
-    demoOtp?: string;
   } | null>(null);
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(0);
-  const [otpError, setOtpError] = useState('');
 
   // Start the resend countdown whenever the OTP step opens
   useEffect(() => {
@@ -172,7 +169,7 @@ export const RegisterScreen: React.FC = () => {
   };
 
   const clearSession = async () => {
-    dispatch(logout());
+    dispatch(clearAuth());
     await AsyncStorage.removeItem('axnol_token');
     await AsyncStorage.removeItem('axnol_user');
   };
@@ -195,52 +192,75 @@ export const RegisterScreen: React.FC = () => {
 
   const onSubmit = async (values: FormValues) => {
     if (!agreed) {
-      Alert.alert(
+      toast.warning(
         'Terms & Conditions',
         'Please agree to the Terms & Conditions and Privacy Policy to continue.',
       );
       return;
     }
     try {
-      const res = await register(values).unwrap();
+      await dispatch(
+        registerUserSlice({
+          name: values.name,
+          phone: values.phone,
+          email: values.email,
+          company_name: values.company,
+          gst_number: values.gstin || '',
+          password: values.password,
+          password_confirmation:values.password,
+          terms_accepted: true,
+          fcm_token: null
+        }),
+      ).unwrap();
       setOtpData({
-        userId: res.userId,
         email: values.email,
-        demoOtp: res.demoOtp,
       });
-      setOtp(res.demoOtp ?? '');
-      setOtpError('');
+      setOtp('');
       setStep(3);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
+      toast.success('OTP Sent', `A verification code was sent to ${values.email}.`);
     } catch (err: any) {
-      Alert.alert(
+      toast.error(
         'Registration Failed',
-        err?.data?.message ?? 'Could not create account. Please try again.',
+        err?.message ?? 'Could not create account. Please try again.',
       );
     }
   };
 
   const handleVerify = async () => {
     if (!otpData) return;
+    setVerifying(true);
     try {
-      setOtpError('');
-      const res = await verify({ userId: otpData.userId, otp }).unwrap();
-      await AsyncStorage.setItem('axnol_token', res.token);
-      await AsyncStorage.setItem('axnol_user', JSON.stringify(res.user));
-      dispatch(setCredentials({ token: res.token, user: res.user }));
+      await dispatch(verifyOtpSlice({ otp })).unwrap();
+      setVerifying(false);
       setStep(4);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
+      toast.success('Account Verified', 'Your account has been created successfully.');
     } catch (err: any) {
-      setOtpError(err?.data?.message || 'Verification failed. Please try again.');
+      setVerifying(false);
+      toast.error(
+        'Verification Failed',
+        err?.message || 'Verification failed. Please try again.',
+      );
     }
   };
 
   const handleResend = async () => {
     if (seconds > 0 || !otpData) return;
-    const res = await resendOtp({ userId: otpData.userId }).unwrap();
-    setOtp(res.demoOtp);
-    setOtpError('');
-    setSeconds(32);
+    setResending(true);
+    try {
+      await dispatch(resendOtpSlice({})).unwrap();
+      setResending(false);
+      setOtp('');
+      setSeconds(32);
+      toast.success('OTP Resent', 'A new verification code has been sent.');
+    } catch (err: any) {
+      setResending(false);
+      toast.error(
+        'Resend Failed',
+        err?.message || 'Could not resend OTP. Please try again.',
+      );
+    }
   };
 
   const renderOtpBoxes = () => {
@@ -583,8 +603,17 @@ export const RegisterScreen: React.FC = () => {
                   </View>
                   <Text style={styles.termsText}>
                     I agree to the{' '}
-                    <Text style={styles.termsLink}>Terms & Conditions</Text> and{' '}
-                    <Text style={styles.termsLink}>Privacy Policy</Text>
+                    <Text
+                      style={styles.termsLink}
+                      onPress={() => navigation.navigate('TermsConditions')}>
+                      Terms & Conditions
+                    </Text>{' '}
+                    and{' '}
+                    <Text
+                      style={styles.termsLink}
+                      onPress={() => navigation.navigate('PrivacyPolicy')}>
+                      Privacy Policy
+                    </Text>
                   </Text>
                 </TouchableOpacity>
 
@@ -631,7 +660,7 @@ export const RegisterScreen: React.FC = () => {
                   <View style={styles.sectionHeaderTexts}>
                     <Text style={styles.sectionHeaderTitle}>OTP Verification</Text>
                     <Text style={styles.sectionHeaderSubtitle}>
-                      Enter the 6-digit code we sent to{'\n'}
+                      Enter the 4-digit code we sent to{'\n'}
                       <Text style={styles.maskedContact}>
                         {otpData ? maskContact(otpData.email) : ''}
                       </Text>
@@ -639,19 +668,12 @@ export const RegisterScreen: React.FC = () => {
                   </View>
                 </View>
 
-                {otpError ? (
-                  <View style={styles.otpErrorBox}>
-                    <Text style={styles.otpErrorText}>{otpError}</Text>
-                  </View>
-                ) : null}
-
                 <View style={styles.otpContainer}>
                   {renderOtpBoxes()}
                   <TextInput
                     ref={otpInputRef}
                     value={otp}
                     onChangeText={t => {
-                      setOtpError('');
                       setOtp(t.replace(/[^0-9]/g, ''));
                     }}
                     keyboardType="number-pad"
@@ -700,12 +722,6 @@ export const RegisterScreen: React.FC = () => {
                   <ShieldCheck size={scale(14)} color="#16A34A" />
                   <Text style={styles.secureText}>Your details are safe and secure</Text>
                 </View>
-
-                {otpData?.demoOtp ? (
-                  <View style={styles.demoPill}>
-                    <Text style={styles.demoText}>Demo OTP: {otpData.demoOtp}</Text>
-                  </View>
-                ) : null}
               </>
             ) : (
               <>
@@ -1105,24 +1121,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#063970',
   },
-  otpErrorBox: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: radius.md,
-    padding: scale(10),
-    marginBottom: scale(14),
-  },
-  otpErrorText: {
-    ...typography.medium,
-    fontSize: fontSize.sm,
-    color: '#DC2626',
-    textAlign: 'center',
-  },
   otpContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
+    paddingHorizontal:scale(55)
   },
   otpBox: {
     width: scale(44),
@@ -1186,21 +1189,6 @@ const styles = StyleSheet.create({
     ...typography.regular,
     fontSize: fontSize.xs,
     color: '#64748B',
-  },
-  demoPill: {
-    alignSelf: 'center',
-    backgroundColor: '#FFFBEB',
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  demoText: {
-    ...typography.semibold,
-    fontSize: fontSize.xs,
-    color: '#B45309',
   },
   successArt: {
     alignItems: 'center',

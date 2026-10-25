@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback, useEffect, useMemo} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -11,10 +11,6 @@ import {
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {CatalogueStackParamList} from '../../navigation/types';
-import {
-  useGetCategoriesQuery,
-  useGetSubCategoriesQuery,
-} from '../../api/services/catalogueApi';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {
@@ -26,6 +22,10 @@ import {
   typography,
 } from '../../theme';
 import {useRefresh} from '../../hooks/useRefresh';
+import {useAppDispatch} from '../../redux/hooks';
+import {useAppSelector} from '../../store';
+import {fetchCategoriesSlice} from '../../redux/CategorySlice';
+import {fetchIndustriesSlice} from '../../redux/IndustrySlice';
 
 type Route = RouteProp<CatalogueStackParamList, 'Categories'>;
 
@@ -36,36 +36,75 @@ const CARD_WIDTH = Math.floor(
   (SCREEN_WIDTH - spacing.lg * 2 - CARD_GAP * 2) / 3,
 );
 
+const loggedCategories = new Set<string>();
+let hasLoggedCategoriesIndustries = false;
+
 export const CategoriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const {params} = useRoute<Route>();
-  const {data, isLoading, refetch} = useGetCategoriesQuery({
-    industryId: params?.industryId,
-  });
-  const {data: subCategories, refetch: refetchSubs} =
-    useGetSubCategoriesQuery({});
-  const {refreshing, onRefresh} = useRefresh(refetch, refetchSubs);
+  const dispatch = useAppDispatch();
+  const industryId = params?.industryId;
+  const apiCategories = useAppSelector(s => s.category.categories);
+  const categoriesLoading = useAppSelector(s => s.category.loading);
 
+  const loadCategories = useCallback(() => {
+    const key = industryId ? String(industryId) : 'all';
+    const request = dispatch(
+      fetchCategoriesSlice(industryId ? {industryId} : undefined),
+    );
+    request
+      .unwrap()
+      .then(res => {
+        if (!loggedCategories.has(key)) {
+          loggedCategories.add(key);
+          console.log('Categories API Response:', res);
+        }
+      })
+      .catch(err => console.log('Categories API Error:', err));
 
-  const hasSubCategories = (categoryId: string) =>
-    (subCategories ?? []).some(s => s.categoryId === categoryId);
-
-  const handlePress = (item: {id: string; name: string; industryId: string}) => {
-    const industryId = params?.industryId ?? item.industryId;
-    if (hasSubCategories(item.id)) {
-      navigation.navigate('SubCategories', {
-        categoryId: item.id,
-        categoryName: item.name,
-        industryId,
-      });
-    } else {
-      navigation.navigate('CategoryProducts', {
-        categoryId: item.id,
-        title: item.name,
-        industryId,
-      });
+    if (!hasLoggedCategoriesIndustries) {
+      hasLoggedCategoriesIndustries = true;
+      dispatch(fetchIndustriesSlice())
+        .unwrap()
+        .then(res => console.log('Industries API Response:', res))
+        .catch(err => console.log('Industries API Error:', err));
     }
+
+    return request;
+  }, [dispatch, industryId]);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  const {refreshing, onRefresh} = useRefresh(loadCategories);
+
+  const categories = useMemo(
+    () =>
+      (apiCategories ?? []).map(item => ({
+        id: String(item.id),
+        name: item.title ?? item.name ?? '',
+        image: item.icon_url ?? item.image ?? '',
+        industryId: String(
+          item.industry_id ?? item.industryId ?? industryId ?? '',
+        ),
+      })),
+    [apiCategories, industryId],
+  );
+
+  const handlePress = (item: {
+    id: string;
+    name: string;
+    industryId: string;
+  }) => {
+    navigation.navigate('SubCategories', {
+      categoryId: item.id,
+      categoryName: item.name,
+      industryId: item.industryId || industryId,
+    });
   };
+
+  const loading = categoriesLoading && !categories.length;
 
   return (
     <View style={styles.container}>
@@ -73,7 +112,7 @@ export const CategoriesScreen: React.FC = () => {
         title={params?.industryName ?? 'Categories'}
         onBack={() => navigation.goBack()}
       />
-      {isLoading ? (
+      {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
@@ -87,7 +126,7 @@ export const CategoriesScreen: React.FC = () => {
               tintColor={colors.primary}
             />
           }
-          data={data}
+          data={categories}
           keyExtractor={i => i.id}
           numColumns={3}
           columnWrapperStyle={styles.columnWrapper}
@@ -140,7 +179,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     width: '100%',
-    height:scale(95),
+    height: scale(95),
     backgroundColor: '#F1F5F9',
     overflow: 'hidden',
   },

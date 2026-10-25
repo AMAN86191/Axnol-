@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -29,6 +28,7 @@ import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 import Input from '../../components/ui/Input';
 import CommonHeader from '../../components/ui/CommonHeader';
+import {toast} from '../../components/ui/ToastProvider';
 import {useAppSelector} from '../../store';
 import {colors, fontSize, radius, scale, shadows, spacing} from '../../theme';
 
@@ -129,14 +129,14 @@ export const ContactUsScreen: React.FC = () => {
         subject: subject.trim(),
         message: message.trim(),
       }).unwrap();
-      Alert.alert(
+      toast.success(
         'Message Sent',
         'Thank you for reaching out. Our team will contact you soon.',
       );
       setSubject('');
       setMessage('');
     } catch {
-      Alert.alert('Something went wrong', 'Please try again in a moment.');
+      toast.error('Something Went Wrong', 'Please try again in a moment.');
     }
   };
 

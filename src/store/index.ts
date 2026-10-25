@@ -9,13 +9,21 @@ import {ordersApi} from '../api/services/ordersApi';
 import {profileApi} from '../api/services/profileApi';
 import {documentsApi} from '../api/services/documentsApi';
 import {enquiriesApi} from '../api/services/enquiriesApi';
-import authReducer from '../features/auth/authSlice';
+import authReducer from '../redux/AuthSlice';
+import homeReducer from '../redux/HomeSlice';
+import categoryReducer from '../redux/CategorySlice';
+import industryReducer from '../redux/IndustrySlice';
+import productReducer from '../redux/ProductSlice';
 import cartReducer from '../features/cart/cartSlice';
 import wishlistReducer from '../features/wishlist/wishlistSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
+    home: homeReducer,
+    category: categoryReducer,
+    industry: industryReducer,
+    product: productReducer,
     cart: cartReducer,
     wishlist: wishlistReducer,
     [authApi.reducerPath]: authApi.reducer,

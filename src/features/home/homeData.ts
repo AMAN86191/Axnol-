@@ -3,14 +3,14 @@ import {ImageKey} from '../../assets/images';
 export interface IndustryItem {
   id: string;
   name: string;
-  image: ImageKey;
+  image: string;
 }
 
 export interface HomeProduct {
   id: string;
   name: string;
   code: string;
-  image: ImageKey;
+  image: string;
   price: number;
   mrp?: number;
   unit?: string;
@@ -19,7 +19,8 @@ export interface HomeProduct {
 export interface CategoryItem {
   id: string;
   name: string;
-  image: ImageKey;
+  image: string;
+  industryId?: string;
 }
 
 export interface HomeBannerItem {
@@ -28,7 +29,11 @@ export interface HomeBannerItem {
   /** Wrap words in *asterisks* to highlight them in blue */
   title: string;
   description: string;
-  image: ImageKey;
+  image: string;
+  primaryLabel?: string;
+  secondaryLabel?: string;
+  pdfUrl?: string | null;
+  navigationLink?: string | null;
 }
 
 export const HOME_BANNERS: HomeBannerItem[] = [

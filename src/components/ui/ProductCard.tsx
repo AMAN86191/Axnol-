@@ -21,6 +21,7 @@ export interface ProductCardData {
   code?: string;
   price: number;
   unit?: string;
+  qty?: number | string;
   mrp?: number;
 }
 
@@ -79,8 +80,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       <View style={styles.priceRow}>
         <Text style={styles.price}>{formatPrice(product.price)}</Text>
-        {product.unit ? (
-          <Text style={styles.unit}> / {product.unit}</Text>
+        {product.qty || product.unit ? (
+          <Text style={styles.unit}>
+            {' '}
+            / {product.qty ? `${product.qty}${product.unit ? product.unit : ''}` : product.unit}
+          </Text>
         ) : null}
       </View>
 

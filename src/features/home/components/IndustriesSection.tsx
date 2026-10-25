@@ -1,21 +1,25 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import AppImage from '../../../components/ui/AppImage';
+import Skeleton from '../../../components/ui/Skeleton';
 import {scale} from '../../../theme';
 import {IndustryItem} from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 
 interface IndustriesSectionProps {
   industries: IndustryItem[];
+  loading?: boolean;
   onSeeAll?: () => void;
   onSelect: (item: IndustryItem) => void;
 }
 
 const CIRCLE = scale(60);
 const CARD_WIDTH = scale(84);
+const SKELETON_COUNT = 4;
 
 export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
   industries,
+  loading = false,
   onSeeAll,
   onSelect,
 }) => (
@@ -26,30 +30,49 @@ export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
       onAction={onSeeAll}
     />
 
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.scrollPad}>
-      {industries.map(ind => (
-        <TouchableOpacity
-          key={ind.id}
-          style={styles.card}
-          activeOpacity={0.85}
-          onPress={() => onSelect(ind)}>
-          {/* Round industry image */}
-          <View style={styles.circleShadow}>
-            <View style={styles.circle}>
-              <AppImage uri={ind.image} style={styles.cardImg} resizeMode="cover" />
-            </View>
+    {loading ? (
+      <View style={styles.skeletonRow}>
+        {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+          <View key={`industry-skeleton-${index}`} style={styles.card}>
+            <Skeleton width={CIRCLE} height={CIRCLE} circle />
+            <Skeleton
+              width={scale(50)}
+              height={scale(9)}
+              style={styles.skeletonTitle}
+            />
           </View>
+        ))}
+      </View>
+    ) : (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollPad}>
+        {industries.map(ind => (
+          <TouchableOpacity
+            key={ind.id}
+            style={styles.card}
+            activeOpacity={0.85}
+            onPress={() => onSelect(ind)}>
+            {/* Round industry image */}
+            <View style={styles.circleShadow}>
+              <View style={styles.circle}>
+                <AppImage
+                  uri={ind.image}
+                  style={styles.cardImg}
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
 
-          {/* Title below the image */}
-          <Text style={styles.cardName} numberOfLines={1}>
-            {ind.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+            {/* Title below the image */}
+            <Text style={styles.cardName} numberOfLines={1}>
+              {ind.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    )}
   </>
 );
 
@@ -59,6 +82,16 @@ const styles = StyleSheet.create({
     paddingRight: scale(14),
     paddingTop: scale(4),
     paddingBottom: scale(4),
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    gap: scale(10),
+    paddingRight: scale(14),
+    paddingTop: scale(4),
+    paddingBottom: scale(4),
+  },
+  skeletonTitle: {
+    marginTop: scale(8),
   },
   card: {
     width: CARD_WIDTH,

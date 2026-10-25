@@ -1,7 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Dimensions,
   Image,
   KeyboardAvoidingView,
@@ -33,6 +32,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Image as ImageIcon,
+  Lock,
   Map,
   MapPin,
   Phone,
@@ -47,13 +47,13 @@ import {
   launchCamera,
   launchImageLibrary,
 } from 'react-native-image-picker';
-import {
-  useGetProfileQuery,
-  useUpdateProfileMutation,
-} from '../../api/services/profileApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {updateProfileSlice, changePasswordSlice} from '../../redux/AuthSlice';
+import {useAppDispatch, useAppSelector} from '../../redux/hooks';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import AppImage from '../../components/ui/AppImage';
+import {toast} from '../../components/ui/ToastProvider';
 import images from '../../assets/images';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
 import Logo from '../../components/ui/Logo';
@@ -68,6 +68,8 @@ type FormState = {
   state: string;
   pincode: string;
   avatar: string;
+  avatarFileName: string;
+  avatarMime: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -80,6 +82,8 @@ const EMPTY_FORM: FormState = {
   state: '',
   pincode: '',
   avatar: '',
+  avatarFileName: '',
+  avatarMime: '',
 };
 
 const {height: SCREEN_H} = Dimensions.get('window');
@@ -304,29 +308,90 @@ const PhotoPickerSheet: React.FC<PhotoPickerSheetProps> = ({
 export const EditProfileScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const {data, isLoading} = useGetProfileQuery();
-  const [updateProfile, {isLoading: saving}] = useUpdateProfileMutation();
+  const dispatch = useAppDispatch();
+  const reduxUser = useAppSelector(s => s.auth.user);
+  const scrollRef = useRef<ScrollView>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+  });
+
+  const applyUser = (user: any) => {
+    if (!user) {
+      return;
+    }
+    const company = user.company;
+    setForm({
+      name: user.name ?? '',
+      phone: user.phone ?? '',
+      company:
+        (typeof company === 'string' ? company : company?.company_name) ?? '',
+      gstin:
+        user.gst_number ?? user.gstin ?? company?.gst_number ?? '',
+      address: user.address ?? '',
+      city: user.city ?? '',
+      state: user.state ?? '',
+      pincode: user.pincode ?? '',
+      avatar: user.profile_pic_url ?? user.profile_pic ?? user.avatar ?? '',
+      avatarFileName: '',
+      avatarMime: '',
+    });
+  };
 
   useEffect(() => {
-    if (data) {
-      setForm({
-        name: data.name ?? '',
-        phone: data.phone ?? '',
-        company: data.company ?? '',
-        gstin: data.gstin ?? '',
-        address: data.address ?? '',
-        city: data.city ?? '',
-        state: data.state ?? '',
-        pincode: data.pincode ?? '',
-        avatar: data.avatar ?? '',
+    let active = true;
+    AsyncStorage.getItem('axnol_user')
+      .then(raw => {
+        if (!active) {
+          return;
+        }
+        if (raw) {
+          try {
+            applyUser(JSON.parse(raw));
+          } catch {
+            // ignore malformed cache
+          }
+        } else {
+          applyUser(reduxUser);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          applyUser(reduxUser);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingProfile(false);
+        }
       });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (reduxUser) {
+      applyUser(reduxUser);
     }
-  }, [data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduxUser]);
 
   const setField = (key: keyof FormState) => (value: string) =>
     setForm(prev => ({...prev, [key]: value}));
+
+  const switchTab = (tab: 'profile' | 'password') => {
+    setActiveTab(tab);
+    scrollRef.current?.scrollTo({y: 0, animated: true});
+  };
 
   const openPicker = async (
     launcher: (
@@ -346,44 +411,134 @@ export const EditProfileScreen: React.FC = () => {
         return;
       }
       if (result.errorCode) {
-        Alert.alert(
-          'Image error',
+        toast.error(
+          'Image Error',
           result.errorMessage ?? 'Could not open the image picker.',
         );
         return;
       }
       const asset = result.assets?.[0];
       if (asset?.uri) {
-        setForm(prev => ({...prev, avatar: asset.uri as string}));
+        setForm(prev => ({
+          ...prev,
+          avatar: asset.uri as string,
+          avatarFileName:
+            asset.fileName ?? `profile-${Date.now()}.jpg`,
+          avatarMime: asset.type ?? 'image/jpeg',
+        }));
       }
     } catch {
-      Alert.alert('Image error', 'Could not open the image picker.');
+      toast.error('Image Error', 'Could not open the image picker.');
     }
   };
 
   const changePhoto = () => setPhotoSheetVisible(true);
 
   const removePhoto = () =>
-    setForm(prev => ({...prev, avatar: ''}));
+    setForm(prev => ({
+      ...prev,
+      avatar: '',
+      avatarFileName: '',
+      avatarMime: '',
+    }));
 
   const onSave = async () => {
     if (!form.name.trim()) {
-      Alert.alert('Missing name', 'Please enter your name.');
+      toast.warning('Missing Name', 'Please enter your name.');
       return;
     }
+    if (!form.phone.trim()) {
+      toast.warning('Missing Phone', 'Please enter your phone number.');
+      return;
+    }
+    if (!form.company.trim()) {
+      toast.warning('Missing Company', 'Please enter your company name.');
+      return;
+    }
+    setSaving(true);
     try {
-      await updateProfile(form).unwrap();
-      Alert.alert('Profile updated');
+      const formData = new FormData();
+      formData.append('name', form.name.trim());
+      formData.append('phone', form.phone.trim());
+      formData.append('company_name', form.company.trim());
+      formData.append('gst_number', form.gstin.trim());
+      formData.append('address', form.address.trim());
+      formData.append('city', form.city.trim());
+      formData.append('state', form.state.trim());
+      formData.append('pincode', form.pincode.trim());
+
+      if (form.avatar && !/^https?:\/\//i.test(form.avatar)) {
+        formData.append('profile_pic', {
+          uri: form.avatar,
+          name: form.avatarFileName || `profile-${Date.now()}.jpg`,
+          type: form.avatarMime || 'image/jpeg',
+        } as any);
+      }
+
+      await dispatch(updateProfileSlice(formData)).unwrap();
+      setSaving(false);
+      toast.success(
+        'Profile Updated',
+        'Your profile has been updated successfully.',
+      );
       navigation.goBack();
     } catch (e: any) {
-      Alert.alert(
-        'Update failed',
-        e?.data?.message ?? 'Please try again later.',
+      setSaving(false);
+      toast.error('Update Failed', e?.message ?? 'Please try again later.');
+    }
+  };
+
+  const setPasswordField =
+    (key: keyof typeof passwordForm) => (value: string) =>
+      setPasswordForm(prev => ({...prev, [key]: value}));
+
+  const onUpdatePassword = async () => {
+    if (!passwordForm.current_password) {
+      toast.warning('Current Password', 'Please enter your current password.');
+      return;
+    }
+    if (passwordForm.password.length < 8) {
+      toast.warning(
+        'Weak Password',
+        'New password must be at least 8 characters long.',
+      );
+      return;
+    }
+    if (passwordForm.password !== passwordForm.password_confirmation) {
+      toast.warning(
+        'Password Mismatch',
+        'New password and confirmation do not match.',
+      );
+      return;
+    }
+    if (passwordForm.password === passwordForm.current_password) {
+      toast.warning(
+        'Same Password',
+        'New password must be different from the current password.',
+      );
+      return;
+    }
+    setUpdatingPassword(true);
+    try {
+      await dispatch(changePasswordSlice(passwordForm)).unwrap();
+      setUpdatingPassword(false);
+      setPasswordForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+      });
+      toast.success('Password Updated', 'Your password has been changed successfully.');
+      navigation.goBack();
+    } catch (e: any) {
+      setUpdatingPassword(false);
+      toast.error(
+        'Update Failed',
+        e?.message ?? 'Could not update your password. Please try again.',
       );
     }
   };
 
-  if (isLoading) {
+  if (loadingProfile) {
     return (
       <View style={styles.container}>
         <StatusBar
@@ -415,6 +570,7 @@ export const EditProfileScreen: React.FC = () => {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
+          ref={scrollRef}
           style={styles.flex}
           contentContainerStyle={[
             styles.scroll,
@@ -454,7 +610,53 @@ export const EditProfileScreen: React.FC = () => {
             </Text>
           </View>
 
+          {/* Section tabs */}
+          <View style={styles.tabBar}>
+            <TouchableOpacity
+              style={[
+                styles.tabItem,
+                activeTab === 'profile' && styles.tabItemActive,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => switchTab('profile')}>
+              <User
+                size={scale(15)}
+                color={activeTab === 'profile' ? '#FFFFFF' : '#64748B'}
+                strokeWidth={2.2}
+              />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  activeTab === 'profile' && styles.tabLabelActive,
+                ]}>
+                Profile Details
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tabItem,
+                activeTab === 'password' && styles.tabItemActive,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => switchTab('password')}>
+              <Lock
+                size={scale(15)}
+                color={activeTab === 'password' ? '#FFFFFF' : '#64748B'}
+                strokeWidth={2.2}
+              />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  activeTab === 'password' && styles.tabLabelActive,
+                ]}>
+                Change Password
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Frosted glass card */}
+          {activeTab === 'profile' ? (
           <View style={styles.mainCard}>
             <LinearGradient
               colors={[
@@ -643,6 +845,92 @@ export const EditProfileScreen: React.FC = () => {
               </Text>
             </View>
           </View>
+          ) : (
+          <View style={styles.mainCard}>
+            <LinearGradient
+              colors={[
+                'rgba(255,255,255,0.55)',
+                'rgba(255,255,255,0.08)',
+                'rgba(255,255,255,0)',
+              ]}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}
+              style={styles.glassSheen}
+            />
+
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionBadge, styles.badgePurple]}>
+                <Lock size={scale(19)} color="#7C3AED" strokeWidth={2.2} />
+              </View>
+              <View style={styles.sectionHeaderTexts}>
+                <Text style={styles.sectionHeaderTitle}>Account Security</Text>
+                <Text style={styles.sectionHeaderSubtitle}>
+                  Update your login password
+                </Text>
+              </View>
+            </View>
+
+            <Input
+              variant="clean"
+              required
+              label="Current Password"
+              placeholder="Enter current password"
+              value={passwordForm.current_password}
+              onChangeText={setPasswordField('current_password')}
+              secureTextEntry
+              leftIcon={Lock}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              required
+              label="New Password"
+              placeholder="Enter new password"
+              value={passwordForm.password}
+              onChangeText={setPasswordField('password')}
+              secureTextEntry
+              leftIcon={Lock}
+              helperText="Use at least 8 characters"
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Input
+              variant="clean"
+              required
+              label="Confirm New Password"
+              placeholder="Re-enter new password"
+              value={passwordForm.password_confirmation}
+              onChangeText={setPasswordField('password_confirmation')}
+              secureTextEntry
+              leftIcon={ShieldCheck}
+              containerStyle={styles.fieldSpacing}
+            />
+
+            <Button
+              title="Update Password"
+              variant="outline"
+              size="medium"
+              onPress={onUpdatePassword}
+              loading={updatingPassword}
+              iconRight={
+                <Lock
+                  size={scale(17)}
+                  color={colors.primary}
+                  strokeWidth={2.2}
+                />
+              }
+              textStyle={styles.saveBtnText}
+            />
+
+            <View style={styles.secureRow}>
+              <ShieldCheck size={scale(14)} color="#16A34A" />
+              <Text style={styles.secureText}>
+                Choose a strong, unique password
+              </Text>
+            </View>
+          </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -769,6 +1057,43 @@ const styles = StyleSheet.create({
     lineHeight: scale(18.5),
   },
 
+  /* Tabs */
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.65)',
+    borderRadius: radius.pill,
+    padding: scale(4),
+    marginBottom: scale(16),
+    borderWidth: 1,
+    borderColor: 'rgba(203,213,225,0.6)',
+  },
+  tabItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(6),
+    paddingVertical: scale(9),
+    borderRadius: radius.pill,
+  },
+  tabItemActive: {
+    backgroundColor: colors.primary,
+    shadowColor: '#0284C7',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabLabel: {
+    fontSize: scale(12.5),
+    fontWeight: '700',
+    color: '#64748B',
+    letterSpacing: 0.1,
+  },
+  tabLabelActive: {
+    color: '#FFFFFF',
+  },
+
   /* Frosted glass card */
   mainCard: {
     backgroundColor: 'rgba(255,255,255,0.4)',
@@ -805,6 +1130,9 @@ const styles = StyleSheet.create({
   },
   badgeGreen: {
     backgroundColor: '#F0FDF4',
+  },
+  badgePurple: {
+    backgroundColor: '#F5F3FF',
   },
   sectionHeaderTexts: {
     justifyContent: 'center',

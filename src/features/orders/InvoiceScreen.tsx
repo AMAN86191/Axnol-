@@ -1,6 +1,5 @@
 import React, {useState} from 'react';
 import {
-  Alert,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -12,6 +11,7 @@ import {useNavigation} from '@react-navigation/native';
 import {ChevronLeft, FileText, RotateCcw} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fontSize, radius, scale, spacing, typography} from '../../theme';
+import {toast} from '../../components/ui/ToastProvider';
 
 const FILTER_TABS = ['All', 'Paid', 'Pending'];
 
@@ -61,14 +61,16 @@ export const InvoiceScreen: React.FC = () => {
   });
 
   const handleInvoicePress = (item: (typeof MOCK_INVOICES)[0]) => {
-    Alert.alert(
-      'Tax Invoice',
-      `${item.invoiceNo}\n${item.orderNo}\nAmount: ₹${item.amount.toLocaleString('en-IN')}\nStatus: ${item.status}`,
-      [
-        {text: 'Download PDF', onPress: () => Alert.alert('Downloading', `${item.invoiceNo}.pdf downloaded`)},
-        {text: 'Close'},
-      ],
-    );
+    toast.show({
+      type: 'info',
+      title: 'Tax Invoice',
+      message: `${item.invoiceNo} • ${item.orderNo}\nAmount: ₹${item.amount.toLocaleString('en-IN')} • Status: ${item.status}`,
+      action: {
+        label: 'Download PDF',
+        onPress: () =>
+          toast.success('Downloading', `${item.invoiceNo}.pdf downloaded`),
+      },
+    });
   };
 
   return (

@@ -9,16 +9,21 @@ import {
 import {colors, scale} from '../../../theme';
 import {CategoryItem} from '../homeData';
 import AppImage from '../../../components/ui/AppImage';
+import Skeleton from '../../../components/ui/Skeleton';
 import HomeSectionHeader from './HomeSectionHeader';
 
 interface CategoriesSectionProps {
   categories: CategoryItem[];
+  loading?: boolean;
   onSeeAll?: () => void;
   onSelect: (category: CategoryItem) => void;
 }
 
+const SKELETON_COUNT = 4;
+
 export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
   categories,
+  loading = false,
   onSeeAll,
   onSelect,
 }) => (
@@ -29,35 +34,53 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
       onAction={onSeeAll}
     />
 
-    <FlatList
-      horizontal
-      data={categories}
-      showsHorizontalScrollIndicator={false}
-      keyExtractor={item => item.id}
-      contentContainerStyle={styles.listPad}
-      renderItem={({item}) => {
-        return (
-          <TouchableOpacity
-            style={styles.item}
-            activeOpacity={0.85}
-            onPress={() => onSelect(item)}>
-            <View style={styles.circle}>
-              <AppImage
-                uri={item.image}
-                style={styles.image}
-                resizeMode="cover"
-              />
-            </View>
+    {loading ? (
+      <View style={styles.skeletonRow}>
+        {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+          <View key={`category-skeleton-${index}`} style={styles.item}>
+            <Skeleton width={CIRCLE} height={CIRCLE} circle />
+            <Skeleton
+              width={scale(54)}
+              height={scale(9)}
+              style={styles.skeletonTitle}
+            />
+            <Skeleton
+              width={scale(38)}
+              height={scale(9)}
+              style={styles.skeletonSubtitle}
+            />
+          </View>
+        ))}
+      </View>
+    ) : (
+      <FlatList
+        horizontal
+        data={categories}
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listPad}
+        renderItem={({item}) => {
+          return (
+            <TouchableOpacity
+              style={styles.item}
+              activeOpacity={0.85}
+              onPress={() => onSelect(item)}>
+              <View style={styles.circle}>
+                <AppImage
+                  uri={item.image}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+              </View>
 
-            <Text style={styles.name} numberOfLines={2}>
-              {item.name}
-            </Text>
-
-          
-          </TouchableOpacity>
-        );
-      }}
-    />
+              <Text style={styles.name} numberOfLines={2}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+      />
+    )}
   </>
 );
 
@@ -73,6 +96,19 @@ const styles = StyleSheet.create({
   item: {
     width: scale(74),
     alignItems: 'center',
+  },
+  skeletonRow: {
+    flexDirection: 'row',
+    gap: scale(14),
+    paddingTop: scale(4),
+    paddingBottom: scale(4),
+    paddingRight: scale(6),
+  },
+  skeletonTitle: {
+    marginTop: scale(8),
+  },
+  skeletonSubtitle: {
+    marginTop: scale(4),
   },
   circle: {
     width: CIRCLE,

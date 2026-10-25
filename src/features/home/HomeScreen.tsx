@@ -1,9 +1,15 @@
-import React, { useCallback } from 'react';
-import { ScrollView, StatusBar, StyleSheet, View, RefreshControl} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking, ActivityIndicator} from 'react-native';
+import { stripHtml } from '../../utils/stripHtml';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, scale } from '../../theme';
 import { useAppSelector } from '../../store';
+import { useAppDispatch } from '../../redux/hooks';
+import { fetchSlidersSlice } from '../../redux/HomeSlice';
+import { fetchIndustriesSlice } from '../../redux/IndustrySlice';
+import { fetchCategoriesSlice } from '../../redux/CategorySlice';
+import { clearProducts, fetchProductsSlice } from '../../redux/ProductSlice';
 import { selectCartItemCount } from '../cart/cartSelectors';
 import { selectWishlistCount } from '../wishlist/wishlistSelectors';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
@@ -14,14 +20,9 @@ import {
   Catgory_BANNERS,
   FEATURED_PRODUCTS,
   HOME_BANNERS,
+  HomeBannerItem,
   HomeProduct,
-  INDUSTRIES,
 } from './homeData';
-import { ImageKey } from '../../assets/images';
-import {
-  useGetCategoriesQuery,
-  useGetSubCategoriesQuery,
-} from '../../api/services/catalogueApi';
 import { useGetNotificationsQuery } from '../../api/services/documentsApi';
 import HomeHeader from './components/HomeHeader';
 import HomeBanner from './components/HomeBanner';
@@ -32,27 +33,50 @@ import CategoriesSection from './components/CategoriesSection';
 import AllProductsGrid from './components/AllProductsGrid';
 import { useRefresh } from '../../hooks/useRefresh';
 
+let hasLoggedSliders = false;
+
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
   const user = useAppSelector(s => s.auth.user);
+  const sliders = useAppSelector(s => s.home.sliders);
+  const slidersLoading = useAppSelector(s => s.home.loading);
+  const apiIndustries = useAppSelector(s => s.industry.industries);
+  const industriesLoading = useAppSelector(s => s.industry.loading);
+  const apiCategories = useAppSelector(s =>
+    s.category.allCategories.length
+      ? s.category.allCategories
+      : s.category.categories,
+  );
+  const categoriesLoading = useAppSelector(s => s.category.loading);
+  const apiProducts = useAppSelector(s => s.product.products);
+  const productsLoading = useAppSelector(s => s.product.loading);
+  const productsPagination = useAppSelector(s => s.product.pagination);
   const cartCount = useAppSelector(selectCartItemCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
   const loading = useSimulatedLoading();
-  const { data: categoriesData, refetch: refetchCategories } =
-    useGetCategoriesQuery({});
-  const { data: subCategoriesData, refetch: refetchSubCategories } =
-    useGetSubCategoriesQuery({});
+  const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
+  const [homeProductsPage, setHomeProductsPage] = useState(1);
+
   const {
     data: notificationsData,
     refetch: refetchNotifications,
   } = useGetNotificationsQuery();
 
-  const { refreshing, onRefresh } = useRefresh(
-    refetchCategories,
-    refetchSubCategories,
-    refetchNotifications,
-  );
+  const handleHomeRefresh = useCallback(async () => {
+    setHomeProductsPage(1);
+    dispatch(clearProducts());
+    await Promise.all([
+      dispatch(fetchIndustriesSlice()),
+      dispatch(fetchCategoriesSlice()),
+      dispatch(fetchProductsSlice({ page: 1 })),
+      refetchNotifications(),
+      dispatch(fetchSlidersSlice()),
+    ]);
+  }, [dispatch, refetchNotifications]);
+
+  const { refreshing, onRefresh } = useRefresh(handleHomeRefresh);
 
   const hasUnreadNotifications = (notificationsData ?? []).some(
     notification => !notification.read,
@@ -61,14 +85,46 @@ export const HomeScreen: React.FC = () => {
   useFocusEffect(
     useCallback(() => {
       refetchNotifications();
-    }, [refetchNotifications]),
+      dispatch(fetchIndustriesSlice());
+      dispatch(fetchCategoriesSlice());
+      if (!(apiProducts && apiProducts.length)) {
+        dispatch(clearProducts());
+        setHomeProductsPage(1);
+        dispatch(fetchProductsSlice({ page: 1 }))
+          .unwrap()
+          .then(res => console.log('Products API Response:', res))
+          .catch(err => console.log('Products API Error:', err));
+      }
+      dispatch(fetchSlidersSlice())
+        .unwrap()
+        .then(res => {
+          if (!hasLoggedSliders) {
+            hasLoggedSliders = true;
+            console.log('Sliders API Response:', res);
+          }
+        })
+        .catch(err => console.log('Sliders API Error:', err));
+    }, [dispatch, refetchNotifications]),
   );
 
-  const homeCategories: CategoryItem[] = (categoriesData ?? []).map(
+
+  const homeIndustries = (apiIndustries ?? []).map(industry => ({
+    id: String(industry.id),
+    name: industry.title ?? '',
+    image: industry.image_url ?? '',
+  }));
+
+  const homeCategories: CategoryItem[] = (apiCategories ?? []).map(
     category => ({
-      id: category.id,
-      name: category.name,
-      image: category.image as ImageKey,
+      id: String(category.id),
+      name: category.title ?? category.name ?? '',
+      image: category.icon_url ?? category.image_url ?? category.image ?? '',
+      industryId:
+        category.industry_id != null
+          ? String(category.industry_id)
+          : category.industryId != null
+          ? String(category.industryId)
+          : undefined,
     }),
   );
 
@@ -89,27 +145,101 @@ export const HomeScreen: React.FC = () => {
   };
 
   const openCategory = (category: CategoryItem) => {
-    const hasSubCategories = (subCategoriesData ?? []).some(
-      sub => sub.categoryId === category.id,
-    );
-    if (hasSubCategories) {
-      navigation.navigate('Products', {
-        screen: 'SubCategories',
-        params: { categoryId: category.id, categoryName: category.name },
-        initial: false,
-      });
-    } else {
-      navigation.navigate('Products', {
-        screen: 'CategoryProducts',
-        params: { categoryId: category.id, title: category.name },
-        initial: false,
-      });
-    }
+    navigation.navigate('Products', {
+      screen: 'SubCategories',
+      params: {
+        categoryId: category.id,
+        categoryName: category.name,
+        industryId: category.industryId,
+      },
+      initial: false,
+    });
   };
 
-  if (loading) {
-    return <HomeSkeleton />;
-  }
+  const sliderBanners: HomeBannerItem[] = (sliders ?? []).map(
+    (slider, index) => ({
+      id: String(slider.id ?? index),
+      tagline: slider.tag_line ?? '',
+      title: slider.title ?? '',
+      description: stripHtml(slider.description ?? ''),
+      image: slider.image_url ?? '',
+      primaryLabel: slider.button || undefined,
+      secondaryLabel: slider.second_button || undefined,
+      pdfUrl: slider.second_button_pdf_url,
+      navigationLink: slider.navigation_link,
+    }),
+  );
+
+  const banners = sliderBanners.length > 0 ? sliderBanners : HOME_BANNERS;
+
+  const getProductPrice = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const price =
+        first?.price ??
+        first?.rate ??
+        first?.amount ??
+        first?.selling_price ??
+        first?.dealer_price ??
+        first?.mrp_price ??
+        first?.mrp ??
+        first?.list_price ??
+        0;
+      return Number(price) || 0;
+    }
+    return Number(product?.price ?? product?.selling_price ?? 0) || 0;
+  };
+
+  const getProductUnitAndQty = (product: any) => {
+    const rateCharts = product?.rate_charts;
+    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
+      const first = rateCharts[0];
+      const unit =
+        first?.unit ??
+        first?.pack_size_unit ??
+        first?.packing_unit ??
+        first?.uom ??
+        first?.unit_name ??
+        product?.unit;
+      const qty =
+        first?.qty ??
+        first?.quantity ??
+        first?.pack_size ??
+        first?.pack_qty ??
+        first?.min_qty ??
+        product?.qty ??
+        product?.quantity;
+      return {
+        unit: unit ? String(unit).trim() : 'Unit',
+        qty: qty !== undefined && qty !== null && qty !== '' ? qty : undefined,
+      };
+    }
+    return {
+      unit: product?.unit ? String(product.unit).trim() : 'Unit',
+      qty: product?.qty ?? product?.quantity,
+    };
+  };
+
+  const homeProducts = (apiProducts ?? []).map((product: any, index) => {
+    const price = getProductPrice(product);
+    const {unit, qty} = getProductUnitAndQty(product);
+    return {
+      id: String(product.id ?? index),
+      name: product.name ?? '',
+      code:
+        product.category?.title ??
+        product.category?.name ??
+        product.sub_category?.title ??
+        product.sub_category?.name ??
+        '',
+      image: product.thumbnail_url ?? product.image_urls?.[0] ?? 'product_generic',
+      price,
+      mrp: price > 0 ? Math.round(price * 1.1) : 0,
+      unit,
+      qty,
+    };
+  });
 
   return (
     <View style={styles.container}>
@@ -129,12 +259,35 @@ export const HomeScreen: React.FC = () => {
             progressViewOffset={insets.top}
           />
         }
+        onScroll={({nativeEvent}) => {
+          const paddingToBottom = scale(400);
+          if (
+            !isLoadingMoreProducts &&
+            !productsLoading &&
+            productsPagination?.last_page &&
+            homeProductsPage < productsPagination.last_page
+          ) {
+            const offsetY = nativeEvent.contentOffset.y;
+            const layoutHeight = nativeEvent.layoutMeasurement.height;
+            const contentHeight = nativeEvent.contentSize.height;
+            if (offsetY + layoutHeight + paddingToBottom >= contentHeight) {
+              const nextPage = homeProductsPage + 1;
+              setIsLoadingMoreProducts(true);
+              setHomeProductsPage(nextPage);
+              dispatch(fetchProductsSlice({ page: nextPage }))
+                .unwrap()
+                .catch(err => console.log('Products API Error:', err))
+                .finally(() => setIsLoadingMoreProducts(false));
+            }
+          }
+        }}
+        scrollEventThrottle={400}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
           {
             paddingTop: insets.top + scale(8),
-            paddingBottom: insets.bottom,
+            paddingBottom: insets.bottom + scale(40),
           },
         ]}>
         {/* 1. Header (logo + notifications + profile + search + scan) */}
@@ -156,19 +309,32 @@ export const HomeScreen: React.FC = () => {
 
         {/* 2. Hero banner carousel */}
         <HomeBanner
-          banners={HOME_BANNERS}
+          banners={banners}
+          loading={slidersLoading}
           buttonLabel="Explore Products"
           onPressItem={() => openAllProducts()}
           onPressButton={() => openAllProducts()}
+          onPressDownload={item => {
+            if (item.pdfUrl) {
+              Linking.openURL(item.pdfUrl).catch(() => {});
+              return;
+            }
+            openAllProducts();
+          }}
         />
 
         {/* 3. Industries */} 
         <View style={styles.sectionWrap}>
           <IndustriesSection
-            industries={INDUSTRIES}
+            industries={homeIndustries}
+            loading={industriesLoading && !homeIndustries.length}
             onSeeAll={() => navigation.navigate('Industry')}
             onSelect={ind =>
-              openAllProducts({ title: ind.name, industryId: ind.id })
+              navigation.navigate('Industry', {
+                screen: 'IndustryDetails',
+                params: { industryId: ind.id, industryTitle: ind.name },
+                initial: false,
+              })
             }
           />
         </View>
@@ -188,6 +354,7 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.sectionWrap}>
           <CategoriesSection
             categories={homeCategories}
+            loading={categoriesLoading && !homeCategories.length}
             onSeeAll={() =>
               navigation.navigate('Products', {
                 screen: 'Categories',
@@ -214,13 +381,18 @@ export const HomeScreen: React.FC = () => {
         {/* 6. All products grid */}
         <View style={styles.sectionWrap}>
           <AllProductsGrid
-            products={ALL_PRODUCTS}
+            products={homeProducts.length ? homeProducts : ALL_PRODUCTS}
             onSeeAll={() => openAllProducts()}
             onPress={openProduct}
           />
+          {isLoadingMoreProducts || (productsLoading && homeProductsPage > 1) ? (
+            <View style={styles.loadMoreWrap}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : null}
         </View>
 
-     
+      
       </ScrollView>
     </View>
   );
@@ -235,6 +407,11 @@ const styles = StyleSheet.create({
   },
   sectionWrap: {
     marginBottom: scale(20),
+  },
+  loadMoreWrap: {
+    marginTop: scale(12),
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

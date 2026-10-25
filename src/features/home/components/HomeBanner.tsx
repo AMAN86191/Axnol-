@@ -12,6 +12,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {ArrowRight, Download} from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
+import Skeleton from '../../../components/ui/Skeleton';
 import {scale} from '../../../theme';
 import {HomeBannerItem} from '../homeData';
 
@@ -23,6 +24,7 @@ interface HomeBannerProps {
   banners: HomeBannerItem[];
   height?: number;
   autoPlay?: boolean;
+  loading?: boolean;
   buttonLabel?: string;
   downloadLabel?: string;
   showPrimaryButton?: boolean;
@@ -48,8 +50,9 @@ const renderHighlightedTitle = (title: string) => {
 
 export const HomeBanner: React.FC<HomeBannerProps> = ({
   banners,
-  height = scale(160),
-  autoPlay = true,
+  height = scale(175),
+  autoPlay = true,      
+  loading = false,
   buttonLabel = 'Explore Products',
   downloadLabel = 'Download',
   showPrimaryButton = true,
@@ -103,6 +106,14 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
     indexRef.current = index;
     setActiveIndex(index);
   };
+
+  if (loading && !banners.length) {
+    return (
+      <View style={styles.container}>
+        <Skeleton height={height} borderRadius={scale(16)} />
+      </View>
+    );
+  }
 
   if (!banners.length) {
     return null;
@@ -160,17 +171,21 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
 
               {/* Left content panel (~58% width) */}
               <View style={styles.contentPanel} pointerEvents="box-none">
-                <Text style={styles.tagline} numberOfLines={1}>
-                  {item.tagline.toUpperCase()}
-                </Text>
+                {!!item.tagline && (
+                  <Text style={styles.tagline} numberOfLines={1}>
+                    {item.tagline.toUpperCase()}
+                  </Text>
+                )}
 
                 <Text style={styles.title} numberOfLines={3}>
                   {renderHighlightedTitle(item.title)}
                 </Text>
 
-                <Text style={styles.description} numberOfLines={3}>
-                  {item.description}
-                </Text>
+                {!!item.description && (
+                  <Text style={styles.description} numberOfLines={3}>
+                    {item.description}
+                  </Text>
+                )}
 
                 {/* Common CTAs shared by every banner */}
                 <View style={styles.buttonRow}>
@@ -180,7 +195,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
                       activeOpacity={0.85}
                       onPress={() => onPressButton?.(item, index)}>
                       <Text style={styles.buttonText} numberOfLines={1}>
-                        {buttonLabel}
+                        {item.primaryLabel || buttonLabel}
                       </Text>
                       <ArrowRight
                         size={scale(11)}
@@ -197,7 +212,9 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
                       onPress={() =>
                         onPressDownload
                           ? onPressDownload(item, index)
-                          : Linking.openURL(BROCHURE_URL).catch(() => {})
+                          : Linking.openURL(
+                              item.pdfUrl || BROCHURE_URL,
+                            ).catch(() => {})
                       }>
                       <Download
                         size={scale(11)}
@@ -205,7 +222,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
                         strokeWidth={2.8}
                       />
                       <Text style={styles.buttonOutlineText} numberOfLines={1}>
-                        {downloadLabel}
+                        {item.secondaryLabel || downloadLabel}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -236,6 +253,7 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
 const styles = StyleSheet.create({
   container: {
     marginBottom: scale(12),
+    marginTop: scale(3),
   },
   slide: {
     overflow: 'hidden',
