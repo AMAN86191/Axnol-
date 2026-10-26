@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useRef} from 'react';
 import {
   StyleProp,
   StyleSheet,
@@ -26,18 +26,66 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   style,
 }) => {
   const { add, increment, decrement, remove, items } = useCart();
-  const quantity = items.find(item => item.id === product.id)?.quantity ?? 0;
+  const busyRef = useRef(false);
+  const productKey = String(product.productId ?? product.id);
+  const rateChartKey =
+    product.rateChartId !== undefined &&
+    product.rateChartId !== null &&
+    String(product.rateChartId).trim()
+      ? String(product.rateChartId)
+      : undefined;
+  const rawSize = product.size ?? product.unit;
+  const sizeKey =
+    rawSize && rawSize !== 'Unit' ? String(rawSize) : undefined;
+  const existing = items.find(item => {
+    if (String(item.productId ?? item.id) !== productKey) {
+      return false;
+    }
+    if (rateChartKey) {
+      return (
+        item.rateChartId !== undefined &&
+        item.rateChartId !== null &&
+        String(item.rateChartId) === rateChartKey
+      );
+    }
+    if (sizeKey) {
+      return (
+        (item.rateChartId === undefined || item.rateChartId === null) &&
+        String(item.size ?? item.unit ?? '') === sizeKey
+      );
+    }
+    return item.rateChartId === undefined || item.rateChartId === null;
+  });
+  const quantity = existing?.quantity ?? 0;
+  const itemId = existing?.cartItemId ?? existing?.id ?? product.id;
 
-  const handleAdd = () => {
-    add(product, 1);
-    onAdded?.();
+  const run = async (action: () => Promise<unknown> | unknown) => {
+    if (busyRef.current) {
+      return;
+    }
+    busyRef.current = true;
+    try {
+      await action();
+    } finally {
+      busyRef.current = false;
+    }
   };
 
-  if (quantity > 0) {
-    // Going below 1 takes the item out of the cart, which brings back "Add".
-    const handleMinus = () =>
-      quantity > 1 ? decrement(product.id) : remove(product.id);
+  const handleAdd = () =>
+    run(async () => {
+      const size = sizeKey;
+      const added = await add({ ...(product as any), size }, 1);
+      if (added) {
+        onAdded?.();
+      }
+    });
 
+  const handleMinus = () =>
+    run(() => (quantity > 1 ? decrement(itemId) : remove(itemId)));
+
+  const handlePlus = () => run(() => increment(itemId));
+
+  if (quantity > 0) {
     return (
       <View
         style={[styles.stepper, compact && styles.stepperCompact, style]}>
@@ -55,7 +103,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
           style={styles.stepBtn}
           activeOpacity={0.7}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          onPress={() => increment(product.id)}>
+          onPress={handlePlus}>
           <Plus size={scale(14)} color={colors.primary} strokeWidth={3} />
         </TouchableOpacity>
       </View>

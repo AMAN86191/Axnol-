@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking, ActivityIndicator} from 'react-native';
 import { stripHtml } from '../../utils/stripHtml';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -12,14 +12,9 @@ import { fetchCategoriesSlice } from '../../redux/CategorySlice';
 import { clearProducts, fetchProductsSlice } from '../../redux/ProductSlice';
 import { selectCartItemCount } from '../cart/cartSelectors';
 import { selectWishlistCount } from '../wishlist/wishlistSelectors';
-import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
-import HomeSkeleton from './components/HomeSkeleton';
 import {
-  ALL_PRODUCTS,
   CategoryItem,
   Catgory_BANNERS,
-  FEATURED_PRODUCTS,
-  HOME_BANNERS,
   HomeBannerItem,
   HomeProduct,
 } from './homeData';
@@ -32,6 +27,8 @@ import FeaturedProductsSection from './components/FeaturedProductsSection';
 import CategoriesSection from './components/CategoriesSection';
 import AllProductsGrid from './components/AllProductsGrid';
 import { useRefresh } from '../../hooks/useRefresh';
+import { getLoadErrorMessage } from '../../utils/apiError';
+import { toProductCardData } from '../../utils/productCardData';
 
 let hasLoggedSliders = false;
 
@@ -44,18 +41,22 @@ export const HomeScreen: React.FC = () => {
   const slidersLoading = useAppSelector(s => s.home.loading);
   const apiIndustries = useAppSelector(s => s.industry.industries);
   const industriesLoading = useAppSelector(s => s.industry.loading);
+  const industriesError = useAppSelector(s => s.industry.error);
   const apiCategories = useAppSelector(s =>
     s.category.allCategories.length
       ? s.category.allCategories
       : s.category.categories,
   );
   const categoriesLoading = useAppSelector(s => s.category.loading);
+  const categoriesError = useAppSelector(s => s.category.error);
   const apiProducts = useAppSelector(s => s.product.products);
+  const apiProductsRef = useRef(apiProducts);
+  apiProductsRef.current = apiProducts;
   const productsLoading = useAppSelector(s => s.product.loading);
+  const productsError = useAppSelector(s => s.product.error);
   const productsPagination = useAppSelector(s => s.product.pagination);
   const cartCount = useAppSelector(selectCartItemCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
-  const loading = useSimulatedLoading();
   const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
   const [homeProductsPage, setHomeProductsPage] = useState(1);
 
@@ -78,6 +79,30 @@ export const HomeScreen: React.FC = () => {
 
   const { refreshing, onRefresh } = useRefresh(handleHomeRefresh);
 
+  const retryIndustries = useCallback(() => {
+    dispatch(fetchIndustriesSlice());
+  }, [dispatch]);
+
+  const retryCategories = useCallback(() => {
+    dispatch(fetchCategoriesSlice());
+  }, [dispatch]);
+
+  const retryProducts = useCallback(() => {
+    setHomeProductsPage(1);
+    dispatch(clearProducts());
+    dispatch(fetchProductsSlice({ page: 1 }));
+  }, [dispatch]);
+
+  const industriesErrorMessage = getLoadErrorMessage(
+    industriesError,
+    'industries',
+  );
+  const categoriesErrorMessage = getLoadErrorMessage(
+    categoriesError,
+    'categories',
+  );
+  const productsErrorMessage = getLoadErrorMessage(productsError, 'products');
+
   const hasUnreadNotifications = (notificationsData ?? []).some(
     notification => !notification.read,
   );
@@ -87,7 +112,8 @@ export const HomeScreen: React.FC = () => {
       refetchNotifications();
       dispatch(fetchIndustriesSlice());
       dispatch(fetchCategoriesSlice());
-      if (!(apiProducts && apiProducts.length)) {
+      const currentProducts = apiProductsRef.current;
+      if (!(currentProducts && currentProducts.length)) {
         dispatch(clearProducts());
         setHomeProductsPage(1);
         dispatch(fetchProductsSlice({ page: 1 }))
@@ -165,74 +191,9 @@ export const HomeScreen: React.FC = () => {
 
   const banners = sliderBanners.length > 0 ? sliderBanners : [];
 
-  const getProductPrice = (product: any) => {
-    const rateCharts = product?.rate_charts;
-    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
-      const first = rateCharts[0];
-      const price =
-        first?.price ??
-        first?.rate ??
-        first?.amount ??
-        first?.selling_price ??
-        first?.dealer_price ??
-        first?.mrp_price ??
-        first?.mrp ??
-        first?.list_price ??
-        0;
-      return Number(price) || 0;
-    }
-    return Number(product?.price ?? product?.selling_price ?? 0) || 0;
-  };
-
-  const getProductUnitAndQty = (product: any) => {
-    const rateCharts = product?.rate_charts;
-    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
-      const first = rateCharts[0];
-      const unit =
-        first?.unit ??
-        first?.pack_size_unit ??
-        first?.packing_unit ??
-        first?.uom ??
-        first?.unit_name ??
-        product?.unit;
-      const qty =
-        first?.qty ??
-        first?.quantity ??
-        first?.pack_size ??
-        first?.pack_qty ??
-        first?.min_qty ??
-        product?.qty ??
-        product?.quantity;
-      return {
-        unit: unit ? String(unit).trim() : 'Unit',
-        qty: qty !== undefined && qty !== null && qty !== '' ? qty : undefined,
-      };
-    }
-    return {
-      unit: product?.unit ? String(product.unit).trim() : 'Unit',
-      qty: product?.qty ?? product?.quantity,
-    };
-  };
-
-  const homeProducts = (apiProducts ?? []).map((product: any, index) => {
-    const price = getProductPrice(product);
-    const {unit, qty} = getProductUnitAndQty(product);
-    return {
-      id: String(product.id ?? index),
-      name: product.name ?? '',
-      code:
-        product.category?.title ??
-        product.category?.name ??
-        product.sub_category?.title ??
-        product.sub_category?.name ??
-        '',
-      image: product.thumbnail_url ?? product.image_urls?.[0] ?? 'product_generic',
-      price,
-      mrp: price > 0 ? Math.round(price * 1.1) : 0,
-      unit,
-      qty,
-    };
-  });
+  const homeProducts = (apiProducts ?? []).map((product: any, index: number) =>
+    toProductCardData(product, index),
+  );
 
   return (
     <View style={styles.container}>
@@ -329,6 +290,8 @@ export const HomeScreen: React.FC = () => {
           <IndustriesSection
             industries={homeIndustries}
             loading={industriesLoading && !homeIndustries.length}
+            errorMessage={industriesErrorMessage}
+            onRetry={retryIndustries}
             onSeeAll={() => navigation.navigate('Industries')}
             onSelect={ind =>
               navigation.navigate('IndustryDetails', {
@@ -342,7 +305,7 @@ export const HomeScreen: React.FC = () => {
         {/* 4. Featured products */}
         <View style={styles.sectionWrap}>
           <FeaturedProductsSection
-            products={FEATURED_PRODUCTS}
+            products={homeProducts.slice(0, 6)}
             onSeeAll={() =>
               openAllProducts({ featured: true, title: 'Featured Products' })
             }
@@ -355,6 +318,8 @@ export const HomeScreen: React.FC = () => {
           <CategoriesSection
             categories={homeCategories}
             loading={categoriesLoading && !homeCategories.length}
+            errorMessage={categoriesErrorMessage}
+            onRetry={retryCategories}
             onSeeAll={() => navigation.navigate('Categories')}
             onSelect={openCategory}
           />
@@ -375,7 +340,10 @@ export const HomeScreen: React.FC = () => {
         {/* 6. All products grid */}
         <View style={styles.sectionWrap}>
           <AllProductsGrid
-            products={homeProducts.length ? homeProducts : ALL_PRODUCTS}
+            products={homeProducts}
+            loading={productsLoading && homeProducts.length === 0}
+            errorMessage={productsErrorMessage}
+            onRetry={retryProducts}
             onSeeAll={() => openAllProducts()}
             onPress={openProduct}
           />

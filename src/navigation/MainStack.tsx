@@ -3,6 +3,8 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import MainDrawer from './MainDrawer';
 import CartScreen from '../features/cart/CartScreen';
 import WishlistScreen from '../features/wishlist/WishlistScreen';
+import ProductDetailsScreen from '../features/product/ProductDetailsScreen';
+import PricingRequestsScreen from '../features/pricing/PricingRequestsScreen';
 import ContactUsScreen from '../features/enquiries/ContactUsScreen';
 import AboutScreen from '../features/about/AboutScreen';
 import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
@@ -17,6 +19,8 @@ export const MainStack: React.FC = () => {
       <Stack.Screen name="Drawer" component={MainDrawer} />
       <Stack.Screen name="Cart" component={CartScreen} />
       <Stack.Screen name="Wishlist" component={WishlistScreen} />
+      <Stack.Screen name="ProductDetails" component={ProductDetailsScreen} />
+      <Stack.Screen name="RequestPrice" component={PricingRequestsScreen} />
       <Stack.Screen name="ContactUs" component={ContactUsScreen} />
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />

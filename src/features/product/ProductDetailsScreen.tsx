@@ -18,7 +18,6 @@ import {
   ArrowRight,
   Download,
   FileText,
-  ShieldCheck,
   ShoppingCart,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +28,7 @@ import Button from '../../components/ui/Button';
 import { toast } from '../../components/ui/ToastProvider';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
+import { getRateChartId } from '../../utils/productCardData';
 import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import ProductDetailsSkeleton from './components/ProductDetailsSkeleton';
 import { useCart } from '../cart/useCart';
@@ -38,7 +38,6 @@ import WishlistButton from '../wishlist/components/WishlistButton';
 import { useAppDispatch } from '../../redux/hooks';
 import { fetchProductDetailsSlice } from '../../redux/ProductSlice';
 import { useAppSelector } from '../../store';
-import { stripHtml } from '../../utils/stripHtml';
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
 
@@ -131,10 +130,19 @@ export const ProductDetailsScreen: React.FC = () => {
         first?.unit_name ??
         product?.unit;
       const qty = first?.qty ?? first?.quantity ?? first?.pack_size ?? first?.pack_qty;
+      const explicitSize = first?.size ?? first?.packSize;
+      const pack =
+        explicitSize !== undefined &&
+        explicitSize !== null &&
+        String(explicitSize).trim()
+          ? String(explicitSize).trim()
+          : qty !== undefined && qty !== null && qty !== ''
+          ? `${qty} ${unit ? String(unit).trim() : ''}`.trim()
+          : undefined;
       return {
         price: Number(price) || 0,
         unit: unit ? String(unit).trim() : 'Unit',
-        pack: qty !== undefined && qty !== null && qty !== '' ? `${qty}${unit ? String(unit).trim() : ''}`.replace(/\s+/g, '') : undefined,
+        pack,
         qty,
       };
     }
@@ -145,22 +153,69 @@ export const ProductDetailsScreen: React.FC = () => {
   };
 
   const priceInfo = getProductPriceInfo(productDetail);
-  const price = priceInfo.price;
-  const mrp = price > 0 ? Math.round(price * 1.1) : 0;
-  const defaultPack = priceInfo.pack || (priceInfo.unit ? `1${priceInfo.unit}` : '1L');
-  const packSizesFromApi = Array.isArray(productDetail?.rate_charts)
+  const packOptions = Array.isArray(productDetail?.rate_charts)
     ? productDetail.rate_charts
         .map((rc: any) => {
+          const explicitSize = rc?.size ?? rc?.packSize;
           const unit = rc?.unit ?? priceInfo.unit;
           const qty = rc?.qty ?? rc?.quantity ?? rc?.pack_size;
-          if (qty !== undefined && qty !== null && qty !== '') {
-            return `${qty}${unit ? String(unit).trim() : ''}`.replace(/\s+/g, '');
-          }
-          if (unit) return String(unit).trim();
-          return null;
+          const rawPrice =
+            rc?.price ??
+            rc?.rate ??
+            rc?.amount ??
+            rc?.selling_price ??
+            rc?.dealer_price ??
+            rc?.mrp_price ??
+            rc?.mrp ??
+            priceInfo.price;
+          const optionPrice = Number(rawPrice);
+          const hasExplicitSize =
+            explicitSize !== undefined &&
+            explicitSize !== null &&
+            Boolean(String(explicitSize).trim());
+          const label = hasExplicitSize
+            ? String(explicitSize).trim()
+            : qty !== undefined && qty !== null && qty !== ''
+            ? `${qty} ${unit ? String(unit).trim() : ''}`.trim()
+            : unit
+            ? String(unit).trim()
+            : '';
+          const size = hasExplicitSize
+            ? String(explicitSize).trim()
+            : unit
+            ? String(unit).trim()
+            : label;
+          const rateChartId = getRateChartId(rc);
+          return label && size
+            ? {
+                label,
+                size,
+                price: Number.isFinite(optionPrice)
+                  ? optionPrice
+                  : priceInfo.price,
+                rateChartId,
+              }
+            : null;
         })
-        .filter((size): size is string => typeof size === 'string')
+        .filter(
+          (option): option is {
+            label: string;
+            size: string;
+            price: number;
+            rateChartId: string | number | undefined;
+          } => option !== null,
+        )
     : [];
+  const packSizesFromApi = packOptions.map(option => option.label);
+  const selectedPackOption =
+    packOptions.find(option => option.label === selectedPack) ?? packOptions[0];
+  const selectedSize = selectedPackOption?.size;
+  const selectedRateChartId = selectedPackOption?.rateChartId;
+  const price = selectedPackOption?.price ?? priceInfo.price;
+  const mrp = price > 0 ? Math.round(price * 1.1) : 0;
+  const defaultPack =
+    priceInfo.pack ||
+    (priceInfo.unit ? `1 ${priceInfo.unit}`.trim() : '1 L');
 
   const product = {
     id: String(productDetail?.id ?? productId ?? ''),
@@ -182,7 +237,7 @@ export const ProductDetailsScreen: React.FC = () => {
         setSelectedPack(product.packSizes[0] ?? '');
       }
     }
-  }, [product.packSizes]);
+  }, [product.packSizes, selectedPack]);
 
   const discount =
     product.mrp > product.price && product.price > 0
@@ -191,19 +246,38 @@ export const ProductDetailsScreen: React.FC = () => {
 
   const totalPrice = product.price * quantity;
 
-  const inCart = items.some(item => item.id === product.id);
+  const inCart = items.some(item => {
+    if (String(item.productId ?? item.id) !== product.id) {
+      return false;
+    }
+    if (
+      selectedRateChartId === undefined ||
+      selectedRateChartId === null ||
+      String(selectedRateChartId).trim() === ''
+    ) {
+      return true;
+    }
+    return (
+      item.rateChartId !== undefined &&
+      item.rateChartId !== null &&
+      String(item.rateChartId) === String(selectedRateChartId)
+    );
+  });
 
-  const handleAddToCart = () => {
-    add(
+  const handleAddToCart = async () => {
+    await add(
       {
         id: product.id,
+        productId: productDetail?.id ?? product.id,
         name: product.name,
         code: product.name,
         image: product.images[0],
         price: product.price,
         mrp: product.mrp,
         unit: selectedPack || product.unit,
-      },
+        size: selectedSize,
+        rateChartId: selectedRateChartId,
+      } as any,
       quantity,
     );
   };
@@ -277,8 +351,9 @@ export const ProductDetailsScreen: React.FC = () => {
                 image: product.images[0],
                 price: product.price,
                 mrp: product.mrp,
-              unit: selectedPack || product.unit,
-            }}
+                unit: selectedSize ?? product.unit,
+                rateChartId: selectedRateChartId,
+              }}
             size={20}
             containerSize={30}
             showBackground={false}
@@ -576,9 +651,11 @@ export const ProductDetailsScreen: React.FC = () => {
               style={styles.checkoutBtn}
               activeOpacity={0.9}
               onPress={() =>
-                navigation.navigate('RequestPrice',                 {
+                navigation.navigate('RequestPrice', {
                   productId: product.id,
                   productName: product.name,
+                  productImage: product.images[0],
+                  rateChartId: selectedRateChartId,
                   category: product.subtitle,
                   price: product.price,
                   mrp: product.mrp,

@@ -18,6 +18,7 @@ import {HomeBannerItem} from '../homeData';
 
 export type {HomeBannerItem};
 
+
 const BROCHURE_URL = null;
 
 interface HomeBannerProps {

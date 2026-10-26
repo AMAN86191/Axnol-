@@ -1,9 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Dimensions,
-  FlatList,
   Modal,
   Pressable,
   RefreshControl,
@@ -28,6 +26,7 @@ import {useRefresh} from '../../hooks/useRefresh';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
 import {fetchProductsSlice} from '../../redux/ProductSlice';
+import {toProductCardData} from '../../utils/productCardData';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
 
@@ -126,89 +125,17 @@ export const ProductsScreen: React.FC = () => {
   const [pendingCategory, setPendingCategory] = useState(selectedCategory);
   const [pendingUnit, setPendingUnit] = useState(selectedUnit);
   const [pendingSort, setPendingSort] = useState<SortKey>(sortBy);
-  const [page, setPage] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [, setPage] = useState(1);
+  const [, setIsLoadingMore] = useState(false);
   const slideAnim = useRef(new Animated.Value(-FILTER_PANEL_WIDTH)).current;
-
-  const getProductPrice = (product: any) => {
-    const rateCharts = product?.rate_charts;
-    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
-      const first = rateCharts[0];
-      const price =
-        first?.price ??
-        first?.rate ??
-        first?.amount ??
-        first?.selling_price ??
-        first?.dealer_price ??
-        first?.mrp_price ??
-        first?.mrp ??
-        first?.list_price ??
-        0;
-      return Number(price) || 0;
-    }
-    return Number(product?.price ?? product?.selling_price ?? 0) || 0;
-  };
-
-  const getProductUnitAndQty = (product: any) => {
-    const rateCharts = product?.rate_charts;
-    if (Array.isArray(rateCharts) && rateCharts.length > 0) {
-      const first = rateCharts[0];
-      const unit =
-        first?.unit ??
-        first?.pack_size_unit ??
-        first?.packing_unit ??
-        first?.uom ??
-        first?.unit_name ??
-        product?.unit;
-      const qty =
-        first?.qty ??
-        first?.quantity ??
-        first?.pack_size ??
-        first?.pack_qty ??
-        product?.qty ??
-        product?.quantity;
-      return {
-        unit: unit ? String(unit).trim() : 'Unit',
-        qty: qty !== undefined && qty !== null && qty !== '' ? qty : undefined,
-      };
-    }
-    return {
-      unit: product?.unit ? String(product.unit).trim() : 'Unit',
-      qty: product?.qty ?? product?.quantity,
-    };
-  };
 
   const allProducts = useMemo(
     () =>
-      (apiProducts ?? []).map((product: any, index) => {
-        const price = getProductPrice(product);
-        const {unit, qty} = getProductUnitAndQty(product);
-        return {
-          id: String(product.id ?? index),
-          name: product.name ?? '',
-          code:
-            product.category?.title ??
-            product.category?.name ??
-            product.sub_category?.title ??
-            product.sub_category?.name ??
-            '',
-          image: product.thumbnail_url ?? product.image_urls?.[0] ?? 'product_generic',
-          price,
-          mrp: price > 0 ? Math.round(price * 1.1) : 0,
-          unit,
-          qty,
-        };
-      }),
+      (apiProducts ?? []).map((product: any, index: number) =>
+        toProductCardData(product, index),
+      ),
     [apiProducts],
   );
-
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    allProducts.forEach((p: any) => {
-      if (p.code) set.add(p.code);
-    });
-    return ['All', ...Array.from(set)];
-  }, [allProducts]);
 
   const units = useMemo(() => {
     const set = new Set<string>();
@@ -245,14 +172,14 @@ export const ProductsScreen: React.FC = () => {
   const handleRefresh = useCallback(() => {
     dispatch({ type: 'product/clearProducts' } as any);
     loadProducts(1);
-  }, [loadProducts]);
+  }, [dispatch, loadProducts]);
 
   const {refreshing, onRefresh} = useRefresh(handleRefresh);
 
   useEffect(() => {
     dispatch({ type: 'product/clearProducts' } as any);
     loadProducts(1);
-  }, [dispatch, route.params?.industryId, route.params?.categoryId, route.params?.subCategoryId]);
+  }, [dispatch, loadProducts]);
 
   // const pageTitle = route.params?.title ?? 'Products';
   const pageTitle = 'Products';
@@ -284,30 +211,6 @@ export const ProductsScreen: React.FC = () => {
       }).start();
     }
   }, [filterVisible, slideAnim]);
-
-  const loadMore = () => {
-    if (isLoadingMore || productsLoading) {
-      return;
-    }
-    if (pagination?.current_page && pagination?.last_page) {
-      if (pagination.current_page >= pagination.last_page) {
-        return;
-      }
-      const nextPage = pagination.current_page + 1;
-      setPage(nextPage);
-      setIsLoadingMore(true);
-      const params: Record<string, any> = { page: nextPage };
-      if (route.params?.industryId) params.industryId = route.params.industryId;
-      if (route.params?.categoryId) params.categoryId = route.params.categoryId;
-      if (route.params?.subCategoryId) params.subCategoryId = route.params.subCategoryId;
-      dispatch(fetchProductsSlice(params))
-        .unwrap()
-        .then(res => console.log('Products List API Response:', res))
-        .catch(err => console.log('Products List API Error:', err))
-        .finally(() => setIsLoadingMore(false));
-      return;
-    }
-  };
 
   useEffect(() => {
     if (pagination?.current_page) {

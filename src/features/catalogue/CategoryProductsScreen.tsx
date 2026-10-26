@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -10,13 +10,14 @@ import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {PackageSearch} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
-import {useGetProductsQuery} from '../../api/services/catalogueApi';
-import {Product} from '../../api/types';
+import {getProducts, ProductApi} from '../../api/ProductProvider';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import {colors, scale, spacing} from '../../theme';
-import ProductCard, {ProductCardData} from '../../components/ui/ProductCard';
+import ProductCard from '../../components/ui/ProductCard';
 import {useRefresh} from '../../hooks/useRefresh';
+import {getLoadErrorMessage} from '../../utils/apiError';
+import {toProductCardData} from '../../utils/productCardData';
 
 type Route = RouteProp<CatalogueStackParamList, 'CategoryProducts'>;
 
@@ -28,30 +29,46 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
   return rows;
 };
 
-const toCard = (product: Product): ProductCardData => ({
-  id: product.id,
-  name: product.name,
-  image: product.images?.[0],
-  code: product.brand,
-  price: product.price,
-  unit: product.packSizes?.[0],
-});
-
 export const CategoryProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const {params} = useRoute<Route>();
-  const {data, isLoading, refetch} = useGetProductsQuery({
-    categoryId: params?.categoryId,
-    subCategoryId: params?.subCategoryId,
-    industryId: params?.industryId,
-  });
-  const {refreshing, onRefresh} = useRefresh(refetch);
+  const {categoryId, subCategoryId, industryId} = params ?? {};
+  const [products, setProducts] = useState<ProductApi[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
 
-  const products = data ?? [];
-  const isEmpty = !isLoading && products.length === 0;
+  const loadProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await getProducts({
+        ...(categoryId ? {categoryId} : {}),
+        ...(subCategoryId ? {subCategoryId} : {}),
+        ...(industryId ? {industryId} : {}),
+      });
+      const data: any = res?.data ?? res;
+      const list = Array.isArray(data)
+        ? data
+        : data?.products ?? data?.items ?? [];
+      setProducts(list);
+    } catch (err) {
+      setError(err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryId, subCategoryId, industryId]);
 
-  const handlePress = (product: Product) =>
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  const {refreshing, onRefresh} = useRefresh(loadProducts);
+
+  const isEmpty = !loading && !error && products.length === 0;
+
+  const handlePress = (product: ProductApi) =>
     navigation.navigate('ProductDetails', {productId: product.id});
 
   return (
@@ -60,10 +77,18 @@ export const CategoryProductsScreen: React.FC = () => {
         title={params?.title ?? 'Products'}
         onBack={() => navigation.goBack()}
       />
-      {isLoading ? (
+      {loading && products.length === 0 ? (
         <View style={styles.loader}>
           <ActivityIndicator color={colors.primary} size="large" />
         </View>
+      ) : error && products.length === 0 ? (
+        <EmptyState
+          icon={PackageSearch}
+          title="Could not load products"
+          subtitle={getLoadErrorMessage(error, 'products')}
+          actionLabel="Try Again"
+          onAction={loadProducts}
+        />
       ) : isEmpty ? (
         <EmptyState
           icon={PackageSearch}
@@ -92,7 +117,7 @@ export const CategoryProductsScreen: React.FC = () => {
                 <ProductCard
                   style={styles.gridCard}
                   key={product.id}
-                  product={toCard(product)}
+                  product={toProductCardData(product)}
                   onPress={() => handlePress(product)}
                 />
               ))}

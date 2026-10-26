@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ChevronRight, Heart, Trash2} from 'lucide-react-native';
+import {Heart, Trash2} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import Button from '../../components/ui/Button';
@@ -46,12 +46,44 @@ export const WishlistScreen: React.FC = () => {
     );
   };
 
-  const handleAddAllToCart = () => {
-    const alreadyInCart = new Set(cartItems.map(item => item.id));
-    const toAdd = items.filter(item => !alreadyInCart.has(item.id));
+  const handleAddAllToCart = async () => {
+    const getCartKey = (
+      productId: string | number,
+      rateChartId?: string | number,
+      size?: string,
+    ) =>
+      `${String(productId)}:${
+        rateChartId !== undefined && rateChartId !== null
+          ? String(rateChartId)
+          : String(size ?? '')
+      }`;
+    const alreadyInCart = new Set(
+      cartItems.map(item =>
+        getCartKey(
+          item.productId ?? item.id,
+          item.rateChartId,
+          item.size ?? item.unit,
+        ),
+      ),
+    );
+    const toAdd = items.filter(
+      item =>
+        !alreadyInCart.has(
+          getCartKey(item.id, item.rateChartId, item.unit),
+        ),
+    );
 
-    toAdd.forEach(item => {
-      add({
+    if (toAdd.length === 0) {
+      toast.info(
+        'Already in Cart',
+        'All wishlist items are already in your cart.',
+      );
+      return;
+    }
+
+    let addedCount = 0;
+    for (const item of toAdd) {
+      const added = await add({
         id: item.id,
         name: item.name,
         code: item.code,
@@ -59,18 +91,17 @@ export const WishlistScreen: React.FC = () => {
         price: item.price,
         mrp: item.mrp,
         unit: item.unit,
+        rateChartId: item.rateChartId,
       });
-    });
+      if (added) {
+        addedCount += 1;
+      }
+    }
 
-    if (toAdd.length > 0) {
+    if (addedCount > 0) {
       toast.success(
         'Added to Cart',
-        `${toAdd.length} item(s) added to your cart.`,
-      );
-    } else {
-      toast.info(
-        'Already in Cart',
-        'All wishlist items are already in your cart.',
+        `${addedCount} item(s) added to your cart.`,
       );
     }
   };
@@ -193,22 +224,7 @@ export const WishlistScreen: React.FC = () => {
               <View style={styles.divider} />
 
               <View style={styles.ctaRow}>
-                <Button
-                  title="Details"
-                  variant="outline"
-                  size="small"
-                  fullWidth={false}
-                  style={styles.detailsBtn}
-                  onPress={() => openProduct(item.id)}
-                  iconRight={
-                    <ChevronRight
-                      size={scale(13)}
-                      color={colors.primary}
-                      strokeWidth={2.6}
-                    />
-                  }
-                  textStyle={styles.detailsText}
-                />
+               
                 <AddToCartButton
                   product={{
                     id: item.id,
@@ -218,6 +234,7 @@ export const WishlistScreen: React.FC = () => {
                     price: item.price,
                     mrp: item.mrp,
                     unit: item.unit,
+                    rateChartId: item.rateChartId,
                   }}
                   compact
                   style={styles.addBtn}

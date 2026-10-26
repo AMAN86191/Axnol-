@@ -19,7 +19,7 @@ export const selectCartItemCount = (state: RootState): number =>
 export const selectCartTotals = (state: RootState): CartTotals => {
   const items = state.cart.items;
   const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.lineTotal ?? item.price * item.quantity),
     0,
   );
   const mrpTotal = items.reduce(

@@ -10,11 +10,15 @@ import {colors, scale} from '../../../theme';
 import {CategoryItem} from '../homeData';
 import AppImage from '../../../components/ui/AppImage';
 import Skeleton from '../../../components/ui/Skeleton';
+import {WifiOff} from 'lucide-react-native';
 import HomeSectionHeader from './HomeSectionHeader';
+import SectionEmptyState from './SectionEmptyState';
 
 interface CategoriesSectionProps {
   categories: CategoryItem[];
   loading?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   onSeeAll?: () => void;
   onSelect: (category: CategoryItem) => void;
 }
@@ -24,65 +28,87 @@ const SKELETON_COUNT = 4;
 export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
   categories,
   loading = false,
+  errorMessage,
+  onRetry,
   onSeeAll,
   onSelect,
-}) => (
-  <>
-    <HomeSectionHeader
-      title="Categories"
-      subtitle="Browse our product range"
-      onAction={onSeeAll}
-    />
+}) => {
+  const showError = !loading && categories.length === 0 && Boolean(errorMessage);
+  const isEmpty = !loading && !showError && categories.length === 0;
 
-    {loading ? (
-      <View style={styles.skeletonRow}>
-        {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-          <View key={`category-skeleton-${index}`} style={styles.item}>
-            <Skeleton width={CIRCLE} height={CIRCLE} circle />
-            <Skeleton
-              width={scale(54)}
-              height={scale(9)}
-              style={styles.skeletonTitle}
-            />
-            <Skeleton
-              width={scale(38)}
-              height={scale(9)}
-              style={styles.skeletonSubtitle}
-            />
-          </View>
-        ))}
-      </View>
-    ) : (
-      <FlatList
-        horizontal
-        data={categories}
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listPad}
-        renderItem={({item}) => {
-          return (
-            <TouchableOpacity
-              style={styles.item}
-              activeOpacity={0.85}
-              onPress={() => onSelect(item)}>
-              <View style={styles.circle}>
-                <AppImage
-                  uri={item.image}
-                  style={styles.image}
-                  resizeMode="cover"
-                />
-              </View>
-
-              <Text style={styles.name} numberOfLines={2}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
+  return (
+    <>
+      <HomeSectionHeader
+        title="Categories"
+        subtitle={
+          showError
+            ? 'Unable to load right now'
+            : isEmpty
+            ? 'Please check back later'
+            : 'Browse our product range'
+        }
+        onAction={isEmpty || showError ? undefined : onSeeAll}
       />
-    )}
-  </>
-);
+
+      {loading ? (
+        <View style={styles.skeletonRow}>
+          {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+            <View key={`category-skeleton-${index}`} style={styles.item}>
+              <Skeleton width={CIRCLE} height={CIRCLE} circle />
+              <Skeleton
+                width={scale(54)}
+                height={scale(9)}
+                style={styles.skeletonTitle}
+              />
+              <Skeleton
+                width={scale(38)}
+                height={scale(9)}
+                style={styles.skeletonSubtitle}
+              />
+            </View>
+          ))}
+        </View>
+      ) : showError ? (
+        <SectionEmptyState
+          icon={WifiOff}
+          message={errorMessage as string}
+          actionLabel="Retry"
+          onAction={onRetry}
+        />
+      ) : isEmpty ? (
+        <SectionEmptyState message="No categories found at the moment" />
+      ) : (
+        <FlatList
+          horizontal
+          data={categories}
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listPad}
+          renderItem={({item}) => {
+            return (
+              <TouchableOpacity
+                style={styles.item}
+                activeOpacity={0.85}
+                onPress={() => onSelect(item)}>
+                <View style={styles.circle}>
+                  <AppImage
+                    uri={item.image}
+                    style={styles.image}
+                    resizeMode="cover"
+                  />
+                </View>
+
+                <Text style={styles.name} numberOfLines={2}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      )}
+    </>
+  );
+};
 
 const CIRCLE = scale(56);
 

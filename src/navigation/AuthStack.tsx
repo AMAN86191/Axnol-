@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {AuthStackParamList} from './types';
 import SplashScreen from '../features/auth/SplashScreen';
@@ -10,14 +10,18 @@ import ForgotPasswordScreen from '../features/auth/ForgotPasswordScreen';
 import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
 import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
 import {useAppSelector} from '../store';
+import {consumeSessionExpired} from '../api/sessionEvents';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
 export const AuthStack: React.FC = () => {
   const {token} = useAppSelector(s => s.auth);
-  const initialRouteName: keyof AuthStackParamList = !token
-    ? 'Splash'
-    : 'Login';
+  const [sessionExpired] = useState(() => consumeSessionExpired());
+  const initialRouteName: keyof AuthStackParamList = token
+    ? 'Login'
+    : sessionExpired
+    ? 'Login'
+    : 'Splash';
   return (
     <Stack.Navigator
       initialRouteName={initialRouteName}
