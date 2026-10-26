@@ -112,7 +112,12 @@ export const ProductsScreen: React.FC = () => {
   const loading = useSimulatedLoading();
 
   const route = useRoute<Route>();
-  const initialCategory = route.params?.title ? route.params.title : 'All';
+  const initialCategory =
+    route.params?.industryId || route.params?.categoryId || route.params?.subCategoryId
+      ? 'All'
+      : route.params?.title
+      ? route.params.title
+      : 'All';
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedUnit, setSelectedUnit] = useState('All');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
@@ -215,40 +220,39 @@ export const ProductsScreen: React.FC = () => {
 
   const loadProducts = useCallback(
     (pageNum = 1) => {
+      const params: Record<string, any> = { page: pageNum };
+      if (route.params?.industryId) params.industryId = route.params.industryId;
+      if (route.params?.categoryId) params.categoryId = route.params.categoryId;
+      if (route.params?.subCategoryId) params.subCategoryId = route.params.subCategoryId;
       if (pageNum === 1) {
         setPage(1);
-        dispatch(fetchProductsSlice({ page: 1 }))
+        dispatch(fetchProductsSlice(params))
           .unwrap()
           .then(res => console.log('Products List API Response:', res))
           .catch(err => console.log('Products List API Error:', err));
         return;
       }
       setIsLoadingMore(true);
-      dispatch(fetchProductsSlice({ page: pageNum }))
+      dispatch(fetchProductsSlice(params))
         .unwrap()
         .then(res => console.log('Products List API Response:', res))
         .catch(err => console.log('Products List API Error:', err))
         .finally(() => setIsLoadingMore(false));
     },
-    [dispatch],
+    [dispatch, route.params?.industryId, route.params?.categoryId, route.params?.subCategoryId],
   );
 
   const handleRefresh = useCallback(() => {
     dispatch({ type: 'product/clearProducts' } as any);
     loadProducts(1);
-  }, [dispatch, loadProducts]);
+  }, [loadProducts]);
 
   const {refreshing, onRefresh} = useRefresh(handleRefresh);
 
   useEffect(() => {
-    if (!apiProducts || apiProducts.length === 0) {
-      loadProducts(1);
-    }
-  }, [loadProducts, apiProducts]);
-
-  // const industryBanner = route.params?.industryId
-  //   ? INDUSTRY_BANNERS[route.params.industryId]
-  //   : undefined;
+    dispatch({ type: 'product/clearProducts' } as any);
+    loadProducts(1);
+  }, [dispatch, route.params?.industryId, route.params?.categoryId, route.params?.subCategoryId]);
 
   // const pageTitle = route.params?.title ?? 'Products';
   const pageTitle = 'Products';
@@ -292,7 +296,11 @@ export const ProductsScreen: React.FC = () => {
       const nextPage = pagination.current_page + 1;
       setPage(nextPage);
       setIsLoadingMore(true);
-      dispatch(fetchProductsSlice({ page: nextPage }))
+      const params: Record<string, any> = { page: nextPage };
+      if (route.params?.industryId) params.industryId = route.params.industryId;
+      if (route.params?.categoryId) params.categoryId = route.params.categoryId;
+      if (route.params?.subCategoryId) params.subCategoryId = route.params.subCategoryId;
+      dispatch(fetchProductsSlice(params))
         .unwrap()
         .then(res => console.log('Products List API Response:', res))
         .catch(err => console.log('Products List API Error:', err))
@@ -401,7 +409,7 @@ export const ProductsScreen: React.FC = () => {
       </View>
 
       {/* Category Horizontal Filter Pills */}
-      <View style={styles.categoryFilterContainer}>
+      {/* <View style={styles.categoryFilterContainer}>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -422,7 +430,7 @@ export const ProductsScreen: React.FC = () => {
             );
           }}
         />
-      </View>
+      </View> */}
 
       {/* Product List / Grid */}
       {productsLoading && allProducts.length === 0 ? (

@@ -81,14 +81,16 @@ export const CategoriesScreen: React.FC = () => {
 
   const categories = useMemo(
     () =>
-      (apiCategories ?? []).map(item => ({
-        id: String(item.id),
-        name: item.title ?? item.name ?? '',
-        image: item.icon_url ?? item.image ?? '',
-        industryId: String(
-          item.industry_id ?? item.industryId ?? industryId ?? '',
-        ),
-      })),
+      (apiCategories ?? [])
+        .map(item => ({
+          id: String(item.id),
+          name: item.title ?? item.name ?? '',
+          image: item.icon_url ?? item.image ?? '',
+          industryId: String(
+            item.industry_id ?? item.industryId ?? industryId ?? '',
+          ),
+        }))
+        .filter(item => Boolean(item.image && item.image.trim())),
     [apiCategories, industryId],
   );
 

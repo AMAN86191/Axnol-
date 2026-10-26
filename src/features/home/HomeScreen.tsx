@@ -108,14 +108,16 @@ export const HomeScreen: React.FC = () => {
   );
 
 
-  const homeIndustries = (apiIndustries ?? []).map(industry => ({
-    id: String(industry.id),
-    name: industry.title ?? '',
-    image: industry.image_url ?? '',
-  }));
+  const homeIndustries = (apiIndustries ?? [])
+    .map(industry => ({
+      id: String(industry.id),
+      name: industry.title ?? '',
+      image: industry.image_url ?? '',
+    }))
+    .filter(industry => Boolean(industry.image && industry.image.trim()));
 
-  const homeCategories: CategoryItem[] = (apiCategories ?? []).map(
-    category => ({
+  const homeCategories: CategoryItem[] = (apiCategories ?? [])
+    .map(category => ({
       id: String(category.id),
       name: category.title ?? category.name ?? '',
       image: category.icon_url ?? category.image_url ?? category.image ?? '',
@@ -125,52 +127,43 @@ export const HomeScreen: React.FC = () => {
           : category.industryId != null
           ? String(category.industryId)
           : undefined,
-    }),
-  );
+    }))
+    .filter(category => Boolean(category.image && category.image.trim()));
 
   const openProduct = (product: HomeProduct) => {
-    navigation.navigate('Products', {
-      screen: 'ProductDetails',
-      params: { productId: product.id },
-      initial: false,
-    });
+    navigation.navigate('ProductDetails', { productId: product.id });
   };
 
   const openAllProducts = (params?: Record<string, any>) => {
-    navigation.navigate('Products', {
-      screen: 'Products',
-      params: { title: 'Products', ...params },
-      initial: false,
-    });
+    navigation.navigate('Products', { title: 'Products', ...params });
   };
 
   const openCategory = (category: CategoryItem) => {
-    navigation.navigate('Products', {
-      screen: 'SubCategories',
-      params: {
-        categoryId: category.id,
-        categoryName: category.name,
-        industryId: category.industryId,
-      },
-      initial: false,
+    navigation.navigate('SubCategories', {
+      categoryId: category.id,
+      categoryName: category.name,
+      industryId: category.industryId,
     });
   };
 
+  const BROCHURE_PDF =
+    'https://axnol.tambimotors.com/storage/sliders/pdfs/g8NrjflaCVtDaBPOyJCm8nWegRkP02cLqhjQ2hSI.pdf';
+
   const sliderBanners: HomeBannerItem[] = (sliders ?? []).map(
-    (slider, index) => ({
-      id: String(slider.id ?? index),
-      tagline: slider.tag_line ?? '',
-      title: slider.title ?? '',
-      description: stripHtml(slider.description ?? ''),
-      image: slider.image_url ?? '',
-      primaryLabel: slider.button || undefined,
-      secondaryLabel: slider.second_button || undefined,
-      pdfUrl: slider.second_button_pdf_url,
-      navigationLink: slider.navigation_link,
+    (slider: any, index: number) => ({
+      id: String(slider?.id ?? `slider-${index}`),
+      tagline: slider?.tag_line ?? '',
+      title: slider?.title ?? '',
+      description: stripHtml(slider?.description ?? ''),
+      image: slider?.image_url ?? '',
+      primaryLabel: slider?.button || undefined,
+      secondaryLabel: 'Download Brochure',
+      pdfUrl: BROCHURE_PDF,
+      navigationLink: BROCHURE_PDF,
     }),
   );
 
-  const banners = sliderBanners.length > 0 ? sliderBanners : HOME_BANNERS;
+  const banners = sliderBanners.length > 0 ? sliderBanners : [];
 
   const getProductPrice = (product: any) => {
     const rateCharts = product?.rate_charts;
@@ -310,16 +303,24 @@ export const HomeScreen: React.FC = () => {
         {/* 2. Hero banner carousel */}
         <HomeBanner
           banners={banners}
-          loading={slidersLoading}
-          buttonLabel="Explore Products"
-          onPressItem={() => openAllProducts()}
-          onPressButton={() => openAllProducts()}
+          loading={slidersLoading && banners.length === 0}
+          buttonLabel="Download Brochure"
+          downloadLabel="Download Brochure"
+          showPrimaryButton={false}
+          showDownloadButton={true}
+          onPressItem={item => {
+            const url =
+              item?.pdfUrl ||
+              item?.navigationLink || ''
+            Linking.openURL(url).catch(() => {});
+          }}
+          onPressButton={() => {}}
           onPressDownload={item => {
-            if (item.pdfUrl) {
-              Linking.openURL(item.pdfUrl).catch(() => {});
-              return;
-            }
-            openAllProducts();
+            const url =
+              item?.pdfUrl ||
+              item?.navigationLink ||
+              'https://axnol.tambimotors.com/about';
+            Linking.openURL(url).catch(() => {});
           }}
         />
 
@@ -328,12 +329,11 @@ export const HomeScreen: React.FC = () => {
           <IndustriesSection
             industries={homeIndustries}
             loading={industriesLoading && !homeIndustries.length}
-            onSeeAll={() => navigation.navigate('Industry')}
+            onSeeAll={() => navigation.navigate('Industries')}
             onSelect={ind =>
-              navigation.navigate('Industry', {
-                screen: 'IndustryDetails',
-                params: { industryId: ind.id, industryTitle: ind.name },
-                initial: false,
+              navigation.navigate('IndustryDetails', {
+                industryId: ind.id,
+                industryTitle: ind.name,
               })
             }
           />
@@ -355,13 +355,7 @@ export const HomeScreen: React.FC = () => {
           <CategoriesSection
             categories={homeCategories}
             loading={categoriesLoading && !homeCategories.length}
-            onSeeAll={() =>
-              navigation.navigate('Products', {
-                screen: 'Categories',
-                params: {},
-                initial: false,
-              })
-            }
+            onSeeAll={() => navigation.navigate('Categories')}
             onSelect={openCategory}
           />
         </View>

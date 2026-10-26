@@ -32,12 +32,6 @@ import {
   MainTabParamList,
 } from './types';
 import MainTabs from './MainTabs';
-import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
-import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
-import ContactUsScreen from '../features/enquiries/ContactUsScreen';
-import AboutScreen from '../features/about/AboutScreen';
-import CartScreen from '../features/cart/CartScreen';
-import WishlistScreen from '../features/wishlist/WishlistScreen';
 import Logo from '../components/ui/Logo';
 
 const Drawer = createDrawerNavigator<MainDrawerParamList>();
@@ -360,15 +354,6 @@ export const MainDrawer: React.FC = () => {
         },
       }}>
       <Drawer.Screen name="HomeTabs" component={MainTabs} />
-      <Drawer.Screen name="Cart" component={CartScreen} />
-      <Drawer.Screen name="Wishlist" component={WishlistScreen} />
-      <Drawer.Screen name="ContactUs" component={ContactUsScreen} />
-      <Drawer.Screen name="About" component={AboutScreen} />
-      <Drawer.Screen
-        name="TermsConditions"
-        component={TermsConditionsScreen}
-      />
-      <Drawer.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </Drawer.Navigator>
   );
 };
