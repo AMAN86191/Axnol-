@@ -22,6 +22,8 @@ export interface ProductCardData {
   price: number;
   unit?: string;
   qty?: number | string;
+  size?: string;
+  rateChartId?: string | number;
   mrp?: number;
 }
 
@@ -48,7 +50,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     price: product.price,
     mrp: product.mrp,
     unit: product.unit,
-    size: product.unit,
+    size: product.size ?? product.unit,
+    rateChartId: product.rateChartId,
   } as any;
 
   const image = (

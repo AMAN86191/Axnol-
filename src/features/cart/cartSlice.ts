@@ -4,6 +4,7 @@ export interface CartItem {
   id: string;
   cartItemId?: string | number;
   productId?: string | number;
+  rateChartId?: string | number;
   name: string;
   code?: string;
   image?: string;
@@ -11,6 +12,8 @@ export interface CartItem {
   mrp?: number;
   unit?: string;
   size?: string;
+  packSize?: string;
+  lineTotal?: number;
   quantity: number;
 }
 

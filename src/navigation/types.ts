@@ -41,6 +41,7 @@ export type HomeStackParamList = {
         productId?: string;
         productName?: string;
         productImage?: string;
+        rateChartId?: string | number;
         category?: string;
         price?: number;
         mrp?: number;
@@ -93,6 +94,7 @@ export type CatalogueStackParamList = {
         productId?: string;
         productName?: string;
         productImage?: string;
+        rateChartId?: string | number;
         category?: string;
         price?: number;
         mrp?: number;
@@ -127,6 +129,8 @@ export type MainStackParamList = {
   Drawer: NavigatorScreenParams<MainDrawerParamList>;
   Cart: undefined;
   Wishlist: undefined;
+  ProductDetails: HomeStackParamList['ProductDetails'];
+  RequestPrice: HomeStackParamList['RequestPrice'];
   ContactUs: undefined;
   About: undefined;
   TermsConditions: undefined;

@@ -3,6 +3,7 @@ import api from '../api/axiosConfig';
 export interface CartItemApi {
   id: number;
   product_id: number;
+  rate_chart_id?: number | string | null;
   size?: string | null;
   qty: number;
   product?: any;
@@ -31,6 +32,7 @@ export const getCart = async (): Promise<CartResponse> => {
 
 export const addToCartApi = async (payload: {
   product_id: number | string;
+rate_chart_id?: number | string;
   size?: string;
   qty?: number;
 }): Promise<any> => {

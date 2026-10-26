@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {ShoppingBag, Trash2} from 'lucide-react-native';
+import {useNavigation} from '@react-navigation/native';
+import {ShoppingBag} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
-import {toast} from '../../components/ui/ToastProvider';
 import {colors, radius, scale, spacing} from '../../theme';
 import {formatPrice} from '../../utils/formatPrice';
 import {useAppSelector} from '../../store';
@@ -22,6 +22,7 @@ import CommonHeader from '../../components/ui/CommonHeader';
 import EditableQuantity from './components/EditableQuantity';
 
 export const CartScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectCartItems);
   const totals = useAppSelector(selectCartTotals);
@@ -41,10 +42,11 @@ export const CartScreen: React.FC = () => {
     }
   }, [fetchCart]);
   const handleCheckout = () => {
-    toast.info(
-      'Checkout',
-      'Checkout flow coming soon. Your cart is saved for later.',
-    );
+    navigation.navigate('RequestPrice');
+  };
+
+  const openProduct = (id: string | number) => {
+    navigation.navigate('ProductDetails', {productId: String(id)});
   };
 
   if (items.length === 0) {
@@ -91,47 +93,52 @@ export const CartScreen: React.FC = () => {
         ) : null} */}
 
         {items.map(item => {
-          const lineTotal = item.price * item.quantity;
+          const lineTotal = item.lineTotal ?? item.price * item.quantity;
+          const packLabel = item.packSize || item.size || item.unit;
 
           return (
-            <View key={item.id} style={styles.card}>
+            <View
+              key={String(item.cartItemId ?? item.id)}
+              style={styles.card}>
               <View style={styles.cardTop}>
-                <View style={styles.imageWrap}>
+                <TouchableOpacity
+                  style={styles.imageWrap}
+                  activeOpacity={0.8}
+                  onPress={() => openProduct(item.productId ?? item.id)}>
                   <AppImage
                     uri={item.image}
                     style={styles.image}
                     resizeMode="contain"
                   />
-                </View>
+                </TouchableOpacity>
 
                 <View style={styles.info}>
-                  <Text style={styles.name} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  {item.code ? (
-                    <Text style={styles.code}>{item.code}</Text>
-                  ) : null}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => openProduct(item.productId ?? item.id)}>
+                    <Text style={styles.name} numberOfLines={2}>
+                      {item.name}
+                    </Text>
+                    {item.code ? (
+                      <Text style={styles.code}>{item.code}</Text>
+                    ) : null}
 
-                  <View style={styles.priceRow}>
-                    <Text style={styles.price}>{formatPrice(item.price)}</Text>
-                    {(item.size || item.unit) ? (
-                      <Text style={styles.unit}> / {item.size || item.unit}</Text>
-                    ) : null}
-                    {item.mrp && item.mrp > item.price ? (
-                      <Text style={styles.mrp}>{formatPrice(item.mrp)}</Text>
-                    ) : null}
-                  </View>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.price}>{formatPrice(item.price)}</Text>
+                      {packLabel ? (
+                        <Text style={styles.unit}> / {packLabel}</Text>
+                      ) : null}
+                      {item.mrp && item.mrp > item.price ? (
+                        <Text style={styles.mrp}>{formatPrice(item.mrp)}</Text>
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
 
                   <TouchableOpacity
                     style={styles.removeBtn}
                     activeOpacity={0.7}
                     hitSlop={{top: 4, bottom: 4, left: 4, right: 4}}
-                    onPress={() => remove(item.id)}>
-                    <Trash2
-                      size={scale(12)}
-                      color={colors.danger}
-                      strokeWidth={2.1}
-                    />
+                    onPress={() => remove(item.cartItemId ?? item.id)}>
                     <Text style={styles.removeText}>Remove</Text>
                   </TouchableOpacity>
                 </View>
@@ -144,7 +151,9 @@ export const CartScreen: React.FC = () => {
                   <Text style={styles.qtyLabel}>Qty</Text>
                   <EditableQuantity
                     value={item.quantity}
-                    onChange={next => setQuantity(item.id, next)}
+                    onChange={next =>
+                      setQuantity(item.cartItemId ?? item.id, next)
+                    }
                   />
                 </View>
 
@@ -170,17 +179,21 @@ export const CartScreen: React.FC = () => {
           </Text>
           <Text style={styles.summaryValue}>{formatPrice(totals.subtotal)}</Text>
         </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>MRP Total</Text>
-          <Text style={styles.summaryMrp}>{formatPrice(totals.mrpTotal)}</Text>
-        </View>
         {totals.savings > 0 ? (
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Discount</Text>
-            <Text style={styles.summarySave}>
-              - {formatPrice(totals.savings)} ({totals.discountPercent}%)
-            </Text>
-          </View>
+          <>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>MRP Total</Text>
+              <Text style={styles.summaryMrp}>
+                {formatPrice(totals.mrpTotal)}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Discount</Text>
+              <Text style={styles.summarySave}>
+                - {formatPrice(totals.savings)} ({totals.discountPercent}%)
+              </Text>
+            </View>
+          </>
         ) : null}
 
         <View style={styles.summaryDivider} />
@@ -305,15 +318,15 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     gap: scale(3),
     marginTop: scale(6),
-    paddingVertical: scale(2),
+    // paddingVertical: scale(1),
     paddingHorizontal: scale(7),
     borderRadius: radius.pill,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#fbfbfb',
   },
   removeText: {
     fontSize: scale(9.5),
     fontWeight: '700',
-    color: colors.danger,
+    color: "#000",
   },
   cardDivider: {
     height: 1,

@@ -14,6 +14,7 @@ import homeReducer from '../redux/HomeSlice';
 import categoryReducer from '../redux/CategorySlice';
 import industryReducer from '../redux/IndustrySlice';
 import productReducer from '../redux/ProductSlice';
+import orderReducer from '../redux/OrderSlice';
 import cartReducer from '../features/cart/cartSlice';
 import wishlistReducer from '../features/wishlist/wishlistSlice';
 
@@ -24,6 +25,7 @@ export const store = configureStore({
     category: categoryReducer,
     industry: industryReducer,
     product: productReducer,
+    order: orderReducer,
     cart: cartReducer,
     wishlist: wishlistReducer,
     [authApi.reducerPath]: authApi.reducer,

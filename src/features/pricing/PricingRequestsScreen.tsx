@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -32,7 +33,6 @@ import {
   MessageSquare,
   Minus,
   Plus,
-  Receipt,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
@@ -40,6 +40,11 @@ import Input from '../../components/ui/Input';
 import { colors, fontSize, radius, scale, spacing } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import CommonHeader from '../../components/ui/CommonHeader';
+import { toast } from '../../components/ui/ToastProvider';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { confirmOrderSlice } from '../../redux/OrderSlice';
+import { ConfirmOrderItem } from '../../api/OrderProvider';
+import { useCart } from '../cart/useCart';
 
 const MIN_QUANTITY = 1;
 
@@ -108,8 +113,8 @@ const ConfettiParticle: React.FC<ConfettiParticleProps> = ({
     index % 3 === 0
       ? styles.confettiCircle
       : index % 3 === 1
-      ? styles.confettiSquare
-      : styles.confettiSliver;
+        ? styles.confettiSquare
+        : styles.confettiSliver;
 
   return (
     <Animated.View
@@ -180,19 +185,19 @@ const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
             </Animated.View>
             {visible
               ? Array.from({ length: CONFETTI_COUNT }).map((_, i) => (
-                  <ConfettiParticle
-                    key={i}
-                    index={i}
-                    active={visible}
-                    color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
-                  />
-                ))
+                <ConfettiParticle
+                  key={i}
+                  index={i}
+                  active={visible}
+                  color={CONFETTI_COLORS[i % CONFETTI_COLORS.length]}
+                />
+              ))
               : null}
           </View>
 
-          <Text style={styles.modalTitle}>Order Submitted</Text>
+          <Text style={styles.modalTitle}>Order Confirmed</Text>
           <Text style={styles.modalMessage}>
-            Your order has been successfully submitted.
+            Your order has been confirmed successfully.
           </Text>
 
           <View style={styles.modalActions}>
@@ -224,23 +229,43 @@ export const PricingRequestsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const route = useRoute<any>();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(s => s.auth.user);
+  const submitting = useAppSelector(s => s.order.loading);
+  const cartLoading = useAppSelector(s => s.cart.loading);
+  const { items: cartItems, totals: cartTotals, fetchCart, clear } = useCart();
 
-  const productName = route.params?.productName ?? 'Gear Oil AX-200';
-  const category = route.params?.category ?? 'Extreme Pressure Gear Oil';
-  const price = route.params?.price as number | undefined;
+  const hasDirectProduct = Boolean(
+    route.params?.productId || route.params?.productName,
+  );
+  const isCartCheckout = !hasDirectProduct;
+  const directProductId = route.params?.productId as
+    | string
+    | number
+    | undefined;
+  const directProductName = route.params?.productName ?? 'Product';
+  const directCategory = route.params?.category ?? '';
+  const directPrice = route.params?.price as number | undefined;
+  const directImage = route.params?.productImage as string | undefined;
+  const directRateChartId = route.params?.rateChartId as
+    | string
+    | number
+    | undefined;
+  const productName = directProductName;
+  const category = directCategory;
+  const price = directPrice;
 
-  const availablePacks: string[] =
-    (route.params?.packSizes as string[] | undefined)?.length
-      ? (route.params.packSizes as string[])
-      : ['1L', '5L', '20L', '210L'];
+  const companyFromUser =
+    (typeof user?.company === 'string'
+      ? user.company
+      : user?.company?.company_name) || '';
 
   const [quantity, setQuantity] = useState(
-    route.params?.quantity != null ? String(route.params.quantity) : '100',
+    route.params?.quantity != null ? String(route.params.quantity) : '1',
   );
-  const [packSize, setPackSize] = useState(
-    (route.params?.unit as string | undefined) ?? availablePacks[0],
-  );
-  const [remark, setRemark] = useState('Need dealer price for our project');
+  const [remark, setRemark] = useState('');
+  const [companyName, setCompanyName] = useState(companyFromUser);
+  const [phone, setPhone] = useState(user?.phone ?? '');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [addressState, setAddressState] = useState('');
@@ -248,6 +273,22 @@ export const PricingRequestsScreen: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isCartCheckout) {
+      fetchCart();
+    }
+  }, [fetchCart, isCartCheckout]);
+
+  useEffect(() => {
+    if (!companyName && companyFromUser) {
+      setCompanyName(companyFromUser);
+    }
+    if (!phone && user?.phone) {
+      setPhone(user.phone);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyFromUser, user?.phone]);
 
   const clearError = (key: string) =>
     setErrors(prev => {
@@ -273,18 +314,72 @@ export const PricingRequestsScreen: React.FC = () => {
 
   const qtyNum = Number(quantity);
   const validQty = !quantity.trim() || isNaN(qtyNum) || qtyNum <= 0 ? 0 : qtyNum;
-  const calculatedPrice =
-    price != null && validQty > 0 ? price * validQty : null;
+  const calculatedPrice = isCartCheckout
+    ? cartItems.length > 0 && cartTotals.subtotal > 0
+      ? cartTotals.subtotal
+      : null
+    : price != null && validQty > 0
+    ? price * validQty
+    : null;
 
-  const handleSubmit = () => {
+  const orderItems: ConfirmOrderItem[] = isCartCheckout
+    ? cartItems
+        .map(item => ({
+          product_id: Number(item.productId ?? item.id),
+          rate_chart_id: Number(item.rateChartId),
+          qty: Number(item.quantity),
+        }))
+        .filter(
+          item =>
+            Number.isFinite(item.product_id) &&
+            item.product_id > 0 &&
+            Number.isFinite(item.rate_chart_id) &&
+            item.rate_chart_id > 0 &&
+            Number.isFinite(item.qty) &&
+            item.qty > 0,
+        )
+    : directProductId != null &&
+      directRateChartId != null &&
+      Number.isFinite(Number(directProductId)) &&
+      Number.isFinite(Number(directRateChartId)) &&
+      validQty > 0
+    ? [
+        {
+          product_id: Number(directProductId),
+          rate_chart_id: Number(directRateChartId),
+          qty: validQty,
+        },
+      ]
+    : [];
+
+  const handleSubmit = async () => {
     const e: Record<string, string> = {};
-    if (!quantity.trim()) {
-      e.quantity = 'Quantity is required';
-    } else if (isNaN(Number(quantity)) || Number(quantity) <= 0) {
-      e.quantity = 'Enter a valid quantity';
+    if (!isCartCheckout) {
+      if (!quantity.trim()) {
+        e.quantity = 'Quantity is required';
+      } else if (isNaN(Number(quantity)) || Number(quantity) <= 0) {
+        e.quantity = 'Enter a valid quantity';
+      }
     }
     if (calculatedPrice == null) {
-      e.calculatedPrice = 'Calculated price is not available';
+      e.calculatedPrice = isCartCheckout
+        ? 'Your cart is empty'
+        : 'Calculated price is not available';
+    }
+    if (orderItems.length === 0) {
+      e.items = isCartCheckout
+        ? 'Cart items are missing product or rate chart details'
+        : 'A valid pack size is required to place this order';
+    } else if (isCartCheckout && orderItems.length !== cartItems.length) {
+      e.items = 'Some cart items are missing rate chart details';
+    }
+    if (!companyName.trim()) {
+      e.companyName = 'Company name is required';
+    }
+    if (!phone.trim()) {
+      e.phone = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(phone.trim())) {
+      e.phone = 'Enter a valid 10-digit phone number';
     }
     if (!address.trim()) {
       e.address = 'Full address is required';
@@ -305,20 +400,51 @@ export const PricingRequestsScreen: React.FC = () => {
       return;
     }
 
-    setSubmitted(true);
-    setShowSuccess(true);
+    try {
+      await dispatch(
+        confirmOrderSlice({
+          items: orderItems,
+          address: address.trim(),
+          city: city.trim(),
+          state: addressState.trim(),
+          pincode: pincode.trim(),
+          company_name: companyName.trim(),
+          phone: phone.trim(),
+          remark: remark.trim(),
+        }),
+      ).unwrap();
+      if (isCartCheckout) {
+        await clear();
+      }
+      setSubmitted(true);
+      setShowSuccess(true);
+    } catch (err: any) {
+      toast.error(
+        'Order Failed',
+        err?.message || 'Unable to confirm your order. Please try again.',
+      );
+    }
   };
 
   const handleOrderHistory = () => {
     setShowSuccess(false);
     navigation.popToTop();
-    navigation.navigate('Orders', { screen: 'OrdersList' });
+    navigation.navigate('Drawer', {
+      screen: 'HomeTabs',
+      params: {
+        screen: 'Orders',
+        params: { screen: 'OrdersList' },
+      },
+    });
   };
 
   const handleHome = () => {
     setShowSuccess(false);
     navigation.popToTop();
-    navigation.navigate('Home');
+    navigation.navigate('Drawer', {
+      screen: 'HomeTabs',
+      params: { screen: 'Home' },
+    });
   };
 
 
@@ -330,7 +456,7 @@ export const PricingRequestsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
 
-      <CommonHeader title="Request a qoute" />
+      <CommonHeader title={isCartCheckout ? 'Checkout' : 'Request a Quote'} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -340,135 +466,203 @@ export const PricingRequestsScreen: React.FC = () => {
           { paddingBottom: insets.bottom + scale(50) },
         ]}>
 
-        {/* Selected Product Card */}
-        <View style={styles.productCard}>
-          <View style={styles.productTop}>
-            <View style={styles.productImgWrap}>
-              <AppImage
-                uri="product_cutting"
-                style={styles.productImg}
-                resizeMode="contain"
+        {isCartCheckout ? (
+          <View style={styles.productCard}>
+            <Text style={styles.sectionTitle}>Order Items</Text>
+            {cartLoading && cartItems.length === 0 ? (
+              <ActivityIndicator
+                style={styles.cartLoader}
+                color={colors.primary}
               />
-            </View>
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>{productName}</Text>
-              <Text style={styles.productSubtitle}>{category}</Text>
-              {price != null ? (
-                <View style={styles.productPriceRow}>
-                  <View style={styles.productPriceLeft}>
-                    <Text style={styles.productPrice}>
-                      {formatPrice(calculatedPrice ?? price)}
-                    </Text>
-                    {validQty > 0 ? (
-                      <Text style={styles.productPriceUnit}>
-                        {' '}
-                        / {quantity} {packSize}
-                      </Text>
-                    ) : packSize ? (
-                      <Text style={styles.productPriceUnit}> / {packSize}</Text>
-                    ) : null}
-                  </View>
+            ) : cartItems.length > 0 ? (
+              <>
+                {cartItems.map((item, index) => (
                   <View
+                    key={String(item.cartItemId ?? item.id)}
                     style={[
-                      styles.stepper,
-                      errors.quantity ? styles.stepperError : null,
+                      styles.cartProduct,
+                      index > 0 && styles.cartProductDivider,
                     ]}>
-                    <TouchableOpacity
-                      style={[styles.stepBtn, !canDecrement && styles.stepBtnDisabled]}
-                      activeOpacity={0.7}
-                      disabled={!canDecrement}
-                      onPress={handleDecrement}>
-                      <Minus
-                        size={scale(16)}
-                        color={canDecrement ? '#0F172A' : '#CBD5E1'}
-                        strokeWidth={2.5}
+                    <View style={styles.productImgWrap}>
+                      <AppImage
+                        uri={item.image || 'product_generic'}
+                        style={styles.productImg}
+                        resizeMode="contain"
                       />
-                    </TouchableOpacity>
-
-                    <TextInput
-                      style={styles.stepValue}
-                      value={quantity}
-                      onChangeText={v => {
-                        setQuantity(v.replace(/[^0-9]/g, ''));
-                        clearError('quantity');
-                        clearError('calculatedPrice');
-                      }}
-                      keyboardType="numeric"
-                      maxLength={7}
-                      selectTextOnFocus
-                      placeholder="0"
-                      placeholderTextColor="#94A3B8"
-                    />
-
-                    <TouchableOpacity
-                      style={styles.stepBtn}
-                      activeOpacity={0.7}
-                      onPress={handleIncrement}>
-                      <Plus size={scale(16)} color="#0F172A" strokeWidth={2.5} />
-                    </TouchableOpacity>
+                    </View>
+                    <View style={styles.productInfo}>
+                      <Text style={styles.productName} numberOfLines={2}>
+                        {item.name || 'Product'}
+                      </Text>
+                      {item.code ? (
+                        <Text style={styles.productSubtitle} numberOfLines={1}>
+                          {item.code}
+                        </Text>
+                      ) : null}
+                      <View style={styles.cartPriceRow}>
+                        <Text style={styles.cartUnitPrice}>
+                          {formatPrice(item.price)} each
+                        </Text>
+                        <Text style={styles.productPriceUnit}>
+                          Qty: {item.quantity}
+                        </Text>
+                        <Text style={styles.productPrice}>
+                          {formatPrice(
+                            item.lineTotal ?? item.price * item.quantity,
+                          )}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
+                ))}
+                <View style={styles.cartTotalRow}>
+                  <Text style={styles.cartTotalLabel}>Order Total</Text>
+                  <Text style={styles.cartTotalValue}>
+                    {formatPrice(cartTotals.subtotal)}
+                  </Text>
                 </View>
-              ) : (
-                <Text style={styles.productPriceMissing}>Price not available</Text>
-              )}
-            </View>
+              </>
+            ) : (
+              <Text style={styles.emptyCartText}>
+                Your cart is empty. Add products before checkout.
+              </Text>
+            )}
+            {errors.calculatedPrice ? (
+              <Text style={styles.errorText}>{errors.calculatedPrice}</Text>
+            ) : null}
+            {errors.items ? (
+              <Text style={styles.errorText}>{errors.items}</Text>
+            ) : null}
           </View>
+        ) : (
+          <View style={styles.productCard}>
+            <View style={styles.productTop}>
+              <View style={styles.productImgWrap}>
+                <AppImage
+                  uri={directImage || 'product_generic'}
+                  style={styles.productImg}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.productInfo}>
+                <Text style={styles.productName}>{productName}</Text>
+                {category ? (
+                  <Text style={styles.productSubtitle}>{category}</Text>
+                ) : null}
+                {price != null ? (
+                  <View style={styles.productPriceRow}>
+                    <View style={styles.productPriceLeft}>
+                      <Text style={styles.productPrice}>
+                        {formatPrice(calculatedPrice ?? price)}
+                      </Text>
+                      <Text style={styles.productPriceUnit}>Qty: {quantity}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.stepper,
+                        errors.quantity ? styles.stepperError : null,
+                      ]}>
+                      <TouchableOpacity
+                        style={[
+                          styles.stepBtn,
+                          !canDecrement && styles.stepBtnDisabled,
+                        ]}
+                        activeOpacity={0.7}
+                        disabled={!canDecrement}
+                        onPress={handleDecrement}>
+                        <Minus
+                          size={scale(16)}
+                          color={canDecrement ? '#0F172A' : '#CBD5E1'}
+                          strokeWidth={2.5}
+                        />
+                      </TouchableOpacity>
 
-       
+                      <TextInput
+                        style={styles.stepValue}
+                        value={quantity}
+                        onChangeText={v => {
+                          setQuantity(v.replace(/[^0-9]/g, ''));
+                          clearError('quantity');
+                          clearError('calculatedPrice');
+                        }}
+                        keyboardType="numeric"
+                        maxLength={7}
+                        selectTextOnFocus
+                        placeholder="0"
+                        placeholderTextColor="#94A3B8"
+                      />
 
-          {errors.quantity ? (
-            <Text style={styles.errorText}>{errors.quantity}</Text>
-          ) : null}
-          {errors.calculatedPrice ? (
-            <Text style={styles.errorText}>{errors.calculatedPrice}</Text>
-          ) : null}
-        </View>
+                      <TouchableOpacity
+                        style={styles.stepBtn}
+                        activeOpacity={0.7}
+                        onPress={handleIncrement}>
+                        <Plus
+                          size={scale(16)}
+                          color="#0F172A"
+                          strokeWidth={2.5}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={styles.productPriceMissing}>
+                    Price not available
+                  </Text>
+                )}
+              </View>
+            </View>
+            {errors.quantity ? (
+              <Text style={styles.errorText}>{errors.quantity}</Text>
+            ) : null}
+            {errors.calculatedPrice ? (
+              <Text style={styles.errorText}>{errors.calculatedPrice}</Text>
+            ) : null}
+            {errors.items ? (
+              <Text style={styles.errorText}>{errors.items}</Text>
+            ) : null}
+          </View>
+        )}
 
         {/* Form Fields */}
         <View style={styles.formContainer}>
 
-          {/* Available Pack Sizes */}
-          <View style={styles.packBlock}>
-            <Text style={styles.qtyLabel}>Pack Size</Text>
-            <View style={styles.packRow}>
-              {availablePacks.map(size => {
-                const selected = size === packSize;
-                return (
-                  <TouchableOpacity
-                    key={size}
-                    style={[styles.packPill, selected && styles.packPillSelected]}
-                    activeOpacity={0.8}
-                    onPress={() => setPackSize(size)}>
-                    <Text
-                      style={[
-                        styles.packPillText,
-                        selected && styles.packPillTextSelected,
-                      ]}>
-                      {size}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
 
-        
+          {/* Company / Contact */}
+          {/* <View style={styles.addressSection}>
+            <Text style={styles.sectionTitle}>Company Details</Text>
 
-          {/* Remark (Optional) */}
-          <Input
-            label="Remark (Optional)"
-            placeholder="Need dealer price for our project"
-            variant="clean"
-            leftIcon={MessageSquare}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-            value={remark}
-            onChangeText={setRemark}
-            containerStyle={styles.field}
-          />
+            <Input
+              label="Company Name"
+              placeholder="Enter company name"
+              variant="clean"
+              leftIcon={Building2}
+              required
+              error={errors.companyName}
+              value={companyName}
+              onChangeText={v => {
+                setCompanyName(v);
+                clearError('companyName');
+              }}
+              containerStyle={styles.field}
+            />
 
-
+            <Input
+              label="Phone"
+              placeholder="Enter 10-digit phone number"
+              variant="clean"
+              leftIcon={Phone}
+              required
+              error={errors.phone}
+              keyboardType="phone-pad"
+              maxLength={10}
+              value={phone}
+              onChangeText={v => {
+                setPhone(v.replace(/[^0-9]/g, ''));
+                clearError('phone');
+              }}
+              containerStyle={styles.field}
+            />
+          </View> */}
 
           {/* Delivery Address */}
           <View style={styles.addressSection}>
@@ -538,21 +732,44 @@ export const PricingRequestsScreen: React.FC = () => {
               }}
               containerStyle={styles.field}
             />
+            {/* Remark (Optional) */}
+            <Input
+              label="Remark (Optional)"
+              placeholder="Urgent delivery"
+              variant="clean"
+              leftIcon={MessageSquare}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+              value={remark}
+              onChangeText={setRemark}
+              containerStyle={styles.field}
+            />
+
           </View>
 
           {/* Submit Request Button */}
           <TouchableOpacity
-            style={[styles.submitBtn, submitted && styles.submitBtnDone]}
+            style={[
+              styles.submitBtn,
+              submitted && styles.submitBtnDone,
+              submitting && styles.submitBtnDisabled,
+            ]}
             activeOpacity={0.85}
-            disabled={submitted}
+            disabled={submitted || submitting}
             onPress={handleSubmit}>
-            {submitted ? (
+            {submitting ? (
+              <>
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text style={styles.submitBtnText}>Confirming...</Text>
+              </>
+            ) : submitted ? (
               <>
                 <Check size={scale(18)} color="#FFFFFF" strokeWidth={3} />
-                <Text style={styles.submitBtnText}>Request Submitted</Text>
+                <Text style={styles.submitBtnText}>Order Confirmed</Text>
               </>
             ) : (
-              <Text style={styles.submitBtnText}>Check Out</Text>
+              <Text style={styles.submitBtnText}>Confirm Order</Text>
             )}
           </TouchableOpacity>
 
@@ -611,7 +828,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productName: {
-    fontSize: scale(15),
+    fontSize: scale(13.5),
     fontWeight: '700',
     color: '#0F172A',
   },
@@ -624,7 +841,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: scale(8),
+    // marginTop: scale(8),
     gap: spacing.sm,
   },
   productPriceLeft: {
@@ -648,6 +865,56 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#94A3B8',
     marginTop: scale(5),
+  },
+  cartLoader: {
+    marginVertical: spacing.lg,
+  },
+  cartProduct: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cartProductDivider: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  cartPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: scale(6),
+  },
+  cartUnitPrice: {
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  cartTotalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  cartTotalLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  cartTotalValue: {
+    fontSize: scale(18),
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  emptyCartText: {
+    paddingVertical: spacing.md,
+    textAlign: 'center',
+    fontSize: fontSize.sm,
+    color: '#64748B',
   },
   formContainer: {
     gap: spacing.lg,
@@ -815,6 +1082,9 @@ const styles = StyleSheet.create({
   submitBtnDone: {
     backgroundColor: '#16A34A',
     shadowColor: '#16A34A',
+  },
+  submitBtnDisabled: {
+    opacity: 0.75,
   },
   submitBtnText: {
     fontSize: fontSize.md,

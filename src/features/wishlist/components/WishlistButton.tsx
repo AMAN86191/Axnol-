@@ -67,6 +67,7 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
         price: product.price,
         mrp: product.mrp,
         unit: product.unit,
+        rateChartId: product.rateChartId,
       }),
     );
     animate();

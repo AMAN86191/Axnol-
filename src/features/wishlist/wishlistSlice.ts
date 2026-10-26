@@ -8,6 +8,7 @@ export interface WishlistItem {
   price: number;
   mrp?: number;
   unit?: string;
+  rateChartId?: string | number;
 }
 
 export interface WishlistState {

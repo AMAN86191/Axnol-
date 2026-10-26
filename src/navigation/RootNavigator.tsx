@@ -8,16 +8,27 @@ import {useAppDispatch, useAppSelector} from '../redux/hooks';
 import {setAuth} from '../redux/AuthSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {SplashScreenView} from '../features/auth/SplashScreen';
+import {useCart} from '../features/cart/useCart';
+import {setCartItems} from '../features/cart/cartSlice';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
   const {token, user} = useAppSelector(state => state.auth);
+  const {fetchCart} = useCart();
 
   const ready = Boolean(token && user?.status === 'active');
 
   const [restoring, setRestoring] = useState(true);
+
+  useEffect(() => {
+    if (ready) {
+      fetchCart();
+    } else {
+      dispatch(setCartItems([]));
+    }
+  }, [dispatch, fetchCart, ready]);
 
   useEffect(() => {
     const hydrate = async () => {
