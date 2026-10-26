@@ -83,7 +83,7 @@ export const useCart = () => {
     try {
       dispatch(setCartLoading(true));
       const res = await getCart();
-      console.log('Cart API Response:', JSON.stringify(res));
+      console.log('Cart API Response:', res);
       const data = res?.data ?? res;
       const list = Array.isArray(data) ? data : data?.items ?? data?.cart ?? data?.data ?? [];
       dispatch(setCartItems(list.map(mapApiCartItem)));
@@ -107,7 +107,7 @@ export const useCart = () => {
         size,
         qty: quantity,
       });
-      console.log('Add to Cart API Response:', JSON.stringify(res));
+      console.log('Add to Cart API Response:', res);
       await fetchCart();
       return;
     } catch (e) {
@@ -146,7 +146,7 @@ export const useCart = () => {
         if (item.cartItemId) {
           try {
             const res = await removeCartItemApi(item.cartItemId);
-            console.log('Remove Cart API Response:', JSON.stringify(res));
+            console.log('Remove Cart API Response:', res);
             await fetchCart();
             return;
           } catch (e) {
@@ -160,7 +160,7 @@ export const useCart = () => {
       try {
         if (item.cartItemId) {
           const res = await updateCartItemApi(item.cartItemId, { qty: nextQty });
-          console.log('Update Cart API Response:', JSON.stringify(res));
+          console.log('Update Cart API Response:', res);
           await fetchCart();
           return;
         }
@@ -179,7 +179,7 @@ export const useCart = () => {
       try {
         if (item?.cartItemId) {
           const res = await updateCartItemApi(item.cartItemId, { qty });
-          console.log('Update Cart API Response:', JSON.stringify(res));
+          console.log('Update Cart API Response:', res);
           await fetchCart();
           return;
         }
@@ -197,7 +197,7 @@ export const useCart = () => {
       try {
         if (item?.cartItemId) {
           const res = await removeCartItemApi(item.cartItemId);
-          console.log('Remove Cart API Response:', JSON.stringify(res));
+          console.log('Remove Cart API Response:', res);
           await fetchCart();
           return;
         }
@@ -212,7 +212,7 @@ export const useCart = () => {
   const clear = useCallback(async () => {
     try {
       const res = await clearCartApi();
-      console.log('Clear Cart API Response:', JSON.stringify(res));
+      console.log('Clear Cart API Response:', res);
       await fetchCart();
       return;
     } catch (e) {

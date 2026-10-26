@@ -32,6 +32,7 @@ import FeaturedProductsSection from './components/FeaturedProductsSection';
 import CategoriesSection from './components/CategoriesSection';
 import AllProductsGrid from './components/AllProductsGrid';
 import { useRefresh } from '../../hooks/useRefresh';
+import { getLoadErrorMessage } from '../../utils/apiError';
 
 let hasLoggedSliders = false;
 
@@ -44,14 +45,17 @@ export const HomeScreen: React.FC = () => {
   const slidersLoading = useAppSelector(s => s.home.loading);
   const apiIndustries = useAppSelector(s => s.industry.industries);
   const industriesLoading = useAppSelector(s => s.industry.loading);
+  const industriesError = useAppSelector(s => s.industry.error);
   const apiCategories = useAppSelector(s =>
     s.category.allCategories.length
       ? s.category.allCategories
       : s.category.categories,
   );
   const categoriesLoading = useAppSelector(s => s.category.loading);
+  const categoriesError = useAppSelector(s => s.category.error);
   const apiProducts = useAppSelector(s => s.product.products);
   const productsLoading = useAppSelector(s => s.product.loading);
+  const productsError = useAppSelector(s => s.product.error);
   const productsPagination = useAppSelector(s => s.product.pagination);
   const cartCount = useAppSelector(selectCartItemCount);
   const wishlistCount = useAppSelector(selectWishlistCount);
@@ -77,6 +81,30 @@ export const HomeScreen: React.FC = () => {
   }, [dispatch, refetchNotifications]);
 
   const { refreshing, onRefresh } = useRefresh(handleHomeRefresh);
+
+  const retryIndustries = useCallback(() => {
+    dispatch(fetchIndustriesSlice());
+  }, [dispatch]);
+
+  const retryCategories = useCallback(() => {
+    dispatch(fetchCategoriesSlice());
+  }, [dispatch]);
+
+  const retryProducts = useCallback(() => {
+    setHomeProductsPage(1);
+    dispatch(clearProducts());
+    dispatch(fetchProductsSlice({ page: 1 }));
+  }, [dispatch]);
+
+  const industriesErrorMessage = getLoadErrorMessage(
+    industriesError,
+    'industries',
+  );
+  const categoriesErrorMessage = getLoadErrorMessage(
+    categoriesError,
+    'categories',
+  );
+  const productsErrorMessage = getLoadErrorMessage(productsError, 'products');
 
   const hasUnreadNotifications = (notificationsData ?? []).some(
     notification => !notification.read,
@@ -329,6 +357,8 @@ export const HomeScreen: React.FC = () => {
           <IndustriesSection
             industries={homeIndustries}
             loading={industriesLoading && !homeIndustries.length}
+            errorMessage={industriesErrorMessage}
+            onRetry={retryIndustries}
             onSeeAll={() => navigation.navigate('Industries')}
             onSelect={ind =>
               navigation.navigate('IndustryDetails', {
@@ -355,6 +385,8 @@ export const HomeScreen: React.FC = () => {
           <CategoriesSection
             categories={homeCategories}
             loading={categoriesLoading && !homeCategories.length}
+            errorMessage={categoriesErrorMessage}
+            onRetry={retryCategories}
             onSeeAll={() => navigation.navigate('Categories')}
             onSelect={openCategory}
           />
@@ -375,7 +407,10 @@ export const HomeScreen: React.FC = () => {
         {/* 6. All products grid */}
         <View style={styles.sectionWrap}>
           <AllProductsGrid
-            products={homeProducts.length ? homeProducts : ALL_PRODUCTS}
+            products={homeProducts}
+            loading={productsLoading && homeProducts.length === 0}
+            errorMessage={productsErrorMessage}
+            onRetry={retryProducts}
             onSeeAll={() => openAllProducts()}
             onPress={openProduct}
           />

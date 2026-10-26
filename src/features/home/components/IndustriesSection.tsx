@@ -1,14 +1,18 @@
 import React from 'react';
 import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {WifiOff} from 'lucide-react-native';
 import AppImage from '../../../components/ui/AppImage';
 import Skeleton from '../../../components/ui/Skeleton';
 import {scale} from '../../../theme';
 import {IndustryItem} from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
+import SectionEmptyState from './SectionEmptyState';
 
 interface IndustriesSectionProps {
   industries: IndustryItem[];
   loading?: boolean;
+  errorMessage?: string;
+  onRetry?: () => void;
   onSeeAll?: () => void;
   onSelect: (item: IndustryItem) => void;
 }
@@ -20,61 +24,83 @@ const SKELETON_COUNT = 4;
 export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
   industries,
   loading = false,
+  errorMessage,
+  onRetry,
   onSeeAll,
   onSelect,
-}) => (
-  <>
-    <HomeSectionHeader
-      title="Industries"
-      subtitle="Solutions built for your sector"
-      onAction={onSeeAll}
-    />
+}) => {
+  const showError = !loading && industries.length === 0 && Boolean(errorMessage);
+  const isEmpty = !loading && !showError && industries.length === 0;
 
-    {loading ? (
-      <View style={styles.skeletonRow}>
-        {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
-          <View key={`industry-skeleton-${index}`} style={styles.card}>
-            <Skeleton width={CIRCLE} height={CIRCLE} circle />
-            <Skeleton
-              width={scale(50)}
-              height={scale(9)}
-              style={styles.skeletonTitle}
-            />
-          </View>
-        ))}
-      </View>
-    ) : (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollPad}>
-        {industries.map(ind => (
-          <TouchableOpacity
-            key={ind.id}
-            style={styles.card}
-            activeOpacity={0.85}
-            onPress={() => onSelect(ind)}>
-            {/* Round industry image */}
-            <View style={styles.circleShadow}>
-              <View style={styles.circle}>
-                <AppImage
-                  uri={ind.image}
-                  style={styles.cardImg}
-                  resizeMode="cover"
-                />
-              </View>
+  return (
+    <>
+      <HomeSectionHeader
+        title="Industries"
+        subtitle={
+          showError
+            ? 'Unable to load right now'
+            : isEmpty
+            ? 'Please check back later'
+            : 'Solutions built for your sector'
+        }
+        onAction={isEmpty || showError ? undefined : onSeeAll}
+      />
+
+      {loading ? (
+        <View style={styles.skeletonRow}>
+          {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+            <View key={`industry-skeleton-${index}`} style={styles.card}>
+              <Skeleton width={CIRCLE} height={CIRCLE} circle />
+              <Skeleton
+                width={scale(50)}
+                height={scale(9)}
+                style={styles.skeletonTitle}
+              />
             </View>
+          ))}
+        </View>
+      ) : showError ? (
+        <SectionEmptyState
+          icon={WifiOff}
+          message={errorMessage as string}
+          actionLabel="Retry"
+          onAction={onRetry}
+        />
+      ) : isEmpty ? (
+        <SectionEmptyState message="No industries found at the moment" />
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollPad}>
+          {industries.map(ind => (
+            <TouchableOpacity
+              key={ind.id}
+              style={styles.card}
+              activeOpacity={0.85}
+              onPress={() => onSelect(ind)}>
+              {/* Round industry image */}
+              <View style={styles.circleShadow}>
+                <View style={styles.circle}>
+                  <AppImage
+                    uri={ind.image}
+                    style={styles.cardImg}
+                    resizeMode="cover"
+                  />
+                </View>
+              </View>
 
-            {/* Title below the image */}
-            <Text style={styles.cardName} numberOfLines={1}>
-              {ind.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    )}
-  </>
-);
+              {/* Title below the image */}
+              <Text style={styles.cardName} numberOfLines={1}>
+                {ind.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   scrollPad: {
