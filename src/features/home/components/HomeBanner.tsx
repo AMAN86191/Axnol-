@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   FlatList,
-  Linking,
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   StyleSheet,
@@ -10,28 +10,21 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {ArrowRight, Download} from 'lucide-react-native';
-import AppImage from '../../../components/ui/AppImage';
+import {Download} from 'lucide-react-native';
 import Skeleton from '../../../components/ui/Skeleton';
 import {scale} from '../../../theme';
 import {HomeBannerItem} from '../homeData';
 
 export type {HomeBannerItem};
 
-
-const BROCHURE_URL = null;
-
 interface HomeBannerProps {
   banners: HomeBannerItem[];
   height?: number;
   autoPlay?: boolean;
   loading?: boolean;
-  buttonLabel?: string;
   downloadLabel?: string;
-  showPrimaryButton?: boolean;
   showDownloadButton?: boolean;
   onPressItem?: (item: HomeBannerItem, index: number) => void;
-  onPressButton?: (item: HomeBannerItem, index: number) => void;
   onPressDownload?: (item: HomeBannerItem, index: number) => void;
 }
 
@@ -52,14 +45,11 @@ const renderHighlightedTitle = (title: string) => {
 export const HomeBanner: React.FC<HomeBannerProps> = ({
   banners,
   height = scale(155),
-  autoPlay = true,      
+  autoPlay = true,
   loading = false,
-  buttonLabel = 'Explore Products',
   downloadLabel = 'Download',
-  showPrimaryButton = true,
   showDownloadButton = true,
   onPressItem,
-  onPressButton,
   onPressDownload,
 }) => {
   const listRef = useRef<FlatList<HomeBannerItem>>(null);
@@ -144,8 +134,8 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
           renderItem={({item, index}) => (
             <View style={[styles.slide, {width, height}]}>
               {/* Realistic industrial background image (no baked-in text) */}
-              <AppImage
-                uri={item.image}
+              <Image
+                source={{uri :item.image}}
                 style={styles.backgroundImage}
                 resizeMode="cover"
               />
@@ -182,31 +172,14 @@ export const HomeBanner: React.FC<HomeBannerProps> = ({
                 <Text style={styles.title} numberOfLines={3}>
                   {renderHighlightedTitle(item.title)}
                 </Text>
-
+{/* 
                 {!!item.description && (
                   <Text style={styles.description} numberOfLines={3}>
-                    {/* {item.description} */}
+                    {item.description}
                   </Text>
-                )}
+                )} */}
 
-                {/* Common CTAs shared by every banner */}
                 <View style={styles.buttonRow}>
-                  {/* {showPrimaryButton && (
-                    <TouchableOpacity
-                      style={styles.button}
-                      activeOpacity={0.85}
-                      onPress={() => onPressButton?.(item, index)}>
-                      <Text style={styles.buttonText} numberOfLines={1}>
-                        {item.primaryLabel || buttonLabel}
-                      </Text>
-                      <ArrowRight
-                        size={scale(11)}
-                        color="#FFFFFF"
-                        strokeWidth={2.8}
-                      />
-                    </TouchableOpacity>
-                  )} */}
-
                   {showDownloadButton && (
                     <TouchableOpacity
                       style={styles.buttonOutline}
@@ -337,7 +310,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: scale(8),
-    marginTop: scale(2),
+    marginTop: scale(25),
   },
   buttonOutline: {
     flexDirection: 'row',

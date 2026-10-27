@@ -5,7 +5,6 @@ export type AuthStackParamList = {
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
-  ProfileSetup: undefined;
   ForgotPassword: undefined;
   TermsConditions: undefined;
   PrivacyPolicy: undefined;
@@ -108,15 +107,12 @@ export type CatalogueStackParamList = {
 export type OrdersStackParamList = {
   OrdersList: undefined;
   OrderDetails: {orderId: string};
-  Invoice: {orderId?: string; invoiceId?: string} | undefined;
 };
 
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   EditProfile: undefined;
   PricingRequests: undefined;
-  Documents: undefined;
-  MyEnquiries: undefined;
   ContactUs: undefined;
   About: undefined;
 };

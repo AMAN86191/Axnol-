@@ -9,7 +9,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {Heart, Trash2} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import Button from '../../components/ui/Button';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
@@ -180,8 +180,8 @@ export const WishlistScreen: React.FC = () => {
                 style={styles.imgArea}
                 activeOpacity={0.85}
                 onPress={() => openProduct(item.id)}>
-                <AppImage
-                  uri={item.image}
+                <Image
+                  source={{uri: item.image}}
                   style={styles.img}
                   resizeMode="contain"
                 />

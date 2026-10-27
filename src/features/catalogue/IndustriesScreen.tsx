@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -11,18 +12,13 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppImage from '../../components/ui/AppImage';
 import { radius, scale, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
-import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
-import { useAppDispatch } from '../../redux/hooks';
-import { useAppSelector } from '../../store';
-import { fetchIndustriesSlice } from '../../redux/IndustrySlice';
+import { getIndustries, Industry } from '../../api/IndustryProvider';
+import { getLoadErrorMessage } from '../../utils/apiError';
 import IndustriesSkeleton from './components/IndustriesSkeleton';
 
 const COLUMNS = 3;
-
-let hasLoggedIndustries = false;
 
 const chunk = <T,>(list: T[], size: number): T[][] => {
   const rows: T[][] = [];
@@ -35,26 +31,70 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 export const IndustriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const dispatch = useAppDispatch();
   const [search, setSearch] = useState('');
-  const apiIndustries = useAppSelector(s => s.industry.industries);
-  const industriesLoading = useAppSelector(s => s.industry.loading);
-  const simulatedLoading = useSimulatedLoading();
-  const loading =
-    simulatedLoading || (industriesLoading && !apiIndustries.length);
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  const timersRef = useRef<Record<string, any>>({});
+  const [apiIndustries, setApiIndustries] = useState<Industry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const response = await getIndustries();
+      setApiIndustries(response?.data?.industries ?? []);
+    } catch (error) {
+      setLoadError(error);
+      console.error('Failed to load industries:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (hasLoggedIndustries) {
-      return;
-    }
-    dispatch(fetchIndustriesSlice())
-      .unwrap()
-      .then(res => {
-        hasLoggedIndustries = true;
-        console.log('Industries API Response:', res);
-      })
-      .catch(err => console.log('Industries API Error:', err));
-  }, [dispatch]);
+    Object.values(timersRef.current).forEach(t => clearTimeout(t));
+    timersRef.current = {};
+  }, [apiIndustries]);
+
+  useEffect(() => {
+    const timeouts: Record<string, any> = {};
+    apiIndustries.forEach(item => {
+      const image = (item as any).image_url ?? (item as any).image ?? '';
+      if (image && !loadedImages[item.id] && !failedImages[item.id]) {
+        timeouts[item.id] = setTimeout(() => {
+          setFailedImages(prev => (prev[item.id] ? prev : { ...prev, [item.id]: true }));
+        }, 8000);
+      }
+    });
+    timersRef.current = timeouts;
+    return () => {
+      Object.values(timeouts).forEach(t => clearTimeout(t));
+    };
+  }, [apiIndustries, loadedImages, failedImages]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(timersRef.current).forEach(t => clearTimeout(t));
+      timersRef.current = {};
+    };
+  }, []);
+
+  useEffect(() => {
+    apiIndustries.forEach(item => {
+      const image = (item as any).image_url ?? (item as any).image ?? '';
+      if (image) {
+        Image.prefetch(image).catch(() => undefined);
+      }
+    });
+  }, [apiIndustries]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const loadErrorMessage = getLoadErrorMessage(loadError, 'industries');
 
   const industries = apiIndustries
     .map(item => ({
@@ -67,6 +107,14 @@ export const IndustriesScreen: React.FC = () => {
   const filtered = industries.filter(
     item => !search || item.name.toLowerCase().includes(search.toLowerCase()),
   );
+
+  useEffect(() => {
+    filtered.forEach(item => {
+      if (item.image && !loadedImages[item.id]) {
+        Image.prefetch(item.image).catch(() => undefined);
+      }
+    });
+  }, [filtered, loadedImages]);
 
   return (
     <View style={styles.container}>
@@ -99,7 +147,14 @@ export const IndustriesScreen: React.FC = () => {
               { paddingBottom: insets.bottom + scale(80) },
             ]}
           >
-            {filtered.length === 0 ? (
+            {filtered.length === 0 && loadErrorMessage ? (
+              <View style={styles.errorWrap}>
+                <Text style={styles.emptyText}>{loadErrorMessage}</Text>
+                <TouchableOpacity onPress={fetchData} activeOpacity={0.8}>
+                  <Text style={styles.retryText}>Try again</Text>
+                </TouchableOpacity>
+              </View>
+            ) : filtered.length === 0 ? (
               <Text style={styles.emptyText}>No industries found</Text>
             ) : (
               chunk(filtered, COLUMNS).map((row, rowIndex) => (
@@ -117,11 +172,41 @@ export const IndustriesScreen: React.FC = () => {
                       }
                     >
                       <View style={styles.imageWrap}>
-                        <AppImage
-                          uri={item.image}
-                          style={styles.image}
-                          resizeMode="cover"
-                        />
+                        {item.image ? (
+                          <Image
+                            key={`${item.id}`}
+                            source={{ uri: item.image }}
+                            style={styles.image}
+                            resizeMode="cover"
+                            onLoad={() => {
+                              if (timersRef.current[item.id]) {
+                                clearTimeout(timersRef.current[item.id]);
+                                delete timersRef.current[item.id];
+                              }
+                              setLoadedImages(prev => ({ ...prev, [item.id]: true }));
+                            }}
+                            onLoadEnd={() => {
+                              if (timersRef.current[item.id]) {
+                                clearTimeout(timersRef.current[item.id]);
+                                delete timersRef.current[item.id];
+                              }
+                              setLoadedImages(prev => ({ ...prev, [item.id]: true }));
+                            }}
+                            onError={() => {
+                              if (timersRef.current[item.id]) {
+                                clearTimeout(timersRef.current[item.id]);
+                                delete timersRef.current[item.id];
+                              }
+                            }}
+                          />
+                        ) : null}
+                        {(!item.image || failedImages[item.id]) && !loadedImages[item.id] && (
+                          <View style={[styles.image, styles.fallbackWrap, StyleSheet.absoluteFillObject]}>
+                            <Text style={styles.fallbackText}>
+                              {item.name?.charAt(0)?.toUpperCase() || '?'}
+                            </Text>
+                          </View>
+                        )}
                       </View>
                       <Text style={styles.tileTitle} numberOfLines={1}>
                         {item.name}
@@ -203,11 +288,30 @@ const styles = StyleSheet.create({
     marginTop: scale(8),
     marginBottom: scale(2),
   },
+  fallbackWrap: {
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fallbackText: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: '#2563EB',
+  },
   emptyText: {
     textAlign: 'center',
     fontSize: scale(12.5),
     color: '#718096',
     paddingVertical: spacing.xl,
+  },
+  errorWrap: {
+    alignItems: 'center',
+  },
+  retryText: {
+    color: '#2563EB',
+    fontSize: scale(12),
+    fontWeight: '700',
+    paddingVertical: spacing.sm,
   },
 });
 

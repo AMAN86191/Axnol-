@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {CatalogueStackParamList} from '../../navigation/types';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {
   colors,
@@ -26,6 +26,7 @@ import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
 import {fetchCategoriesSlice} from '../../redux/CategorySlice';
 import {fetchIndustriesSlice} from '../../redux/IndustrySlice';
+import {invalidateRequests} from '../../api/requestCache';
 
 type Route = RouteProp<CatalogueStackParamList, 'Categories'>;
 
@@ -36,9 +37,6 @@ const CARD_WIDTH = Math.floor(
   (SCREEN_WIDTH - spacing.lg * 2 - CARD_GAP * 2) / 3,
 );
 
-const loggedCategories = new Set<string>();
-let hasLoggedCategoriesIndustries = false;
-
 export const CategoriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const {params} = useRoute<Route>();
@@ -48,28 +46,11 @@ export const CategoriesScreen: React.FC = () => {
   const categoriesLoading = useAppSelector(s => s.category.loading);
 
   const loadCategories = useCallback(() => {
-    const key = industryId ? String(industryId) : 'all';
     const request = dispatch(
       fetchCategoriesSlice(industryId ? {industryId} : undefined),
     );
-    request
-      .unwrap()
-      .then(res => {
-        if (!loggedCategories.has(key)) {
-          loggedCategories.add(key);
-          console.log('Categories API Response:', res);
-        }
-      })
-      .catch(err => console.log('Categories API Error:', err));
-
-    if (!hasLoggedCategoriesIndustries) {
-      hasLoggedCategoriesIndustries = true;
-      dispatch(fetchIndustriesSlice())
-        .unwrap()
-        .then(res => console.log('Industries API Response:', res))
-        .catch(err => console.log('Industries API Error:', err));
-    }
-
+    request.unwrap().catch(() => undefined);
+    dispatch(fetchIndustriesSlice()).unwrap().catch(() => undefined);
     return request;
   }, [dispatch, industryId]);
 
@@ -77,7 +58,13 @@ export const CategoriesScreen: React.FC = () => {
     loadCategories();
   }, [loadCategories]);
 
-  const {refreshing, onRefresh} = useRefresh(loadCategories);
+  const refreshCategories = useCallback(() => {
+    invalidateRequests('/categories');
+    invalidateRequests('/industries');
+    return loadCategories();
+  }, [loadCategories]);
+
+  const {refreshing, onRefresh} = useRefresh(refreshCategories);
 
   const categories = useMemo(
     () =>
@@ -140,8 +127,8 @@ export const CategoriesScreen: React.FC = () => {
               activeOpacity={0.85}
               onPress={() => handlePress(item)}>
               <View style={styles.imageWrap}>
-                <AppImage
-                  uri={item.image}
+                <Image
+                  source={{uri: item.image}}
                   style={styles.img}
                   resizeMode="cover"
                 />

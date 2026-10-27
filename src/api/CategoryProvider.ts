@@ -1,4 +1,5 @@
 import api from './axiosConfig';
+import {cachedRequest} from './requestCache';
 
 export interface ApiCategory {
   id: number | string;
@@ -26,10 +27,16 @@ export interface CategoriesParams {
 
 export const getCategories = async (
   params?: CategoriesParams,
+  force = false,
 ): Promise<CategoriesResponse> => {
   try {
-    const response = await api.get('/categories', {params});
-    return response.data;
+    return await cachedRequest({
+      resource: '/categories',
+      params,
+      ttl: 5 * 60_000,
+      force,
+      request: async () => (await api.get('/categories', {params})).data,
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;
@@ -38,12 +45,16 @@ export const getCategories = async (
 
 export const getCategoryDetails = async (
   category: string | number,
+  force = false,
 ): Promise<CategoriesResponse> => {
   try {
-    const response = await api.get(
-      `/categories/${encodeURIComponent(String(category))}`,
-    );
-    return response.data;
+    const categoryId = encodeURIComponent(String(category));
+    return await cachedRequest({
+      resource: `/categories/${categoryId}`,
+      ttl: 5 * 60_000,
+      force,
+      request: async () => (await api.get(`/categories/${categoryId}`)).data,
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;

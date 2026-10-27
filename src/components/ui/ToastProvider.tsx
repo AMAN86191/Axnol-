@@ -1,11 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {
-  Animated,
-  Keyboard,
-  Platform,
-  StyleSheet,
-  View,
-} from 'react-native';
+import {Keyboard, StyleSheet, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Toast, {ToastAction, ToastData, ToastType} from './Toast';
 import {spacing} from '../../theme';

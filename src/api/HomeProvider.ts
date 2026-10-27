@@ -1,4 +1,5 @@
 import api from './axiosConfig';
+import {cachedRequest} from './requestCache';
 
 export interface Slider {
   id: number;
@@ -19,10 +20,16 @@ export interface SlidersResponse {
   };
 }
 
-export const getSliders = async (): Promise<SlidersResponse> => {
+export const getSliders = async (
+  force = false,
+): Promise<SlidersResponse> => {
   try {
-    const response = await api.get('/sliders');
-    return response.data;
+    return await cachedRequest({
+      resource: '/sliders',
+      ttl: 5 * 60_000,
+      force,
+      request: async () => (await api.get('/sliders')).data,
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;

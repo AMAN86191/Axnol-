@@ -7,9 +7,9 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import {Image} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {colors, scale} from '../../theme';
-import AppImage from './AppImage';
 import {formatPrice} from '../../utils/formatPrice';
 import AddToCartButton from '../../features/cart/components/AddToCartButton';
 import WishlistButton from '../../features/wishlist/components/WishlistButton';
@@ -57,7 +57,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const image = (
     <>
       <WishlistButton product={cartProduct} style={styles.favBtn} />
-      <AppImage uri={product.image} style={styles.img} resizeMode="contain" />
+      <Image source={{uri: product.image}} style={styles.img} resizeMode="contain" />
     </>
   );
 

@@ -33,7 +33,6 @@ import {
   ChevronRight,
   Image as ImageIcon,
   Lock,
-  Map,
   MapPin,
   Phone,
   ShieldCheck,
@@ -44,7 +43,7 @@ import {
   CameraOptions,
   ImageLibraryOptions,
   ImagePickerResponse,
-  launchCamera,
+
   launchImageLibrary,
 } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -52,7 +51,6 @@ import {updateProfileSlice, changePasswordSlice} from '../../redux/AuthSlice';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import AppImage from '../../components/ui/AppImage';
 import {toast} from '../../components/ui/ToastProvider';
 import images from '../../assets/images';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
@@ -161,7 +159,6 @@ type PhotoPickerSheetProps = {
   visible: boolean;
   hasPhoto: boolean;
   onClose: () => void;
-  onCamera: () => void;
   onGallery: () => void;
   onRemove: () => void;
 };
@@ -170,7 +167,6 @@ const PhotoPickerSheet: React.FC<PhotoPickerSheetProps> = ({
   visible,
   hasPhoto,
   onClose,
-  onCamera,
   onGallery,
   onRemove,
 }) => {
@@ -373,7 +369,6 @@ export const EditProfileScreen: React.FC = () => {
     if (reduxUser) {
       applyUser(reduxUser);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduxUser]);
 
   const setField = (key: keyof FormState) => (value: string) =>
@@ -678,8 +673,8 @@ export const EditProfileScreen: React.FC = () => {
                 style={styles.avatarPicker}
                 activeOpacity={0.85}
                 onPress={changePhoto}>
-                <AppImage
-                  uri={form.avatar || 'user_avatar'}
+                <Image
+                  source={form.avatar ? {uri: form.avatar} : require('../../../assets/axnol/default_avatar.png')}
                   style={styles.avatarImg}
                   resizeMode="cover"
                 />
@@ -759,7 +754,7 @@ export const EditProfileScreen: React.FC = () => {
             {/* Address Details */}
             <View style={styles.sectionHeaderRow}>
               <View style={[styles.sectionBadge, styles.badgeGreen]}>
-                <MapPin size={scale(19)} color="#16A34A" strokeWidth={2.2} />
+                <MapPin size={19} color="#16A34A" strokeWidth={2.2} />
               </View>
               <View style={styles.sectionHeaderTexts}>
                 <Text style={styles.sectionHeaderTitle}>Address Details</Text>
@@ -798,7 +793,7 @@ export const EditProfileScreen: React.FC = () => {
               placeholder="Enter state"
               value={form.state}
               onChangeText={setField('state')}
-              leftIcon={Map}
+              // leftIcon={Map}
               containerStyle={styles.fieldSpacing}
             />
 
@@ -929,7 +924,6 @@ export const EditProfileScreen: React.FC = () => {
         visible={photoSheetVisible}
         hasPhoto={!!form.avatar}
         onClose={() => setPhotoSheetVisible(false)}
-        onCamera={() => openPicker(launchCamera)}
         onGallery={() => openPicker(launchImageLibrary)}
         onRemove={removePhoto}
       />

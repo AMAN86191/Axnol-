@@ -17,22 +17,20 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArrowRight,
-  Award,
   Car,
   Cog,
   Database,
   Factory,
   Flame,
-  FlaskConical,
   Gauge,
   Package,
-  ShieldCheck,
   Truck,
   Zap,
 } from 'lucide-react-native';
 import { AuthStackParamList } from '../../navigation/types';
 import { colors, scale } from '../../theme';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
+import {resolveImage} from '../../assets/images';
 import Logo from '../../components/ui/Logo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Onboarding'>;
@@ -170,11 +168,11 @@ export const OnboardingScreen: React.FC = () => {
       return (
         <View style={{ width, height }}>
           {/* Hero Image - per-slide style (edit slideImageStyles above) */}
-          <AppImage
-            uri={item.bgUri}
-            style={item.imageStyle}
-            resizeMode="cover"
-          />
+  <Image
+    source={resolveImage(item.bgUri)}
+    style={item.imageStyle}
+    resizeMode="cover"
+  />
 
           {/* Soft fade where image meets the top white area */}
           <LinearGradient

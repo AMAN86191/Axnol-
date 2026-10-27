@@ -1,12 +1,11 @@
 /**
- * Local image registry. Keys are used in mock data and resolved by AppImage.
+ * Local image registry resolved by AppImage.
  */
 import type {ImageSourcePropType} from 'react-native';
 
 const images = {
   logo: require('../assets/logo_blue-sm-logo.png'),
-  user_avatar: require('../../assets/axnol/rahul_avatar.png'),
-  product_drum: require('../../assets/axnol/mock_drum.png'),
+  user_avatar: require('../../assets/axnol/default_avatar.png'),
   hero_banner: require('../../assets/axnol/hero_banner.png'),
   header_sky_bg: require('../../assets/axnol/header_sky_bg.png'),
   cat_engine_oil: require('../../assets/axnol/cat_engine_oil.png'),

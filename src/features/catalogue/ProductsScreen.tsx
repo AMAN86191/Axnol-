@@ -19,13 +19,13 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {colors, fontSize, radius, scale, spacing} from '../../theme';
-import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
 import ProductsSkeleton from './components/ProductsSkeleton';
 import ProductCard from '../../components/ui/ProductCard';
 import {useRefresh} from '../../hooks/useRefresh';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
 import {fetchProductsSlice} from '../../redux/ProductSlice';
+import {invalidateRequests} from '../../api/requestCache';
 import {toProductCardData} from '../../utils/productCardData';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
@@ -108,7 +108,7 @@ export const ProductsScreen: React.FC = () => {
   const apiProducts = useAppSelector(s => s.product.products);
   const productsLoading = useAppSelector(s => s.product.loading);
   const pagination = useAppSelector(s => s.product.pagination);
-  const loading = useSimulatedLoading();
+  const loading = productsLoading && apiProducts.length === 0;
 
   const route = useRoute<Route>();
   const initialCategory =
@@ -155,21 +155,20 @@ export const ProductsScreen: React.FC = () => {
         setPage(1);
         dispatch(fetchProductsSlice(params))
           .unwrap()
-          .then(res => console.log('Products List API Response:', res))
-          .catch(err => console.log('Products List API Error:', err));
+          .catch(() => undefined);
         return;
       }
       setIsLoadingMore(true);
       dispatch(fetchProductsSlice(params))
         .unwrap()
-        .then(res => console.log('Products List API Response:', res))
-        .catch(err => console.log('Products List API Error:', err))
+        .catch(() => undefined)
         .finally(() => setIsLoadingMore(false));
     },
     [dispatch, route.params?.industryId, route.params?.categoryId, route.params?.subCategoryId],
   );
 
   const handleRefresh = useCallback(() => {
+    invalidateRequests('/products');
     dispatch({ type: 'product/clearProducts' } as any);
     loadProducts(1);
   }, [dispatch, loadProducts]);
@@ -366,7 +365,9 @@ export const ProductsScreen: React.FC = () => {
           }
           style={styles.scrollFlex}
           contentContainerStyle={[styles.gridContainer, {paddingBottom: insets.bottom + scale(85)}]}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews
+          scrollEventThrottle={16}>
           {chunk(filtered, 2).map((row, rowIndex) => (
             <View key={`row-${rowIndex}`} style={styles.gridRow}>
               {row.map(prod => (

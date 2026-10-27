@@ -86,14 +86,6 @@ interface FaqItemProps {
   answer: string;
 }
 
-interface TeamMemberProps {
-  name: string;
-  role: string;
-  initials: string;
-  tint: string;
-  bg: string;
-}
-
 const OFFERINGS: OfferingProps[] = [
   {
     icon: Droplets,
@@ -260,37 +252,6 @@ const FAQS: FaqItemProps[] = [
   },
 ];
 
-const TEAM: TeamMemberProps[] = [
-  {
-    name: 'Roman Amata',
-    role: 'Technical Lead',
-    initials: 'RA',
-    tint: '#0284C7',
-    bg: '#E4F1FC',
-  },
-  {
-    name: 'Monika Larson',
-    role: 'Industrial Engineer',
-    initials: 'ML',
-    tint: '#EA580C',
-    bg: '#FFF1E6',
-  },
-  {
-    name: 'Natalie Jones',
-    role: 'Team Leader',
-    initials: 'NJ',
-    tint: '#16A34A',
-    bg: '#E7F6EE',
-  },
-  {
-    name: 'David Green',
-    role: 'CEO',
-    initials: 'DG',
-    tint: '#7C3AED',
-    bg: '#F1EBFE',
-  },
-];
-
 const CONTACT_ROWS: ContactRowProps[] = [
   {
     icon: MapPin,
@@ -424,26 +385,6 @@ const FaqRow: React.FC<FaqItemProps & {index: number}> = ({
     </View>
   );
 };
-
-const TeamCard: React.FC<TeamMemberProps> = ({
-  name,
-  role,
-  initials,
-  tint,
-  bg,
-}) => (
-  <View style={styles.teamCard}>
-    <View style={[styles.teamAvatar, {backgroundColor: bg}]}>
-      <Text style={[styles.teamInitials, {color: tint}]}>{initials}</Text>
-    </View>
-    <Text style={styles.teamName} numberOfLines={1}>
-      {name}
-    </Text>
-    <Text style={styles.teamRole} numberOfLines={1}>
-      {role}
-    </Text>
-  </View>
-);
 
 const ContactRow: React.FC<ContactRowProps & {isLast: boolean}> = ({
   icon: Icon,
@@ -731,19 +672,6 @@ export const AboutScreen: React.FC = () => {
                   </Text>
                 </View>
               </View>
-            </View>
-          </View>
-
-          {/* Leadership Team */}
-          <View style={styles.card}>
-            <SectionHeading
-              title="Meet Our Expert Team"
-              subtitle="The people driving Axnol forward"
-            />
-            <View style={styles.teamGrid}>
-              {TEAM.map(member => (
-                <TeamCard key={member.name} {...member} />
-              ))}
             </View>
           </View>
 
@@ -1201,46 +1129,6 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   chairmanRole: {
-    fontSize: scale(10.5),
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-
-  /* Team */
-  teamGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: scale(9),
-  },
-  teamCard: {
-    width: '48%',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingVertical: scale(14),
-    paddingHorizontal: scale(8),
-  },
-  teamAvatar: {
-    width: scale(48),
-    height: scale(48),
-    borderRadius: scale(24),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: scale(8),
-  },
-  teamInitials: {
-    fontSize: scale(15),
-    fontWeight: '900',
-  },
-  teamName: {
-    fontSize: scale(12),
-    fontWeight: '800',
-    color: colors.text,
-  },
-  teamRole: {
     fontSize: scale(10.5),
     color: colors.textMuted,
     marginTop: 1,

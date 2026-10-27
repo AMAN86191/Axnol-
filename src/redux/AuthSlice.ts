@@ -8,6 +8,7 @@ import {
   verifyOtp,
 } from '../api/AuthProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {invalidateRequests} from '../api/requestCache';
 
 export const registerUserSlice = createAsyncThunk(
   'auth/registerUserSlice',
@@ -18,6 +19,7 @@ export const registerUserSlice = createAsyncThunk(
       if (data?.token) {
         await AsyncStorage.setItem('axnol_token', data.token);
       }
+      invalidateRequests();
       return data;
     } catch (error) {
       return rejectWithValue(error);
@@ -37,6 +39,7 @@ export const loginUserSlice = createAsyncThunk(
       if (data?.user) {
         await AsyncStorage.setItem('axnol_user', JSON.stringify(data.user));
       }
+      invalidateRequests();
       return data;
     } catch (error) {
       return rejectWithValue(error);
@@ -58,6 +61,7 @@ export const verifyOtpSlice = createAsyncThunk(
       if (data?.user) {
         await AsyncStorage.setItem('axnol_user', JSON.stringify(data.user));
       }
+      invalidateRequests();
       return { ...data, token };
     } catch (error) {
       return rejectWithValue(error);

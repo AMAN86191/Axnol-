@@ -1,4 +1,5 @@
 import api from './axiosConfig';
+import {cachedRequest} from './requestCache';
 
 export interface Industry {
   id: number;
@@ -25,10 +26,16 @@ export interface IndustryDetailsResponse {
   data: IndustryDetails;
 }
 
-export const getIndustries = async (): Promise<IndustriesResponse> => {
+export const getIndustries = async (
+  force = false,
+): Promise<IndustriesResponse> => {
   try {
-    const response = await api.get('/industries');
-    return response.data;
+    return await cachedRequest({
+      resource: '/industries',
+      ttl: 5 * 60_000,
+      force,
+      request: async () => (await api.get('/industries')).data,
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;
@@ -37,10 +44,15 @@ export const getIndustries = async (): Promise<IndustriesResponse> => {
 
 export const getIndustryDetails = async (
   industryId: string | number,
+  force = false,
 ): Promise<IndustryDetailsResponse> => {
   try {
-    const response = await api.get(`/industries/${industryId}`);
-    return response.data;
+    return await cachedRequest({
+      resource: `/industries/${industryId}`,
+      ttl: 5 * 60_000,
+      force,
+      request: async () => (await api.get(`/industries/${industryId}`)).data,
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;

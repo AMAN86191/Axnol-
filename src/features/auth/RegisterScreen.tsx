@@ -27,7 +27,6 @@ import {
   Clock3,
   Lock,
   Mail,
-  Percent,
   Phone,
   ShieldCheck,
   Smartphone,
@@ -199,6 +198,7 @@ export const RegisterScreen: React.FC = () => {
       );
       return;
     }
+    setIsLoading(true);
     try {
       const fcmToken = await getFcmToken();
       await dispatch(
@@ -226,6 +226,8 @@ export const RegisterScreen: React.FC = () => {
         'Registration Failed',
         err?.message ?? 'Could not create account. Please try again.',
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 

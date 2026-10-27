@@ -5,7 +5,6 @@ import SplashScreen from '../features/auth/SplashScreen';
 import OnboardingScreen from '../features/auth/OnboardingScreen';
 import LoginScreen from '../features/auth/LoginScreen';
 import RegisterScreen from '../features/auth/RegisterScreen';
-import ProfileSetupScreen from '../features/auth/ProfileSetupScreen';
 import ForgotPasswordScreen from '../features/auth/ForgotPasswordScreen';
 import TermsConditionsScreen from '../features/legal/TermsConditionsScreen';
 import PrivacyPolicyScreen from '../features/legal/PrivacyPolicyScreen';
@@ -30,7 +29,6 @@ export const AuthStack: React.FC = () => {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />
       <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
