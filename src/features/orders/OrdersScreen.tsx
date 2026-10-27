@@ -1,120 +1,100 @@
-import React, {useMemo, useState} from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
+  RefreshControl,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  RefreshControl,
 } from 'react-native';
-import {DrawerActions, useNavigation} from '@react-navigation/native';
 import {
-  ArrowUpDown,
-  CalendarDays,
-  ChevronRight,
-  Menu,
-  Package,
-} from 'lucide-react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+  DrawerActions,
+  useFocusEffect,
+  useNavigation,
+} from '@react-navigation/native';
+import { CalendarDays, ChevronRight, Menu, Package } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppImage from '../../components/ui/AppImage';
 import CommonHeader from '../../components/ui/CommonHeader';
-import {colors, fontSize, radius, scale, spacing} from '../../theme';
-import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
+import { colors, fontSize, radius, scale, spacing } from '../../theme';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { fetchOrdersSlice } from '../../redux/OrderSlice';
+import { formatPrice } from '../../utils/formatPrice';
 import OrdersSkeleton from './components/OrdersSkeleton';
-import {useRefresh} from '../../hooks/useRefresh';
+import { useRefresh } from '../../hooks/useRefresh';
+import {
+  formatOrderDate,
+  formatStatusLabel,
+  getOrderErrorMessage,
+  getOrderImage,
+  getOrderProductLabel,
+  getOrderQty,
+  getStatusBadgeStyle,
+  statusKey,
+} from './orderUtils';
 
-const FILTER_TABS = ['All', 'Pending', 'Processing', 'Delivered', 'Canceled'];
+const ALL_FILTER = 'all';
 
-const MOCK_ORDERS = [
-  {
-    id: 'ord1',
-    orderNo: 'AX0001',
-    productName: 'Engine Oil AX-1000',
-    quantity: 10,
-    amount: 24000,
-    date: '25 Sep 2026',
-    status: 'Pending',
-    image: 'product_cutting',
-  },
-  {
-    id: 'ord2',
-    orderNo: 'AX0002',
-    productName: 'Hydraulic Oil AX-300',
-    quantity: 5,
-    amount: 18500,
-    date: '22 Sep 2026',
-    status: 'Processing',
-    image: 'product_cutting',
-  },
-  {
-    id: 'ord3',
-    orderNo: 'AX0003',
-    productName: 'Gear Oil AX-200',
-    quantity: 20,
-    amount: 45000,
-    date: '18 Sep 2026',
-    status: 'Delivered',
-    image: 'product_cutting',
-  },
-  {
-    id: 'ord4',
-    orderNo: 'AX0004',
-    productName: 'Compressor Oil AX-400',
-    quantity: 2,
-    amount: 12000,
-    date: '10 Sep 2026',
-    status: 'Canceled',
-    image: 'product_cutting',
-  },
+const STATUS_FILTERS = [
+  { key: ALL_FILTER, label: 'All' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'placed', label: 'Placed' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'delivered', label: 'Delivered' },
+  { key: 'cancelled', label: 'Cancelled' },
 ];
-
-const getStatusBadgeStyle = (status: string) => {
-  switch (status) {
-    case 'Pending':
-      return {bg: '#FEF3C7', text: '#D97706', dot: '#F59E0B'};
-    case 'Processing':
-      return {bg: '#DBEAFE', text: '#2563EB', dot: '#3B82F6'};
-    case 'Delivered':
-      return {bg: '#DCFCE7', text: '#16A34A', dot: '#22C55E'};
-    case 'Canceled':
-      return {bg: '#FEE2E2', text: '#DC2626', dot: '#EF4444'};
-    default:
-      return {bg: '#F1F5F9', text: '#64748B', dot: '#94A3B8'};
-  }
-};
-
-const formatMoney = (value: number) =>
-  `₹${value.toLocaleString('en-IN')}`;
 
 export const OrdersScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+  const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
-  const {refreshing, onRefresh} = useRefresh();
+  const orders = useAppSelector(state => state.order.orders);
+  const loading = useAppSelector(state => state.order.ordersLoading);
+  const error = useAppSelector(state => state.order.ordersError);
 
-  const [selectedFilter, setSelectedFilter] = useState('All');
-  const [newestFirst, setNewestFirst] = useState(true);
-  const loading = useSimulatedLoading();
+  const [selectedFilter, setSelectedFilter] = useState(ALL_FILTER);
+
+  const fetchOrders = useCallback(
+    () => dispatch(fetchOrdersSlice()).unwrap().catch(() => undefined),
+    [dispatch],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [fetchOrders]),
+  );
+
+  const { refreshing, onRefresh } = useRefresh(fetchOrders);
 
   const counts = useMemo(() => {
-    const map: Record<string, number> = {All: MOCK_ORDERS.length};
-    MOCK_ORDERS.forEach(o => {
-      map[o.status] = (map[o.status] ?? 0) + 1;
+    const map: Record<string, number> = { [ALL_FILTER]: orders.length };
+    orders.forEach(order => {
+      const key = statusKey(order.status);
+      if (!key) return;
+      map[key] = (map[key] ?? 0) + 1;
     });
     return map;
-  }, []);
+  }, [orders]);
 
   const filteredOrders = useMemo(() => {
-    const list = MOCK_ORDERS.filter(o => {
-      if (selectedFilter === 'All') return true;
-      return o.status.toLowerCase() === selectedFilter.toLowerCase();
-    });
+    const list =
+      selectedFilter === ALL_FILTER
+        ? orders
+        : orders.filter(order => statusKey(order.status) === selectedFilter);
+
     return [...list].sort((a, b) => {
-      const ta = new Date(a.date).getTime();
-      const tb = new Date(b.date).getTime();
-      return newestFirst ? tb - ta : ta - tb;
+      const ta = new Date(a.createdAt ?? 0).getTime();
+      const tb = new Date(b.createdAt ?? 0).getTime();
+      return tb - ta;
     });
-  }, [selectedFilter, newestFirst]);
+  }, [orders, selectedFilter]);
+
+  const selectedLabel =
+    STATUS_FILTERS.find(filter => filter.key === selectedFilter)?.label ??
+    'All';
+  const errorMessage = error ? getOrderErrorMessage(error) : '';
 
   return (
     <View style={styles.container}>
@@ -133,152 +113,190 @@ export const OrdersScreen: React.FC = () => {
         }
       />
 
-      {/* Horizontal Filter Tabs */}
-      {loading ? (
+      {loading && orders.length === 0 ? (
         <OrdersSkeleton />
       ) : (
         <>
-      <View style={styles.filterBar}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={FILTER_TABS}
-          keyExtractor={item => item}
-          contentContainerStyle={styles.filterList}
-          renderItem={({item}) => {
-            const active = item === selectedFilter;
-            return (
-              <TouchableOpacity
-                style={[styles.filterPill, active && styles.filterPillActive]}
-                activeOpacity={0.8}
-                onPress={() => setSelectedFilter(item)}>
-                <Text
-                  style={[
-                    styles.filterPillText,
-                    active && styles.filterPillTextActive,
-                  ]}>
-                  {item}
-                </Text>
-                <View
-                  style={[
-                    styles.filterCount,
-                    active && styles.filterCountActive,
-                  ]}>
-                  <Text
-                    style={[
-                      styles.filterCountText,
-                      active && styles.filterCountTextActive,
-                    ]}>
-                    {counts[item] ?? 0}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View>
-
-      {/* Orders List */}
-      <FlatList
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-          />
-        }
-        data={filteredOrders}
-        keyExtractor={item => item.id}
-        contentContainerStyle={[
-          styles.orderList,
-          {paddingBottom: insets.bottom + scale(90)},
-        ]}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          filteredOrders.length > 0 ? (
-            <View style={styles.listMeta}>
-              <Text style={styles.listMetaTitle}>Recent Orders</Text>
-              <Text style={styles.listMetaCount}>
-                {filteredOrders.length}{' '}
-                {filteredOrders.length === 1 ? 'order' : 'orders'}
-              </Text>
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <View style={styles.emptyIcon}>
-              <Package size={scale(30)} color={colors.primary} strokeWidth={1.8} />
-            </View>
-            <Text style={styles.emptyTitle}>No orders found</Text>
-            <Text style={styles.emptyText}>
-              You don&apos;t have any {selectedFilter.toLowerCase()} orders yet.
-            </Text>
+          <View style={styles.filterBar}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={STATUS_FILTERS}
+              keyExtractor={item => item.key}
+              contentContainerStyle={styles.filterList}
+              renderItem={({ item }) => {
+                const active = item.key === selectedFilter;
+                return (
+                  <TouchableOpacity
+                    style={[styles.filterPill, active && styles.filterPillActive]}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedFilter(item.key)}>
+                    <Text
+                      style={[
+                        styles.filterPillText,
+                        active && styles.filterPillTextActive,
+                      ]}>
+                      {item.label}
+                    </Text>
+                    <View
+                      style={[
+                        styles.filterCount,
+                        active && styles.filterCountActive,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.filterCountText,
+                          active && styles.filterCountTextActive,
+                        ]}>
+                        {counts[item.key] ?? 0}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
           </View>
-        }
-        renderItem={({item}) => {
-          const badge = getStatusBadgeStyle(item.status);
-          return (
-            <TouchableOpacity
-              style={styles.orderCard}
-              activeOpacity={0.85}
-              onPress={() =>
-                navigation.navigate('OrderDetails', {orderId: item.id})
-              }>
-              <View style={styles.cardTop}>
-                <View style={styles.orderImgWrap}>
-                  <AppImage
-                    uri={item.image}
-                    style={styles.orderImg}
-                    resizeMode="contain"
-                  />
-                </View>
 
-                <View style={styles.orderContent}>
-                  <Text style={styles.orderNo}>{item.orderNo}</Text>
-                  <Text style={styles.productName} numberOfLines={1}>
-                    {item.productName}
-                  </Text>
-                  <Text style={styles.orderMeta}>Qty {item.quantity} units</Text>
-                </View>
-
-                <View style={[styles.statusBadge, {backgroundColor: badge.bg}]}>
-                  <View
-                    style={[styles.statusDot, {backgroundColor: badge.dot}]}
-                  />
-                  <Text style={[styles.statusText, {color: badge.text}]}>
-                    {item.status}
+          <FlatList
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            }
+            data={filteredOrders}
+            keyExtractor={item => String(item.id)}
+            contentContainerStyle={[
+              styles.orderList,
+              { paddingBottom: insets.bottom + scale(90) },
+            ]}
+            showsVerticalScrollIndicator={false}
+            ListHeaderComponent={
+              filteredOrders.length > 0 ? (
+                <View style={styles.listMeta}>
+                  <Text style={styles.listMetaTitle}>Recent Orders</Text>
+                  <Text style={styles.listMetaCount}>
+                    {filteredOrders.length}{' '}
+                    {filteredOrders.length === 1 ? 'order' : 'orders'}
                   </Text>
                 </View>
-              </View>
-
-              <View style={styles.cardDivider} />
-
-              <View style={styles.cardBottom}>
-                <View style={styles.dateGroup}>
-                  <CalendarDays
-                    size={scale(14)}
-                    color="#94A3B8"
-                    strokeWidth={2.2}
-                  />
-                  <Text style={styles.orderDate}>{item.date}</Text>
-                </View>
-
-                <View style={styles.amountGroup}>
-                  <Text style={styles.amountLabel}>Total</Text>
-                  <Text style={styles.amountValue}>{formatMoney(item.amount)}</Text>
-                  <ChevronRight
-                    size={scale(16)}
-                    color="#CBD5E1"
-                    strokeWidth={2.4}
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyWrap}>
+                <View style={styles.emptyIcon}>
+                  <Package
+                    size={scale(30)}
+                    color={colors.primary}
+                    strokeWidth={1.8}
                   />
                 </View>
+                <Text style={styles.emptyTitle}>
+                  {error ? 'Could not load orders' : 'No orders found'}
+                </Text>
+                <Text style={styles.emptyText}>
+                  {error
+                    ? errorMessage
+                    : selectedFilter === ALL_FILTER
+                      ? "You don't have any orders yet."
+                      : `You don't have any ${selectedLabel.toLowerCase()} orders yet.`}
+                </Text>
+                {error ? (
+                  <TouchableOpacity
+                    style={styles.retryBtn}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      fetchOrders();
+                    }}>
+                    <Text style={styles.retryText}>Try Again</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
-            </TouchableOpacity>
-          );
-        }}
-      />
+            }
+            renderItem={({ item }) => {
+              const badge = getStatusBadgeStyle(item.status);
+              const quantity = getOrderQty(item);
+
+              return (
+                <TouchableOpacity
+                  style={styles.orderCard}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    navigation.navigate('OrderDetails', {
+                      orderId: String(item.id),
+                    })
+                  }>
+                  <View style={styles.cardTop}>
+                    <View style={styles.orderImgWrap}>
+                      <AppImage
+                        uri={getOrderImage(item)}
+                        style={styles.orderImg}
+                        resizeMode="contain"
+                      />
+                    </View>
+
+                    <View style={styles.orderContent}>
+                      <Text style={styles.orderNo}>{item.orderNumber}</Text>
+                      <Text style={styles.productName} numberOfLines={1}>
+                        {getOrderProductLabel(item)}
+                      </Text>
+                      <Text style={styles.orderMeta}>
+                        Qty {quantity} {quantity === 1 ? 'unit' : 'units'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.badgeColumn}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: badge.bg },
+                        ]}>
+                        <View
+                          style={[
+                            styles.statusDot,
+                            { backgroundColor: badge.dot },
+                          ]}
+                        />
+                        <Text
+                          style={[styles.statusText, { color: badge.text }]}>
+                          {formatStatusLabel(item.status)}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardDivider} />
+
+                  <View style={styles.cardBottom}>
+                    <View style={styles.dateGroup}>
+                      <CalendarDays
+                        size={scale(14)}
+                        color="#94A3B8"
+                        strokeWidth={2.2}
+                      />
+                      <Text style={styles.orderDate}>
+                        {formatOrderDate(item.createdAt)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.amountGroup}>
+                      <Text style={styles.amountLabel}>Total</Text>
+                      <Text style={styles.amountValue}>
+                        {formatPrice(item.totalAmount)}
+                      </Text>
+                      <ChevronRight
+                        size={scale(16)}
+                        color="#CBD5E1"
+                        strokeWidth={2.4}
+                      />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
         </>
       )}
     </View>
@@ -396,13 +414,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orderNo: {
-    fontSize: scale(11),
+    fontSize: scale(10),
     fontWeight: '700',
     color: '#94A3B8',
     letterSpacing: 0.3,
   },
   productName: {
-    fontSize: scale(13.5),
+    fontSize: scale(12.5),
     fontWeight: '700',
     color: '#0F172A',
     marginTop: scale(2),
@@ -413,6 +431,11 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: scale(3),
   },
+  badgeColumn: {
+    alignItems: 'flex-end',
+    gap: scale(4),
+    marginLeft: spacing.sm,
+  },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,8 +443,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: scale(5),
     borderRadius: radius.pill,
-    alignSelf: 'flex-start',
-    marginLeft: spacing.sm,
   },
   statusDot: {
     width: scale(6),
@@ -431,6 +452,10 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: scale(10.5),
     fontWeight: '800',
+  },
+  paymentText: {
+    fontSize: scale(9.5),
+    fontWeight: '700',
   },
   cardDivider: {
     height: 1,
@@ -494,6 +519,20 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     textAlign: 'center',
     marginTop: scale(6),
+  },
+  retryBtn: {
+    height: scale(38),
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryText: {
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
 

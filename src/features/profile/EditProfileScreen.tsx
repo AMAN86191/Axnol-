@@ -215,15 +215,6 @@ const PhotoPickerSheet: React.FC<PhotoPickerSheetProps> = ({
 
   const actions: SheetAction[] = [
     {
-      key: 'camera',
-      label: 'Take Photo',
-      hint: 'Use your camera to capture a new photo',
-      icon: Camera,
-      color: '#0284C7',
-      bg: '#EFF6FF',
-      onPress: onCamera,
-    },
-    {
       key: 'gallery',
       label: 'Choose from Gallery',
       hint: 'Pick an existing photo from your device',

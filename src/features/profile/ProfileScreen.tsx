@@ -177,7 +177,7 @@ export const ProfileScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + scale(14),
-          paddingBottom: insets.bottom + scale(96),
+          paddingBottom: insets.bottom,
         }}>
         {/* Top-right corner art */}
         <Image
@@ -278,19 +278,6 @@ export const ProfileScreen: React.FC = () => {
 
         {/* Support & Legal */}
         <View style={styles.sectionCard}>
-          <View style={styles.sectionHeaderRow}>
-            <View style={[styles.sectionBadge, styles.badgeOrange]}>
-              <LifeBuoy size={scale(19)} color="#EA580C" strokeWidth={2.2} />
-            </View>
-            <View style={styles.sectionHeaderTexts}>
-              <Text style={styles.sectionHeaderTitle}>Support &amp; Legal</Text>
-              <Text style={styles.sectionHeaderSubtitle}>
-                Help, policies and more
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.sectionDivider} />
 
           {MENU_ITEMS.map((item, index) => {
             const isLast = index === MENU_ITEMS.length - 1;
@@ -506,7 +493,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     backgroundColor: 'rgba(255,255,255,0.72)',
     borderRadius: radius.xl,
-    paddingVertical: scale(15),
+    paddingVertical: scale(5),
     paddingHorizontal: scale(13),
     borderWidth: 1.2,
     borderColor: 'rgba(203,213,225,0.5)',
@@ -593,7 +580,7 @@ const styles = StyleSheet.create({
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: scale(11),
+    paddingVertical: scale(10),
   },
   menuIconWrap: {
     width: scale(38),
@@ -625,7 +612,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     marginHorizontal: spacing.lg,
-    height: scale(50),
+    height: scale(40),
     borderRadius: radius.md,
     backgroundColor: colors.dangerLight,
     marginTop: spacing.sm,

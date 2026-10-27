@@ -90,7 +90,6 @@ export const IndustryDetailsScreen: React.FC = () => {
   const {params} = useRoute<Route>();
   const dispatch = useAppDispatch();
   const industryDetail = useAppSelector(s => s.industry.industryDetail);
-  console.log('industryDetail :', industryDetail);
   const detailLoading = useAppSelector(s => s.industry.detailLoading);
   const detailError = useAppSelector(s => s.industry.detailError);
   const {industryId, industryTitle} = params;
@@ -407,52 +406,56 @@ export const IndustryDetailsScreen: React.FC = () => {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Categories</Text>
         {detailLoading && !industryDetail ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
+          <>
+            <Text style={styles.sectionTitle}>Categories</Text>
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
+          </>
         ) : detailError && !industryDetail ? (
-          <View style={styles.errorWrap}>
-            <Text style={styles.emptyText}>
-              {getLoadErrorMessage(detailError, 'categories')}
-            </Text>
-            <TouchableOpacity
-              activeOpacity={0.75}
-              style={styles.retryBtn}
-              onPress={loadIndustryDetails}>
-              <Text style={styles.retryText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        ) : categoryOptions.length === 0 ? (
-          <Text style={styles.emptyText}>
-            No product categories listed for this industry yet.
-          </Text>
-        ) : (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chipRow}>
-            {renderChip(
-              ALL_FILTER_ID,
-              'All',
-              selectedCategoryId === ALL_FILTER_ID,
-              () => {
-                setSelectedCategoryId(ALL_FILTER_ID);
-                setSelectedSubCategoryId(ALL_FILTER_ID);
-              },
-            )}
-            {categoryOptions.map(option =>
-              renderChip(
-                option.id,
-                option.name,
-                selectedCategoryId === option.id,
+          <>
+            <Text style={styles.sectionTitle}>Categories</Text>
+            <View style={styles.errorWrap}>
+              <Text style={styles.emptyText}>
+                {getLoadErrorMessage(detailError, 'categories')}
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.75}
+                style={styles.retryBtn}
+                onPress={loadIndustryDetails}>
+                <Text style={styles.retryText}>Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : categoryOptions.length > 0 ? (
+          <>
+            <Text style={styles.sectionTitle}>Categories</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chipRow}>
+              {renderChip(
+                ALL_FILTER_ID,
+                'All',
+                selectedCategoryId === ALL_FILTER_ID,
                 () => {
-                  setSelectedCategoryId(option.id);
+                  setSelectedCategoryId(ALL_FILTER_ID);
                   setSelectedSubCategoryId(ALL_FILTER_ID);
                 },
-              ),
-            )}
-          </ScrollView>
-        )}
+              )}
+              {categoryOptions.map(option =>
+                renderChip(
+                  option.id,
+                  option.name,
+                  selectedCategoryId === option.id,
+                  () => {
+                    setSelectedCategoryId(option.id);
+                    setSelectedSubCategoryId(ALL_FILTER_ID);
+                  },
+                ),
+              )}
+            </ScrollView>
+          </>
+        ) : null}
 
         {subCategoryOptions.length > 0 ? (
           <>

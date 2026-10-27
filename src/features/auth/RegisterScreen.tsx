@@ -51,6 +51,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Logo from '../../components/ui/Logo';
 import { toast } from '../../components/ui/ToastProvider';
+import { getFcmToken } from '../../utils/notificationService';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Register'>;
 
@@ -199,6 +200,7 @@ export const RegisterScreen: React.FC = () => {
       return;
     }
     try {
+      const fcmToken = await getFcmToken();
       await dispatch(
         registerUserSlice({
           name: values.name,
@@ -207,9 +209,9 @@ export const RegisterScreen: React.FC = () => {
           company_name: values.company,
           gst_number: values.gstin || '',
           password: values.password,
-          password_confirmation:values.password,
+          password_confirmation: values.password,
           terms_accepted: true,
-          fcm_token: null
+          fcm_token: fcmToken || null,
         }),
       ).unwrap();
       setOtpData({
