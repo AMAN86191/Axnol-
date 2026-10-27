@@ -5,10 +5,8 @@ import { clearAuth } from '../redux/AuthSlice';
 import { toast } from '../components/ui/ToastProvider';
 import { markSessionExpired } from './sessionEvents';
 import { invalidateRequests } from './requestCache';
-import {
-  getNetworkErrorKind,
-  getNetworkErrorMessage,
-} from '../utils/apiError';
+import { getNetworkErrorKind } from '../utils/apiError';
+import { reportNetworkError, reportNetworkOk } from '../utils/connectivity';
 
 const API_URL = 'https://axnol.tambimotors.com/api';
 
@@ -33,10 +31,12 @@ api.interceptors.request.use(
 );
 
 let handlingSessionExpiry = false;
-let lastNetworkToastAt = 0;
 
 api.interceptors.response.use(
-  response => response,
+  response => {
+    reportNetworkOk();
+    return response;
+  },
   async error => {
     const status = error?.response?.status;
     const message = String(
@@ -73,14 +73,11 @@ api.interceptors.response.use(
 
     const networkKind = getNetworkErrorKind(error);
     if (networkKind) {
-      const now = Date.now();
-      if (now - lastNetworkToastAt > 4000) {
-        lastNetworkToastAt = now;
-        toast.error(
-          networkKind === 'slow' ? 'Slow Internet Connection' : 'No Internet Connection',
-          getNetworkErrorMessage(networkKind),
-        );
-      }
+      // The global NetworkBanner shows the message and a Retry button.
+      reportNetworkError(networkKind);
+    } else if (error?.response) {
+      // The server answered, so the connection itself is fine.
+      reportNetworkOk();
     }
 
     return Promise.reject(error);

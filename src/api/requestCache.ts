@@ -1,8 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {clearSessionValues} from '../utils/sessionStore';
 
 const TOKEN_STORAGE_KEY = 'axnol_token';
 const CACHE_KEY_SEPARATOR = '\u0000';
-const DEFAULT_TTL_MS = 60_000;
+// Responses are kept for the whole app session: the memory cache dies when the
+// app is closed, so a fresh launch fetches again. Entries are dropped earlier
+// only by invalidateRequests (pull-to-refresh, cart/order changes, login/logout).
+const SESSION_TTL = Infinity;
 
 interface CacheEntry<T> {
   data: T;
@@ -13,6 +17,7 @@ interface CacheEntry<T> {
 export interface CachedRequestOptions<T> {
   resource: string;
   params?: unknown;
+  /** Milliseconds to keep the response; defaults to the whole app session. */
   ttl?: number;
   force?: boolean;
   request: () => Promise<T>;
@@ -70,7 +75,7 @@ const isMatchingResource = (entryResource: string, resource: string) =>
 export const cachedRequest = async <T>({
   resource,
   params,
-  ttl = DEFAULT_TTL_MS,
+  ttl = SESSION_TTL,
   force = false,
   request,
 }: CachedRequestOptions<T>): Promise<T> => {
@@ -118,6 +123,7 @@ export const invalidateRequests = (resource?: string): void => {
 
   if (!resource) {
     cache.clear();
+    clearSessionValues();
     return;
   }
 

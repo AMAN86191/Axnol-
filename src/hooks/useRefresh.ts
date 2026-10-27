@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { onReconnect } from '../utils/connectivity';
 
 const MIN_SPINNER_MS = 600;
 
@@ -22,6 +23,9 @@ export const useRefresh = (...refetchers: Array<() => unknown>) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, refetchers);
+
+  // When the internet comes back after a failure, reload this screen's data.
+  useEffect(() => onReconnect(() => { onRefresh(); }), [onRefresh]);
 
   return { refreshing, onRefresh };
 };

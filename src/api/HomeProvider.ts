@@ -26,7 +26,6 @@ export const getSliders = async (
   try {
     return await cachedRequest({
       resource: '/sliders',
-      ttl: 5 * 60_000,
       force,
       request: async () => (await api.get('/sliders')).data,
     });
