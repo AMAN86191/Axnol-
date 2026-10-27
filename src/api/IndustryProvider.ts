@@ -32,7 +32,6 @@ export const getIndustries = async (
   try {
     return await cachedRequest({
       resource: '/industries',
-      ttl: 5 * 60_000,
       force,
       request: async () => (await api.get('/industries')).data,
     });
@@ -49,7 +48,6 @@ export const getIndustryDetails = async (
   try {
     return await cachedRequest({
       resource: `/industries/${industryId}`,
-      ttl: 5 * 60_000,
       force,
       request: async () => (await api.get(`/industries/${industryId}`)).data,
     });

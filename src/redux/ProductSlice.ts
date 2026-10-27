@@ -1,6 +1,17 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { getProductById, getProducts, ProductApi } from '../api/ProductProvider';
 
+/**
+ * Identifies which filtered list the store currently holds (page ignored), so a
+ * screen can reuse it when the filters match instead of clearing and refetching.
+ */
+export const getProductListKey = (params?: Record<string, any>): string =>
+  JSON.stringify([
+    params?.industryId ?? params?.industry_id ?? null,
+    params?.categoryId ?? params?.category_id ?? null,
+    params?.subCategoryId ?? params?.sub_category_id ?? null,
+  ]);
+
 export const fetchProductsSlice = createAsyncThunk(
   'product/fetchProductsSlice',
   async (params: Record<string, any> | undefined, { rejectWithValue }) => {
@@ -30,6 +41,8 @@ const productSlice = createSlice({
     error: null as any,
     products: [] as ProductApi[],
     pagination: null as any,
+    // Filters the current `products` list was loaded for.
+    listKey: null as string | null,
     detailLoading: false,
     detailError: null as any,
     productDetail: null as ProductApi | null,
@@ -41,13 +54,24 @@ const productSlice = createSlice({
     clearProducts: state => {
       state.products = [];
       state.pagination = null;
+      state.listKey = null;
     },
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchProductsSlice.pending, state => {
+      .addCase(fetchProductsSlice.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        // A different filter means the old list is the wrong one: drop it.
+        // The same filter keeps its list so the screen can show it at once.
+        const arg: any = action.meta.arg ?? {};
+        const page = Number(arg.page ?? arg.pageNumber ?? 1);
+        const key = getProductListKey(arg);
+        if (page === 1 && state.listKey !== key) {
+          state.products = [];
+          state.pagination = null;
+        }
+        state.listKey = key;
       })
       .addCase(fetchProductsSlice.fulfilled, (state, action) => {
         state.loading = false;

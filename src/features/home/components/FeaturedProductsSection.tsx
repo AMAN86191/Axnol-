@@ -6,19 +6,22 @@ import { scale } from '../../../theme';
 import { HomeProduct } from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 import SectionEmptyState from './SectionEmptyState';
+import {ProductCardSkeleton} from '../../../components/ui/ProductCardSkeleton';
 
 interface FeaturedProductsSectionProps {
   products: HomeProduct[];
+  loading?: boolean;
   onSeeAll?: () => void;
   onPress: (product: HomeProduct) => void;
 }
 
 export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = ({
   products,
+  loading = false,
   onSeeAll,
   onPress,
 }) => {
-  const isEmpty = products.length === 0;
+  const isEmpty = !loading && products.length === 0;
 
   return (
     <>
@@ -28,7 +31,17 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
         onAction={isEmpty ? undefined : onSeeAll}
       />
 
-      {isEmpty ? (
+      {loading && products.length === 0 ? (
+        <ScrollView
+          horizontal
+          scrollEnabled={false}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollPad}>
+          {[0, 1, 2].map(i => (
+            <ProductCardSkeleton key={i} style={styles.card} />
+          ))}
+        </ScrollView>
+      ) : isEmpty ? (
         <SectionEmptyState
           icon={Star}
           message="No featured products found at the moment"

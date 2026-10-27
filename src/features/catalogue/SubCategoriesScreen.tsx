@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -30,6 +29,8 @@ import {fetchCategoryDetailsSlice} from '../../redux/CategorySlice';
 import {invalidateRequests} from '../../api/requestCache';
 import {getLoadErrorMessage} from '../../utils/apiError';
 import {toProductCardData} from '../../utils/productCardData';
+import {ChipRowSkeleton} from '../../components/ui/ListSkeletons';
+import {ProductGridSkeleton} from '../../components/ui/ProductCardSkeleton';
 
 type Route = RouteProp<CatalogueStackParamList, 'SubCategories'>;
 
@@ -161,8 +162,11 @@ export const SubCategoriesScreen: React.FC = () => {
         onBack={() => navigation.goBack()}
       />
       {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
+        <View style={styles.content}>
+          <ChipRowSkeleton />
+          <View style={styles.skeletonGap}>
+            <ProductGridSkeleton count={4} />
+          </View>
         </View>
       ) : showError ? (
         <EmptyState
@@ -278,7 +282,7 @@ export const SubCategoriesScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  skeletonGap: {marginTop: scale(18)},
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,

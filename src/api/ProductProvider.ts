@@ -62,7 +62,6 @@ export const getProducts = async (
     return await cachedRequest({
       resource: '/products',
       params: apiParams,
-      ttl: 2 * 60_000,
       force,
       request: async () => (await api.get('/products', {params: apiParams})).data,
     });
@@ -79,7 +78,6 @@ export const getProductById = async (
   try {
     return await cachedRequest({
       resource: `/products/${productId}`,
-      ttl: 5 * 60_000,
       force,
       request: async () => (await api.get(`/products/${productId}`)).data,
     });

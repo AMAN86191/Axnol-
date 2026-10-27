@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,7 +13,10 @@ import { Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { radius, scale, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
-import { getIndustries, Industry } from '../../api/IndustryProvider';
+import CachedImage from '../../components/ui/CachedImage';
+import { useAppDispatch } from '../../redux/hooks';
+import { useAppSelector } from '../../store';
+import { fetchIndustriesSlice } from '../../redux/IndustrySlice';
 import { getLoadErrorMessage } from '../../utils/apiError';
 import IndustriesSkeleton from './components/IndustriesSkeleton';
 
@@ -31,64 +33,21 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 export const IndustriesScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
   const [search, setSearch] = useState('');
-  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
-  const timersRef = useRef<Record<string, any>>({});
-  const [apiIndustries, setApiIndustries] = useState<Industry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<unknown>(null);
+  // The list lives in Redux, so reopening the screen shows it straight away.
+  const apiIndustries = useAppSelector(s => s.industry.industries);
+  const industriesLoading = useAppSelector(s => s.industry.loading);
+  const loadError = useAppSelector(s => s.industry.error);
+  const loading = industriesLoading && apiIndustries.length === 0;
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const response = await getIndustries();
-      setApiIndustries(response?.data?.industries ?? []);
-    } catch (error) {
-      setLoadError(error);
-      console.error('Failed to load industries:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    Object.values(timersRef.current).forEach(t => clearTimeout(t));
-    timersRef.current = {};
-  }, [apiIndustries]);
-
-  useEffect(() => {
-    const timeouts: Record<string, any> = {};
-    apiIndustries.forEach(item => {
-      const image = (item as any).image_url ?? (item as any).image ?? '';
-      if (image && !loadedImages[item.id] && !failedImages[item.id]) {
-        timeouts[item.id] = setTimeout(() => {
-          setFailedImages(prev => (prev[item.id] ? prev : { ...prev, [item.id]: true }));
-        }, 8000);
-      }
-    });
-    timersRef.current = timeouts;
-    return () => {
-      Object.values(timeouts).forEach(t => clearTimeout(t));
-    };
-  }, [apiIndustries, loadedImages, failedImages]);
-
-  useEffect(() => {
-    return () => {
-      Object.values(timersRef.current).forEach(t => clearTimeout(t));
-      timersRef.current = {};
-    };
-  }, []);
-
-  useEffect(() => {
-    apiIndustries.forEach(item => {
-      const image = (item as any).image_url ?? (item as any).image ?? '';
-      if (image) {
-        Image.prefetch(image).catch(() => undefined);
-      }
-    });
-  }, [apiIndustries]);
+  const fetchData = useCallback(
+    () =>
+      dispatch(fetchIndustriesSlice())
+        .unwrap()
+        .catch(() => undefined),
+    [dispatch],
+  );
 
   useEffect(() => {
     fetchData();
@@ -107,14 +66,6 @@ export const IndustriesScreen: React.FC = () => {
   const filtered = industries.filter(
     item => !search || item.name.toLowerCase().includes(search.toLowerCase()),
   );
-
-  useEffect(() => {
-    filtered.forEach(item => {
-      if (item.image && !loadedImages[item.id]) {
-        Image.prefetch(item.image).catch(() => undefined);
-      }
-    });
-  }, [filtered, loadedImages]);
 
   return (
     <View style={styles.container}>
@@ -172,41 +123,32 @@ export const IndustriesScreen: React.FC = () => {
                       }
                     >
                       <View style={styles.imageWrap}>
-                        {item.image ? (
-                          <Image
-                            key={`${item.id}`}
-                            source={{ uri: item.image }}
-                            style={styles.image}
-                            resizeMode="cover"
-                            onLoad={() => {
-                              if (timersRef.current[item.id]) {
-                                clearTimeout(timersRef.current[item.id]);
-                                delete timersRef.current[item.id];
-                              }
-                              setLoadedImages(prev => ({ ...prev, [item.id]: true }));
-                            }}
-                            onLoadEnd={() => {
-                              if (timersRef.current[item.id]) {
-                                clearTimeout(timersRef.current[item.id]);
-                                delete timersRef.current[item.id];
-                              }
-                              setLoadedImages(prev => ({ ...prev, [item.id]: true }));
-                            }}
-                            onError={() => {
-                              if (timersRef.current[item.id]) {
-                                clearTimeout(timersRef.current[item.id]);
-                                delete timersRef.current[item.id];
-                              }
-                            }}
-                          />
-                        ) : null}
-                        {(!item.image || failedImages[item.id]) && !loadedImages[item.id] && (
-                          <View style={[styles.image, styles.fallbackWrap, StyleSheet.absoluteFillObject]}>
-                            <Text style={styles.fallbackText}>
-                              {item.name?.charAt(0)?.toUpperCase() || '?'}
-                            </Text>
-                          </View>
-                        )}
+                        <CachedImage
+                          uri={item.image}
+                          style={styles.image}
+                          placeholder={
+                            <View
+                              style={[
+                                styles.image,
+                                styles.fallbackWrap,
+                                StyleSheet.absoluteFillObject,
+                              ]}
+                            />
+                          }
+                          fallback={
+                            <View
+                              style={[
+                                styles.image,
+                                styles.fallbackWrap,
+                                StyleSheet.absoluteFillObject,
+                              ]}
+                            >
+                              <Text style={styles.fallbackText}>
+                                {item.name?.charAt(0)?.toUpperCase() || '?'}
+                              </Text>
+                            </View>
+                          }
+                        />
                       </View>
                       <Text style={styles.tileTitle} numberOfLines={1}>
                         {item.name}

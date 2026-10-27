@@ -209,7 +209,7 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.avatarBlock}>
             <View style={styles.avatarRing}>
               <Image
-                source={avatarUri ? {uri: avatarUri} : require('../../../assets/axnol/default_avatar.png')}
+                source={avatarUri ? {uri: avatarUri} : require('../../../assets/axnol/default_avatar.webp')}
                 style={styles.avatar}
                 resizeMode="cover"
               />

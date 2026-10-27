@@ -29,11 +29,12 @@ export const AdSlider: React.FC<AdSliderProps> = ({
           });
         }}>
         <Image
-          source={require('../../../../assets/axnol/banner_category_1.png')}
+          source={require('../../../../assets/axnol/banner_category_1.webp')}
           style={styles.image}
           resizeMode="cover"
         />
       </TouchableOpacity>
+
     </View>
   );
 };

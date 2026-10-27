@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useSyncExternalStore } from 'react';
-import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking, ActivityIndicator } from 'react-native';
+import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking } from 'react-native';
 import { stripHtml } from '../../utils/stripHtml';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,7 @@ import { invalidateRequests } from '../../api/requestCache';
 import { getLoadErrorMessage } from '../../utils/apiError';
 import { toProductCardData } from '../../utils/productCardData';
 import AdSlider from './components/AdSlider';
+import { ProductGridSkeleton } from '../../components/ui/ProductCardSkeleton';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -406,6 +407,7 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.sectionWrap}>
           <FeaturedProductsSection
             products={homeProducts.slice(0, 6)}
+            loading={productsLoading && homeProducts.length === 0}
             onSeeAll={() =>
               openAllProducts({ featured: true, title: 'Featured Products' })
             }
@@ -439,7 +441,7 @@ export const HomeScreen: React.FC = () => {
           />
           {isLoadingMoreProducts || (productsLoading && homeProductsPage > 1) ? (
             <View style={styles.loadMoreWrap}>
-              <ActivityIndicator size="small" color={colors.primary} />
+              <ProductGridSkeleton count={2} />
             </View>
           ) : null}
         </View>

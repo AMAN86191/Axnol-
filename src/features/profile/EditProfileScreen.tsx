@@ -674,7 +674,7 @@ export const EditProfileScreen: React.FC = () => {
                 activeOpacity={0.85}
                 onPress={changePhoto}>
                 <Image
-                  source={form.avatar ? {uri: form.avatar} : require('../../../assets/axnol/default_avatar.png')}
+                  source={form.avatar ? {uri: form.avatar} : require('../../../assets/axnol/default_avatar.webp')}
                   style={styles.avatarImg}
                   resizeMode="cover"
                 />

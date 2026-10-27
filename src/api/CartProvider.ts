@@ -25,7 +25,6 @@ export const getCart = async (force = false): Promise<CartResponse> => {
   try {
     return await cachedRequest({
       resource: '/cart',
-      ttl: 15_000,
       force,
       request: async () => (await api.get('/cart')).data,
     });

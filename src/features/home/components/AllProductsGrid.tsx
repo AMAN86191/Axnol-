@@ -1,11 +1,12 @@
 import React from 'react';
-import {ActivityIndicator, StyleSheet, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import {WifiOff} from 'lucide-react-native';
 import ProductCard from '../../../components/ui/ProductCard';
-import {colors, scale} from '../../../theme';
+import {scale} from '../../../theme';
 import {HomeProduct} from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 import SectionEmptyState from './SectionEmptyState';
+import {ProductGridSkeleton} from '../../../components/ui/ProductCardSkeleton';
 
 interface AllProductsGridProps {
   products: HomeProduct[];
@@ -51,9 +52,7 @@ export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
       />
 
       {loading && products.length === 0 ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={colors.primary} />
-        </View>
+        <ProductGridSkeleton count={4} />
       ) : showError ? (
         <SectionEmptyState
           icon={WifiOff}

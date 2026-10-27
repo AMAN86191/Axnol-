@@ -33,7 +33,6 @@ export const getCategories = async (
     return await cachedRequest({
       resource: '/categories',
       params,
-      ttl: 5 * 60_000,
       force,
       request: async () => (await api.get('/categories', {params})).data,
     });
@@ -51,7 +50,6 @@ export const getCategoryDetails = async (
     const categoryId = encodeURIComponent(String(category));
     return await cachedRequest({
       resource: `/categories/${categoryId}`,
-      ttl: 5 * 60_000,
       force,
       request: async () => (await api.get(`/categories/${categoryId}`)).data,
     });

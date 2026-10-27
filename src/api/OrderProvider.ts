@@ -256,7 +256,6 @@ export const getOrders = async (force = false): Promise<OrderRecord[]> => {
   try {
     return await cachedRequest({
       resource: '/orders',
-      ttl: 30_000,
       force,
       request: async () => {
         const response = await api.get('/orders');
@@ -276,7 +275,6 @@ export const getOrderById = async (
   try {
     return await cachedRequest({
       resource: `/orders/${orderId}`,
-      ttl: 30_000,
       force,
       request: async () => {
         const response = await api.get(`/orders/${orderId}`);
@@ -302,6 +300,8 @@ export const confirmOrder = async (
   try {
     const response = await api.post('/orders/confirm', payload);
     invalidateRequests('/orders');
+    // Placing an order empties the server-side cart.
+    invalidateRequests('/cart');
     return response.data;
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
