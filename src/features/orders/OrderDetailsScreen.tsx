@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -16,17 +16,20 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import {
-  BadgeCheck,
+  RouteProp,
+  useFocusEffect,
+  useRoute,
+} from '@react-navigation/native';
+import {
   CalendarDays,
-  ChevronLeft,
   ClipboardCheck,
-  Home,
+  Clock,
   MapPin,
   Package,
   PackageCheck,
   Truck,
+  XCircle,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,101 +37,148 @@ import { OrdersStackParamList } from '../../navigation/types';
 import AppImage from '../../components/ui/AppImage';
 import { colors, radius, scale, shadows, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
-import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import OrderDetailsSkeleton from './components/OrderDetailsSkeleton';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { fetchOrderDetailSlice } from '../../redux/OrderSlice';
+import { OrderRecord } from '../../api/OrderProvider';
+import { formatPrice } from '../../utils/formatPrice';
+import {
+  formatOrderDateTime,
+  formatStatusLabel,
+  getOrderAddress,
+  getOrderErrorMessage,
+  getOrderItemsTotal,
+  getOrderQty,
+  getStatusBadgeStyle,
+  statusKey,
+} from './orderUtils';
 
 type Route = RouteProp<OrdersStackParamList, 'OrderDetails'>;
+
+type TimelineState = 'completed' | 'current' | 'upcoming' | 'cancelled';
 
 interface TimelineStepData {
   title: string;
   time: string;
   note: string;
   icon: LucideIcon;
+  state: TimelineState;
 }
 
-interface OrderItemData {
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  image: string;
+interface TimelineStage {
+  key: string;
+  title: string;
+  note: string;
+  icon: LucideIcon;
 }
 
-const ORDER = {
-  orderNo: 'AX0003',
-  date: '18 Sep 2026, 10:30 AM',
-  status: 'Delivered',
-  items: [
-    {
-      name: 'Gear Oil AX-200',
-      quantity: 20,
-      unitPrice: 2250,
-      image: 'product_cutting',
-    },
-  ] as OrderItemData[],
-  subtotal: 45000,
-  gst: 8100,
-  total: 53100,
-  shippingAddress:
-    'Sharma Auto Traders, Plot 12, Industrial Area Phase II, Jaipur, Rajasthan - 302013',
-  timeline: [
-    {
-      title: 'Order Placed',
-      time: '18 Sep 2026, 10:30 AM',
-      note: 'Order received by Axnol',
-      icon: ClipboardCheck,
-    },
-    {
-      title: 'Processing',
-      time: '19 Sep 2026, 09:00 AM',
-      note: 'Stock allocated & packed',
-      icon: PackageCheck,
-    },
-    {
-      title: 'Dispatched',
-      time: '20 Sep 2026, 04:20 PM',
-      note: 'Shipped from Jaipur depot',
-      icon: Truck,
-    },
-    {
-      title: 'Delivered',
-      time: '21 Sep 2026, 11:30 AM',
-      note: 'Signed for by recipient',
-      icon: Home,
-    },
-  ] as TimelineStepData[],
+const TIMELINE_STAGES: TimelineStage[] = [
+  {
+    key: 'pending',
+    title: 'Order Pending',
+    note: 'Order received and awaiting confirmation',
+    icon: Clock,
+  },
+  {
+    key: 'placed',
+    title: 'Order Placed',
+    note: 'Order confirmed and being prepared',
+    icon: ClipboardCheck,
+  },
+  {
+    key: 'shipped',
+    title: 'Shipped',
+    note: 'Order handed over to the delivery partner',
+    icon: Truck,
+  },
+  {
+    key: 'delivered',
+    title: 'Delivered',
+    note: 'Order delivered successfully',
+    icon: PackageCheck,
+  },
+];
+
+const STATUS_STAGE: Record<string, string> = {
+  pending: 'pending',
+  placed: 'placed',
+  processing: 'placed',
+  confirmed: 'placed',
+  shipped: 'shipped',
+  dispatched: 'shipped',
+  delivered: 'delivered',
+  completed: 'delivered',
+  cancelled: 'cancelled',
 };
 
-const STATUS_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  Delivered: { bg: '#DCFCE7', text: '#16A34A', dot: '#16A34A' },
-  Dispatched: { bg: '#E0E7FF', text: '#4F46E5', dot: '#4F46E5' },
-  Processing: { bg: '#DBEAFE', text: '#2563EB', dot: '#2563EB' },
-  Placed: { bg: '#FEF3C7', text: '#D97706', dot: '#D97706' },
-  Canceled: { bg: '#FEE2E2', text: '#DC2626', dot: '#DC2626' },
+const getOrderTimeline = (order: OrderRecord): TimelineStepData[] => {
+  const status = statusKey(order.status);
+  const currentStage = STATUS_STAGE[status] ?? 'pending';
+  const createdAt = formatOrderDateTime(order.createdAt);
+  const currentTime = formatOrderDateTime(
+    order.updatedAt ?? order.createdAt,
+  );
+
+  if (currentStage === 'cancelled') {
+    return [
+      {
+        ...TIMELINE_STAGES[0],
+        time: createdAt,
+        state: 'completed',
+      },
+      {
+        title: 'Order Cancelled',
+        note: 'Order was cancelled',
+        icon: XCircle,
+        time: currentTime,
+        state: 'cancelled',
+      },
+    ];
+  }
+
+  const currentIndex = TIMELINE_STAGES.findIndex(
+    stage => stage.key === currentStage,
+  );
+
+  return TIMELINE_STAGES.map((stage, index) => {
+    const isCurrent = index === currentIndex;
+    const isCompleted = index < currentIndex;
+
+    return {
+      ...stage,
+      time: isCurrent
+        ? currentTime
+        : isCompleted
+        ? index === 0
+          ? createdAt
+          : 'Completed'
+        : 'Pending',
+      note: isCompleted || isCurrent ? stage.note : 'Waiting for update',
+      state: isCurrent ? 'current' : isCompleted ? 'completed' : 'upcoming',
+    };
+  });
 };
-
-const statusStyle = (status: string) =>
-  STATUS_STYLES[status] ?? { bg: '#F1F5F9', text: '#64748B', dot: '#64748B' };
-
-const formatMoney = (value: number) => `₹${value.toLocaleString('en-IN')}`;
 
 interface TimelineStepProps {
   step: TimelineStepData;
   index: number;
   isLast: boolean;
-  isCurrent: boolean;
 }
 
 const TimelineStep: React.FC<TimelineStepProps> = ({
   step,
   index,
   isLast,
-  isCurrent,
 }) => {
   const circleScale = useSharedValue(0);
   const contentOpacity = useSharedValue(0);
   const contentY = useSharedValue(scale(14));
   const lineScale = useSharedValue(0);
-  const delay = 260 + index * 240;
+  const delay = 260 + index * 180;
+  const isCurrent = step.state === 'current';
+  const isCancelled = step.state === 'cancelled';
+  const isUpcoming = step.state === 'upcoming';
+  const isCompleted = step.state === 'completed';
 
   useEffect(() => {
     circleScale.value = withDelay(
@@ -140,13 +190,21 @@ const TimelineStep: React.FC<TimelineStepProps> = ({
       delay + 90,
       withTiming(0, { duration: 420, easing: Easing.out(Easing.cubic) }),
     );
-    if (!isLast) {
+    if (!isLast && isCompleted) {
       lineScale.value = withDelay(
         delay + 210,
         withTiming(1, { duration: 380, easing: Easing.inOut(Easing.ease) }),
       );
     }
-  }, [circleScale, contentOpacity, contentY, lineScale, delay, isLast]);
+  }, [
+    circleScale,
+    contentOpacity,
+    contentY,
+    lineScale,
+    delay,
+    isLast,
+    isCompleted,
+  ]);
 
   const circleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: circleScale.value }],
@@ -168,9 +226,15 @@ const TimelineStep: React.FC<TimelineStepProps> = ({
           style={[
             styles.stepCircle,
             isCurrent && styles.stepCircleCurrent,
+            isUpcoming && styles.stepCircleUpcoming,
+            isCancelled && styles.stepCircleCancelled,
             circleStyle,
           ]}>
-          <Icon size={scale(13)} color="#FFFFFF" strokeWidth={2.6} />
+          <Icon
+            size={scale(13)}
+            color={isUpcoming ? '#94A3B8' : '#FFFFFF'}
+            strokeWidth={2.6}
+          />
         </Animated.View>
         {!isLast && (
           <View style={styles.lineTrack}>
@@ -186,46 +250,126 @@ const TimelineStep: React.FC<TimelineStepProps> = ({
           contentStyle,
         ]}>
         <View style={styles.stepTitleRow}>
-          <Text style={styles.stepTitle}>{step.title}</Text>
+          <Text
+            style={[
+              styles.stepTitle,
+              isCurrent && styles.stepTitleCurrent,
+              isUpcoming && styles.stepTitleUpcoming,
+              isCancelled && styles.stepTitleCancelled,
+            ]}>
+            {step.title}
+          </Text>
           {isCurrent && (
             <View style={styles.currentPill}>
               <Text style={styles.currentPillText}>CURRENT</Text>
             </View>
           )}
         </View>
-        <Text style={styles.stepTime}>{step.time}</Text>
-        <Text style={styles.stepNote}>{step.note}</Text>
+        <Text
+          style={[
+            styles.stepTime,
+            isUpcoming && styles.stepTextUpcoming,
+            isCancelled && styles.stepTimeCancelled,
+          ]}>
+          {step.time}
+        </Text>
+        <Text
+          style={[
+            styles.stepNote,
+            isUpcoming && styles.stepTextUpcoming,
+            isCancelled && styles.stepTimeCancelled,
+          ]}>
+          {step.note}
+        </Text>
       </Animated.View>
     </View>
   );
 };
 
 export const OrderDetailsScreen: React.FC = () => {
-  const navigation = useNavigation<any>();
+  const route = useRoute<Route>();
   const insets = useSafeAreaInsets();
-  useRoute<Route>();
-  const loading = useSimulatedLoading();
+  const dispatch = useAppDispatch();
+  const orderId = route.params?.orderId;
+  const order = useAppSelector(state => state.order.orderDetail);
+  const loading = useAppSelector(state => state.order.orderDetailLoading);
+  const error = useAppSelector(state => state.order.orderDetailError);
 
-  const order = ORDER;
-  const badge = statusStyle(order.status);
-  const currentIndex = order.timeline.length - 1;
+  const fetchOrder = useCallback(() => {
+    if (!orderId) return Promise.resolve();
+    return dispatch(fetchOrderDetailSlice(orderId))
+      .unwrap()
+      .catch(() => undefined);
+  }, [dispatch, orderId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrder();
+    }, [fetchOrder]),
+  );
+
+  if (loading && !order) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <CommonHeader title="Order Details" />
+        <OrderDetailsSkeleton />
+      </View>
+    );
+  }
+
+  if (!order) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <CommonHeader title="Order Details" />
+        <View style={styles.stateWrap}>
+          <View style={styles.stateIcon}>
+            <Package size={scale(30)} color={colors.primary} strokeWidth={1.8} />
+          </View>
+          <Text style={styles.stateTitle}>Could not load order</Text>
+          <Text style={styles.stateText}>
+            {error ? getOrderErrorMessage(error) : 'Order not found.'}
+          </Text>
+          {error ? (
+            <TouchableOpacity
+              style={styles.retryBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                fetchOrder();
+              }}>
+              <Text style={styles.retryText}>Try Again</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
+
+  const badge = getStatusBadgeStyle(order.status);
+  const paymentBadge = getStatusBadgeStyle(order.paymentStatus);
+  const timeline = getOrderTimeline(order);
+  const subtotal = getOrderItemsTotal(order);
+  const total = order.totalAmount || subtotal;
+  const totalQty = getOrderQty(order);
+  const address = getOrderAddress(order);
+  const addressLines = [
+    order.companyName,
+    address,
+    order.phone ? `Phone: ${order.phone}` : '',
+  ].filter(Boolean);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      {/* Header */}
-      <CommonHeader title='Order Details' />
-      {loading ? (
-        <OrderDetailsSkeleton />
-      ) : (
+      <CommonHeader title="Order Details" />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: insets.bottom + scale(48) },
         ]}>
-        {/* Status hero */}
         <LinearGradient
           colors={[colors.primary, colors.primaryDark]}
           start={{ x: 0, y: 0 }}
@@ -235,13 +379,13 @@ export const OrderDetailsScreen: React.FC = () => {
           <View style={styles.heroDecorTwo} />
 
           <View style={styles.heroTopRow}>
-            <Text style={styles.heroOrderNo}>{order.orderNo}</Text>
+            <Text style={styles.heroOrderNo}>{order.orderNumber}</Text>
             <View style={[styles.heroStatus, { backgroundColor: badge.bg }]}>
               <View
                 style={[styles.heroStatusDot, { backgroundColor: badge.dot }]}
               />
               <Text style={[styles.heroStatusText, { color: badge.text }]}>
-                {order.status}
+                {formatStatusLabel(order.status)}
               </Text>
             </View>
           </View>
@@ -252,7 +396,9 @@ export const OrderDetailsScreen: React.FC = () => {
               color="rgba(255,255,255,0.8)"
               strokeWidth={2.2}
             />
-            <Text style={styles.heroMetaText}>{order.date}</Text>
+            <Text style={styles.heroMetaText}>
+              {formatOrderDateTime(order.createdAt)}
+            </Text>
           </View>
 
           <View style={styles.heroDivider} />
@@ -260,91 +406,101 @@ export const OrderDetailsScreen: React.FC = () => {
           <View style={styles.heroBottomRow}>
             <View>
               <Text style={styles.heroTotalLabel}>Total Amount</Text>
-              <Text style={styles.heroTotal}>{formatMoney(order.total)}</Text>
+              <Text style={styles.heroTotal}>{formatPrice(total)}</Text>
             </View>
             <View style={styles.heroItemsPill}>
               <Package size={scale(10.5)} color="#FFFFFF" strokeWidth={1.5} />
               <Text style={styles.heroItemsText}>
-                {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                {order.items.length} item{order.items.length === 1 ? '' : 's'}
               </Text>
             </View>
           </View>
         </LinearGradient>
 
-        {/* Timeline */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Timeline</Text>
           <View style={styles.panel}>
             <View style={styles.timelineBody}>
-              {order.timeline.map((step, index) => (
+              {timeline.map((step, index) => (
                 <TimelineStep
-                  key={step.title}
+                  key={`${step.title}-${index}`}
                   step={step}
                   index={index}
-                  isLast={index === order.timeline.length - 1}
-                  isCurrent={index === currentIndex}
+                  isLast={index === timeline.length - 1}
                 />
               ))}
             </View>
           </View>
         </View>
 
-        {/* Items */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Items</Text>
           <View style={styles.panel}>
-            {order.items.map((item, index) => (
-              <View
-                key={item.name}
-                style={[styles.itemRow, index > 0 && styles.rowDivider]}>
-                <View style={styles.itemImgWrap}>
-                  <AppImage
-                    uri={item.image}
-                    style={styles.itemImg}
-                    resizeMode="contain"
-                  />
-                </View>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.itemMeta}>
-                    Qty {item.quantity} • {formatMoney(item.unitPrice)}/unit
-                  </Text>
-                </View>
-                <Text style={styles.itemTotal}>
-                  {formatMoney(item.quantity * item.unitPrice)}
-                </Text>
-              </View>
-            ))}
+            {order.items.length === 0 ? (
+              <Text style={styles.emptyItemsText}>No items in this order.</Text>
+            ) : (
+              order.items.map((item, index) => {
+                const lineTotal =
+                  item.lineTotal || item.unitPrice * item.qty;
+                return (
+                  <View
+                    key={`${item.productId}-${item.rateChartId ?? index}`}
+                    style={[styles.itemRow, index > 0 && styles.rowDivider]}>
+                    <View style={styles.itemImgWrap}>
+                      <AppImage
+                        uri={item.image || 'product_generic'}
+                        style={styles.itemImg}
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemName} numberOfLines={1}>
+                        {item.productName}
+                      </Text>
+                      <Text style={styles.itemMeta}>
+                        Qty {item.qty}
+                        {item.size ? ` • ${item.size}` : ''} •{' '}
+                        {formatPrice(item.unitPrice)}/unit
+                      </Text>
+                    </View>
+                    <Text style={styles.itemTotal}>
+                      {formatPrice(lineTotal)}
+                    </Text>
+                  </View>
+                );
+              })
+            )}
           </View>
         </View>
 
-        {/* Payment Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Summary</Text>
           <View style={styles.panel}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>
-                {formatMoney(order.subtotal)}
-              </Text>
+              <Text style={styles.summaryLabel}>Items Subtotal</Text>
+              <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>GST (18%)</Text>
-              <Text style={styles.summaryValue}>{formatMoney(order.gst)}</Text>
+              <Text style={styles.summaryLabel}>Total Quantity</Text>
+              <Text style={styles.summaryValue}>{totalQty}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Payment Status</Text>
+              <Text
+                style={[styles.summaryValue, { color: paymentBadge.text }]}>
+                {formatStatusLabel(order.paymentStatus)}
+              </Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
               <Text style={styles.summaryTotalLabel}>Total</Text>
               <Text style={styles.summaryTotalValue}>
-                {formatMoney(order.total)}
+                {formatPrice(total)}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Delivery Address */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Address</Text>
           <View style={styles.panel}>
@@ -356,14 +512,24 @@ export const OrderDetailsScreen: React.FC = () => {
                   strokeWidth={2.4}
                 />
               </View>
-              <Text style={styles.addressText}>{order.shippingAddress}</Text>
+              <Text style={styles.addressText}>
+                {addressLines.length > 0
+                  ? addressLines.join('\n')
+                  : 'Address not available'}
+              </Text>
             </View>
           </View>
         </View>
 
-      
+        {order.remark ? (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Remark</Text>
+            <View style={styles.panel}>
+              <Text style={styles.remarkText}>{order.remark}</Text>
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
-      )}
     </View>
   );
 };
@@ -373,7 +539,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-
 
   scrollContent: {
     paddingHorizontal: spacing.lg,
@@ -532,6 +697,14 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#DCEAF7',
   },
+  stepCircleUpcoming: {
+    backgroundColor: '#E2E8F0',
+  },
+  stepCircleCancelled: {
+    backgroundColor: '#DC2626',
+    borderWidth: 3,
+    borderColor: '#FEE2E2',
+  },
   lineTrack: {
     width: scale(2),
     flex: 1,
@@ -564,6 +737,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#0F172A',
   },
+  stepTitleCurrent: {
+    color: colors.primaryDark,
+    fontWeight: '800',
+  },
+  stepTitleUpcoming: {
+    color: '#94A3B8',
+    fontWeight: '600',
+  },
+  stepTitleCancelled: {
+    color: '#DC2626',
+  },
   currentPill: {
     paddingHorizontal: scale(7),
     paddingVertical: scale(2),
@@ -587,12 +771,17 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: scale(2),
   },
+  stepTextUpcoming: {
+    color: '#CBD5E1',
+  },
+  stepTimeCancelled: {
+    color: '#DC2626',
+  },
 
   // Items
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    // paddingVertical: scale(8),
   },
   rowDivider: {
     borderTopWidth: 1,
@@ -629,6 +818,12 @@ const styles = StyleSheet.create({
     fontSize: scale(13.5),
     fontWeight: '800',
     color: '#0F172A',
+  },
+  emptyItemsText: {
+    fontSize: scale(12.5),
+    color: '#94A3B8',
+    textAlign: 'center',
+    paddingVertical: spacing.md,
   },
 
   // Summary
@@ -682,7 +877,55 @@ const styles = StyleSheet.create({
     fontSize: scale(12.5),
     lineHeight: scale(19),
     color: '#475569',
-  }
+  },
+  remarkText: {
+    fontSize: scale(12.5),
+    lineHeight: scale(19),
+    color: '#475569',
+  },
+
+  // Loading / error state
+  stateWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  stateIcon: {
+    width: scale(72),
+    height: scale(72),
+    borderRadius: scale(36),
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  stateTitle: {
+    fontSize: scale(16),
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  stateText: {
+    marginTop: scale(6),
+    fontSize: scale(12.5),
+    lineHeight: scale(19),
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    height: scale(38),
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryText: {
+    fontSize: scale(12.5),
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });
 
 export default OrderDetailsScreen;

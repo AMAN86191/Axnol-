@@ -56,6 +56,231 @@ export interface ConfirmOrderResponse {
   };
 }
 
+export interface OrderItemRecord {
+  productId: number;
+  productName: string;
+  rateChartId?: string | number | null;
+  size?: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+  image?: string;
+}
+
+export interface OrderRecord {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  totalAmount: number;
+  totalQty: number;
+  items: OrderItemRecord[];
+  createdAt?: string;
+  updatedAt?: string;
+  userId?: number;
+  remark?: string;
+  companyName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}
+
+const toNumber = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const toText = (value: unknown, fallback = ''): string => {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
+};
+
+const getPackSizeLabel = (raw: any, product: any): string => {
+  const unit = toText(
+    raw?.unit ?? raw?.product_unit ?? raw?.uom ?? product?.unit,
+  );
+  const explicitSize = toText(
+    raw?.size ??
+      raw?.packSize ??
+      raw?.pack_size_label ??
+      product?.size ??
+      product?.packSize,
+  );
+  const sizeValue =
+    raw?.product_size ??
+    raw?.productSize ??
+    raw?.pack_size ??
+    raw?.packSize ??
+    product?.product_size ??
+    product?.productSize ??
+    product?.pack_size ??
+    product?.packSize;
+
+  if (sizeValue !== undefined && sizeValue !== null) {
+    const sizeText = String(sizeValue).trim();
+    if (sizeText) {
+      if (!unit) {
+        if (explicitSize && explicitSize !== sizeText) {
+          return explicitSize.toLowerCase().includes(sizeText.toLowerCase())
+            ? explicitSize
+            : `${sizeText} ${explicitSize}`;
+        }
+        return explicitSize || sizeText;
+      }
+      return sizeText.toLowerCase().includes(unit.toLowerCase())
+        ? sizeText
+        : `${sizeText} ${unit}`;
+    }
+  }
+
+  return explicitSize || unit;
+};
+
+const normalizeOrderItem = (raw: any): OrderItemRecord => {
+  const product = raw?.product ?? raw?.product_detail ?? {};
+  const qty = toNumber(raw?.qty ?? raw?.quantity) || 1;
+  const unitPrice = toNumber(
+    raw?.unit_price ?? raw?.unitPrice ?? raw?.price ?? product?.price,
+  );
+  const lineTotal =
+    toNumber(raw?.line_total ?? raw?.lineTotal ?? raw?.total) ||
+    unitPrice * qty;
+
+  return {
+    productId: toNumber(
+      raw?.product_id ?? raw?.productId ?? product?.id,
+    ),
+    productName: toText(
+      raw?.product_name ??
+        raw?.productName ??
+        raw?.name ??
+        product?.name,
+      'Product',
+    ),
+    rateChartId:
+      raw?.rate_chart_id ??
+      raw?.rateChartId ??
+      raw?.rate_chart?.id ??
+      null,
+    size: getPackSizeLabel(raw, product),
+    qty,
+    unitPrice,
+    lineTotal,
+    image: toText(
+      raw?.image ??
+        raw?.thumbnail_url ??
+        raw?.thumbnailUrl ??
+        product?.thumbnail_url ??
+        product?.thumbnailUrl ??
+        product?.image_urls?.[0] ??
+        product?.imageUrls?.[0],
+      '',
+    ),
+  };
+};
+
+const normalizeOrder = (raw: any): OrderRecord => {
+  const rawItems = raw?.items ?? raw?.order_items ?? raw?.orderItems ?? [];
+  const items = Array.isArray(rawItems)
+    ? rawItems.map(normalizeOrderItem)
+    : [];
+  const itemsQty = items.reduce((sum, item) => sum + item.qty, 0);
+  const itemsTotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const orderId = raw?.id ?? raw?.order_id ?? raw?.orderId;
+
+  return {
+    id: toText(orderId),
+    orderNumber: toText(
+      raw?.invoice_number ??
+        raw?.invoiceNumber ??
+        raw?.invoice_no ??
+        raw?.orderNumber ??
+        raw?.order_number ??
+        raw?.order_no,
+      orderId ? `#${orderId}` : 'Order',
+    ),
+    status: toText(raw?.status, 'pending'),
+    paymentStatus: toText(
+      raw?.payment_status ?? raw?.paymentStatus ?? raw?.payment,
+      'unpaid',
+    ),
+    totalAmount:
+      toNumber(
+        raw?.total_amount ??
+          raw?.totalAmount ??
+          raw?.total ??
+          raw?.amount,
+      ) || itemsTotal,
+    totalQty:
+      toNumber(raw?.total_qty ?? raw?.totalQty ?? raw?.qty) || itemsQty,
+    items,
+    createdAt: raw?.created_at ?? raw?.createdAt,
+    updatedAt: raw?.updated_at ?? raw?.updatedAt,
+    userId:
+      raw?.user_id != null || raw?.userId != null
+        ? toNumber(raw?.user_id ?? raw?.userId)
+        : undefined,
+    remark: toText(raw?.remark ?? raw?.message, ''),
+    companyName: toText(
+      raw?.company_name ?? raw?.companyName ?? raw?.company,
+      '',
+    ),
+    phone: toText(raw?.phone, ''),
+    email: toText(raw?.email, ''),
+    address: toText(raw?.address, ''),
+    city: toText(raw?.city, ''),
+    state: toText(raw?.state, ''),
+    pincode: toText(raw?.pincode, ''),
+  };
+};
+
+const findOrderList = (node: any, depth = 0): any[] => {
+  if (Array.isArray(node)) return node;
+  if (!node || typeof node !== 'object' || depth > 5) return [];
+
+  for (const key of ['orders', 'items', 'data', 'results']) {
+    if (node[key] !== undefined) {
+      const found = findOrderList(node[key], depth + 1);
+      if (found.length > 0) return found;
+    }
+  }
+  return [];
+};
+
+export const getOrders = async (): Promise<OrderRecord[]> => {
+  try {
+    const response = await api.get('/orders');
+    const list = findOrderList(response.data);
+    return list.map(normalizeOrder);
+  } catch (error: any) {
+    const data = error.response?.data ?? { message: error.message };
+    throw data;
+  }
+};
+
+export const getOrderById = async (
+  orderId: string | number,
+): Promise<OrderRecord> => {
+  try {
+    const response = await api.get(`/orders/${orderId}`);
+    const payload = response.data?.data ?? response.data;
+    const raw =
+      payload?.order ?? payload?.data?.order ?? payload?.data ?? payload;
+
+    if (!raw || typeof raw !== 'object') {
+      throw { message: 'Order not found' };
+    }
+    return normalizeOrder(raw);
+  } catch (error: any) {
+    const data = error.response?.data ?? { message: error.message };
+    throw data;
+  }
+};
+
 export const confirmOrder = async (
   payload: ConfirmOrderPayload,
 ): Promise<ConfirmOrderResponse> => {

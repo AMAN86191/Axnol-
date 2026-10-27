@@ -26,6 +26,7 @@ import { ArrowRight, ChevronLeft, Lock, User } from 'lucide-react-native';
 import { clearAuth, loginUserSlice } from '../../redux/AuthSlice';
 import Logo from '../../components/ui/Logo';
 import { toast } from '../../components/ui/ToastProvider';
+import { getFcmToken } from '../../utils/notificationService';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -53,7 +54,12 @@ export const LoginScreen: React.FC = () => {
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
-      const res: any = await dispatch(loginUserSlice(values)).unwrap();
+      const fcmToken = await getFcmToken();
+      const payload = {
+        ...values,
+        fcm_token: fcmToken,
+      };
+      const res: any = await dispatch(loginUserSlice(payload)).unwrap();
       if (res?.user?.status === 'active') {
         setIsLoading(false);
         toast.success(
