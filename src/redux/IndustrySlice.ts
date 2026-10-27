@@ -37,6 +37,8 @@ const industrySlice = createSlice({
     detailLoading: false,
     detailError: null as any,
     industryDetail: null as IndustryDetails | null,
+    // Details already loaded this session, by industry id.
+    detailsById: {} as Record<string, IndustryDetails>,
   },
   reducers: {},
   extraReducers: builder => {
@@ -54,14 +56,21 @@ const industrySlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      .addCase(fetchIndustryDetailsSlice.pending, state => {
-        state.detailLoading = true;
+      .addCase(fetchIndustryDetailsSlice.pending, (state, action) => {
+        // Reuse what we already have for this industry so the page shows at
+        // once; only a first visit starts empty (and shows the skeleton).
+        const cached = state.detailsById[String(action.meta.arg)] ?? null;
+        state.industryDetail = cached;
+        state.detailLoading = !cached;
         state.detailError = null;
-        state.industryDetail = null;
       })
       .addCase(fetchIndustryDetailsSlice.fulfilled, (state, action) => {
         state.detailLoading = false;
-        state.industryDetail = action.payload?.data ?? action.payload ?? null;
+        const detail = action.payload?.data ?? action.payload ?? null;
+        state.industryDetail = detail;
+        if (detail) {
+          state.detailsById[String(action.meta.arg)] = detail;
+        }
       })
       .addCase(fetchIndustryDetailsSlice.rejected, (state, action) => {
         state.detailLoading = false;

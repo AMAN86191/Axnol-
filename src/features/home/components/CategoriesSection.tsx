@@ -8,11 +8,11 @@ import {
 } from 'react-native';
 import {colors, scale} from '../../../theme';
 import {CategoryItem} from '../homeData';
-import {Image} from 'react-native';
 import Skeleton from '../../../components/ui/Skeleton';
 import {WifiOff} from 'lucide-react-native';
 import HomeSectionHeader from './HomeSectionHeader';
 import SectionEmptyState from './SectionEmptyState';
+import CachedImage from '../../../components/ui/CachedImage';
 
 interface CategoriesSectionProps {
   categories: CategoryItem[];
@@ -91,8 +91,8 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
                 activeOpacity={0.85}
                 onPress={() => onSelect(item)}>
                 <View style={styles.circle}>
-                <Image
-                  source={{uri: item.image}}
+                <CachedImage
+                  uri={item.image}
                   style={styles.circle}
                   resizeMode="cover"
                 />

@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -25,10 +24,13 @@ import {getLoadErrorMessage} from '../../utils/apiError';
 import {toProductCardData} from '../../utils/productCardData';
 import IndustryBanner from './components/IndustryBanner';
 import {useRefresh} from '../../hooks/useRefresh';
+import {useSessionState} from '../../hooks/useSessionState';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
 import {fetchIndustryDetailsSlice} from '../../redux/IndustrySlice';
 import {invalidateRequests} from '../../api/requestCache';
+import {ChipRowSkeleton} from '../../components/ui/ListSkeletons';
+import {ProductGridSkeleton} from '../../components/ui/ProductCardSkeleton';
 
 type Route = RouteProp<CatalogueStackParamList, 'IndustryDetails'>;
 
@@ -99,7 +101,10 @@ export const IndustryDetailsScreen: React.FC = () => {
     useState(ALL_FILTER_ID);
   const [selectedSubCategoryId, setSelectedSubCategoryId] =
     useState(ALL_FILTER_ID);
-  const [products, setProducts] = useState<ProductApi[]>([]);
+  const [products, setProducts] = useSessionState<ProductApi[]>(
+    `industry-products:${industryId}`,
+    [],
+  );
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState<any>(null);
 
@@ -110,7 +115,8 @@ export const IndustryDetailsScreen: React.FC = () => {
   }, [dispatch, industryId]);
 
   const loadProducts = useCallback(async () => {
-    setProductsLoading(true);
+    // Only a first visit (nothing remembered yet) needs the skeleton.
+    setProductsLoading(products.length === 0);
     setProductsError(null);
     try {
       const res = await getProducts({industryId});
@@ -124,7 +130,7 @@ export const IndustryDetailsScreen: React.FC = () => {
     } finally {
       setProductsLoading(false);
     }
-  }, [industryId]);
+  }, [industryId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadScreen = useCallback(
     () =>
@@ -416,7 +422,7 @@ export const IndustryDetailsScreen: React.FC = () => {
         {detailLoading && !industryDetail ? (
           <>
             <Text style={styles.sectionTitle}>Categories</Text>
-            <ActivityIndicator color={colors.primary} style={styles.loader} />
+            <ChipRowSkeleton />
           </>
         ) : detailError && !industryDetail ? (
           <>
@@ -498,7 +504,7 @@ export const IndustryDetailsScreen: React.FC = () => {
         </View>
 
         {productsLoading && allProducts.length === 0 ? (
-          <ActivityIndicator color={colors.primary} style={styles.loader} />
+          <ProductGridSkeleton count={4} />
         ) : productsError && allProducts.length === 0 ? (
           <EmptyState
             icon={PackageSearch}

@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   View,
@@ -19,6 +18,7 @@ import ProductCard from '../../components/ui/ProductCard';
 import {useRefresh} from '../../hooks/useRefresh';
 import {getLoadErrorMessage} from '../../utils/apiError';
 import {toProductCardData} from '../../utils/productCardData';
+import {ProductGridSkeleton} from '../../components/ui/ProductCardSkeleton';
 
 type Route = RouteProp<CatalogueStackParamList, 'CategoryProducts'>;
 
@@ -84,8 +84,8 @@ export const CategoryProductsScreen: React.FC = () => {
         onBack={() => navigation.goBack()}
       />
       {loading && products.length === 0 ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
+        <View style={styles.gridContainer}>
+          <ProductGridSkeleton count={6} />
         </View>
       ) : error && products.length === 0 ? (
         <EmptyState

@@ -24,7 +24,7 @@ import ProductCard from '../../components/ui/ProductCard';
 import {useRefresh} from '../../hooks/useRefresh';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
-import {fetchProductsSlice} from '../../redux/ProductSlice';
+import {fetchProductsSlice, getProductListKey} from '../../redux/ProductSlice';
 import {invalidateRequests} from '../../api/requestCache';
 import {toProductCardData} from '../../utils/productCardData';
 
@@ -108,6 +108,7 @@ export const ProductsScreen: React.FC = () => {
   const apiProducts = useAppSelector(s => s.product.products);
   const productsLoading = useAppSelector(s => s.product.loading);
   const pagination = useAppSelector(s => s.product.pagination);
+  const listKey = useAppSelector(s => s.product.listKey);
   const loading = productsLoading && apiProducts.length === 0;
 
   const route = useRoute<Route>();
@@ -176,9 +177,15 @@ export const ProductsScreen: React.FC = () => {
   const {refreshing, onRefresh} = useRefresh(handleRefresh);
 
   useEffect(() => {
-    dispatch({ type: 'product/clearProducts' } as any);
-    loadProducts(1);
-  }, [dispatch, loadProducts]);
+    // Reuse the list already in the store when it was loaded for these same
+    // filters (e.g. just visited, or loaded by Home); only fetch otherwise.
+    const sameFilters =
+      listKey === getProductListKey(route.params) && apiProducts.length > 0;
+    if (!sameFilters) {
+      loadProducts(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadProducts]);
 
   // const pageTitle = route.params?.title ?? 'Products';
   const pageTitle = 'Products';

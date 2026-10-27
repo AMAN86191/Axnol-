@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo} from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   FlatList,
   StyleSheet,
@@ -11,7 +10,6 @@ import {
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {CatalogueStackParamList} from '../../navigation/types';
-import {Image} from 'react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
 import {
   colors,
@@ -27,6 +25,8 @@ import {useAppSelector} from '../../store';
 import {fetchCategoriesSlice} from '../../redux/CategorySlice';
 import {fetchIndustriesSlice} from '../../redux/IndustrySlice';
 import {invalidateRequests} from '../../api/requestCache';
+import {CategoryGridSkeleton} from '../../components/ui/ListSkeletons';
+import CachedImage from '../../components/ui/CachedImage';
 
 type Route = RouteProp<CatalogueStackParamList, 'Categories'>;
 
@@ -102,9 +102,7 @@ export const CategoriesScreen: React.FC = () => {
         onBack={() => navigation.goBack()}
       />
       {loading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
+        <CategoryGridSkeleton />
       ) : (
         <FlatList
           refreshControl={
@@ -127,8 +125,8 @@ export const CategoriesScreen: React.FC = () => {
               activeOpacity={0.85}
               onPress={() => handlePress(item)}>
               <View style={styles.imageWrap}>
-                <Image
-                  source={{uri: item.image}}
+                <CachedImage
+                  uri={item.image}
                   style={styles.img}
                   resizeMode="cover"
                 />

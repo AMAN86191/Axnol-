@@ -8,12 +8,12 @@ import {
   ViewToken,
 } from 'react-native';
 import { WifiOff } from 'lucide-react-native';
-import { Image } from 'react-native';
 import Skeleton from '../../../components/ui/Skeleton';
 import { scale } from '../../../theme';
 import { IndustryItem } from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 import SectionEmptyState from './SectionEmptyState';
+import CachedImage from '../../../components/ui/CachedImage';
 
 interface IndustriesSectionProps {
   industries: IndustryItem[];
@@ -36,22 +36,27 @@ export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
   onSeeAll,
   onSelect,
 }) => {
-  const showError = !loading && industries.length === 0 && Boolean(errorMessage);
+  const showError =
+    !loading && industries.length === 0 && Boolean(errorMessage);
   const isEmpty = !loading && !showError && industries.length === 0;
-  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [visibleIndustryIds, setVisibleIndustryIds] = useState<Set<string>>(
     () => new Set(),
   );
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 });
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      setVisibleIndustryIds(
-        new Set(
-          viewableItems
-            .map(token => (token.item as IndustryItem).id)
-            .filter(Boolean),
-        ),
-      );
+      // Keep ids once seen, so an image that scrolled away isn't dropped and
+      // loaded again when it comes back.
+      setVisibleIndustryIds(prev => {
+        const next = new Set(prev);
+        viewableItems.forEach(token => {
+          const id = (token.item as IndustryItem).id;
+          if (id) {
+            next.add(id);
+          }
+        });
+        return next.size === prev.size ? prev : next;
+      });
     },
     [],
   );
@@ -101,31 +106,29 @@ export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
             <TouchableOpacity
               style={styles.card}
               activeOpacity={0.85}
-              onPress={() => onSelect(ind)}>
+              onPress={() => onSelect(ind)}
+            >
               <View style={styles.circleShadow}>
-                {ind.image && visibleIndustryIds.has(ind.id) ? (
-                  <Image
-                    source={{ uri: ind.image }}
+                {visibleIndustryIds.has(ind.id) ? (
+                  <CachedImage
+                    uri={ind.image}
                     style={styles.circle}
                     resizeMode="cover"
-                    resizeMethod="resize"
-                    onError={() =>
-                      setFailedImages(prev => ({ ...prev, [ind.id]: true }))
+                    fallback={
+                      <View
+                        style={[
+                          styles.circle,
+                          styles.fallbackCircle,
+                          StyleSheet.absoluteFillObject,
+                        ]}
+                      >
+                        <Text style={styles.fallbackText}>
+                          {ind.name?.charAt(0)?.toUpperCase() || '?'}
+                        </Text>
+                      </View>
                     }
                   />
                 ) : null}
-                {(!ind.image || failedImages[ind.id]) && (
-                  <View
-                    style={[
-                      styles.circle,
-                      styles.fallbackCircle,
-                      StyleSheet.absoluteFillObject,
-                    ]}>
-                    <Text style={styles.fallbackText}>
-                      {ind.name?.charAt(0)?.toUpperCase() || '?'}
-                    </Text>
-                  </View>
-                )}
               </View>
               <Text style={styles.cardName} numberOfLines={1}>
                 {ind.name}
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0A3B74',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 7,
     elevation: 3,
