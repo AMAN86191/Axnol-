@@ -28,6 +28,7 @@ import {useRefresh} from '../../hooks/useRefresh';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
 import {fetchIndustryDetailsSlice} from '../../redux/IndustrySlice';
+import {invalidateRequests} from '../../api/requestCache';
 
 type Route = RouteProp<CatalogueStackParamList, 'IndustryDetails'>;
 
@@ -137,7 +138,13 @@ export const IndustryDetailsScreen: React.FC = () => {
     loadScreen();
   }, [loadScreen]);
 
-  const {refreshing, onRefresh} = useRefresh(loadScreen);
+  const refreshScreen = useCallback(() => {
+    invalidateRequests('/industries');
+    invalidateRequests('/products');
+    return loadScreen();
+  }, [loadScreen]);
+
+  const {refreshing, onRefresh} = useRefresh(refreshScreen);
 
   const title = industryDetail?.title ?? industryTitle ?? 'Industry';
   const image = industryDetail?.image_url ?? '';

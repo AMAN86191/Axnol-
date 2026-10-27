@@ -4,6 +4,7 @@ import { store } from '../store';
 import { clearAuth } from '../redux/AuthSlice';
 import { toast } from '../components/ui/ToastProvider';
 import { markSessionExpired } from './sessionEvents';
+import { invalidateRequests } from './requestCache';
 import {
   getNetworkErrorKind,
   getNetworkErrorMessage,
@@ -54,6 +55,7 @@ api.interceptors.response.use(
           await AsyncStorage.removeItem('axnol_token');
           await AsyncStorage.removeItem('axnol_user');
           markSessionExpired();
+          invalidateRequests();
           store.dispatch(clearAuth());
           toast.warning(
             'Session Expired',

@@ -1,10 +1,10 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking, ActivityIndicator} from 'react-native';
+import React, { useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { ScrollView, StatusBar, StyleSheet, View, RefreshControl, Linking, ActivityIndicator } from 'react-native';
 import { stripHtml } from '../../utils/stripHtml';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, scale } from '../../theme';
-import { useAppSelector } from '../../store';
+import { store } from '../../store';
 import { useAppDispatch } from '../../redux/hooks';
 import { fetchSlidersSlice } from '../../redux/HomeSlice';
 import { fetchIndustriesSlice } from '../../redux/IndustrySlice';
@@ -12,86 +12,203 @@ import { fetchCategoriesSlice } from '../../redux/CategorySlice';
 import { clearProducts, fetchProductsSlice } from '../../redux/ProductSlice';
 import { selectCartItemCount } from '../cart/cartSelectors';
 import { selectWishlistCount } from '../wishlist/wishlistSelectors';
-import {
-  CategoryItem,
-  Catgory_BANNERS,
-  HomeBannerItem,
-  HomeProduct,
-} from './homeData';
-import { useGetNotificationsQuery } from '../../api/services/documentsApi';
+import { CategoryItem, HomeBannerItem, HomeProduct } from './homeData';
+import type { Slider } from '../../api/HomeProvider';
+import type { Industry } from '../../api/IndustryProvider';
+import type { ApiCategory } from '../../api/CategoryProvider';
+import type { ProductApi } from '../../api/ProductProvider';
 import HomeHeader from './components/HomeHeader';
 import HomeBanner from './components/HomeBanner';
-import AdSlider from './components/AdSlider';
 import IndustriesSection from './components/IndustriesSection';
 import FeaturedProductsSection from './components/FeaturedProductsSection';
 import CategoriesSection from './components/CategoriesSection';
 import AllProductsGrid from './components/AllProductsGrid';
 import { useRefresh } from '../../hooks/useRefresh';
+import { invalidateRequests } from '../../api/requestCache';
 import { getLoadErrorMessage } from '../../utils/apiError';
 import { toProductCardData } from '../../utils/productCardData';
-
-let hasLoggedSliders = false;
+import AdSlider from './components/AdSlider';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
-  const user = useAppSelector(s => s.auth.user);
-  const sliders = useAppSelector(s => s.home.sliders);
-  const slidersLoading = useAppSelector(s => s.home.loading);
-  const apiIndustries = useAppSelector(s => s.industry.industries);
-  const industriesLoading = useAppSelector(s => s.industry.loading);
-  const industriesError = useAppSelector(s => s.industry.error);
-  const apiCategories = useAppSelector(s =>
-    s.category.allCategories.length
-      ? s.category.allCategories
-      : s.category.categories,
-  );
-  const categoriesLoading = useAppSelector(s => s.category.loading);
-  const categoriesError = useAppSelector(s => s.category.error);
-  const apiProducts = useAppSelector(s => s.product.products);
+  const [sliders, setSliders] = useState<Slider[]>([]);
+  const [slidersLoading, setSlidersLoading] = useState(false);
+  const [apiIndustries, setApiIndustries] = useState<Industry[]>([]);
+  const [industriesLoading, setIndustriesLoading] = useState(false);
+  const [industriesError, setIndustriesError] = useState<unknown>(null);
+  const [apiCategories, setApiCategories] = useState<ApiCategory[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [categoriesError, setCategoriesError] = useState<unknown>(null);
+  const [apiProducts, setApiProducts] = useState<ProductApi[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState<unknown>(null);
+  const [productsPagination, setProductsPagination] = useState<any>(null);
   const apiProductsRef = useRef(apiProducts);
   apiProductsRef.current = apiProducts;
-  const productsLoading = useAppSelector(s => s.product.loading);
-  const productsError = useAppSelector(s => s.product.error);
-  const productsPagination = useAppSelector(s => s.product.pagination);
-  const cartCount = useAppSelector(selectCartItemCount);
-  const wishlistCount = useAppSelector(selectWishlistCount);
+  const apiCategoriesRef = useRef(apiCategories);
+  apiCategoriesRef.current = apiCategories;
+  const apiIndustriesRef = useRef(apiIndustries);
+  apiIndustriesRef.current = apiIndustries;
+  const slidersRef = useRef(sliders);
+  slidersRef.current = sliders;
+  const cartCount = useSyncExternalStore(
+    store.subscribe,
+    () => selectCartItemCount(store.getState()),
+    () => selectCartItemCount(store.getState()),
+  );
+  const wishlistCount = useSyncExternalStore(
+    store.subscribe,
+    () => selectWishlistCount(store.getState()),
+    () => selectWishlistCount(store.getState()),
+  );
   const [isLoadingMoreProducts, setIsLoadingMoreProducts] = useState(false);
   const [homeProductsPage, setHomeProductsPage] = useState(1);
 
-  const {
-    data: notificationsData,
-    refetch: refetchNotifications,
-  } = useGetNotificationsQuery();
+  const fetchData = useCallback(
+    async (options: {
+      sliders?: boolean;
+      industries?: boolean;
+      categories?: boolean;
+      products?: boolean;
+      page?: number;
+    } = {}) => {
+      const {
+        sliders: shouldFetchSliders = true,
+        industries: shouldFetchIndustries = true,
+        categories: shouldFetchCategories = true,
+        products: shouldFetchProducts = true,
+        page = 1,
+      } = options;
+      const requests: Promise<void>[] = [];
+
+      if (shouldFetchSliders) {
+        setSlidersLoading(true);
+        requests.push(
+          dispatch(fetchSlidersSlice())
+            .unwrap()
+            .then(payload => {
+              const data: any = payload?.data ?? payload;
+              console.log('data :', data);
+              setSliders(
+                Array.isArray(data) ? data : data?.sliders ?? [],
+              );
+            })
+            .catch(error => {
+              console.error('Failed to load home sliders:', error);
+            })
+            .finally(() => setSlidersLoading(false)),
+        );
+      }
+
+      if (shouldFetchIndustries) {
+        setIndustriesLoading(true);
+        setIndustriesError(null);
+        requests.push(
+          dispatch(fetchIndustriesSlice())
+            .unwrap()
+            .then(payload => {
+              const data: any = payload?.data ?? payload;
+              setApiIndustries(
+                Array.isArray(data) ? data : data?.industries ?? [],
+              );
+            })
+            .catch(error => setIndustriesError(error))
+            .finally(() => setIndustriesLoading(false)),
+        );
+      }
+
+      if (shouldFetchCategories) {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        requests.push(
+          dispatch(fetchCategoriesSlice())
+            .unwrap()
+            .then(payload => {
+              const data: any = payload?.data ?? payload;
+              setApiCategories(
+                Array.isArray(data)
+                  ? data
+                  : data?.categories ?? data?.data ?? [],
+              );
+            })
+            .catch(error => setCategoriesError(error))
+            .finally(() => setCategoriesLoading(false)),
+        );
+      }
+
+      if (shouldFetchProducts) {
+        setProductsLoading(true);
+        setProductsError(null);
+        requests.push(
+          dispatch(fetchProductsSlice({ page }))
+            .unwrap()
+            .then(payload => {
+              const data: any = payload?.data ?? payload;
+              const products = Array.isArray(data)
+                ? data
+                : data?.products ?? data?.items ?? data?.data ?? [];
+              const pagination = Array.isArray(data)
+                ? null
+                : data?.pagination ??
+                  data?.meta?.pagination ??
+                  data?.meta ??
+                  null;
+              setApiProducts(current =>
+                page > 1 ? [...current, ...products] : products,
+              );
+              setProductsPagination(pagination);
+            })
+            .catch(error => setProductsError(error))
+            .finally(() => setProductsLoading(false)),
+        );
+      }
+
+      await Promise.all(requests);
+    },
+    [dispatch],
+  );
 
   const handleHomeRefresh = useCallback(async () => {
     setHomeProductsPage(1);
+    invalidateRequests();
     dispatch(clearProducts());
-    await Promise.all([
-      dispatch(fetchIndustriesSlice()),
-      dispatch(fetchCategoriesSlice()),
-      dispatch(fetchProductsSlice({ page: 1 })),
-      refetchNotifications(),
-      dispatch(fetchSlidersSlice()),
-    ]);
-  }, [dispatch, refetchNotifications]);
+    setApiProducts([]);
+    await fetchData();
+  }, [dispatch, fetchData]);
 
   const { refreshing, onRefresh } = useRefresh(handleHomeRefresh);
 
   const retryIndustries = useCallback(() => {
-    dispatch(fetchIndustriesSlice());
-  }, [dispatch]);
+    fetchData({
+      sliders: false,
+      industries: true,
+      categories: false,
+      products: false,
+    });
+  }, [fetchData]);
 
   const retryCategories = useCallback(() => {
-    dispatch(fetchCategoriesSlice());
-  }, [dispatch]);
+    fetchData({
+      sliders: false,
+      industries: false,
+      categories: true,
+      products: false,
+    });
+  }, [fetchData]);
 
   const retryProducts = useCallback(() => {
     setHomeProductsPage(1);
     dispatch(clearProducts());
-    dispatch(fetchProductsSlice({ page: 1 }));
-  }, [dispatch]);
+    setApiProducts([]);
+    fetchData({
+      sliders: false,
+      industries: false,
+      categories: false,
+      products: true,
+    });
+  }, [dispatch, fetchData]);
 
   const industriesErrorMessage = getLoadErrorMessage(
     industriesError,
@@ -103,34 +220,24 @@ export const HomeScreen: React.FC = () => {
   );
   const productsErrorMessage = getLoadErrorMessage(productsError, 'products');
 
-  const hasUnreadNotifications = (notificationsData ?? []).some(
-    notification => !notification.read,
-  );
-
   useFocusEffect(
     useCallback(() => {
-      refetchNotifications();
-      dispatch(fetchIndustriesSlice());
-      dispatch(fetchCategoriesSlice());
+      const currentSliders = slidersRef.current;
+      const currentIndustries = apiIndustriesRef.current;
+      const currentCategories = apiCategoriesRef.current;
       const currentProducts = apiProductsRef.current;
+      fetchData({
+        sliders: !(currentSliders && currentSliders.length),
+        industries: !(currentIndustries && currentIndustries.length),
+        categories: !(currentCategories && currentCategories.length),
+        products: !(currentProducts && currentProducts.length),
+        page: 1,
+      });
       if (!(currentProducts && currentProducts.length)) {
         dispatch(clearProducts());
         setHomeProductsPage(1);
-        dispatch(fetchProductsSlice({ page: 1 }))
-          .unwrap()
-          .then(res => console.log('Products API Response:', res))
-          .catch(err => console.log('Products API Error:', err));
       }
-      dispatch(fetchSlidersSlice())
-        .unwrap()
-        .then(res => {
-          if (!hasLoggedSliders) {
-            hasLoggedSliders = true;
-            console.log('Sliders API Response:', res);
-          }
-        })
-        .catch(err => console.log('Sliders API Error:', err));
-    }, [dispatch, refetchNotifications]),
+    }, [dispatch, fetchData]),
   );
 
 
@@ -151,8 +258,8 @@ export const HomeScreen: React.FC = () => {
         category.industry_id != null
           ? String(category.industry_id)
           : category.industryId != null
-          ? String(category.industryId)
-          : undefined,
+            ? String(category.industryId)
+            : undefined,
     }))
     .filter(category => Boolean(category.image && category.image.trim()));
 
@@ -172,8 +279,7 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  const BROCHURE_PDF =
-    'https://axnol.tambimotors.com/storage/sliders/pdfs/g8NrjflaCVtDaBPOyJCm8nWegRkP02cLqhjQ2hSI.pdf';
+  const BROCHURE_PDF = '';
 
   const sliderBanners: HomeBannerItem[] = (sliders ?? []).map(
     (slider: any, index: number) => ({
@@ -190,10 +296,11 @@ export const HomeScreen: React.FC = () => {
   );
 
   const banners = sliderBanners.length > 0 ? sliderBanners : [];
-
+  console.log('banners :', banners);
   const homeProducts = (apiProducts ?? []).map((product: any, index: number) =>
     toProductCardData(product, index),
   );
+
 
   return (
     <View style={styles.container}>
@@ -213,7 +320,7 @@ export const HomeScreen: React.FC = () => {
             progressViewOffset={insets.top}
           />
         }
-        onScroll={({nativeEvent}) => {
+        onScroll={({ nativeEvent }) => {
           const paddingToBottom = scale(400);
           if (
             !isLoadingMoreProducts &&
@@ -228,9 +335,13 @@ export const HomeScreen: React.FC = () => {
               const nextPage = homeProductsPage + 1;
               setIsLoadingMoreProducts(true);
               setHomeProductsPage(nextPage);
-              dispatch(fetchProductsSlice({ page: nextPage }))
-                .unwrap()
-                .catch(err => console.log('Products API Error:', err))
+              fetchData({
+                sliders: false,
+                industries: false,
+                categories: false,
+                products: true,
+                page: nextPage,
+              })
                 .finally(() => setIsLoadingMoreProducts(false));
             }
           }
@@ -246,46 +357,35 @@ export const HomeScreen: React.FC = () => {
         ]}>
         {/* 1. Header (logo + notifications + profile + search + scan) */}
         <HomeHeader
-          userName={user?.name ?? 'Rahul Sharma'}
           onBellPress={() => navigation.navigate('Notifications')}
-          onProfilePress={() =>
-            navigation.navigate('Profile', {
-              screen: 'ProfileMain',
-              initial: false,
-            })
-          }
           onCartPress={() => navigation.navigate('Cart')}
           cartCount={cartCount}
           onWishlistPress={() => navigation.navigate('Wishlist')}
           wishlistCount={wishlistCount}
-          hasUnreadNotifications={hasUnreadNotifications}
         />
 
         {/* 2. Hero banner carousel */}
         <HomeBanner
           banners={banners}
           loading={slidersLoading && banners.length === 0}
-          buttonLabel="Download Brochure"
           downloadLabel="Download Brochure"
-          showPrimaryButton={false}
           showDownloadButton={true}
           onPressItem={item => {
             const url =
               item?.pdfUrl ||
               item?.navigationLink || ''
-            Linking.openURL(url).catch(() => {});
+            Linking.openURL(url).catch(() => { });
           }}
-          onPressButton={() => {}}
           onPressDownload={item => {
             const url =
               item?.pdfUrl ||
               item?.navigationLink ||
-              'https://axnol.tambimotors.com/about';
-            Linking.openURL(url).catch(() => {});
+              '';
+            Linking.openURL(url).catch(() => { });
           }}
         />
 
-        {/* 3. Industries */} 
+        {/* 3. Industries */}
         <View style={styles.sectionWrap}>
           <IndustriesSection
             industries={homeIndustries}
@@ -325,18 +425,8 @@ export const HomeScreen: React.FC = () => {
           />
         </View>
         <View style={styles.sectionWrap}>
-          <AdSlider
-            banners={Catgory_BANNERS}
-            onPressItem={() =>
-              navigation.navigate('Products', {
-                screen: 'Categories',
-                params: {},
-                initial: false,
-              })
-            }
-          />
+          <AdSlider />
         </View>
-
         {/* 6. All products grid */}
         <View style={styles.sectionWrap}>
           <AllProductsGrid
@@ -354,7 +444,7 @@ export const HomeScreen: React.FC = () => {
           ) : null}
         </View>
 
-      
+
       </ScrollView>
     </View>
   );

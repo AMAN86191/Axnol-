@@ -218,11 +218,10 @@ export const useCart = () => {
   const totals = useAppSelector(selectCartTotals);
 
   const fetchCart = useCallback(
-    async (silent = false) => {
+    async (silent = false, force = false) => {
       try {
         dispatch(setCartLoading(true));
-        const res = await getCart();
-        console.log('res :', res);
+        const res = await getCart(force);
         const data = res?.data ?? res;
         const list = Array.isArray(data)
           ? data

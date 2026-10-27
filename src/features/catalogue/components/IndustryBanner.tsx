@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Download } from 'lucide-react-native';
-import AppImage from '../../../components/ui/AppImage';
+import {Image} from 'react-native';
 import { colors, radius, scale, spacing } from '../../../theme';
 
 const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
@@ -49,7 +49,7 @@ export const IndustryBanner: React.FC<IndustryBannerProps> = ({
 
   return (
     <View style={[styles.hero, { height }]}>
-      <AppImage uri={image} style={styles.image} resizeMode="cover" />
+      <Image source={{uri: image}} style={styles.image} resizeMode="cover" />
 
       <LinearGradient
         pointerEvents="none"

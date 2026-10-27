@@ -1,4 +1,5 @@
 import api from './axiosConfig';
+import {cachedRequest, invalidateRequests} from './requestCache';
 
 export interface ConfirmOrderItem {
   product_id: number;
@@ -251,11 +252,17 @@ const findOrderList = (node: any, depth = 0): any[] => {
   return [];
 };
 
-export const getOrders = async (): Promise<OrderRecord[]> => {
+export const getOrders = async (force = false): Promise<OrderRecord[]> => {
   try {
-    const response = await api.get('/orders');
-    const list = findOrderList(response.data);
-    return list.map(normalizeOrder);
+    return await cachedRequest({
+      resource: '/orders',
+      ttl: 30_000,
+      force,
+      request: async () => {
+        const response = await api.get('/orders');
+        return findOrderList(response.data).map(normalizeOrder);
+      },
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;
@@ -264,17 +271,25 @@ export const getOrders = async (): Promise<OrderRecord[]> => {
 
 export const getOrderById = async (
   orderId: string | number,
+  force = false,
 ): Promise<OrderRecord> => {
   try {
-    const response = await api.get(`/orders/${orderId}`);
-    const payload = response.data?.data ?? response.data;
-    const raw =
-      payload?.order ?? payload?.data?.order ?? payload?.data ?? payload;
+    return await cachedRequest({
+      resource: `/orders/${orderId}`,
+      ttl: 30_000,
+      force,
+      request: async () => {
+        const response = await api.get(`/orders/${orderId}`);
+        const payload = response.data?.data ?? response.data;
+        const raw =
+          payload?.order ?? payload?.data?.order ?? payload?.data ?? payload;
 
-    if (!raw || typeof raw !== 'object') {
-      throw { message: 'Order not found' };
-    }
-    return normalizeOrder(raw);
+        if (!raw || typeof raw !== 'object') {
+          throw { message: 'Order not found' };
+        }
+        return normalizeOrder(raw);
+      },
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;
@@ -286,6 +301,7 @@ export const confirmOrder = async (
 ): Promise<ConfirmOrderResponse> => {
   try {
     const response = await api.post('/orders/confirm', payload);
+    invalidateRequests('/orders');
     return response.data;
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };

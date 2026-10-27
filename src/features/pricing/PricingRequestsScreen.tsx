@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -35,7 +36,7 @@ import {
   Plus,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import Input from '../../components/ui/Input';
 import { colors, fontSize, radius, scale, spacing } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
@@ -133,15 +134,11 @@ const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
   onOrderHistory,
   onHome,
 }) => {
-  const overlayOpacity = useSharedValue(0);
-  const cardOpacity = useSharedValue(0);
   const cardScale = useSharedValue(0.8);
   const iconScale = useSharedValue(0);
 
   useEffect(() => {
     if (visible) {
-      overlayOpacity.value = withTiming(1, { duration: 220 });
-      cardOpacity.value = withTiming(1, { duration: 240 });
       cardScale.value = withSpring(1, {
         damping: 15,
         stiffness: 180,
@@ -152,18 +149,12 @@ const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
         withSpring(1, { damping: 9, stiffness: 220 }),
       );
     } else {
-      overlayOpacity.value = withTiming(0, { duration: 180 });
-      cardOpacity.value = withTiming(0, { duration: 180 });
       cardScale.value = 0.8;
       iconScale.value = 0;
     }
-  }, [visible, overlayOpacity, cardOpacity, cardScale, iconScale]);
+  }, [visible, cardScale, iconScale]);
 
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value,
-  }));
   const cardStyle = useAnimatedStyle(() => ({
-    opacity: cardOpacity.value,
     transform: [{ scale: cardScale.value }],
   }));
   const iconStyle = useAnimatedStyle(() => ({
@@ -174,10 +165,10 @@ const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
     <Modal
       transparent
       visible={visible}
-      animationType="none"
+      animationType="fade"
       statusBarTranslucent
       onRequestClose={onHome}>
-      <Animated.View style={[styles.modalOverlay, overlayStyle]}>
+      <View style={styles.modalOverlay}>
         <Animated.View style={[styles.modalCard, cardStyle]}>
           <View style={styles.modalIconArea}>
             <Animated.View style={[styles.modalIconWrap, iconStyle]}>
@@ -220,7 +211,7 @@ const SubmitSuccessModal: React.FC<SubmitSuccessModalProps> = ({
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 };
@@ -401,7 +392,7 @@ export const PricingRequestsScreen: React.FC = () => {
     }
 
     try {
-      await dispatch(
+      const response = await dispatch(
         confirmOrderSlice({
           items: orderItems,
           address: address.trim(),
@@ -413,11 +404,17 @@ export const PricingRequestsScreen: React.FC = () => {
           remark: remark.trim(),
         }),
       ).unwrap();
+      if (response?.status !== true) {
+        throw new Error(
+          response?.message || 'Unable to confirm your order. Please try again.',
+        );
+      }
+      Keyboard.dismiss();
+      setSubmitted(true);
+      setShowSuccess(true);
       if (isCartCheckout) {
         await clear();
       }
-      setSubmitted(true);
-      setShowSuccess(true);
     } catch (err: any) {
       toast.error(
         'Order Failed',
@@ -484,11 +481,13 @@ export const PricingRequestsScreen: React.FC = () => {
                       index > 0 && styles.cartProductDivider,
                     ]}>
                     <View style={styles.productImgWrap}>
-                      <AppImage
-                        uri={item.image || 'product_generic'}
-                        style={styles.productImg}
-                        resizeMode="contain"
-                      />
+                      {item.image ? (
+                        <Image
+                          source={{uri: item.image}}
+                          style={styles.productImg}
+                          resizeMode="contain"
+                        />
+                      ) : null}
                     </View>
                     <View style={styles.productInfo}>
                       <Text style={styles.productName} numberOfLines={2}>
@@ -538,11 +537,13 @@ export const PricingRequestsScreen: React.FC = () => {
           <View style={styles.productCard}>
             <View style={styles.productTop}>
               <View style={styles.productImgWrap}>
-                <AppImage
-                  uri={directImage || 'product_generic'}
-                  style={styles.productImg}
-                  resizeMode="contain"
-                />
+                {directImage ? (
+                  <Image
+                    source={{uri: directImage}}
+                    style={styles.productImg}
+                    resizeMode="contain"
+                  />
+                ) : null}
               </View>
               <View style={styles.productInfo}>
                 <Text style={styles.productName}>{productName}</Text>
@@ -776,11 +777,13 @@ export const PricingRequestsScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <SubmitSuccessModal
-        visible={showSuccess}
-        onOrderHistory={handleOrderHistory}
-        onHome={handleHome}
-      />
+      {showSuccess ? (
+        <SubmitSuccessModal
+          visible
+          onOrderHistory={handleOrderHistory}
+          onHome={handleHome}
+        />
+      ) : null}
     </KeyboardAvoidingView>
   );
 };

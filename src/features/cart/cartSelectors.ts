@@ -1,3 +1,4 @@
+import {createSelector} from '@reduxjs/toolkit';
 import {RootState} from '../../store';
 import {CartItem} from './cartSlice';
 
@@ -16,29 +17,31 @@ export const selectCartItems = (state: RootState): CartItem[] =>
 export const selectCartItemCount = (state: RootState): number =>
   state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-export const selectCartTotals = (state: RootState): CartTotals => {
-  const items = state.cart.items;
-  const subtotal = items.reduce(
-    (sum, item) => sum + (item.lineTotal ?? item.price * item.quantity),
-    0,
-  );
-  const mrpTotal = items.reduce(
-    (sum, item) => sum + (item.mrp ?? item.price) * item.quantity,
-    0,
-  );
-  const savings = mrpTotal - subtotal;
-  const discountPercent =
-    mrpTotal > 0 ? Math.round((savings / mrpTotal) * 100) : 0;
+export const selectCartTotals = createSelector(
+  [selectCartItems],
+  (items): CartTotals => {
+    const subtotal = items.reduce(
+      (sum, item) => sum + (item.lineTotal ?? item.price * item.quantity),
+      0,
+    );
+    const mrpTotal = items.reduce(
+      (sum, item) => sum + (item.mrp ?? item.price) * item.quantity,
+      0,
+    );
+    const savings = mrpTotal - subtotal;
+    const discountPercent =
+      mrpTotal > 0 ? Math.round((savings / mrpTotal) * 100) : 0;
 
-  return {
-    itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-    uniqueCount: items.length,
-    subtotal,
-    mrpTotal,
-    savings,
-    discountPercent,
-  };
-};
+    return {
+      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      uniqueCount: items.length,
+      subtotal,
+      mrpTotal,
+      savings,
+      discountPercent,
+    };
+  },
+);
 
 export const selectCartQuantity =
   (id: string) =>

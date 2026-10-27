@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import {colors, scale} from '../../../theme';
 import {CategoryItem} from '../homeData';
-import AppImage from '../../../components/ui/AppImage';
+import {Image} from 'react-native';
 import Skeleton from '../../../components/ui/Skeleton';
 import {WifiOff} from 'lucide-react-native';
 import HomeSectionHeader from './HomeSectionHeader';
@@ -91,11 +91,11 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({
                 activeOpacity={0.85}
                 onPress={() => onSelect(item)}>
                 <View style={styles.circle}>
-                  <AppImage
-                    uri={item.image}
-                    style={styles.image}
-                    resizeMode="cover"
-                  />
+                <Image
+                  source={{uri: item.image}}
+                  style={styles.circle}
+                  resizeMode="cover"
+                />
                 </View>
 
                 <Text style={styles.name} numberOfLines={2}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Dimensions,
   Linking,
@@ -22,26 +22,23 @@ import {
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogueStackParamList } from '../../navigation/types';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
 import Button from '../../components/ui/Button';
 import { toast } from '../../components/ui/ToastProvider';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import { getRateChartId } from '../../utils/productCardData';
-import { useSimulatedLoading } from '../../hooks/useSimulatedLoading';
 import ProductDetailsSkeleton from './components/ProductDetailsSkeleton';
 import { useCart } from '../cart/useCart';
 import EditableQuantity from '../cart/components/EditableQuantity';
-import { selectCartItemCount } from '../cart/cartSelectors';
 import WishlistButton from '../wishlist/components/WishlistButton';
-import { useAppDispatch } from '../../redux/hooks';
-import { fetchProductDetailsSlice } from '../../redux/ProductSlice';
-import { useAppSelector } from '../../store';
+import { getProductById, ProductApi } from '../../api/ProductProvider';
+import { store } from '../../store';
+import Skeleton from '../../components/ui/Skeleton';
+import { getLoadErrorMessage } from '../../utils/apiError';
 
 type Route = RouteProp<CatalogueStackParamList, 'ProductDetails'>;
-
-const loggedProductDetails = new Set<string>();
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -52,33 +49,65 @@ export const ProductDetailsScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const route = useRoute<Route>();
   const { width } = useWindowDimensions();
-  const dispatch = useAppDispatch();
-  const productDetail = useAppSelector(s => s.product.productDetail);
-  const detailLoading = useAppSelector(s => s.product.detailLoading);
+  const [productDetail, setProductDetail] = useState<ProductApi | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
   const [selectedPack, setSelectedPack] = useState('');
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const requestIdRef = useRef(0);
   const { add, items } = useCart();
-  const cartCount = useAppSelector(selectCartItemCount);
+  const cartCount = useSyncExternalStore(
+    store.subscribe,
+    () =>
+      store
+        .getState()
+        .cart.items.reduce((count, item) => count + item.quantity, 0),
+    () =>
+      store
+        .getState()
+        .cart.items.reduce((count, item) => count + item.quantity, 0),
+  );
   const productId = route.params?.productId;
-  const loading = useSimulatedLoading() || (detailLoading && !productDetail);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     if (!productId) {
+      setProductDetail(null);
+      setLoadError(new Error('Product was not found.'));
+      setLoading(false);
       return;
     }
-    dispatch(fetchProductDetailsSlice(productId))
-      .unwrap()
-      .then(res => {
-        if (!loggedProductDetails.has(String(productId))) {
-          loggedProductDetails.add(String(productId));
-          console.log('Product Details API Response:', res);
-        }
-      })
-      .catch(err => console.log('Product Details API Error:', err));
-  }, [dispatch, productId]);
+    setProductDetail(null);
+    setLoading(true);
+    setLoadError(null);
+    setSelectedPack('');
+    setActiveImage(0);
+    try {
+      const response = await getProductById(productId);
+      if (requestId === requestIdRef.current) {
+        setProductDetail(response?.data ?? null);
+      }
+    } catch (error) {
+      if (requestId === requestIdRef.current) {
+        setLoadError(error);
+        console.error('Failed to load product details:', error);
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    fetchData();
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [fetchData]);
 
   const onViewableItemsChanged = useRef((info: { viewableItems: ViewToken[] }) => {
     const item = info.viewableItems[0];
@@ -365,7 +394,7 @@ export const ProductDetailsScreen: React.FC = () => {
 
       {loading ? (
         <ProductDetailsSkeleton />
-      ) : (
+      ) : productDetail ? (
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -390,11 +419,11 @@ export const ProductDetailsScreen: React.FC = () => {
               onScrollToIndexFailed={() => { }}
               renderItem={({ item }) => (
                 <View style={styles.heroSlide}>
-                  <AppImage
-                    uri={item}
-                    style={styles.heroImage}
-                    resizeMode="contain"
-                  />
+                    <Image
+                      source={{uri: item}}
+                      style={styles.image}
+                      resizeMode="contain"
+                    />
                 </View>
               )}
             />
@@ -411,9 +440,9 @@ export const ProductDetailsScreen: React.FC = () => {
                     styles.thumbBox,
                     index === activeImage && styles.thumbBoxActive,
                   ]}>
-                  <AppImage
-                    uri={img}
-                    style={styles.thumbImage}
+                  <Image
+                    source={{uri: productDetail?.thumbnail_url as string}}
+                    style={styles.image}
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
@@ -594,81 +623,114 @@ export const ProductDetailsScreen: React.FC = () => {
             </View>
           </View>
         </ScrollView>
+      ) : (
+        <View style={styles.loadError}>
+          <Text style={styles.loadErrorText}>
+            {getLoadErrorMessage(loadError, 'product details') ||
+              'Unable to load product details. Please try again.'}
+          </Text>
+          <TouchableOpacity onPress={fetchData} activeOpacity={0.8}>
+            <Text style={styles.retryText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
-      {/* Sticky Bottom Checkout Bar */}
-      <View
-        style={[styles.bottomBar, { paddingBottom: insets.bottom + scale(10) }]}>
-        <View style={styles.bottomPriceCol}>
-          <Text style={styles.bottomPriceLabel}>Total Price</Text>
-          <View style={styles.bottomPriceRow}>
-            <Text style={styles.bottomPrice}>{formatPrice(totalPrice)}</Text>
-            {(selectedPack || product.unit) ? (
-              <Text style={styles.bottomUnit}>/ {selectedPack || product.unit}</Text>
-            ) : null}
+      {loading ? (
+        <View
+          style={[
+            styles.bottomBar,
+            styles.bottomBarSkeleton,
+            { paddingBottom: insets.bottom + scale(10) },
+          ]}>
+          <View style={styles.footerPriceSkeleton}>
+            <Skeleton width={scale(74)} height={scale(11)} />
+            <Skeleton width={scale(100)} height={scale(20)} style={styles.footerSkeletonGap} />
           </View>
-
-          <View style={styles.bottomMetaRow}>
-            {discount > 0 && (
-              <View style={styles.bottomDiscountBadge}>
-                <Text style={styles.bottomDiscountText}>{discount}% OFF</Text>
-              </View>
-            )}
-            {quantity > 1 && (
-              <Text style={styles.bottomQtyText}>
-                {quantity} × {formatPrice(product.price)}
-              </Text>
-            )}
-          </View>
+          <Skeleton width={scale(150)} height={scale(44)} borderRadius={radius.md} />
         </View>
+      ) : productDetail ? (
+        <View
+          style={[styles.bottomBar, { paddingBottom: insets.bottom + scale(10) }]}>
+          <View style={styles.bottomPriceCol}>
+            <Text style={styles.bottomPriceLabel}>Total Price</Text>
+            <View style={styles.bottomPriceRow}>
+              <Text style={styles.bottomPrice}>{formatPrice(totalPrice)}</Text>
+              {(selectedPack || product.unit) ? (
+                <Text style={styles.bottomUnit}>/ {selectedPack || product.unit}</Text>
+              ) : null}
+            </View>
 
-        {inCart ? (
-          <Button
-            title='Go to Cart'
-            onPress={() => navigation.navigate('Cart')}
-            variant='outline'
-            size='medium'
-            style={styles.goToCartBtn}
-            textStyle={styles.goToCartText}
-            iconLeft={
-              <ShoppingCart size={scale(16)} color={colors.primary} strokeWidth={2.3} />
-            }
-          />
-        ) : (
-          <View style={styles.bottomActions}>
-            <TouchableOpacity
-              style={styles.cartIconBtn}
-              activeOpacity={0.8}
-              onPress={handleAddToCart}>
-              <ShoppingCart
-                size={scale(19)}
-                color={colors.primary}
-                strokeWidth={2.3}
-              />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.checkoutBtn}
-              activeOpacity={0.9}
-              onPress={() =>
-                navigation.navigate('RequestPrice', {
-                  productId: product.id,
-                  productName: product.name,
-                  productImage: product.images[0],
-                  rateChartId: selectedRateChartId,
-                  category: product.subtitle,
-                  price: product.price,
-                  mrp: product.mrp,
-                  unit: selectedPack || product.unit,
-                  quantity,
-                  packSizes: product.packSizes,
-                })}>
-              <Text style={styles.checkoutText}>Check Out</Text>
-              <ArrowRight size={scale(15)} color={colors.textInverse} strokeWidth={3} />
-            </TouchableOpacity>
+            <View style={styles.bottomMetaRow}>
+              {discount > 0 && (
+                <View style={styles.bottomDiscountBadge}>
+                  <Text style={styles.bottomDiscountText}>{discount}% OFF</Text>
+                </View>
+              )}
+              {quantity > 1 && (
+                <Text style={styles.bottomQtyText}>
+                  {quantity} × {formatPrice(product.price)}
+                </Text>
+              )}
+            </View>
           </View>
-        )}
-      </View>
+
+          {inCart ? (
+            <Button
+              title="Go to Cart"
+              onPress={() => navigation.navigate('Cart')}
+              variant="outline"
+              size="medium"
+              style={styles.goToCartBtn}
+              textStyle={styles.goToCartText}
+              iconLeft={
+                <ShoppingCart
+                  size={scale(16)}
+                  color={colors.primary}
+                  strokeWidth={2.3}
+                />
+              }
+            />
+          ) : (
+            <View style={styles.bottomActions}>
+              <TouchableOpacity
+                style={styles.cartIconBtn}
+                activeOpacity={0.8}
+                onPress={handleAddToCart}>
+                <ShoppingCart
+                  size={scale(19)}
+                  color={colors.primary}
+                  strokeWidth={2.3}
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkoutBtn}
+                activeOpacity={0.9}
+                onPress={() =>
+                  navigation.navigate('RequestPrice', {
+                    productId: product.id,
+                    productName: product.name,
+                    productImage: product.images[0],
+                    rateChartId: selectedRateChartId,
+                    category: product.subtitle,
+                    price: product.price,
+                    mrp: product.mrp,
+                    unit: selectedPack || product.unit,
+                    quantity,
+                    packSizes: product.packSizes,
+                  })
+                }>
+                <Text style={styles.checkoutText}>Check Out</Text>
+                <ArrowRight
+                  size={scale(15)}
+                  color={colors.textInverse}
+                  strokeWidth={3}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -993,6 +1055,32 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
+  bottomBarSkeleton: {
+    minHeight: scale(66),
+  },
+  footerPriceSkeleton: {
+    flex: 1,
+  },
+  footerSkeletonGap: {
+    marginTop: scale(7),
+  },
+  loadError: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  loadErrorText: {
+    color: '#64748B',
+    fontSize: scale(13),
+    textAlign: 'center',
+  },
+  retryText: {
+    color: colors.primary,
+    fontSize: scale(13),
+    fontWeight: '700',
+    marginTop: spacing.md,
+  },
   bottomPriceCol: {
     flex: 1,
     flexShrink: 1,
@@ -1093,6 +1181,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.2,
     color: colors.textInverse,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
 });
 

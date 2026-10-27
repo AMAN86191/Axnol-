@@ -1,6 +1,5 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {
-  ActivityIndicator,
   Linking,
   ScrollView,
   StyleSheet,
@@ -10,27 +9,25 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
-import {
-  Building2,
-  Factory,
-  Globe,
-  Mail,
-  MessageSquare,
-  Phone,
-  Send,
-  Tag,
-  User,
-} from 'lucide-react-native';
+import {Building2, Factory, Globe, Mail, Phone} from 'lucide-react-native';
 import type {LucideIcon} from 'lucide-react-native';
-import {useGetCompanyQuery} from '../../api/services/homeApi';
-import {useCreateEnquiryMutation} from '../../api/services/enquiriesApi';
-import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
-import Input from '../../components/ui/Input';
 import CommonHeader from '../../components/ui/CommonHeader';
-import {toast} from '../../components/ui/ToastProvider';
-import {useAppSelector} from '../../store';
 import {colors, fontSize, radius, scale, shadows, spacing} from '../../theme';
+
+const COMPANY = {
+  name: 'Axnol',
+  tagline: 'Specialty lubricants, base oils and waxes since 1959.',
+  since: '1959',
+  phone: '+91 94390 98999',
+  phoneUri: 'tel:+919439098999',
+  email: 'contact@axnol.in',
+  website: 'https://axnol.tambimotors.com',
+  registeredOffice:
+    'Shanti Niketan - Kh 65, Ground Floor, Bhawaninagar, Murlipura-302039, Jaipur, Rajasthan, India',
+  factory:
+    'Plot No-3-4, Sai Kripa Industrial Extension, Jatawali, Jaipur, Rajasthan, India',
+};
 
 interface QuickAction {
   icon: LucideIcon;
@@ -66,95 +63,22 @@ const AddressBlock: React.FC<AddressBlockProps> = ({
 
 export const ContactUsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const {data: company, isLoading} = useGetCompanyQuery();
-  const {user} = useAppSelector(s => s.auth);
-
-  const [createEnquiry, {isLoading: submitting}] = useCreateEnquiryMutation();
-
-  const [name, setName] = useState(user?.name ?? '');
-  const [email, setEmail] = useState(user?.email ?? '');
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  if (isLoading || !company) {
-    return (
-      <View style={styles.container}>
-        <CommonHeader title="Contact Us" onBack={() => navigation.goBack()} />
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.primary} size="large" />
-        </View>
-      </View>
-    );
-  }
-
-  const clearError = (field: string) =>
-    setErrors(prev => {
-      if (!prev[field]) {
-        return prev;
-      }
-      const next = {...prev};
-      delete next[field];
-      return next;
-    });
-
-  const validate = () => {
-    const next: Record<string, string> = {};
-    if (!name.trim()) {
-      next.name = 'Please enter your name';
-    }
-    if (!email.trim()) {
-      next.email = 'Please enter your email';
-    } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-      next.email = 'Enter a valid email address';
-    }
-    if (!message.trim()) {
-      next.message = 'Please enter your message';
-    }
-    setErrors(next);
-    return Object.keys(next).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate()) {
-      return;
-    }
-    try {
-      await createEnquiry({
-        type: 'contact',
-        name: name.trim(),
-        email: email.trim(),
-        phone: phone.trim(),
-        subject: subject.trim(),
-        message: message.trim(),
-      }).unwrap();
-      toast.success(
-        'Message Sent',
-        'Thank you for reaching out. Our team will contact you soon.',
-      );
-      setSubject('');
-      setMessage('');
-    } catch {
-      toast.error('Something Went Wrong', 'Please try again in a moment.');
-    }
-  };
 
   const quickActions: QuickAction[] = [
     {
       icon: Phone,
       label: 'Call Us',
-      onPress: () => openUrl(`tel:${company.phone.replace(/\s/g, '')}`),
+      onPress: () => openUrl(COMPANY.phoneUri),
     },
     {
       icon: Mail,
       label: 'Email',
-      onPress: () => openUrl(`mailto:${company.email}`),
+      onPress: () => openUrl(`mailto:${COMPANY.email}`),
     },
     {
       icon: Globe,
       label: 'Website',
-      onPress: () => openUrl(company.website),
+      onPress: () => openUrl(COMPANY.website),
     },
   ];
 
@@ -177,12 +101,12 @@ export const ContactUsScreen: React.FC = () => {
             <Text style={styles.heroEyebrow}>GET IN TOUCH</Text>
           </View>
 
-          <Text style={styles.heroName}>{company.name}</Text>
-          <Text style={styles.heroTagline}>{company.tagline}</Text>
+          <Text style={styles.heroName}>{COMPANY.name}</Text>
+          <Text style={styles.heroTagline}>{COMPANY.tagline}</Text>
 
           <View style={styles.heroSincePill}>
             <Text style={styles.heroSinceText}>
-              Trusted Since {company.since}
+              Trusted Since {COMPANY.since}
             </Text>
           </View>
 
@@ -229,13 +153,13 @@ export const ContactUsScreen: React.FC = () => {
           <AddressBlock
             icon={Building2}
             title="Registered Office"
-            text={company.registeredOffice}
+            text={COMPANY.registeredOffice}
           />
           <View style={styles.divider} />
           <AddressBlock
             icon={Factory}
             title="Factory"
-            text={company.factory}
+            text={COMPANY.factory}
           />
         </Card>
 
@@ -246,7 +170,6 @@ export const ContactUsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: colors.background},
-  loader: {flex: 1, alignItems: 'center', justifyContent: 'center'},
   content: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,

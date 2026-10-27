@@ -32,12 +32,7 @@ import Button from '../../components/ui/Button';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  useForgotPasswordMutation,
-  useResendOtpMutation,
-  useResetPasswordMutation,
-  useVerifyOtpMutation,
-} from '../../api/services/authApi';
+
 import Logo from '../../components/ui/Logo';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
@@ -78,10 +73,7 @@ const maskContact = (value?: string): string => {
 export const ForgotPasswordScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-  const [sendOtp, { isLoading: sending }] = useForgotPasswordMutation();
-  const [verify, { isLoading: verifying }] = useVerifyOtpMutation();
-  const [resendOtp, { isLoading: resending }] = useResendOtpMutation();
-  const [resetPassword, { isLoading: resetting }] = useResetPasswordMutation();
+
 
   const [step, setStep] = useState<number>(1);
   const scrollRef = useRef<ScrollView>(null);
@@ -135,9 +127,9 @@ export const ForgotPasswordScreen: React.FC = () => {
     const ok = await trigger(['email']);
     if (!ok) return;
     try {
-      const res = await sendOtp({ email: getValues('email') }).unwrap();
-      setOtpData({ userId: res.userId, demoOtp: res.demoOtp });
-      setOtp(res.demoOtp ?? '');
+      // const res = await sendOtp({ email: getValues('email') }).unwrap();
+      // setOtpData({ userId: res.userId, demoOtp: res.demoOtp });
+      // setOtp(res.demoOtp ?? '');
       setOtpError('');
       setStep(2);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -152,7 +144,7 @@ export const ForgotPasswordScreen: React.FC = () => {
     if (!otpData) return;
     try {
       setOtpError('');
-      await verify({ userId: otpData.userId, otp }).unwrap();
+      // await verify({ userId: otpData.userId, otp }).unwrap();
       setResetError('');
       setStep(3);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
@@ -163,8 +155,8 @@ export const ForgotPasswordScreen: React.FC = () => {
 
   const handleResend = async () => {
     if (seconds > 0 || !otpData) return;
-    const res = await resendOtp({ userId: otpData.userId }).unwrap();
-    setOtp(res.demoOtp);
+    // const res = await resendOtp({ userId: otpData.userId }).unwrap();
+    // setOtp(res.demoOtp);
     setOtpError('');
     setSeconds(32);
   };
@@ -173,10 +165,10 @@ export const ForgotPasswordScreen: React.FC = () => {
     if (!otpData) return;
     try {
       setResetError('');
-      await resetPassword({
-        userId: otpData.userId,
-        password: values.password,
-      }).unwrap();
+      // await resetPassword({
+      //   userId: otpData.userId,
+      //   password: values.password,
+      // }).unwrap();
       navigation.navigate('Login');
     } catch (err: any) {
       setResetError(
@@ -357,7 +349,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   variant="outline"
                   size="medium"
                   onPress={handleSendOtp}
-                  loading={sending}
+                  // loading={sending}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
                   // style={styles.actionBtn}
                   textStyle={styles.actionBtnText}
@@ -426,7 +418,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   <Text style={styles.resendText}>Didn't receive the code?</Text>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    disabled={seconds > 0 || resending}
+                    // disabled={seconds > 0 || resending}
                     onPress={handleResend}>
                     <Text style={[styles.resendLink, seconds > 0 && styles.resendOff]}>
                       {' '}
@@ -440,7 +432,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   variant="outline"
                   size="medium"
                   onPress={handleVerify}
-                  loading={verifying}
+                  // loading={verifying}
                   disabled={otp.length !== OTP_LENGTH}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
                   // style={styles.actionBtn}
@@ -535,7 +527,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   variant="outline"
                   size="medium"
                   onPress={handleSubmit(onSetPassword)}
-                  loading={resetting}
+                  // loading={resetting}
                   disabled={!canSubmitPassword}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
                   // style={styles.actionBtn}

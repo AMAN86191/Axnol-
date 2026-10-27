@@ -27,6 +27,7 @@ import {useRefresh} from '../../hooks/useRefresh';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
 import {fetchCategoryDetailsSlice} from '../../redux/CategorySlice';
+import {invalidateRequests} from '../../api/requestCache';
 import {getLoadErrorMessage} from '../../utils/apiError';
 import {toProductCardData} from '../../utils/productCardData';
 
@@ -72,7 +73,12 @@ export const SubCategoriesScreen: React.FC = () => {
     loadSubCategories();
   }, [loadSubCategories]);
 
-  const {refreshing, onRefresh} = useRefresh(loadSubCategories);
+  const refreshSubCategories = useCallback(() => {
+    invalidateRequests('/categories');
+    return loadSubCategories();
+  }, [loadSubCategories]);
+
+  const {refreshing, onRefresh} = useRefresh(refreshSubCategories);
 
   const subCategories = useMemo<SubCategoryItem[]>(() => {
     const detail: any = categoryDetail;

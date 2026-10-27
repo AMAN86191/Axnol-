@@ -22,8 +22,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
     return enabled;
-  } catch (error) {
-    console.log('requestNotificationPermission error:', error);
+  } catch {
     return false;
   }
 };
@@ -44,8 +43,7 @@ export const getFcmToken = async (): Promise<string | null> => {
 
     const storedToken = await AsyncStorage.getItem(FCM_TOKEN_STORAGE_KEY);
     return storedToken || null;
-  } catch (error) {
-    console.log('getFcmToken error:', error);
+  } catch {
     try {
       const storedToken = await AsyncStorage.getItem(FCM_TOKEN_STORAGE_KEY);
       return storedToken || null;
@@ -59,8 +57,7 @@ export const getStoredFcmToken = async (): Promise<string | null> => {
   try {
     const storedToken = await AsyncStorage.getItem(FCM_TOKEN_STORAGE_KEY);
     return storedToken || null;
-  } catch (error) {
-    console.log('getStoredFcmToken error:', error);
+  } catch {
     return null;
   }
 };
@@ -69,7 +66,5 @@ export const deleteFcmToken = async (): Promise<void> => {
   try {
     await messaging().deleteToken();
     await AsyncStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
-  } catch (error) {
-    console.log('deleteFcmToken error:', error);
-  }
+  } catch {}
 };

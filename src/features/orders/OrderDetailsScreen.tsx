@@ -34,12 +34,13 @@ import {
 import type { LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrdersStackParamList } from '../../navigation/types';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import { colors, radius, scale, shadows, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import OrderDetailsSkeleton from './components/OrderDetailsSkeleton';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrderDetailSlice } from '../../redux/OrderSlice';
+import { invalidateRequests } from '../../api/requestCache';
 import { OrderRecord } from '../../api/OrderProvider';
 import { formatPrice } from '../../utils/formatPrice';
 import {
@@ -295,12 +296,18 @@ export const OrderDetailsScreen: React.FC = () => {
   const loading = useAppSelector(state => state.order.orderDetailLoading);
   const error = useAppSelector(state => state.order.orderDetailError);
 
-  const fetchOrder = useCallback(() => {
-    if (!orderId) return Promise.resolve();
-    return dispatch(fetchOrderDetailSlice(orderId))
-      .unwrap()
-      .catch(() => undefined);
-  }, [dispatch, orderId]);
+  const fetchOrder = useCallback(
+    (force = false) => {
+      if (!orderId) return Promise.resolve();
+      if (force) {
+        invalidateRequests(`/orders/${orderId}`);
+      }
+      return dispatch(fetchOrderDetailSlice(orderId))
+        .unwrap()
+        .catch(() => undefined);
+    },
+    [dispatch, orderId],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -336,7 +343,7 @@ export const OrderDetailsScreen: React.FC = () => {
               style={styles.retryBtn}
               activeOpacity={0.85}
               onPress={() => {
-                fetchOrder();
+                fetchOrder(true);
               }}>
               <Text style={styles.retryText}>Try Again</Text>
             </TouchableOpacity>
@@ -447,8 +454,8 @@ export const OrderDetailsScreen: React.FC = () => {
                     key={`${item.productId}-${item.rateChartId ?? index}`}
                     style={[styles.itemRow, index > 0 && styles.rowDivider]}>
                     <View style={styles.itemImgWrap}>
-                      <AppImage
-                        uri={item.image || 'product_generic'}
+                      <Image
+                        source={{uri: item.image}}
                         style={styles.itemImg}
                         resizeMode="contain"
                       />

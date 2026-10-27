@@ -10,7 +10,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {ShoppingBag} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import {colors, radius, scale, spacing} from '../../theme';
@@ -36,7 +36,7 @@ export const CartScreen: React.FC = () => {
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await fetchCart();
+      await fetchCart(true, true);
     } finally {
       setRefreshing(false);
     }
@@ -105,8 +105,8 @@ export const CartScreen: React.FC = () => {
                   style={styles.imageWrap}
                   activeOpacity={0.8}
                   onPress={() => openProduct(item.productId ?? item.id)}>
-                  <AppImage
-                    uri={item.image}
+                  <Image
+                    source={{uri: item.image}}
                     style={styles.image}
                     resizeMode="contain"
                   />

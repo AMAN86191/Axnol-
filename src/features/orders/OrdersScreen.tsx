@@ -15,11 +15,12 @@ import {
 } from '@react-navigation/native';
 import { CalendarDays, ChevronRight, Menu, Package } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppImage from '../../components/ui/AppImage';
+import {Image} from 'react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
 import { colors, fontSize, radius, scale, spacing } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrdersSlice } from '../../redux/OrderSlice';
+import { invalidateRequests } from '../../api/requestCache';
 import { formatPrice } from '../../utils/formatPrice';
 import OrdersSkeleton from './components/OrdersSkeleton';
 import { useRefresh } from '../../hooks/useRefresh';
@@ -42,7 +43,7 @@ const STATUS_FILTERS = [
   { key: 'placed', label: 'Placed' },
   { key: 'shipped', label: 'Shipped' },
   { key: 'delivered', label: 'Delivered' },
-  { key: 'cancelled', label: 'Cancelled' },
+  // { key: 'cancelled', label: 'Cancelled' },
 ];
 
 export const OrdersScreen: React.FC = () => {
@@ -56,7 +57,12 @@ export const OrdersScreen: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState(ALL_FILTER);
 
   const fetchOrders = useCallback(
-    () => dispatch(fetchOrdersSlice()).unwrap().catch(() => undefined),
+    (force = false) => {
+      if (force) {
+        invalidateRequests('/orders');
+      }
+      return dispatch(fetchOrdersSlice()).unwrap().catch(() => undefined);
+    },
     [dispatch],
   );
 
@@ -66,7 +72,7 @@ export const OrdersScreen: React.FC = () => {
     }, [fetchOrders]),
   );
 
-  const { refreshing, onRefresh } = useRefresh(fetchOrders);
+  const { refreshing, onRefresh } = useRefresh(() => fetchOrders(true));
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { [ALL_FILTER]: orders.length };
@@ -95,7 +101,7 @@ export const OrdersScreen: React.FC = () => {
     STATUS_FILTERS.find(filter => filter.key === selectedFilter)?.label ??
     'All';
   const errorMessage = error ? getOrderErrorMessage(error) : '';
-
+console.log('filteredOrders :', filteredOrders);
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -230,8 +236,8 @@ export const OrdersScreen: React.FC = () => {
                   }>
                   <View style={styles.cardTop}>
                     <View style={styles.orderImgWrap}>
-                      <AppImage
-                        uri={getOrderImage(item)}
+                      <Image
+                        source={{ uri: getOrderImage(item) }}
                         style={styles.orderImg}
                         resizeMode="contain"
                       />

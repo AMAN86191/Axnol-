@@ -13,12 +13,9 @@ import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useDispatch} from 'react-redux';
 import {
-  BadgeCheck,
   Building2,
   ChevronRight,
   HelpCircle,
-  Info,
-  LifeBuoy,
   LogOut,
   Mail,
   Pencil,
@@ -29,13 +26,12 @@ import {
 import type {LucideIcon} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {clearAuth} from '../../redux/AuthSlice';
+import {invalidateRequests} from '../../api/requestCache';
 import {useAppSelector} from '../../redux/hooks';
 import {toast} from '../../components/ui/ToastProvider';
-import AppImage from '../../components/ui/AppImage';
 import images from '../../assets/images';
 import {colors, radius, scale, shadows, spacing} from '../../theme';
-import {useSimulatedLoading} from '../../hooks/useSimulatedLoading';
-import ProfileSkeleton from './components/ProfileSkeleton';
+
 
 interface MenuItem {
   title: string;
@@ -74,7 +70,6 @@ export const ProfileScreen: React.FC = () => {
   const reduxUser = useAppSelector(s => s.auth.user);
   const [storedUser, setStoredUser] = useState<any>(null);
   const dispatch = useDispatch();
-  const loading = useSimulatedLoading();
 
   useEffect(() => {
     let active = true;
@@ -101,6 +96,7 @@ export const ProfileScreen: React.FC = () => {
       'Are you sure you want to log out?',
       async () => {
         await AsyncStorage.clear();
+        invalidateRequests();
         dispatch(clearAuth());
         toast.success('Logged Out', 'You have been logged out successfully.');
       },
@@ -155,10 +151,6 @@ export const ProfileScreen: React.FC = () => {
       : status === 'inactive'
       ? 'Inactive'
       : status;
-
-  if (loading) {
-    return <ProfileSkeleton />;
-  }
 
   return (
     <View style={styles.container}>
@@ -216,8 +208,8 @@ export const ProfileScreen: React.FC = () => {
 
           <View style={styles.avatarBlock}>
             <View style={styles.avatarRing}>
-              <AppImage
-                uri={avatarUri}
+              <Image
+                source={avatarUri ? {uri: avatarUri} : require('../../../assets/axnol/default_avatar.png')}
                 style={styles.avatar}
                 resizeMode="cover"
               />
@@ -267,7 +259,7 @@ export const ProfileScreen: React.FC = () => {
           <InfoRow label="Company Name" value={companyName} />
           <InfoRow label="GSTIN" value={gstNumber} />
           <InfoRow label="Address" value={user?.address || '—'} />
-          <InfoRow label="City & State" value={location} isLast />
+          <InfoRow label="City & State" value={location} />
           {/* <InfoRow
             label="Account Status"
             value={statusLabel}

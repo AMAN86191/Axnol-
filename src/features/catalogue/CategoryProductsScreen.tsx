@@ -11,6 +11,7 @@ import {PackageSearch} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
 import {getProducts, ProductApi} from '../../api/ProductProvider';
+import {invalidateRequests} from '../../api/requestCache';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import {colors, scale, spacing} from '../../theme';
@@ -64,7 +65,12 @@ export const CategoryProductsScreen: React.FC = () => {
     loadProducts();
   }, [loadProducts]);
 
-  const {refreshing, onRefresh} = useRefresh(loadProducts);
+  const refreshProducts = useCallback(() => {
+    invalidateRequests('/products');
+    return loadProducts();
+  }, [loadProducts]);
+
+  const {refreshing, onRefresh} = useRefresh(refreshProducts);
 
   const isEmpty = !loading && !error && products.length === 0;
 

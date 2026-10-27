@@ -1,10 +1,17 @@
-import React from 'react';
-import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {WifiOff} from 'lucide-react-native';
-import AppImage from '../../../components/ui/AppImage';
+import React, { useCallback, useRef, useState } from 'react';
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewToken,
+} from 'react-native';
+import { WifiOff } from 'lucide-react-native';
+import { Image } from 'react-native';
 import Skeleton from '../../../components/ui/Skeleton';
-import {scale} from '../../../theme';
-import {IndustryItem} from '../homeData';
+import { scale } from '../../../theme';
+import { IndustryItem } from '../homeData';
 import HomeSectionHeader from './HomeSectionHeader';
 import SectionEmptyState from './SectionEmptyState';
 
@@ -31,6 +38,23 @@ export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
 }) => {
   const showError = !loading && industries.length === 0 && Boolean(errorMessage);
   const isEmpty = !loading && !showError && industries.length === 0;
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
+  const [visibleIndustryIds, setVisibleIndustryIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 });
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setVisibleIndustryIds(
+        new Set(
+          viewableItems
+            .map(token => (token.item as IndustryItem).id)
+            .filter(Boolean),
+        ),
+      );
+    },
+    [],
+  );
 
   return (
     <>
@@ -69,34 +93,59 @@ export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
       ) : isEmpty ? (
         <SectionEmptyState message="No industries found at the moment" />
       ) : (
-        <ScrollView
+        <FlatList
           horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollPad}>
-          {industries.map(ind => (
+          data={industries}
+          keyExtractor={item => item.id}
+          renderItem={({ item: ind }) => (
             <TouchableOpacity
-              key={ind.id}
               style={styles.card}
               activeOpacity={0.85}
               onPress={() => onSelect(ind)}>
-              {/* Round industry image */}
               <View style={styles.circleShadow}>
-                <View style={styles.circle}>
-                  <AppImage
-                    uri={ind.image}
-                    style={styles.cardImg}
+                {ind.image && visibleIndustryIds.has(ind.id) ? (
+                  <Image
+                    source={{ uri: ind.image }}
+                    style={styles.circle}
                     resizeMode="cover"
+                    resizeMethod="resize"
+                    onError={() =>
+                      setFailedImages(prev => ({ ...prev, [ind.id]: true }))
+                    }
                   />
-                </View>
+                ) : null}
+                {(!ind.image || failedImages[ind.id]) && (
+                  <View
+                    style={[
+                      styles.circle,
+                      styles.fallbackCircle,
+                      StyleSheet.absoluteFillObject,
+                    ]}>
+                    <Text style={styles.fallbackText}>
+                      {ind.name?.charAt(0)?.toUpperCase() || '?'}
+                    </Text>
+                  </View>
+                )}
               </View>
-
-              {/* Title below the image */}
               <Text style={styles.cardName} numberOfLines={1}>
                 {ind.name}
               </Text>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          )}
+          initialNumToRender={4}
+          maxToRenderPerBatch={4}
+          windowSize={3}
+          updateCellsBatchingPeriod={40}
+          getItemLayout={(_, index) => ({
+            length: CARD_WIDTH + scale(10),
+            offset: (CARD_WIDTH + scale(10)) * index,
+            index,
+          })}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig.current}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollPad}
+        />
       )}
     </>
   );
@@ -156,6 +205,16 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     textAlign: 'center',
     marginTop: scale(8),
+  },
+  fallbackCircle: {
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fallbackText: {
+    fontSize: scale(18),
+    fontWeight: '800',
+    color: '#2563EB',
   },
   cardLink: {
     fontSize: scale(9.5),

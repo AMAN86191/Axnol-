@@ -1,4 +1,5 @@
 import api from './axiosConfig';
+import {cachedRequest} from './requestCache';
 
 export interface ProductApi {
   id: number;
@@ -54,22 +55,34 @@ const toProductApiParams = (params?: Record<string, any>) => {
 
 export const getProducts = async (
   params?: Record<string, any>,
+  force = false,
 ): Promise<ProductsResponse> => {
   try {
-    const response = await api.get('/products', {
-      params: toProductApiParams(params),
+    const apiParams = toProductApiParams(params);
+    return await cachedRequest({
+      resource: '/products',
+      params: apiParams,
+      ttl: 2 * 60_000,
+      force,
+      request: async () => (await api.get('/products', {params: apiParams})).data,
     });
-    return response.data;
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;
   }
 };
 
-export const getProductById = async (productId: string | number): Promise<ProductDetailResponse> => {
+export const getProductById = async (
+  productId: string | number,
+  force = false,
+): Promise<ProductDetailResponse> => {
   try {
-    const response = await api.get(`/products/${productId}`);
-    return response.data;
+    return await cachedRequest({
+      resource: `/products/${productId}`,
+      ttl: 5 * 60_000,
+      force,
+      request: async () => (await api.get(`/products/${productId}`)).data,
+    });
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };
     throw data;

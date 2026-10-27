@@ -6,25 +6,19 @@ import {colors, scale} from '../../../theme';
 import Logo from '../../../components/ui/Logo';
 
 interface HomeHeaderProps {
-  userName?: string;
   onBellPress: () => void;
-  onProfilePress: () => void;
   onCartPress?: () => void;
   cartCount?: number;
   onWishlistPress?: () => void;
   wishlistCount?: number;
-  hasUnreadNotifications?: boolean;
 }
 
 export const HomeHeader: React.FC<HomeHeaderProps> = ({
-  userName: _userName = 'Rahul Sharma',
   onBellPress,
-  onProfilePress: _onProfilePress,
   onCartPress,
   cartCount = 0,
   onWishlistPress,
   wishlistCount = 0,
-  hasUnreadNotifications = false,
 }) => {
   const navigation = useNavigation<any>();
 
@@ -83,14 +77,13 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             activeOpacity={0.75}
             onPress={onBellPress}>
             <Bell size={scale(20)} color="#1E293B" strokeWidth={2.2} />
-            {hasUnreadNotifications ? <View style={styles.bellDot} /> : null}
           </TouchableOpacity>
 
           {/* <TouchableOpacity
             style={styles.profileChip}
             activeOpacity={0.8}
             onPress={onProfilePress}>
-            <AppImage uri="user_avatar" style={styles.avatarImg} />
+            <Image source={require('../../../assets/axnol/default_avatar.png')} style={styles.avatarImg} />
           </TouchableOpacity> */}
         </View>
       </View>
@@ -129,17 +122,6 @@ const styles = StyleSheet.create({
     height: scale(36),
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  bellDot: {
-    position: 'absolute',
-    top: scale(5),
-    right: scale(7),
-    width: scale(8),
-    height: scale(8),
-    borderRadius: scale(4),
-    backgroundColor: '#DC2626',
-    borderWidth: 1.5,
-    borderColor: '#FFFFFF',
   },
   cartBadge: {
     position: 'absolute',
