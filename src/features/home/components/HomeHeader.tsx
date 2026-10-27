@@ -83,7 +83,7 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             style={styles.profileChip}
             activeOpacity={0.8}
             onPress={onProfilePress}>
-            <Image source={require('../../../assets/axnol/default_avatar.png')} style={styles.avatarImg} />
+            <Image source={require('../../../../assets/axnol/default_avatar.png')} style={styles.avatarImg} />
           </TouchableOpacity> */}
         </View>
       </View>
