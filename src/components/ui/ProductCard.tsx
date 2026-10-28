@@ -8,8 +8,8 @@ import {
   ViewStyle,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {colors, scale} from '../../theme';
-import {formatPrice} from '../../utils/formatPrice';
+import { colors, scale } from '../../theme';
+import { formatPrice } from '../../utils/formatPrice';
 import AddToCartButton from '../../features/cart/components/AddToCartButton';
 import WishlistButton from '../../features/wishlist/components/WishlistButton';
 import CachedImage from './CachedImage';
@@ -73,8 +73,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {gradientImage ? (
         <LinearGradient
           colors={['#F8FBFF', '#E8F2FB']}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.imgArea}>
           {image}
         </LinearGradient>
@@ -98,7 +98,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       <View style={styles.divider} />
 
-      <AddToCartButton product={cartProduct} compact />
+      {Number(product.price) !== 0 && (
+        <AddToCartButton product={cartProduct} compact />
+      )}
     </TouchableOpacity>
   );
 };
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 1,

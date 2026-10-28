@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -25,6 +26,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Clock,
+  FileDown,
   MapPin,
   Package,
   PackageCheck,
@@ -35,7 +37,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrdersStackParamList } from '../../navigation/types';
 import {Image} from 'react-native';
-import { colors, radius, scale, shadows, spacing } from '../../theme';
+import { colors, radius, rfValue, scale, shadows, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import OrderDetailsSkeleton from './components/OrderDetailsSkeleton';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -53,6 +55,9 @@ import {
   getStatusBadgeStyle,
   statusKey,
 } from './orderUtils';
+import {Download} from 'lucide-react-native';
+import {downloadInvoice} from '../../utils/invoiceGenerator';
+import Button from '../../components/ui/Button';
 
 type Route = RouteProp<OrdersStackParamList, 'OrderDetails'>;
 
@@ -366,6 +371,19 @@ export const OrderDetailsScreen: React.FC = () => {
     order.phone ? `Phone: ${order.phone}` : '',
   ].filter(Boolean);
 
+  const handleDownloadInvoice = async () => {
+    try {
+      const result = await downloadInvoice(order);
+      // if (result.success) {
+      //   Alert.alert('Invoice Downloaded', 'Invoice saved successfully on this device.');
+      // } else {
+      //   Alert.alert('Error', 'Failed to download invoice. Please try again.');
+      // }
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to download invoice. Please try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -375,7 +393,7 @@ export const OrderDetailsScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + scale(48) },
+          { paddingBottom: insets.bottom + scale(80) },
         ]}>
         <LinearGradient
           colors={[colors.primary, colors.primaryDark]}
@@ -536,6 +554,16 @@ export const OrderDetailsScreen: React.FC = () => {
             </View>
           </View>
         ) : null}
+        <View style={{marginTop:scale(15)}}>
+
+        <Button 
+         title='Download Invoice'
+         variant='navy'
+         onPress={()=>handleDownloadInvoice()}
+        //  iconRight={<FileDown color={'#fff'} size={rfValue(15)} />}
+        />
+        </View>
+    
       </ScrollView>
     </View>
   );
@@ -930,6 +958,36 @@ const styles = StyleSheet.create({
   },
   retryText: {
     fontSize: scale(12.5),
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  bottomBar: {
+    // position: 'absolute',
+    // left: 0,
+    // right: 0,
+    // bottom: 0,
+    // backgroundColor: '#FFFFFF',
+    // borderTopWidth: 1,
+    // borderTopColor: '#E2E8F0',
+    // paddingHorizontal: spacing.lg,
+    // paddingTop: scale(10),
+  },
+  downloadBtn: {
+    height: scale(48),
+    backgroundColor: colors.primary,
+    borderRadius: radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(8),
+    shadowColor: colors.primary,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  downloadBtnText: {
+    fontSize: scale(14),
     fontWeight: '700',
     color: '#FFFFFF',
   },

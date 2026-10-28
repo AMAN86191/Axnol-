@@ -195,13 +195,13 @@ export const LoginScreen: React.FC = () => {
               textStyle={styles.loginBtnText}
             />
 
-            <View style={styles.dividerRow}>
+            {/* <View style={styles.dividerRow}>
               <View style={styles.divider} />
               <Text style={styles.dividerText}>or continue with</Text>
               <View style={styles.divider} />
-            </View>
+            </View> */}
 
-            <View style={styles.socialRow}>
+            {/* <View style={styles.socialRow}>
               <TouchableOpacity style={styles.socialBtn} activeOpacity={0.8}>
                 <GoogleIcon size={scale(20)} />
                 <Text style={styles.socialText}>Google</Text>
@@ -210,7 +210,7 @@ export const LoginScreen: React.FC = () => {
                 <AppleIcon size={scale(20)} color="#0F172A" />
                 <Text style={styles.socialText}>Apple</Text>
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             <View style={styles.registerRow}>
               <Text style={styles.registerText}>Don't have an account?</Text>

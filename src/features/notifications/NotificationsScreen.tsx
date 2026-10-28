@@ -5,39 +5,48 @@ import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import { colors, fontSize, radius, scale, spacing, typography } from '../../theme';
 
-const DUMMY_NOTIFICATIONS = [
-  {
-    id: '1',
-    type: 'order',
-    title: 'Order Placed',
-    body: 'Your order #ORD-12345 has been placed successfully.',
-    createdAt: Date.now() - 3600000,
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'invoice',
-    title: 'Invoice Generated',
-    body: 'Invoice for order #ORD-12344 is ready to download.',
-    createdAt: Date.now() - 86400000,
-    read: true,
-  },
-  {
-    id: '3',
-    type: 'pricing',
-    title: 'Price Update',
-    body: 'New pricing available for selected products.',
-    createdAt: Date.now() - 172800000,
-    read: false,
-  },
-  {
-    id: '4',
-    type: 'account',
-    title: 'Profile Updated',
-    body: 'Your account details have been updated.',
-    createdAt: Date.now() - 259200000,
-    read: true,
-  },
+type Notification = {
+  id: string;
+  type: 'account' | 'pricing' | 'order' | 'invoice';
+  title: string;
+  body: string;
+  createdAt: number;
+  read: boolean;
+};
+
+const DUMMY_NOTIFICATIONS: Notification[] = [
+  // {
+  //   id: '1',
+  //   type: 'order',
+  //   title: 'Order Placed',
+  //   body: 'Your order #ORD-12345 has been placed successfully.',
+  //   createdAt: Date.now() - 3600000,
+  //   read: false,
+  // },
+  // {
+  //   id: '2',
+  //   type: 'invoice',
+  //   title: 'Invoice Generated',
+  //   body: 'Invoice for order #ORD-12344 is ready to download.',
+  //   createdAt: Date.now() - 86400000,
+  //   read: true,
+  // },
+  // {
+  //   id: '3',
+  //   type: 'pricing',
+  //   title: 'Price Update',
+  //   body: 'New pricing available for selected products.',
+  //   createdAt: Date.now() - 172800000,
+  //   read: false,
+  // },
+  // {
+  //   id: '4',
+  //   type: 'account',
+  //   title: 'Profile Updated',
+  //   body: 'Your account details have been updated.',
+  //   createdAt: Date.now() - 259200000,
+  //   read: true,
+  // },
 ];
 
 const ICONS = {

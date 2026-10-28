@@ -6,29 +6,29 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Heart, Trash2} from 'lucide-react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Image} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Heart, Trash2 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'react-native';
 import Button from '../../components/ui/Button';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
-import {toast} from '../../components/ui/ToastProvider';
-import {colors, radius, scale, spacing} from '../../theme';
-import {formatPrice} from '../../utils/formatPrice';
-import {useAppSelector} from '../../store';
-import {selectWishlistItems} from './wishlistSelectors';
-import {useWishlist} from './useWishlist';
-import {useCart} from '../cart/useCart';
+import { toast } from '../../components/ui/ToastProvider';
+import { colors, radius, scale, spacing } from '../../theme';
+import { formatPrice } from '../../utils/formatPrice';
+import { useAppSelector } from '../../store';
+import { selectWishlistItems } from './wishlistSelectors';
+import { useWishlist } from './useWishlist';
+import { useCart } from '../cart/useCart';
 import AddToCartButton from '../cart/components/AddToCartButton';
 
 export const WishlistScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectWishlistItems);
-  const {remove, clear} = useWishlist();
-  const {add, items: cartItems} = useCart();
-console.log('items :', items);
+  const { remove, clear } = useWishlist();
+  const { add, items: cartItems } = useCart();
+  console.log('items :', items);
   const totalValue = items.reduce(
     (sum, item) => sum + (item.price > 0 ? item.price : item.mrp ?? 0),
     0,
@@ -52,10 +52,9 @@ console.log('items :', items);
       rateChartId?: string | number,
       size?: string,
     ) =>
-      `${String(productId)}:${
-        rateChartId !== undefined && rateChartId !== null
-          ? String(rateChartId)
-          : String(size ?? '')
+      `${String(productId)}:${rateChartId !== undefined && rateChartId !== null
+        ? String(rateChartId)
+        : String(size ?? '')
       }`;
     const alreadyInCart = new Set(
       cartItems.map(item =>
@@ -107,7 +106,7 @@ console.log('items :', items);
   };
 
   const openProduct = (id: string) => {
-    navigation.navigate('ProductDetails', {productId: id});
+    navigation.navigate('ProductDetails', { productId: id });
   };
 
   if (items.length === 0) {
@@ -174,7 +173,7 @@ console.log('items :', items);
                 activeOpacity={0.85}
                 onPress={() => openProduct(item.id)}>
                 <Image
-                  source={{uri: item.image}}
+                  source={{ uri: item.image }}
                   style={styles.img}
                   resizeMode="contain"
                 />
@@ -183,7 +182,7 @@ console.log('items :', items);
               <TouchableOpacity
                 style={styles.removeBtn}
                 activeOpacity={0.7}
-                hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 onPress={() => remove(item.id)}>
                 <Heart
                   size={scale(14)}
@@ -217,35 +216,36 @@ console.log('items :', items);
               <View style={styles.divider} />
 
               <View style={styles.ctaRow}>
-               
-                <AddToCartButton
-                  product={{
-                    id: item.id,
-                    name: item.name,
-                    code: item.code,
-                    image: item.image,
-                    price: item.price,
-                    mrp: item.mrp,
-                    unit: item.unit,
-                    rateChartId: item.rateChartId,
-                  }}
-                  compact
-                  style={styles.addBtn}
-                />
+                {Number(item.price) !== 0 && (
+                  <AddToCartButton
+                    product={{
+                      id: item.id,
+                      name: item.name,
+                      code: item.code,
+                      image: item.image,
+                      price: item.price,
+                      mrp: item.mrp,
+                      unit: item.unit,
+                      rateChartId: item.rateChartId,
+                    }}
+                    compact
+                    style={styles.addBtn}
+                  />
+                )}
               </View>
             </View>
           ))}
         </View>
       </ScrollView>
 
-     
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F8FAFC'},
-  scrollFlex: {flex: 1},
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollFlex: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     paddingVertical: scale(10),
     paddingHorizontal: spacing.md,
   },
-  summaryLeft: {flex: 1},
+  summaryLeft: { flex: 1 },
   summaryCount: {
     fontSize: scale(13.5),
     fontWeight: '800',
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 1,
