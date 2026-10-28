@@ -10,6 +10,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {SplashScreenView} from '../features/auth/SplashScreen';
 import {useCart} from '../features/cart/useCart';
 import {setCartItems} from '../features/cart/cartSlice';
+import {useWishlist} from '../features/wishlist/useWishlist';
+import {clearWishlist} from '../features/wishlist/wishlistSlice';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -17,6 +19,7 @@ export const RootNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
   const {token, user} = useAppSelector(state => state.auth);
   const {fetchCart} = useCart();
+  const {fetchWishlist} = useWishlist();
 
   const ready = Boolean(token && user?.status === 'active');
 
@@ -25,10 +28,12 @@ export const RootNavigator: React.FC = () => {
   useEffect(() => {
     if (ready) {
       fetchCart();
+      fetchWishlist();
     } else {
       dispatch(setCartItems([]));
+      dispatch(clearWishlist());
     }
-  }, [dispatch, fetchCart, ready]);
+  }, [dispatch, fetchCart, fetchWishlist, ready]);
 
   useEffect(() => {
     const hydrate = async () => {

@@ -28,9 +28,9 @@ export const WishlistScreen: React.FC = () => {
   const items = useAppSelector(selectWishlistItems);
   const {remove, clear} = useWishlist();
   const {add, items: cartItems} = useCart();
-
+console.log('items :', items);
   const totalValue = items.reduce(
-    (sum, item) => sum + (item.mrp ?? item.price),
+    (sum, item) => sum + (item.price > 0 ? item.price : item.mrp ?? 0),
     0,
   );
 
@@ -107,14 +107,7 @@ export const WishlistScreen: React.FC = () => {
   };
 
   const openProduct = (id: string) => {
-    navigation.navigate('HomeTabs', {
-      screen: 'Products',
-      params: {
-        screen: 'ProductDetails',
-        params: {productId: id},
-        initial: false,
-      },
-    });
+    navigation.navigate('ProductDetails', {productId: id});
   };
 
   if (items.length === 0) {
@@ -127,7 +120,7 @@ export const WishlistScreen: React.FC = () => {
             title="Your wishlist is empty"
             subtitle="Tap the heart icon on any product to save it here for later."
             actionLabel="Browse Products"
-            onAction={() => navigation.navigate('HomeTabs', {screen: 'Home'})}
+            onAction={() => navigation.goBack()}
           />
         </View>
       </View>
@@ -245,16 +238,7 @@ export const WishlistScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          {paddingBottom: Math.max(insets.bottom, spacing.md)},
-        ]}>
-        <Button
-          title={`Add all to Cart (${items.length})`}
-          onPress={handleAddAllToCart}
-        />
-      </View>
+     
     </View>
   );
 };
@@ -435,13 +419,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flexShrink: 1,
   },
-  footer: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
+
 });
 
 export default WishlistScreen;

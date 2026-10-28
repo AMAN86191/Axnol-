@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "936210679603",
-    "project_id": "gaumata-trust-91e11",
-    "storage_bucket": "gaumata-trust-91e11.firebasestorage.app"
+    "project_number": "621467337419",
+    "project_id": "axnol-2c010",
+    "storage_bucket": "axnol-2c010.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:936210679603:android:c9cf902347fd55b58c2046",
+        "mobilesdk_app_id": "1:621467337419:android:2f69cae93bb6641597114e",
         "android_client_info": {
           "package_name": "com.axnolapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBh_navF-MIhxkbAFlJmHaiuDiS7Gqn5Kk"
+          "current_key": "AIzaSyCAavWyFd6e9CtWWYRI85537Fhejr03ULw"
         }
       ],
       "services": {

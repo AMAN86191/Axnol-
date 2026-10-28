@@ -2,6 +2,7 @@ import {createSlice, PayloadAction} from '@reduxjs/toolkit';
 
 export interface WishlistItem {
   id: string;
+  productId?: string | number;
   name: string;
   code?: string;
   image?: string;
@@ -14,17 +15,22 @@ export interface WishlistItem {
 export interface WishlistState {
   items: WishlistItem[];
   isHydrated: boolean;
+  loading: boolean;
 }
 
 const initialState: WishlistState = {
   items: [],
   isHydrated: false,
+  loading: false,
 };
 
 const wishlistSlice = createSlice({
   name: 'wishlist',
   initialState,
   reducers: {
+    setWishlistItems: (state, action: PayloadAction<WishlistItem[]>) => {
+      state.items = action.payload;
+    },
     addToWishlist: (state, action: PayloadAction<WishlistItem>) => {
       const exists = state.items.some(item => item.id === action.payload.id);
       if (!exists) {
@@ -52,16 +58,21 @@ const wishlistSlice = createSlice({
     setWishlistHydrated: (state, action: PayloadAction<boolean>) => {
       state.isHydrated = action.payload;
     },
+    setWishlistLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
   },
 });
 
 export const {
+  setWishlistItems,
   addToWishlist,
   removeFromWishlist,
   toggleWishlist,
   clearWishlist,
   hydrateWishlist,
   setWishlistHydrated,
+  setWishlistLoading,
 } = wishlistSlice.actions;
 
 export default wishlistSlice.reducer;
