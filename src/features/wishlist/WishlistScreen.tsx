@@ -6,31 +6,31 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Heart, Trash2} from 'lucide-react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Image} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Heart, Trash2 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'react-native';
 import Button from '../../components/ui/Button';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
-import {toast} from '../../components/ui/ToastProvider';
-import {colors, radius, scale, spacing} from '../../theme';
-import {formatPrice} from '../../utils/formatPrice';
-import {useAppSelector} from '../../store';
-import {selectWishlistItems} from './wishlistSelectors';
-import {useWishlist} from './useWishlist';
-import {useCart} from '../cart/useCart';
+import { toast } from '../../components/ui/ToastProvider';
+import { colors, radius, scale, spacing } from '../../theme';
+import { formatPrice } from '../../utils/formatPrice';
+import { useAppSelector } from '../../store';
+import { selectWishlistItems } from './wishlistSelectors';
+import { useWishlist } from './useWishlist';
+import { useCart } from '../cart/useCart';
 import AddToCartButton from '../cart/components/AddToCartButton';
 
 export const WishlistScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectWishlistItems);
-  const {remove, clear} = useWishlist();
-  const {add, items: cartItems} = useCart();
-
+  const { remove, clear } = useWishlist();
+  const { add, items: cartItems } = useCart();
+  console.log('items :', items);
   const totalValue = items.reduce(
-    (sum, item) => sum + (item.mrp ?? item.price),
+    (sum, item) => sum + (item.price > 0 ? item.price : item.mrp ?? 0),
     0,
   );
 
@@ -52,10 +52,9 @@ export const WishlistScreen: React.FC = () => {
       rateChartId?: string | number,
       size?: string,
     ) =>
-      `${String(productId)}:${
-        rateChartId !== undefined && rateChartId !== null
-          ? String(rateChartId)
-          : String(size ?? '')
+      `${String(productId)}:${rateChartId !== undefined && rateChartId !== null
+        ? String(rateChartId)
+        : String(size ?? '')
       }`;
     const alreadyInCart = new Set(
       cartItems.map(item =>
@@ -107,14 +106,7 @@ export const WishlistScreen: React.FC = () => {
   };
 
   const openProduct = (id: string) => {
-    navigation.navigate('HomeTabs', {
-      screen: 'Products',
-      params: {
-        screen: 'ProductDetails',
-        params: {productId: id},
-        initial: false,
-      },
-    });
+    navigation.navigate('ProductDetails', { productId: id });
   };
 
   if (items.length === 0) {
@@ -127,7 +119,7 @@ export const WishlistScreen: React.FC = () => {
             title="Your wishlist is empty"
             subtitle="Tap the heart icon on any product to save it here for later."
             actionLabel="Browse Products"
-            onAction={() => navigation.navigate('HomeTabs', {screen: 'Home'})}
+            onAction={() => navigation.goBack()}
           />
         </View>
       </View>
@@ -181,7 +173,7 @@ export const WishlistScreen: React.FC = () => {
                 activeOpacity={0.85}
                 onPress={() => openProduct(item.id)}>
                 <Image
-                  source={{uri: item.image}}
+                  source={{ uri: item.image }}
                   style={styles.img}
                   resizeMode="contain"
                 />
@@ -190,7 +182,7 @@ export const WishlistScreen: React.FC = () => {
               <TouchableOpacity
                 style={styles.removeBtn}
                 activeOpacity={0.7}
-                hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 onPress={() => remove(item.id)}>
                 <Heart
                   size={scale(14)}
@@ -224,7 +216,6 @@ export const WishlistScreen: React.FC = () => {
               <View style={styles.divider} />
 
               <View style={styles.ctaRow}>
-               
                 <AddToCartButton
                   product={{
                     id: item.id,
@@ -237,6 +228,7 @@ export const WishlistScreen: React.FC = () => {
                     rateChartId: item.rateChartId,
                   }}
                   compact
+                  disabled={Number(item.price) === 0}
                   style={styles.addBtn}
                 />
               </View>
@@ -245,23 +237,14 @@ export const WishlistScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          {paddingBottom: Math.max(insets.bottom, spacing.md)},
-        ]}>
-        <Button
-          title={`Add all to Cart (${items.length})`}
-          onPress={handleAddAllToCart}
-        />
-      </View>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#F8FAFC'},
-  scrollFlex: {flex: 1},
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  scrollFlex: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
@@ -297,7 +280,7 @@ const styles = StyleSheet.create({
     paddingVertical: scale(10),
     paddingHorizontal: spacing.md,
   },
-  summaryLeft: {flex: 1},
+  summaryLeft: { flex: 1 },
   summaryCount: {
     fontSize: scale(13.5),
     fontWeight: '800',
@@ -365,7 +348,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#0F172A',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 3,
     elevation: 1,
@@ -435,13 +418,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flexShrink: 1,
   },
-  footer: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
+
 });
 
 export default WishlistScreen;

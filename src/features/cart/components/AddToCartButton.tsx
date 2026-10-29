@@ -15,6 +15,7 @@ import { useCart } from '../useCart';
 interface AddToCartButtonProps {
   product: Omit<CartItem, 'quantity'>;
   compact?: boolean;
+  disabled?: boolean;
   onAdded?: () => void;
   style?: StyleProp<ViewStyle>;
 }
@@ -22,6 +23,7 @@ interface AddToCartButtonProps {
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   product,
   compact = false,
+  disabled = false,
   onAdded,
   style,
 }) => {
@@ -85,6 +87,25 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
   const handlePlus = () => run(() => increment(itemId));
 
+  if (disabled) {
+    return (
+      <TouchableOpacity
+        style={[styles.addBtn, compact && styles.addBtnCompact, styles.addBtnDisabled, style]}
+        activeOpacity={1}
+        disabled
+        accessibilityState={{disabled: true}}>
+        <ShoppingCart
+          size={scale(13)}
+          color="#94A3B8"
+          strokeWidth={2.4}
+        />
+        <Text style={[styles.addText, compact && styles.addTextCompact, styles.addTextDisabled]}>
+          Add
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+
   if (quantity > 0) {
     return (
       <View
@@ -143,11 +164,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(8),
     gap: scale(4),
   },
+  addBtnDisabled: {
+    backgroundColor: '#E2E8F0',
+  },
   addText: {
     color: colors.textInverse,
     fontSize: scale(12),
     fontWeight: '800',
     letterSpacing: 0.1,
+  },
+  addTextDisabled: {
+    color: '#64748B',
   },
   addTextCompact: {
     fontSize: scale(10.5),

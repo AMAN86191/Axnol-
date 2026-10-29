@@ -40,6 +40,31 @@ export const resendOtp = async (payload: any) => {
   }
 };
 
+export const requestPasswordResetOtp = async (payload: {email: string}) => {
+  try {
+    const response = await api.post('/password/forgot', payload);
+    return response.data;
+  } catch (error: any) {
+    const data = error.response?.data ?? {message: error.message};
+    throw data;
+  }
+};
+
+export const resetPassword = async (payload: {
+  email: string;
+  otp: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  try {
+    const response = await api.post('/password/reset', payload);
+    return response.data;
+  } catch (error: any) {
+    const data = error.response?.data ?? {message: error.message};
+    throw data;
+  }
+};
+
 export const getProfile = async () => {
   try {
     const response = await api.get('/profile');
@@ -72,6 +97,16 @@ export const changePassword = async (payload: {
 }) => {
   try {
     const response = await api.post('/password/change', payload);
+    return response.data;
+  } catch (error: any) {
+    const data = error.response?.data ?? { message: error.message };
+    throw data;
+  }
+};
+
+export const deleteAccount = async (payload: {confirm: boolean} = {confirm: true}) => {
+  try {
+    const response = await api.delete('/delete/account', {data: payload});
     return response.data;
   } catch (error: any) {
     const data = error.response?.data ?? { message: error.message };

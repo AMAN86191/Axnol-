@@ -159,7 +159,7 @@ export const Toast: React.FC<ToastProps> = ({data, onClose}) => {
       ]}>
       <View style={styles.card}>
         <View style={[styles.iconBadge, {backgroundColor: conf.tint}]}>
-          <Icon size={scale(16)} color={conf.accent} strokeWidth={2.4} />
+          <Icon size={scale(14)} color={conf.accent} strokeWidth={2.4} />
         </View>
 
         <View style={styles.textWrap}>
@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     ...shadows.medium,
   },
   iconBadge: {
-    width: scale(28),
-    height: scale(28),
+    width: scale(25),
+    height: scale(25),
     borderRadius: scale(14),
     alignItems: 'center',
     justifyContent: 'center',
@@ -244,13 +244,13 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.semibold,
-    fontSize: scale(12.5),
+    fontSize: scale(11.5),
     color: colors.text,
     letterSpacing: -0.1,
   },
   message: {
     ...typography.regular,
-    fontSize: scale(11),
+    fontSize: scale(10),
     color: colors.textSecondary,
     marginTop: scale(1),
     lineHeight: scale(14.5),

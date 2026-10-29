@@ -11,7 +11,6 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useDispatch} from 'react-redux';
 import {
   Building2,
   ChevronRight,
@@ -22,13 +21,15 @@ import {
   Phone,
   ScrollText,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react-native';
 import type {LucideIcon} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {clearAuth} from '../../redux/AuthSlice';
+import {clearAuth, deleteAccountSlice} from '../../redux/AuthSlice';
 import {invalidateRequests} from '../../api/requestCache';
-import {useAppSelector} from '../../redux/hooks';
+import {useAppDispatch, useAppSelector} from '../../redux/hooks';
 import {toast} from '../../components/ui/ToastProvider';
+import {ConfirmModal} from '../../components/ui/ConfirmModal';
 import images from '../../assets/images';
 import {colors, radius, scale, shadows, spacing} from '../../theme';
 
@@ -69,7 +70,11 @@ export const ProfileScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const reduxUser = useAppSelector(s => s.auth.user);
   const [storedUser, setStoredUser] = useState<any>(null);
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const [pendingAction, setPendingAction] = useState<'logout' | 'delete' | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -90,18 +95,37 @@ export const ProfileScreen: React.FC = () => {
 
   const user = storedUser ?? reduxUser;
 
-  const doLogout = () => {
-    toast.confirm(
-      'Logout',
-      'Are you sure you want to log out?',
-      async () => {
-        await AsyncStorage.clear();
-        invalidateRequests();
-        dispatch(clearAuth());
-        toast.success('Logged Out', 'You have been logged out successfully.');
-      },
-      'Logout',
-    );
+  const closeConfirm = () => {
+    if (!deleting) {
+      setPendingAction(null);
+    }
+  };
+
+  const confirmLogout = async () => {
+    setPendingAction(null);
+    await AsyncStorage.clear();
+    invalidateRequests();
+    dispatch(clearAuth());
+    toast.success('Logged Out', 'You have been logged out successfully.');
+  };
+
+  const confirmDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await dispatch(deleteAccountSlice()).unwrap();
+      setPendingAction(null);
+      toast.success(
+        'Account Deleted',
+        'Your account has been deleted successfully.',
+      );
+    } catch (error: any) {
+      toast.error(
+        'Delete Failed',
+        error?.message || 'Something went wrong. Please try again.',
+      );
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const MENU_ITEMS: MenuItem[] = [
@@ -142,15 +166,6 @@ export const ProfileScreen: React.FC = () => {
   const location = [cityState, user?.pincode].filter(Boolean).join(' - ') || '—';
   const avatarUri =
     user?.profile_pic_url || user?.profile_pic || user?.avatar || 'user_avatar';
-  const status = user?.status || '—';
-  const statusLabel =
-    status === 'active'
-      ? 'Active'
-      : status === 'pending'
-      ? 'Pending Approval'
-      : status === 'inactive'
-      ? 'Inactive'
-      : status;
 
   return (
     <View style={styles.container}>
@@ -307,11 +322,39 @@ export const ProfileScreen: React.FC = () => {
         <TouchableOpacity
           style={styles.logoutBtn}
           activeOpacity={0.85}
-          onPress={doLogout}>
+          onPress={() => setPendingAction('logout')}>
           <LogOut size={scale(16)} color={colors.danger} strokeWidth={2.4} />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          activeOpacity={0.85}
+          onPress={() => setPendingAction('delete')}>
+          <Trash2 size={scale(16)} color={colors.danger} strokeWidth={2.4} />
+          <Text style={styles.deleteText}>Delete Account</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      <ConfirmModal
+        visible={pendingAction === 'logout'}
+        title="Log Out"
+        message="Are you sure you want to log out of your account?"
+        confirmLabel="Log Out"
+        onCancel={closeConfirm}
+        onConfirm={confirmLogout}
+      />
+
+      <ConfirmModal
+        visible={pendingAction === 'delete'}
+        title="Delete Account"
+        message="This will permanently delete your account and all associated data. This action cannot be undone."
+        confirmLabel="Delete Account"
+        destructive
+        loading={deleting}
+        onCancel={closeConfirm}
+        onConfirm={confirmDeleteAccount}
+      />
     </View>
   );
 };
@@ -610,6 +653,26 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   logoutText: {
+    fontSize: scale(13.5),
+    fontWeight: '800',
+    color: colors.danger,
+    letterSpacing: 0.2,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
+    height: scale(40),
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: 'transparent',
+  },
+  deleteText: {
     fontSize: scale(13.5),
     fontWeight: '800',
     color: colors.danger,

@@ -1,6 +1,7 @@
 ﻿import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   changePassword,
+  deleteAccount,
   loginUser,
   registerUser,
   resendOtp,
@@ -117,6 +118,20 @@ export const changePasswordSlice = createAsyncThunk(
   },
 );
 
+export const deleteAccountSlice = createAsyncThunk(
+  'auth/deleteAccountSlice',
+  async (_: void, {rejectWithValue}) => {
+    try {
+      const res = await deleteAccount({confirm: true});
+      await AsyncStorage.clear().catch(() => {});
+      invalidateRequests();
+      return res?.data ?? res;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -209,6 +224,20 @@ const authSlice = createSlice({
         state.loading = false;
       })
       .addCase(changePasswordSlice.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(deleteAccountSlice.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteAccountSlice.fulfilled, state => {
+        state.loading = false;
+        state.token = null;
+        state.user = null;
+        state.error = null;
+      })
+      .addCase(deleteAccountSlice.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

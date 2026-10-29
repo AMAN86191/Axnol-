@@ -34,12 +34,14 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Logo from '../../components/ui/Logo';
+import {requestPasswordResetOtp, resetPassword} from '../../api/AuthProvider';
+import {toast} from '../../components/ui/ToastProvider';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
 
 const schema = z
   .object({
-    email: z.string().trim().min(1, 'Required'),
+    email: z.string().trim().email('Enter a valid email address'),
     password: z.string().min(8, 'Minimum 8 characters'),
     confirmPassword: z.string(),
   })
@@ -52,7 +54,7 @@ type FormValues = z.infer<typeof schema>;
 
 const STEPS = [
   { n: 1, label: 'Account Email' },
-  { n: 2, label: 'Verification' },
+  { n: 2, label: 'Reset Code' },
   { n: 3, label: 'New Password' },
 ];
 
@@ -78,15 +80,13 @@ export const ForgotPasswordScreen: React.FC = () => {
   const [step, setStep] = useState<number>(1);
   const scrollRef = useRef<ScrollView>(null);
   const otpInputRef = useRef<TextInput>(null);
-
-  const [otpData, setOtpData] = useState<{
-    userId: string;
-    demoOtp?: string;
-  } | null>(null);
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(0);
   const [otpError, setOtpError] = useState('');
   const [resetError, setResetError] = useState('');
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendingOtp, setResendingOtp] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   const { control, handleSubmit, trigger, setError, watch, getValues } =
     useForm<FormValues>({
@@ -105,6 +105,17 @@ export const ForgotPasswordScreen: React.FC = () => {
   ];
   const canSubmitPassword =
     pwChecks.every(c => c.ok) && confirmPassword.length > 0;
+
+  const getRequestErrorMessage = (error: any, fallback: string): string => {
+    const validationErrors = error?.errors;
+    if (validationErrors && typeof validationErrors === 'object') {
+      const firstError = Object.values(validationErrors)
+        .flat()
+        .find(message => typeof message === 'string');
+      if (firstError) return firstError as string;
+    }
+    return error?.message || fallback;
+  };
 
   // Start the resend countdown whenever the OTP step opens
   useEffect(() => {
@@ -126,54 +137,102 @@ export const ForgotPasswordScreen: React.FC = () => {
   const handleSendOtp = async () => {
     const ok = await trigger(['email']);
     if (!ok) return;
+    setSendingOtp(true);
     try {
-      // const res = await sendOtp({ email: getValues('email') }).unwrap();
-      // setOtpData({ userId: res.userId, demoOtp: res.demoOtp });
-      // setOtp(res.demoOtp ?? '');
+      const response = await requestPasswordResetOtp({
+        email: getValues('email').trim(),
+      });
+      if (response?.status === false) {
+        throw response;
+      }
       setOtpError('');
+      setResetError('');
+      setOtp('');
       setStep(2);
       scrollRef.current?.scrollTo({ y: 0, animated: false });
-    } catch (err: any) {
+      toast.success(
+        'Code Sent',
+        response?.message || 'Check your email for the password reset code.',
+      );
+    } catch (err: unknown) {
       setError('email', {
-        message: err?.data?.message ?? 'No account found with this email.',
+        message: getRequestErrorMessage(
+          err,
+          'Could not send a reset code. Please check your email and try again.',
+        ),
       });
+    } finally {
+      setSendingOtp(false);
     }
   };
 
-  const handleVerify = async () => {
-    if (!otpData) return;
-    try {
-      setOtpError('');
-      // await verify({ userId: otpData.userId, otp }).unwrap();
-      setResetError('');
-      setStep(3);
-      scrollRef.current?.scrollTo({ y: 0, animated: false });
-    } catch (err: any) {
-      setOtpError(err?.data?.message || 'Verification failed. Please try again.');
+  const handleContinue = () => {
+    if (otp.length !== OTP_LENGTH) {
+      setOtpError('Enter the 6-digit code sent to your email.');
+      return;
     }
+    setOtpError('');
+    setStep(3);
+    scrollRef.current?.scrollTo({y: 0, animated: false});
   };
 
   const handleResend = async () => {
-    if (seconds > 0 || !otpData) return;
-    // const res = await resendOtp({ userId: otpData.userId }).unwrap();
-    // setOtp(res.demoOtp);
-    setOtpError('');
-    setSeconds(32);
+    if (seconds > 0 || resendingOtp) return;
+    setResendingOtp(true);
+    try {
+      const response = await requestPasswordResetOtp({
+        email: getValues('email').trim(),
+      });
+      if (response?.status === false) {
+        throw response;
+      }
+      setOtp('');
+      setOtpError('');
+      setSeconds(32);
+    } catch (err: unknown) {
+      setOtpError(
+        getRequestErrorMessage(
+          err,
+          'Could not resend the code. Please try again.',
+        ),
+      );
+    } finally {
+      setResendingOtp(false);
+    }
   };
 
   const onSetPassword = async (values: FormValues) => {
-    if (!otpData) return;
+    if (otp.length !== OTP_LENGTH) {
+      setResetError('Enter the 6-digit code sent to your email.');
+      setStep(2);
+      return;
+    }
+    setResettingPassword(true);
     try {
       setResetError('');
-      // await resetPassword({
-      //   userId: otpData.userId,
-      //   password: values.password,
-      // }).unwrap();
-      navigation.navigate('Login');
-    } catch (err: any) {
-      setResetError(
-        err?.data?.message || 'Could not reset password. Please try again.',
+      const response = await resetPassword({
+        email: values.email.trim(),
+        otp,
+        password: values.password,
+        password_confirmation: values.confirmPassword,
+      });
+      if (response?.status === false) {
+        throw response;
+      }
+      toast.success(
+        'Password Reset',
+        response?.message || 'Log in with your new password.',
       );
+      navigation.navigate('Login');
+    } catch (err: unknown) {
+      setResetError(
+        getRequestErrorMessage(
+          err,
+          'Could not reset password. Check your code and try again.',
+        ),
+      );
+    } finally {
+      setResettingPassword(false);
     }
   };
 
@@ -252,8 +311,9 @@ export const ForgotPasswordScreen: React.FC = () => {
               {step === 1 &&
                 'Enter your registered email to receive a verification code.'}
               {step === 2 &&
-                'Verify your identity to continue resetting your password.'}
-              {step === 3 && 'Create a strong new password for your account.'}
+                'Enter the 6-digit code sent to your registered email.'}
+              {step === 3 &&
+                'Create a new password. The reset code will be verified when you submit.'}
             </Text>
           </View>
 
@@ -349,7 +409,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   variant="outline"
                   size="medium"
                   onPress={handleSendOtp}
-                  // loading={sending}
+                  loading={sendingOtp}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
                   // style={styles.actionBtn}
                   textStyle={styles.actionBtnText}
@@ -418,21 +478,24 @@ export const ForgotPasswordScreen: React.FC = () => {
                   <Text style={styles.resendText}>Didn't receive the code?</Text>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    // disabled={seconds > 0 || resending}
+                    disabled={seconds > 0 || resendingOtp}
                     onPress={handleResend}>
-                    <Text style={[styles.resendLink, seconds > 0 && styles.resendOff]}>
+                    <Text
+                      style={[
+                        styles.resendLink,
+                        (seconds > 0 || resendingOtp) && styles.resendOff,
+                      ]}>
                       {' '}
-                      Resend OTP
+                      {resendingOtp ? 'Sending...' : 'Resend OTP'}
                     </Text>
                   </TouchableOpacity>
                 </View>
 
                 <Button
-                  title="Verify & Continue"
+                  title="Continue"
                   variant="outline"
                   size="medium"
-                  onPress={handleVerify}
-                  // loading={verifying}
+                  onPress={handleContinue}
                   disabled={otp.length !== OTP_LENGTH}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
                   // style={styles.actionBtn}
@@ -459,7 +522,7 @@ export const ForgotPasswordScreen: React.FC = () => {
                   <View style={styles.sectionHeaderTexts}>
                     <Text style={styles.sectionHeaderTitle}>Create New Password</Text>
                     <Text style={styles.sectionHeaderSubtitle}>
-                      Make it strong and unique
+                      Code sent to {maskContact(getValues('email'))} will be verified when you submit.
                     </Text>
                   </View>
                 </View>
@@ -527,8 +590,8 @@ export const ForgotPasswordScreen: React.FC = () => {
                   variant="outline"
                   size="medium"
                   onPress={handleSubmit(onSetPassword)}
-                  // loading={resetting}
-                  disabled={!canSubmitPassword}
+                  loading={resettingPassword}
+                  disabled={!canSubmitPassword || otp.length !== OTP_LENGTH}
                   iconRight={<ArrowRight size={scale(18)} color={colors.primary} strokeWidth={2.2} />}
                   // style={styles.actionBtn}
                   textStyle={styles.actionBtnText}

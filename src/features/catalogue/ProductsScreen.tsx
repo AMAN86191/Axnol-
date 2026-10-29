@@ -13,7 +13,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import {Check, PackageOpen, Search, SlidersHorizontal, X} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
@@ -56,51 +61,6 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
   return rows;
 };
 
-// const INDUSTRY_BANNERS: Record<string, IndustryBanner> = {
-//   ind1: {
-//     title: 'Industrial',
-//     description:
-//       'Heavy-duty lubricants built for machinery.',
-//     image: 'ind_industrial',
-//     tags: ['Machinery', 'Manufacturing', 'MRO'],
-//   },
-//   ind2: {
-//     title: 'Automotive',
-//     description:
-//       'Engine oils, gear oils and greases engineered for vehicles.',
-//     image: 'ind_automotive',
-//     tags: ['Engine Oil', 'Gear Oil', 'Fleets'],
-//   },
-//   ind3: {
-//     title: 'Agriculture',
-//     description:
-//       'Reliable lubrication for tractors, harvesters and farm equipment working in demanding conditios.',
-//     image: 'ind_agricultural',
-//     tags: ['Tractors', 'Harvesters', 'Farm Gear'],
-//   },
-//   ind4: {
-//     title: 'Marine',
-//     description:
-//       'Corrosion-resistant marine lubricants for engines and equipment.',
-//     image: 'ind_marine',
-//     tags: ['Marine Engines', 'Offshore', 'Corrosion'],
-//   },
-//   ind6: {
-//     title: 'Construction',
-//     description:
-//       'High-performance fluids for excavators, cranes and heavy construction.',
-//     image: 'ind_construction',
-//     tags: ['Excavators', 'Cranes', 'Heavy Duty'],
-//   },
-//   ind8: {
-//     title: 'Energy',
-//     description:
-//       'Specialty lubricants for power generation, turbines and energy infrastructure operating non-stop.',
-//     image: 'ind_energy',
-//     tags: ['Power', 'Turbines', 'Generation'],
-//   },
-// };
-
 export const ProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -112,16 +72,10 @@ export const ProductsScreen: React.FC = () => {
   const loading = productsLoading && apiProducts.length === 0;
 
   const route = useRoute<Route>();
-  const initialCategory =
-    route.params?.industryId || route.params?.categoryId || route.params?.subCategoryId
-      ? 'All'
-      : route.params?.title
-      ? route.params.title
-      : 'All';
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedUnit, setSelectedUnit] = useState('All');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
-  const [search, setSearch] = useState(route.params?.search ?? '');
+  const [search, setSearch] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
   const [pendingCategory, setPendingCategory] = useState(selectedCategory);
   const [pendingUnit, setPendingUnit] = useState(selectedUnit);
@@ -129,6 +83,19 @@ export const ProductsScreen: React.FC = () => {
   const [, setPage] = useState(1);
   const [, setIsLoadingMore] = useState(false);
   const slideAnim = useRef(new Animated.Value(-FILTER_PANEL_WIDTH)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedCategory('All');
+      setSelectedUnit('All');
+      setSortBy('newest');
+      setSearch('');
+      setPendingCategory('All');
+      setPendingUnit('All');
+      setPendingSort('newest');
+      setFilterVisible(false);
+    }, []),
+  );
 
   const allProducts = useMemo(
     () =>
@@ -149,9 +116,9 @@ export const ProductsScreen: React.FC = () => {
   const loadProducts = useCallback(
     (pageNum = 1) => {
       const params: Record<string, any> = { page: pageNum };
-      if (route.params?.industryId) params.industryId = route.params.industryId;
-      if (route.params?.categoryId) params.categoryId = route.params.categoryId;
-      if (route.params?.subCategoryId) params.subCategoryId = route.params.subCategoryId;
+      // if (route.params?.industryId) params.industryId = route.params.industryId;
+      // if (route.params?.categoryId) params.categoryId = route.params.categoryId;
+      // if (route.params?.subCategoryId) params.subCategoryId = route.params.subCategoryId;
       if (pageNum === 1) {
         setPage(1);
         dispatch(fetchProductsSlice(params))
@@ -165,7 +132,7 @@ export const ProductsScreen: React.FC = () => {
         .catch(() => undefined)
         .finally(() => setIsLoadingMore(false));
     },
-    [dispatch, route.params?.industryId, route.params?.categoryId, route.params?.subCategoryId],
+    [dispatch],
   );
 
   const handleRefresh = useCallback(() => {

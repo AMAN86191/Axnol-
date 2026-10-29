@@ -73,7 +73,7 @@ const STEPS = [
 
 const STEP1_FIELDS: (keyof FormValues)[] = ['name', 'phone', 'email'];
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 
 const maskContact = (value?: string): string => {
   if (!value) return '';
@@ -664,7 +664,7 @@ export const RegisterScreen: React.FC = () => {
                   <View style={styles.sectionHeaderTexts}>
                     <Text style={styles.sectionHeaderTitle}>OTP Verification</Text>
                     <Text style={styles.sectionHeaderSubtitle}>
-                      Enter the 4-digit code we sent to{'\n'}
+                      Enter the 6-digit code we sent to{'\n'}
                       <Text style={styles.maskedContact}>
                         {otpData ? maskContact(otpData.email) : ''}
                       </Text>
@@ -678,7 +678,7 @@ export const RegisterScreen: React.FC = () => {
                     ref={otpInputRef}
                     value={otp}
                     onChangeText={t => {
-                      setOtp(t.replace(/[^0-9]/g, ''));
+                      setOtp(t.replace(/[^0-9]/g, '').slice(0, OTP_LENGTH));
                     }}
                     keyboardType="number-pad"
                     maxLength={OTP_LENGTH}
@@ -1129,10 +1129,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
-    paddingHorizontal:scale(55)
+    paddingHorizontal: scale(4),
   },
   otpBox: {
-    width: scale(44),
+    width: scale(40),
+    flexShrink: 1,
+    maxWidth: scale(44),
     height: scale(52),
     borderRadius: radius.md,
     borderWidth: 1.5,

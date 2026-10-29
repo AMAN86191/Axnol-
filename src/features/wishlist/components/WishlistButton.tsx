@@ -10,9 +10,10 @@ import {
 } from 'react-native';
 import {Heart} from 'lucide-react-native';
 import {scale} from '../../../theme';
-import {useAppDispatch, useAppSelector} from '../../../store';
+import {useAppSelector} from '../../../store';
 import {selectIsWishlisted} from '../wishlistSelectors';
-import {toggleWishlist, WishlistItem} from '../wishlistSlice';
+import {WishlistItem} from '../wishlistSlice';
+import useWishlist from '../useWishlist';
 
 interface WishlistButtonProps {
   product: WishlistItem;
@@ -29,8 +30,9 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
   style,
   showBackground = true,
 }) => {
-  const isWishlisted = useAppSelector(selectIsWishlisted(product.id));
-  const dispatch = useAppDispatch();
+  const productId = product.productId ?? product.id;
+  const isWishlisted = useAppSelector(selectIsWishlisted(productId));
+  const {toggle} = useWishlist();
   const anim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -58,18 +60,17 @@ export const WishlistButton: React.FC<WishlistButtonProps> = ({
     // Stop the parent product card from also handling this tap.
     event?.stopPropagation?.();
 
-    dispatch(
-      toggleWishlist({
-        id: product.id,
-        name: product.name,
-        code: product.code,
-        image: product.image,
-        price: product.price,
-        mrp: product.mrp,
-        unit: product.unit,
-        rateChartId: product.rateChartId,
-      }),
-    );
+    toggle({
+      id: String(productId),
+      productId,
+      name: product.name,
+      code: product.code,
+      image: product.image,
+      price: product.price,
+      mrp: product.mrp,
+      unit: product.unit,
+      rateChartId: product.rateChartId,
+    });
     animate();
   };
 

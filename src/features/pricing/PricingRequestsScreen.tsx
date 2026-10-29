@@ -257,10 +257,10 @@ export const PricingRequestsScreen: React.FC = () => {
   const [remark, setRemark] = useState('');
   const [companyName, setCompanyName] = useState(companyFromUser);
   const [phone, setPhone] = useState(user?.phone ?? '');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [addressState, setAddressState] = useState('');
-  const [pincode, setPincode] = useState('');
+  const [address, setAddress] = useState(user?.address ?? '');
+  const [city, setCity] = useState(user?.city ?? '');
+  const [addressState, setAddressState] = useState(user?.state ?? '');
+  const [pincode, setPincode] = useState(user?.pincode ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -278,8 +278,20 @@ export const PricingRequestsScreen: React.FC = () => {
     if (!phone && user?.phone) {
       setPhone(user.phone);
     }
+    if (!address && user?.address) {
+      setAddress(user.address);
+    }
+    if (!city && user?.city) {
+      setCity(user.city);
+    }
+    if (!addressState && user?.state) {
+      setAddressState(user.state);
+    }
+    if (!pincode && user?.pincode) {
+      setPincode(user.pincode);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyFromUser, user?.phone]);
+  }, [companyFromUser, user?.phone, user?.address, user?.city, user?.state, user?.pincode]);
 
   const clearError = (key: string) =>
     setErrors(prev => {
