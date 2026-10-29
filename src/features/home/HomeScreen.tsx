@@ -46,6 +46,7 @@ export const HomeScreen: React.FC = () => {
   const [productsLoading, setProductsLoading] = useState(false);
   const [productsError, setProductsError] = useState<unknown>(null);
   const [productsPagination, setProductsPagination] = useState<any>(null);
+  const [brochure, setbrochure] = useState<any>(null);
   const apiProductsRef = useRef(apiProducts);
   apiProductsRef.current = apiProducts;
   const apiCategoriesRef = useRef(apiCategories);
@@ -92,6 +93,8 @@ export const HomeScreen: React.FC = () => {
             .then(payload => {
               const data: any = payload?.data ?? payload;
               console.log('data :', data);
+              setbrochure(data?.sliders?.[0]?.second_button_pdf_url || '');
+              // const BROCHURE_PDF = data.slider[0].second_button_pdf_url;
               setSliders(
                 Array.isArray(data) ? data : data?.sliders ?? [],
               );
@@ -153,9 +156,9 @@ export const HomeScreen: React.FC = () => {
               const pagination = Array.isArray(data)
                 ? null
                 : data?.pagination ??
-                  data?.meta?.pagination ??
-                  data?.meta ??
-                  null;
+                data?.meta?.pagination ??
+                data?.meta ??
+                null;
               setApiProducts(current =>
                 page > 1 ? [...current, ...products] : products,
               );
@@ -268,8 +271,11 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate('ProductDetails', { productId: product.id });
   };
 
-  const openAllProducts = (params?: Record<string, any>) => {
-    navigation.navigate('Products', { title: 'Products', ...params });
+  const openAllProducts = () => {
+    navigation.getParent()?.navigate('Products', {
+      screen: 'Products',
+      params: {title: 'Products'},
+    });
   };
 
   const openCategory = (category: CategoryItem) => {
@@ -280,7 +286,7 @@ export const HomeScreen: React.FC = () => {
     });
   };
 
-  const BROCHURE_PDF = '';
+
 
   const sliderBanners: HomeBannerItem[] = (sliders ?? []).map(
     (slider: any, index: number) => ({
@@ -291,8 +297,8 @@ export const HomeScreen: React.FC = () => {
       image: slider?.image_url ?? '',
       primaryLabel: slider?.button || undefined,
       secondaryLabel: 'Download Brochure',
-      pdfUrl: BROCHURE_PDF,
-      navigationLink: BROCHURE_PDF,
+      pdfUrl: brochure,
+      navigationLink: brochure,
     }),
   );
 
@@ -378,11 +384,13 @@ export const HomeScreen: React.FC = () => {
             Linking.openURL(url).catch(() => { });
           }}
           onPressDownload={item => {
-            const url =
-              item?.pdfUrl ||
-              item?.navigationLink ||
-              '';
-            Linking.openURL(url).catch(() => { });
+            const url = item?.pdfUrl || item?.navigationLink || '';
+
+            if (url.trim()) {
+              Linking.openURL(url).catch(() => { });
+            } else {
+              openAllProducts();
+            }
           }}
         />
 
@@ -393,7 +401,11 @@ export const HomeScreen: React.FC = () => {
             loading={industriesLoading && !homeIndustries.length}
             errorMessage={industriesErrorMessage}
             onRetry={retryIndustries}
-            onSeeAll={() => navigation.navigate('Industries')}
+            onSeeAll={() =>
+              navigation.getParent()?.navigate('Industry', {
+                screen: 'Industries',
+              })
+            }
             onSelect={ind =>
               navigation.navigate('IndustryDetails', {
                 industryId: ind.id,
@@ -409,7 +421,7 @@ export const HomeScreen: React.FC = () => {
             products={homeProducts.slice(0, 6)}
             loading={productsLoading && homeProducts.length === 0}
             onSeeAll={() =>
-              openAllProducts({ featured: true, title: 'Featured Products' })
+              openAllProducts()
             }
             onPress={openProduct}
           />

@@ -31,7 +31,7 @@ import { getFcmToken } from '../../utils/notificationService';
 type Nav = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
 const schema = z.object({
-  email: z.string().trim().min(1, 'Required'),
+  email: z.string().trim().min(1, 'Enter your email'),
   password: z.string().min(6, 'Minimum 6 characters'),
 });
 
@@ -152,7 +152,7 @@ export const LoginScreen: React.FC = () => {
                   autoCapitalize="none"
                   keyboardType="email-address"
                   leftIcon={User}
-                  placeholder="Enter email or mobile"
+                  placeholder="Enter your email"
                   containerStyle={styles.fieldSpacing}
                 />
               )}

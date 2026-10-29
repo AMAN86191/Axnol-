@@ -693,12 +693,17 @@ export const ProductDetailsScreen: React.FC = () => {
           ) : (
             <View style={styles.bottomActions}>
               <TouchableOpacity
-                style={styles.cartIconBtn}
+                style={[
+                  styles.cartIconBtn,
+                  Number(product.price) === 0 && styles.cartIconBtnDisabled,
+                ]}
                 activeOpacity={0.8}
+                disabled={Number(product.price) === 0}
+                accessibilityState={{disabled: Number(product.price) === 0}}
                 onPress={handleAddToCart}>
                 <ShoppingCart
                   size={scale(19)}
-                  color={colors.primary}
+                  color={Number(product.price) === 0 ? '#94A3B8' : colors.primary}
                   strokeWidth={2.3}
                 />
               </TouchableOpacity>
@@ -1154,6 +1159,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cartIconBtnDisabled: {
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F1F5F9',
   },
   goToCartBtn: {
     width: '70%',

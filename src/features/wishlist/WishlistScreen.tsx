@@ -216,22 +216,21 @@ export const WishlistScreen: React.FC = () => {
               <View style={styles.divider} />
 
               <View style={styles.ctaRow}>
-                {Number(item.price) !== 0 && (
-                  <AddToCartButton
-                    product={{
-                      id: item.id,
-                      name: item.name,
-                      code: item.code,
-                      image: item.image,
-                      price: item.price,
-                      mrp: item.mrp,
-                      unit: item.unit,
-                      rateChartId: item.rateChartId,
-                    }}
-                    compact
-                    style={styles.addBtn}
-                  />
-                )}
+                <AddToCartButton
+                  product={{
+                    id: item.id,
+                    name: item.name,
+                    code: item.code,
+                    image: item.image,
+                    price: item.price,
+                    mrp: item.mrp,
+                    unit: item.unit,
+                    rateChartId: item.rateChartId,
+                  }}
+                  compact
+                  disabled={Number(item.price) === 0}
+                  style={styles.addBtn}
+                />
               </View>
             </View>
           ))}

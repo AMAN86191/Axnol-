@@ -44,10 +44,6 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
-	<key>NSCameraUsageDescription</key>
-	<string>Axnol needs access to your camera so you can take a profile photo.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Axnol needs access to your photo library so you can choose a profile photo.</string>
 	<key>UILaunchStoryboardName</key>

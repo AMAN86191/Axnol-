@@ -98,9 +98,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       <View style={styles.divider} />
 
-      {Number(product.price) !== 0 && (
-        <AddToCartButton product={cartProduct} compact />
-      )}
+      <AddToCartButton
+        product={cartProduct}
+        compact
+        disabled={Number(product.price) === 0}
+      />
     </TouchableOpacity>
   );
 };

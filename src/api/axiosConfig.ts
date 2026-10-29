@@ -10,6 +10,39 @@ import { reportNetworkError, reportNetworkOk } from '../utils/connectivity';
 
 const API_URL = 'https://axnol.tambimotors.com/api';
 
+const sanitizeForLog = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map(sanitizeForLog);
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        /token|password|secret|authorization|cookie|api[-_]?key/i.test(key)
+          ? '[REDACTED]'
+          : sanitizeForLog(item),
+      ]),
+    );
+  }
+  return value;
+};
+
+const logApiError = (error: unknown) => {
+  const axiosError = axios.isAxiosError(error) ? error : undefined;
+  const config = axiosError?.config;
+  const response = axiosError?.response;
+  const url = config?.url?.split('?')[0];
+
+  console.log('[API Error]', {
+    method: config?.method?.toUpperCase(),
+    url: config?.baseURL && url ? `${config.baseURL}${url}` : url,
+    status: response?.status,
+    code: axiosError?.code,
+    message: axiosError?.message ?? String(error),
+    response: response ? sanitizeForLog(response.data) : undefined,
+  });
+};
+
 const api = axios.create({
   baseURL: API_URL,
   timeout: 20000,
@@ -27,7 +60,10 @@ api.interceptors.request.use(
     }
     return config;
   },
-  error => Promise.reject(error),
+  error => {
+    logApiError(error);
+    return Promise.reject(error);
+  },
 );
 
 let handlingSessionExpiry = false;
@@ -38,6 +74,7 @@ api.interceptors.response.use(
     return response;
   },
   async error => {
+    logApiError(error);
     const status = error?.response?.status;
     const message = String(
       error?.response?.data?.message || error?.message || '',
