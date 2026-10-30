@@ -1,6 +1,5 @@
 import {generatePDF} from 'react-native-html-to-pdf';
 import {Platform, PermissionsAndroid} from 'react-native';
-import {formatPrice} from './formatPrice';
 import {formatOrderDateTime} from '../features/orders/orderUtils';
 import notifee, {AndroidImportance} from '@notifee/react-native';
 import FileViewer from 'react-native-file-viewer';
@@ -9,6 +8,24 @@ import RNBlobUtil from 'react-native-blob-util';
 const getLogoUri = () => {
   return 'https://axnol.tambimotors.com/web-assets/axnol-images/logo/Axnol-dark-Logo.png';
 };
+
+const formatInvoicePrice = (value: number) =>
+  `₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+
+const capitalizeFirstLetter = (value: string) =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
+const escapeHtml = (value: unknown) =>
+  String(value ?? '').replace(/[&<>"']/g, character => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entities[character];
+  });
 
 const buildInvoiceHtml = (order: any) => {
   const logoUri = getLogoUri();
@@ -19,13 +36,16 @@ const buildInvoiceHtml = (order: any) => {
     : '';
   const orderNo = order?.orderNumber || order?.id || '';
   const items = order?.items || [];
-  const subtotal = items.reduce((sum: number, item: any) => {
+  const calculatedSubtotal = items.reduce((sum: number, item: any) => {
     const qty = Number(item?.qty || item?.quantity || 1);
     const price = Number(item?.unitPrice || item?.price || 0);
     const line = Number(item?.lineTotal || qty * price);
     return sum + line;
   }, 0);
-  const total = order?.totalAmount || order?.total || subtotal;
+  const subtotal = Number(order?.subtotal ?? calculatedSubtotal);
+  const gstRate = Number(order?.gstRate ?? order?.gst_rate ?? 0);
+  const gstAmount = Number(order?.gstAmount ?? order?.gst_amount ?? 0);
+  const total = Number(order?.totalAmount ?? order?.total_amount ?? order?.total ?? subtotal + gstAmount);
   const address = [
     order?.companyName,
     order?.address,
@@ -35,22 +55,24 @@ const buildInvoiceHtml = (order: any) => {
     order?.phone ? `Phone: ${order.phone}` : '',
   ]
     .filter(Boolean)
+    .map(escapeHtml)
     .join(', ');
+  const status = String(order?.status || 'N/A');
 
   const itemsHtml = items
     .map((item: any, idx: number) => {
-      const name = item?.productName || item?.name || 'Product';
+      const name = escapeHtml(item?.productName || item?.name || 'Product');
       const qty = Number(item?.qty || item?.quantity || 1);
       const unitPrice = Number(item?.unitPrice || item?.price || 0);
       const lineTotal = Number(item?.lineTotal || qty * unitPrice);
-      const size = item?.size || item?.unit || '';
+      const size = escapeHtml(item?.size || item?.unit || '');
       return `
         <tr>
           <td class="td center">${idx + 1}</td>
           <td class="td">${name}${size ? '<br/><span class="muted">' + size + '</span>' : ''}</td>
           <td class="td center">${qty}</td>
-          <td class="td right">${formatPrice(unitPrice)}</td>
-          <td class="td right bold">${formatPrice(lineTotal)}</td>
+          <td class="td right">${formatInvoicePrice(unitPrice)}</td>
+          <td class="td right bold">${formatInvoicePrice(lineTotal)}</td>
         </tr>
       `;
     })
@@ -101,15 +123,19 @@ const buildInvoiceHtml = (order: any) => {
         <div class="info-row">
           <div class="info-box">
             <div class="info-title">Bill To</div>
-            <div class="info-text">${address || '-'}</div>
+            <div class="info-text">
+          ${address || '-'}
+          ${order?.remark ? `<br/><strong>Remark:</strong> ${escapeHtml(order.remark)}` : ''}
+            </div>
           </div>
           <div class="info-box">
             <div class="info-title">Invoice Details</div>
             <div class="info-text">
-              <strong>Invoice No:</strong> INV-${orderNo}<br/>
-              <strong>Order No:</strong> ${orderNo}<br/>
-              <strong>Date:</strong> ${orderDate}<br/>
-              <strong>Status:</strong> ${order?.status || 'N/A'}
+              <strong>Invoice No:</strong> ${escapeHtml(orderNo)}<br/>
+              <strong>Order No:</strong> ${escapeHtml(order?.id || orderNo)}<br/>
+              <strong>Date:</strong> ${escapeHtml(orderDate)}<br/>
+              <strong>Status:</strong> ${escapeHtml(capitalizeFirstLetter(status))}<br/>
+              <strong>Payment Status:</strong> ${escapeHtml(capitalizeFirstLetter(String(order?.paymentStatus || order?.payment_status || 'N/A')))}
             </div>
           </div>
         </div>
@@ -130,11 +156,15 @@ const buildInvoiceHtml = (order: any) => {
         <div class="totals">
           <div class="total-row">
             <span>Subtotal</span>
-            <span>${formatPrice(subtotal)}</span>
+            <span>${formatInvoicePrice(subtotal)}</span>
+          </div>
+          <div class="total-row">
+            <span>GST (${gstRate}%)</span>
+            <span>${formatInvoicePrice(gstAmount)}</span>
           </div>
           <div class="total-row grand">
             <span>Total Amount</span>
-            <span>${formatPrice(total)}</span>
+            <span>${formatInvoicePrice(total)}</span>
           </div>
         </div>
         </main>
