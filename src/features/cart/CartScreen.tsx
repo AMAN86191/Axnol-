@@ -14,12 +14,14 @@ import {Image} from 'react-native';
 import Button from '../../components/ui/Button';
 import EmptyState from '../../components/ui/EmptyState';
 import {colors, radius, scale, spacing} from '../../theme';
-import {formatPrice} from '../../utils/formatPrice';
 import {useAppSelector} from '../../store';
 import {selectCartItems, selectCartTotals} from './cartSelectors';
 import {useCart} from './useCart';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EditableQuantity from './components/EditableQuantity';
+
+const formatCartPrice = (value: number): string =>
+  `₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
 
 export const CartScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -53,11 +55,15 @@ export const CartScreen: React.FC = () => {
     return (
       <View style={[styles.container]}>
         <CommonHeader title='Cart' />
-        <EmptyState
-          icon={ShoppingBag}
-          title="Your cart is empty"
-          subtitle="Add products to your cart and they'll show up here."
-        />
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            icon={ShoppingBag}
+            title="Your cart is empty"
+            subtitle="Add products to your cart and they'll show up here."
+            actionLabel="Browse Products"
+            onAction={() => navigation.goBack()}
+          />
+        </View>
       </View>
     );
   }
@@ -124,12 +130,12 @@ export const CartScreen: React.FC = () => {
                     ) : null}
 
                     <View style={styles.priceRow}>
-                      <Text style={styles.price}>{formatPrice(item.price)}</Text>
+                      <Text style={styles.price}>{formatCartPrice(item.price)}</Text>
                       {packLabel ? (
                         <Text style={styles.unit}> / {packLabel}</Text>
                       ) : null}
                       {item.mrp && item.mrp > item.price ? (
-                        <Text style={styles.mrp}>{formatPrice(item.mrp)}</Text>
+                        <Text style={styles.mrp}>{formatCartPrice(item.mrp)}</Text>
                       ) : null}
                     </View>
                   </TouchableOpacity>
@@ -159,7 +165,7 @@ export const CartScreen: React.FC = () => {
 
                 <View style={styles.lineTotalWrap}>
                   <Text style={styles.lineTotalLabel}>Subtotal</Text>
-                  <Text style={styles.lineTotal}>{formatPrice(lineTotal)}</Text>
+                  <Text style={styles.lineTotal}>{formatCartPrice(lineTotal)}</Text>
                 </View>
               </View>
             </View>
@@ -174,33 +180,45 @@ export const CartScreen: React.FC = () => {
         ]}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>
-            Subtotal ({totals.itemCount}{' '}
-            {totals.itemCount === 1 ? 'item' : 'items'})
+            Subtotal ({totals.uniqueCount}{' '}
+            {totals.uniqueCount === 1 ? 'product' : 'products'}, {totals.itemCount}{' '}
+            {totals.itemCount === 1 ? 'unit' : 'units'})
           </Text>
-          <Text style={styles.summaryValue}>{formatPrice(totals.subtotal)}</Text>
+          <Text style={styles.summaryValue}>{formatCartPrice(totals.subtotal)}</Text>
         </View>
         {totals.savings > 0 ? (
           <>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>MRP Total</Text>
               <Text style={styles.summaryMrp}>
-                {formatPrice(totals.mrpTotal)}
+                {formatCartPrice(totals.mrpTotal)}
               </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Discount</Text>
               <Text style={styles.summarySave}>
-                - {formatPrice(totals.savings)} ({totals.discountPercent}%)
+                - {formatCartPrice(totals.savings)} ({totals.discountPercent}%)
               </Text>
             </View>
           </>
         ) : null}
 
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>
+            GST ({totals.gstRate ?? 18}%)
+          </Text>
+          <Text style={styles.summaryValue}>
+            {formatCartPrice(totals.gstAmount ?? 0)}
+          </Text>
+        </View>
+
         <View style={styles.summaryDivider} />
 
         <View style={styles.summaryRow}>
           <Text style={styles.totalLabel}>Total Payable</Text>
-          <Text style={styles.totalValue}>{formatPrice(totals.subtotal)}</Text>
+          <Text style={styles.totalValue}>
+            {formatCartPrice(totals.total ?? totals.subtotal + (totals.gstAmount ?? 0))}
+          </Text>
         </View>
 
         <Button
@@ -215,6 +233,10 @@ export const CartScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F8FAFC'},
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   scrollFlex: {flex: 1},
   scrollContent: {
     paddingHorizontal: spacing.lg,

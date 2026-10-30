@@ -8,6 +8,8 @@ import {Provider} from 'react-redux';
 import {store} from './src/redux/store';
 import RootNavigator from './src/navigation/RootNavigator';
 import {ToastProvider} from './src/components/ui/ToastProvider';
+import {AddNotificationProvider} from './src/components/ui/AddNotificationProvider';
+import {NotificationProvider} from './src/components/ui/NotificationProvider';
 // import NetworkBanner from './src/components/ui/NetworkBanner';
 import {openInvoice} from './src/utils/invoiceGenerator';
 
@@ -81,7 +83,11 @@ const App = () => {
       <SafeAreaProvider>
         <Provider store={store}>
           <ToastProvider>
-            <RootNavigator />
+            <AddNotificationProvider>
+              <NotificationProvider>
+                <RootNavigator />
+              </NotificationProvider>
+            </AddNotificationProvider>
             {/* <NetworkBanner /> */}
           </ToastProvider>
         </Provider>

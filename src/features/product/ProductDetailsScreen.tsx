@@ -14,6 +14,10 @@ import {
 } from 'react-native';
 import RenderHtml from 'react-native-render-html';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import Animated, {
+  FadeInDown,
+  FadeOutDown,
+} from 'react-native-reanimated';
 import {
   ArrowRight,
   Download,
@@ -24,7 +28,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CatalogueStackParamList } from '../../navigation/types';
 import {Image} from 'react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
-import Button from '../../components/ui/Button';
 import { toast } from '../../components/ui/ToastProvider';
 import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
@@ -55,6 +58,7 @@ export const ProductDetailsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'specifications' | 'documents'>('overview');
   const [selectedPack, setSelectedPack] = useState('');
   const [quantity, setQuantity] = useState(MIN_QUANTITY);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const requestIdRef = useRef(0);
@@ -250,7 +254,7 @@ export const ProductDetailsScreen: React.FC = () => {
     id: String(productDetail?.id ?? productId ?? ''),
     name: productDetail?.name ?? 'Product',
     subtitle: categoryName || productDetail?.sub_category?.title || 'Product Details',
-    images: hasApiImages ? apiImages : ['product_generic'],
+    images: hasApiImages ? apiImages : [],
     tags: apiTags.length ? apiTags : [],
     description: apiDescription || '',
     packSizes: packSizesFromApi.length ? packSizesFromApi : [defaultPack],
@@ -258,57 +262,6 @@ export const ProductDetailsScreen: React.FC = () => {
     mrp,
     unit: priceInfo.unit,
     extraInfo: apiExtraInfo,
-  };
-
-  useEffect(() => {
-    if (product.packSizes.length > 0) {
-      if (!product.packSizes.includes(selectedPack)) {
-        setSelectedPack(product.packSizes[0] ?? '');
-      }
-    }
-  }, [product.packSizes, selectedPack]);
-
-  const discount =
-    product.mrp > product.price && product.price > 0
-      ? Math.round(((product.mrp - product.price) / product.mrp) * 100)
-      : 0;
-
-  const totalPrice = product.price * quantity;
-
-  const inCart = items.some(item => {
-    if (String(item.productId ?? item.id) !== product.id) {
-      return false;
-    }
-    if (
-      selectedRateChartId === undefined ||
-      selectedRateChartId === null ||
-      String(selectedRateChartId).trim() === ''
-    ) {
-      return true;
-    }
-    return (
-      item.rateChartId !== undefined &&
-      item.rateChartId !== null &&
-      String(item.rateChartId) === String(selectedRateChartId)
-    );
-  });
-
-  const handleAddToCart = async () => {
-    await add(
-      {
-        id: product.id,
-        productId: productDetail?.id ?? product.id,
-        name: product.name,
-        code: product.name,
-        image: product.images[0],
-        price: product.price,
-        mrp: product.mrp,
-        unit: selectedPack || product.unit,
-        size: selectedSize,
-        rateChartId: selectedRateChartId,
-      } as any,
-      quantity,
-    );
   };
 
   const documents = [
@@ -347,6 +300,111 @@ export const ProductDetailsScreen: React.FC = () => {
     bg: string;
   }>;
 
+  useEffect(() => {
+    if (product.packSizes.length > 0) {
+      if (!product.packSizes.includes(selectedPack)) {
+        setSelectedPack(product.packSizes[0] ?? '');
+      }
+    }
+  }, [product.packSizes, selectedPack]);
+
+  useEffect(() => {
+    if (activeTab === 'overview' && !product.description) {
+      if (product.extraInfo) {
+        setActiveTab('specifications');
+      } else if (documents.length > 0) {
+        setActiveTab('documents');
+      }
+    } else if (activeTab === 'specifications' && !product.extraInfo) {
+      if (product.description) {
+        setActiveTab('overview');
+      } else if (documents.length > 0) {
+        setActiveTab('documents');
+      }
+    } else if (activeTab === 'documents' && documents.length === 0) {
+      if (product.description) {
+        setActiveTab('overview');
+      } else if (product.extraInfo) {
+        setActiveTab('specifications');
+      }
+    }
+  }, [activeTab, product.description, product.extraInfo, documents.length]);
+
+  const totalPrice = product.price * quantity;
+
+  const inCart = items.some(item => {
+    if (String(item.productId ?? item.id) !== product.id) {
+      return false;
+    }
+    if (
+      selectedRateChartId === undefined ||
+      selectedRateChartId === null ||
+      String(selectedRateChartId).trim() === ''
+    ) {
+      return true;
+    }
+    return (
+      item.rateChartId !== undefined &&
+      item.rateChartId !== null &&
+      String(item.rateChartId) === String(selectedRateChartId)
+    );
+  });
+
+  const handleAddToCart = async (): Promise<boolean> => {
+    if (addingToCart || Number(product.price) <= 0) {
+      return false;
+    }
+
+    setAddingToCart(true);
+    try {
+      return await add(
+        {
+          id: product.id,
+          productId: productDetail?.id ?? product.id,
+          name: product.name,
+          code: product.name,
+          image: product.images[0],
+          price: product.price,
+          mrp: product.mrp,
+          unit: selectedPack || product.unit,
+          size: selectedSize,
+          rateChartId: selectedRateChartId,
+        } as any,
+        quantity,
+      );
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleRequestPrice = () => {
+    navigation.navigate('RequestPrice', {
+      productId: product.id,
+      productName: product.name,
+      productImage: product.images[0],
+      rateChartId: selectedRateChartId,
+      category: product.subtitle,
+      price: product.price,
+      mrp: product.mrp,
+      unit: selectedPack || product.unit,
+      quantity,
+      packSizes: product.packSizes,
+    });
+  };
+
+  const handleBuyNow = async () => {
+    if (addingToCart) {
+      return;
+    }
+    if (inCart) {
+      navigation.navigate('Cart');
+      return;
+    }
+    if (await handleAddToCart()) {
+      navigation.navigate('Cart');
+    }
+  };
+
   const openDocument = (url: string) => {
     Linking.openURL(url).catch(() => toast.error('Error', 'Unable to open document.'));
   };
@@ -356,7 +414,7 @@ export const ProductDetailsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <CommonHeader
-        title="Product Details"
+        title="Product"
         right={
           <>
             <TouchableOpacity
@@ -398,7 +456,7 @@ export const ProductDetailsScreen: React.FC = () => {
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(105) }]}>
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + scale(145) }]}>
 
           {/* Image Gallery */}
           <View style={styles.heroWrap}>
@@ -467,116 +525,114 @@ export const ProductDetailsScreen: React.FC = () => {
             ) : null}
 
             {/* Horizontal Underlined Tabs */}
-            <View style={styles.tabsRow}>
-              <TouchableOpacity
-                style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
-                activeOpacity={0.7}
-                onPress={() => setActiveTab('overview')}>
-                <Text
-                  style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
-                  Overview
-                </Text>
-              </TouchableOpacity>
+            {(!!product.description || !!product.extraInfo || documents.length > 0) && (
+              <View style={styles.tabsRow}>
+                {!!product.description && (
+                  <TouchableOpacity
+                    style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setActiveTab('overview')}>
+                    <Text
+                      style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
+                      Overview
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-              <TouchableOpacity
-                style={[styles.tabItem, activeTab === 'specifications' && styles.tabItemActive]}
-                activeOpacity={0.7}
-                onPress={() => setActiveTab('specifications')}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === 'specifications' && styles.tabTextActive,
-                  ]}>
-                  Specifications
-                </Text>
-              </TouchableOpacity>
+                {!!product.extraInfo && (
+                  <TouchableOpacity
+                    style={[styles.tabItem, activeTab === 'specifications' && styles.tabItemActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setActiveTab('specifications')}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        activeTab === 'specifications' && styles.tabTextActive,
+                      ]}>
+                      Specifications
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-              <TouchableOpacity
-                style={[styles.tabItem, activeTab === 'documents' && styles.tabItemActive]}
-                activeOpacity={0.7}
-                onPress={() => setActiveTab('documents')}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === 'documents' && styles.tabTextActive,
-                  ]}>
-                  Documents
-                </Text>
-              </TouchableOpacity>
-            </View>
+                {documents.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.tabItem, activeTab === 'documents' && styles.tabItemActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setActiveTab('documents')}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        activeTab === 'documents' && styles.tabTextActive,
+                      ]}>
+                      Documents
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
 
             {/* Tab Content */}
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && !!product.description && (
               <View style={styles.tabContentBlock}>
-                {product.description ? (
-                  <RenderHtml
-                    contentWidth={width - scale(48)}
-                    source={{ html: product.description }}
-                    tagsStyles={{
-                      body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700' },
-                      h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700' },
-                      h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700' },
-                      li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      ul: { marginLeft: scale(4) },
-                      strong: { fontWeight: '700', color: '#0F172A' },
-                    }}
-                  />
-                ) : null}
+                <RenderHtml
+                  contentWidth={width - scale(48)}
+                  source={{ html: product.description }}
+                  tagsStyles={{
+                    body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700', textAlign: 'justify' },
+                    h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700', textAlign: 'justify' },
+                    h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700', textAlign: 'justify' },
+                    li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    ul: { marginLeft: scale(4) },
+                    strong: { fontWeight: '700', color: '#0F172A' },
+                  }}
+                />
               </View>
             )}
 
-            {activeTab === 'specifications' && (
+            {activeTab === 'specifications' && !!product.extraInfo && (
               <View style={styles.tabContentBlock}>
-                {product.extraInfo ? (
-                  <RenderHtml
-                    contentWidth={width - scale(48)}
-                    source={{ html: product.extraInfo }}
-                    tagsStyles={{
-                      body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700' },
-                      h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700' },
-                      h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700' },
-                      li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      ul: { marginLeft: scale(4) },
-                      ol: { marginLeft: scale(4) },
-                      strong: { fontWeight: '700', color: '#0F172A' },
-                    }}
-                  />
-                ) : (
-                  <Text style={styles.specLabel}>No specifications available.</Text>
-                )}
+                <RenderHtml
+                  contentWidth={width - scale(48)}
+                  source={{ html: product.extraInfo }}
+                  tagsStyles={{
+                    body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700', textAlign: 'justify' },
+                    h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700', textAlign: 'justify' },
+                    h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700', textAlign: 'justify' },
+                    li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    ul: { marginLeft: scale(4) },
+                    ol: { marginLeft: scale(4) },
+                    strong: { fontWeight: '700', color: '#0F172A' },
+                  }}
+                />
               </View>
             )}
 
-            {activeTab === 'documents' && (
+            {activeTab === 'documents' && documents.length > 0 && (
               <View style={styles.documentsWrap}>
-                {documents.length > 0 ? (
-                  documents.map(doc => (
-                    <View key={doc.key} style={styles.msdsCard}>
-                      <View style={[styles.msdsIconWrap, { backgroundColor: doc.bg }]}>
-                        <FileText size={scale(22)} color={doc.color} strokeWidth={2} />
-                      </View>
-                      <View style={styles.msdsInfo}>
-                        <Text style={styles.msdsTitle} numberOfLines={2}>
-                          {doc.title}
-                        </Text>
-                        <Text style={styles.msdsSubtitle}>PDF</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.pdfBtn, { backgroundColor: doc.color }]}
-                        activeOpacity={0.8}
-                        onPress={() => openDocument(doc.url)}>
-                        <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
-                        <Text style={styles.pdfBtnText}>View</Text>
-                      </TouchableOpacity>
+                {documents.map(doc => (
+                  <View key={doc.key} style={styles.msdsCard}>
+                    <View style={[styles.msdsIconWrap, { backgroundColor: doc.bg }]}>
+                      <FileText size={scale(22)} color={doc.color} strokeWidth={2} />
                     </View>
-                  ))
-                ) : (
-                  <Text style={styles.specLabel}>No documents available.</Text>
-                )}
+                    <View style={styles.msdsInfo}>
+                      <Text style={styles.msdsTitle} numberOfLines={2}>
+                        {doc.title}
+                      </Text>
+                      <Text style={styles.msdsSubtitle}>PDF</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.pdfBtn, { backgroundColor: doc.color }]}
+                      activeOpacity={0.8}
+                      onPress={() => openDocument(doc.url)}>
+                      <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={styles.pdfBtnText}>View</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
             )}
 
@@ -584,7 +640,7 @@ export const ProductDetailsScreen: React.FC = () => {
             {/* Available Pack Sizes */}
             {product.packSizes.length > 0 ? (
               <View style={styles.packSection}>
-                <Text style={styles.packHeading}>Available Pack Sizes</Text>
+                <Text style={styles.packHeading}>Available Sizes</Text>
                 <View style={styles.packRow}>
                   {product.packSizes.map(size => {
                     const selected = size === selectedPack;
@@ -608,19 +664,6 @@ export const ProductDetailsScreen: React.FC = () => {
               </View>
             ) : null}
 
-            {/* Quantity */}
-            <View style={styles.qtySection}>
-              <View style={styles.qtyInfo}>
-                <Text style={styles.qtyTitle}>Quantity</Text>
-                <Text style={styles.qtyHint}>Select number of packs</Text>
-              </View>
-
-              <EditableQuantity
-                size="regular"
-                value={quantity}
-                onChange={setQuantity}
-              />
-            </View>
           </View>
         </ScrollView>
       ) : (
@@ -642,97 +685,127 @@ export const ProductDetailsScreen: React.FC = () => {
             styles.bottomBarSkeleton,
             { paddingBottom: insets.bottom + scale(10) },
           ]}>
-          <View style={styles.footerPriceSkeleton}>
-            <Skeleton width={scale(74)} height={scale(11)} />
-            <Skeleton width={scale(100)} height={scale(20)} style={styles.footerSkeletonGap} />
+          <View style={styles.footerSummarySkeleton}>
+            <View>
+              <Skeleton width={scale(72)} height={scale(11)} />
+              <Skeleton width={scale(110)} height={scale(21)} style={styles.footerSkeletonGap} />
+            </View>
+            <Skeleton width={scale(104)} height={scale(34)} borderRadius={radius.md} />
           </View>
-          <Skeleton width={scale(150)} height={scale(44)} borderRadius={radius.md} />
+          <View style={styles.bottomActions}>
+            <Skeleton style={styles.actionSkeleton} height={scale(46)} borderRadius={radius.md} />
+            <Skeleton style={styles.actionSkeleton} height={scale(46)} borderRadius={radius.md} />
+          </View>
         </View>
       ) : productDetail ? (
         <View
           style={[styles.bottomBar, { paddingBottom: insets.bottom + scale(10) }]}>
-          <View style={styles.bottomPriceCol}>
-            <Text style={styles.bottomPriceLabel}>Total Price</Text>
-            <View style={styles.bottomPriceRow}>
-              <Text style={styles.bottomPrice}>{formatPrice(totalPrice)}</Text>
-              {(selectedPack || product.unit) ? (
-                <Text style={styles.bottomUnit}>/ {selectedPack || product.unit}</Text>
-              ) : null}
-            </View>
-
-            <View style={styles.bottomMetaRow}>
-              {discount > 0 && (
-                <View style={styles.bottomDiscountBadge}>
-                  <Text style={styles.bottomDiscountText}>{discount}% OFF</Text>
-                </View>
-              )}
-              {quantity > 1 && (
+          <View style={styles.footerSummary}>
+            <View style={styles.bottomPriceCol}>
+              <Text style={styles.bottomPriceLabel}>
+                {product.price > 0 ? 'Order total' : 'Price'}
+              </Text>
+              <View style={styles.bottomPriceRow}>
+                <Text style={styles.bottomPrice}>
+                  {product.price > 0 ? formatPrice(totalPrice) : 'On request'}
+                </Text>
+              </View>
+              {product.price > 0 ? (
                 <Text style={styles.bottomQtyText}>
                   {quantity} × {formatPrice(product.price)}
+                  {selectedPack || product.unit
+                    ? ` / ${selectedPack || product.unit}`
+                    : ''}
                 </Text>
-              )}
+              ) : null}
+            </View>
+            <View style={styles.footerQuantity}>
+              <Text style={styles.footerQuantityLabel}>Qty</Text>
+              <EditableQuantity
+                size="compact"
+                value={quantity}
+                onChange={setQuantity}
+                style={styles.footerQuantityStepper}
+              />
             </View>
           </View>
 
-          {inCart ? (
-            <Button
-              title="Go to Cart"
-              onPress={() => navigation.navigate('Cart')}
-              variant="outline"
-              size="medium"
-              style={styles.goToCartBtn}
-              textStyle={styles.goToCartText}
-              iconLeft={
+          {product.price > 0 && inCart ? (
+            <Animated.View
+              entering={FadeInDown.duration(260)}
+              exiting={FadeOutDown.duration(160)}
+              style={styles.cartActionWrap}>
+              <TouchableOpacity
+                style={styles.goToCartBtn}
+                activeOpacity={0.9}
+                accessibilityRole="button"
+                onPress={() => navigation.navigate('Cart')}>
                 <ShoppingCart
-                  size={scale(16)}
-                  color={colors.primary}
-                  strokeWidth={2.3}
+                  size={scale(18)}
+                  color={colors.textInverse}
+                  strokeWidth={2.4}
                 />
-              }
-            />
-          ) : (
+                <Text style={styles.buyNowText}>Go to Cart</Text>
+                <ArrowRight
+                  size={scale(16)}
+                  color={colors.textInverse}
+                  strokeWidth={2.6}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          ) : product.price > 0 ? (
             <View style={styles.bottomActions}>
               <TouchableOpacity
                 style={[
-                  styles.cartIconBtn,
-                  Number(product.price) === 0 && styles.cartIconBtnDisabled,
+                  styles.addToCartBtn,
+                  addingToCart && styles.actionDisabled,
                 ]}
                 activeOpacity={0.8}
-                disabled={Number(product.price) === 0}
-                accessibilityState={{disabled: Number(product.price) === 0}}
+                disabled={addingToCart}
+                accessibilityRole="button"
+                accessibilityState={{disabled: addingToCart}}
                 onPress={handleAddToCart}>
                 <ShoppingCart
-                  size={scale(19)}
-                  color={Number(product.price) === 0 ? '#94A3B8' : colors.primary}
+                  size={scale(17)}
+                  color={colors.primary}
                   strokeWidth={2.3}
                 />
+                <Text style={styles.addToCartText}>
+                  {addingToCart ? 'Adding...' : 'Add to Cart'}
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.checkoutBtn}
+                style={[
+                  styles.buyNowBtn,
+                  addingToCart && styles.actionDisabled,
+                ]}
                 activeOpacity={0.9}
-                onPress={() =>
-                  navigation.navigate('RequestPrice', {
-                    productId: product.id,
-                    productName: product.name,
-                    productImage: product.images[0],
-                    rateChartId: selectedRateChartId,
-                    category: product.subtitle,
-                    price: product.price,
-                    mrp: product.mrp,
-                    unit: selectedPack || product.unit,
-                    quantity,
-                    packSizes: product.packSizes,
-                  })
-                }>
-                <Text style={styles.checkoutText}>Check Out</Text>
+                disabled={addingToCart}
+                accessibilityRole="button"
+                accessibilityState={{disabled: addingToCart}}
+                onPress={handleBuyNow}>
+                <Text style={styles.buyNowText}>Buy Now</Text>
                 <ArrowRight
-                  size={scale(15)}
+                  size={scale(16)}
                   color={colors.textInverse}
-                  strokeWidth={3}
+                  strokeWidth={2.6}
                 />
               </TouchableOpacity>
             </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.requestPriceBtn}
+              activeOpacity={0.9}
+              accessibilityRole="button"
+              onPress={handleRequestPrice}>
+              <Text style={styles.buyNowText}>Request Price</Text>
+              <ArrowRight
+                size={scale(16)}
+                color={colors.textInverse}
+                strokeWidth={2.6}
+              />
+            </TouchableOpacity>
           )}
         </View>
       ) : null}
@@ -1020,37 +1093,15 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '800',
   },
-  qtySection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xl,
-  },
-  qtyInfo: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  qtyTitle: {
-    fontSize: scale(13),
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  qtyHint: {
-    fontSize: scale(11),
-    color: '#94A3B8',
-    marginTop: scale(2),
-  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: scale(10),
     backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
-    paddingTop: scale(10),
+    paddingTop: scale(12),
     paddingBottom: scale(10),
     borderTopWidth: 1,
     borderTopColor: '#EAEFF5',
@@ -1061,13 +1112,19 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   bottomBarSkeleton: {
-    minHeight: scale(66),
+    minHeight: scale(120),
+    justifyContent: 'center',
   },
-  footerPriceSkeleton: {
-    flex: 1,
+  footerSummarySkeleton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   footerSkeletonGap: {
     marginTop: scale(7),
+  },
+  actionSkeleton: {
+    flex: 1,
   },
   loadError: {
     flex: 1,
@@ -1089,14 +1146,32 @@ const styles = StyleSheet.create({
   bottomPriceCol: {
     flex: 1,
     flexShrink: 1,
-    marginRight: spacing.md,
+  },
+  footerSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  footerQuantity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(7),
+    marginLeft: spacing.md,
+  },
+  footerQuantityLabel: {
+    color: '#64748B',
+    fontSize: scale(11),
+    fontWeight: '700',
+  },
+  footerQuantityStepper: {
+    width: scale(102),
+    height:scale(40)
   },
   bottomPriceLabel: {
-    fontSize: scale(10),
-    fontWeight: '600',
-    color: '#94A3B8',
-    letterSpacing: 0.2,
-    marginBottom: scale(1),
+    fontSize: scale(11),
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: scale(2),
   },
   bottomPriceRow: {
     flexDirection: 'row',
@@ -1109,84 +1184,73 @@ const styles = StyleSheet.create({
     color: '#102A43',
     letterSpacing: -0.5,
   },
-  bottomUnit: {
+  bottomQtyText: {
     fontSize: scale(11),
     fontWeight: '600',
-    color: '#94A3B8',
-    marginLeft: scale(4),
-  },
-  bottomMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: scale(3),
-    gap: scale(6),
-  },
-  bottomMrp: {
-    fontSize: scale(11.5),
-    fontWeight: '600',
-    color: '#94A3B8',
-    textDecorationLine: 'line-through',
-  },
-  bottomDiscountBadge: {
-    backgroundColor: '#E7F6EE',
-    borderRadius: radius.xs,
-    paddingHorizontal: scale(6),
-    paddingVertical: scale(1),
-  },
-  bottomDiscountText: {
-    fontSize: scale(9.5),
-    fontWeight: '800',
-    color: '#0B7A3B',
-    letterSpacing: 0.2,
-  },
-  bottomQtyText: {
-    fontSize: scale(10),
-    fontWeight: '600',
-    color: '#94A3B8',
+    color: '#64748B',
+    marginTop: scale(2),
   },
   bottomActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: scale(8),
+    gap: scale(10),
   },
-  cartIconBtn: {
-    width: scale(48),
-    height: scale(40),
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cartIconBtnDisabled: {
-    borderColor: '#CBD5E1',
-    backgroundColor: '#F1F5F9',
+  cartActionWrap: {
+    width: '100%',
   },
   goToCartBtn: {
-    width: '70%',
-    height: scale(44),
-    paddingHorizontal: scale(10),
+    width: '100%',
+    height: scale(46),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(8),
     borderRadius: radius.md,
+    backgroundColor: colors.primary,
   },
-  goToCartText: {
-    fontSize: scale(13.5),
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  checkoutBtn: {
+  addToCartBtn: {
+    flex: 1,
+    minWidth: 0,
+    height: scale(46),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: scale(6),
-    height: scale(44),
-    paddingHorizontal: scale(24),
+    borderRadius: radius.md,
+    borderWidth: 1.2,
+    borderColor: colors.primary,
+    backgroundColor: '#FFFFFF',
+  },
+  addToCartText: {
+    color: colors.primary,
+    fontSize: scale(12),
+    fontWeight: '800',
+  },
+  buyNowBtn: {
+    flex: 1,
+    minWidth: 0,
+    height: scale(46),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(7),
     borderRadius: radius.md,
     backgroundColor: colors.primary,
   },
-  checkoutText: {
-    fontSize: scale(14),
+  requestPriceBtn: {
+    height: scale(46),
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: scale(7),
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  actionDisabled: {
+    opacity: 0.65,
+  },
+  buyNowText: {
+    fontSize: scale(13),
     fontWeight: '800',
     letterSpacing: 0.2,
     color: colors.textInverse,

@@ -130,7 +130,7 @@ export const LoginScreen: React.FC = () => {
           {/* Title Section */}
           <View style={styles.titleSection}>
             <Text style={styles.eyebrow}>WELCOME BACK</Text>
-            <Text style={styles.title}>Login to Your Account</Text>
+            <Text style={styles.title}>Login To Your Account</Text>
             <Text style={styles.subtitle}>
               Access your products, orders, invoices and more.
             </Text>
@@ -180,7 +180,9 @@ export const LoginScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.forgot}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('ForgotPassword')}>
+              onPress={() =>
+                navigation.navigate('ForgotPassword', {source: 'auth'})
+              }>
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
 

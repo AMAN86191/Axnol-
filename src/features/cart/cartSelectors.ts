@@ -9,21 +9,26 @@ export interface CartTotals {
   mrpTotal: number;
   savings: number;
   discountPercent: number;
+  gstRate: number;
+  gstAmount: number;
+  total: number;
 }
 
 export const selectCartItems = (state: RootState): CartItem[] =>
   state.cart.items;
 
 export const selectCartItemCount = (state: RootState): number =>
+  state.cart.summary?.totalQty ??
   state.cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
 export const selectCartTotals = createSelector(
-  [selectCartItems],
-  (items): CartTotals => {
-    const subtotal = items.reduce(
+  [selectCartItems, (state: RootState) => state.cart.summary],
+  (items, summary): CartTotals => {
+    const calculatedSubtotal = items.reduce(
       (sum, item) => sum + (item.lineTotal ?? item.price * item.quantity),
       0,
     );
+    const subtotal = summary?.totalPrice ?? calculatedSubtotal;
     const mrpTotal = items.reduce(
       (sum, item) => sum + (item.mrp ?? item.price) * item.quantity,
       0,
@@ -31,14 +36,24 @@ export const selectCartTotals = createSelector(
     const savings = mrpTotal - subtotal;
     const discountPercent =
       mrpTotal > 0 ? Math.round((savings / mrpTotal) * 100) : 0;
+    const gstRate = summary?.gstRate ?? 18;
+    const calculatedGstAmount =
+      Math.round((subtotal * gstRate + Number.EPSILON) * 100) / 100;
+    const gstAmount = summary?.gstAmount ?? calculatedGstAmount;
+    const total = summary?.grandTotal ?? subtotal + gstAmount;
 
     return {
-      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
-      uniqueCount: items.length,
+      itemCount:
+        summary?.totalQty ??
+        items.reduce((sum, item) => sum + item.quantity, 0),
+      uniqueCount: summary?.totalItems ?? items.length,
       subtotal,
       mrpTotal,
       savings,
       discountPercent,
+      gstRate,
+      gstAmount,
+      total,
     };
   },
 );

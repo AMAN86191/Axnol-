@@ -114,6 +114,7 @@ export const HomeScreen: React.FC = () => {
             .unwrap()
             .then(payload => {
               const data: any = payload?.data ?? payload;
+              console.log('Industry data :', data);
               setApiIndustries(
                 Array.isArray(data) ? data : data?.industries ?? [],
               );
@@ -250,6 +251,7 @@ export const HomeScreen: React.FC = () => {
       id: String(industry.id),
       name: industry.title ?? '',
       image: industry.image_url ?? '',
+      brochure_url: industry.brochure_url ?? '',
     }))
     .filter(industry => Boolean(industry.image && industry.image.trim()));
 
@@ -274,7 +276,7 @@ export const HomeScreen: React.FC = () => {
   const openAllProducts = () => {
     navigation.getParent()?.navigate('Products', {
       screen: 'Products',
-      params: {title: 'Products'},
+      params: { title: 'Products' },
     });
   };
 
@@ -378,13 +380,15 @@ export const HomeScreen: React.FC = () => {
           downloadLabel="Download Brochure"
           showDownloadButton={true}
           onPressItem={item => {
-            const url =
-              item?.pdfUrl ||
-              item?.navigationLink || ''
-            Linking.openURL(url).catch(() => { });
+            const url = item?.pdfUrl || '';
+            if (url.trim()) {
+              Linking.openURL(url).catch(() => { });
+            } else {
+              openAllProducts();
+            }
           }}
           onPressDownload={item => {
-            const url = item?.pdfUrl || item?.navigationLink || '';
+            const url = item?.pdfUrl || '';
 
             if (url.trim()) {
               Linking.openURL(url).catch(() => { });
@@ -410,6 +414,7 @@ export const HomeScreen: React.FC = () => {
               navigation.navigate('IndustryDetails', {
                 industryId: ind.id,
                 industryTitle: ind.name,
+                industrybrochure:ind.brochure_url
               })
             }
           />

@@ -2,6 +2,7 @@ export interface IndustryItem {
   id: string;
   name: string;
   image: string;
+  brochure_url?: string;
 }
 
 export interface HomeProduct {

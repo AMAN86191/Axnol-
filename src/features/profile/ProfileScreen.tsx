@@ -15,6 +15,7 @@ import {
   Building2,
   ChevronRight,
   HelpCircle,
+  KeyRound,
   LogOut,
   Mail,
   Pencil,
@@ -130,6 +131,13 @@ export const ProfileScreen: React.FC = () => {
 
   const MENU_ITEMS: MenuItem[] = [
     {
+      title: 'Forgot Password',
+      subtitle: 'Reset your account password',
+      icon: KeyRound,
+      onPress: () =>
+        navigation.navigate('ForgotPassword', {source: 'profile'}),
+    },
+    {
       title: 'Help & Support',
       subtitle: 'Get in touch with our team',
       icon: HelpCircle,
@@ -196,7 +204,6 @@ export const ProfileScreen: React.FC = () => {
         {/* Header */}
         <View style={styles.headerRow}>
           <View style={styles.headerTexts}>
-            <Text style={styles.eyebrow}>MY ACCOUNT</Text>
             <Text style={styles.title}>My Profile</Text>
           </View>
           <TouchableOpacity

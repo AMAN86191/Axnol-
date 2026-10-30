@@ -1,11 +1,15 @@
 import {NavigatorScreenParams} from '@react-navigation/native';
 
+export type ForgotPasswordParams = {
+  source: 'auth' | 'profile';
+};
+
 export type AuthStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
-  ForgotPassword: undefined;
+  ForgotPassword: ForgotPasswordParams;
   TermsConditions: undefined;
   PrivacyPolicy: undefined;
 };
@@ -50,7 +54,11 @@ export type HomeStackParamList = {
       }
     | undefined;
   Industries: undefined;
-  IndustryDetails: {industryId: string; industryTitle?: string};
+  IndustryDetails: {
+    industryId: string;
+    industryTitle?: string;
+    industrybrochure?: string;
+  };
   Categories: {industryId?: string; industryName?: string} | undefined;
 };
 
@@ -75,7 +83,11 @@ export type CatalogueStackParamList = {
     | undefined;
   ProductDetails: {productId: string};
   Industries: undefined;
-  IndustryDetails: {industryId: string; industryTitle?: string};
+  IndustryDetails: {
+    industryId: string;
+    industryTitle?: string;
+    industrybrochure?: string;
+  };
   Categories: {industryId?: string; industryName?: string} | undefined;
   SubCategories: {
     categoryId: string;
@@ -112,6 +124,7 @@ export type OrdersStackParamList = {
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   EditProfile: undefined;
+  ForgotPassword: ForgotPasswordParams;
   PricingRequests: undefined;
   ContactUs: undefined;
   About: undefined;

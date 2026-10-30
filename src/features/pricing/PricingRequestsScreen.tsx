@@ -49,6 +49,9 @@ import { useCart } from '../cart/useCart';
 
 const MIN_QUANTITY = 1;
 
+const formatCheckoutPrice = (value: number): string =>
+  `₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+
 interface SubmitSuccessModalProps {
   visible: boolean;
   onOrderHistory: () => void;
@@ -245,7 +248,7 @@ export const PricingRequestsScreen: React.FC = () => {
   const productName = directProductName;
   const category = directCategory;
   const price = directPrice;
-
+console.log('user :', user);
   const companyFromUser =
     (typeof user?.company === 'string'
       ? user.company
@@ -317,13 +320,26 @@ export const PricingRequestsScreen: React.FC = () => {
 
   const qtyNum = Number(quantity);
   const validQty = !quantity.trim() || isNaN(qtyNum) || qtyNum <= 0 ? 0 : qtyNum;
-  const calculatedPrice = isCartCheckout
+  const basePrice = isCartCheckout
     ? cartItems.length > 0 && cartTotals.subtotal > 0
       ? cartTotals.subtotal
       : null
     : price != null && validQty > 0
     ? price * validQty
     : null;
+  const gstRate = isCartCheckout ? cartTotals.gstRate : 18;
+  const gstAmount =
+    basePrice == null
+      ? null
+      : isCartCheckout
+      ? cartTotals.gstAmount
+      : Math.round((basePrice * gstRate) / 100);
+  const calculatedPrice =
+    basePrice == null || gstAmount == null
+      ? null
+      : isCartCheckout
+      ? cartTotals.total
+      : basePrice + gstAmount;
 
   const orderItems: ConfirmOrderItem[] = isCartCheckout
     ? cartItems
@@ -465,7 +481,7 @@ export const PricingRequestsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
 
-      <CommonHeader title={isCartCheckout ? 'Checkout' : 'Request a Quote'} />
+      <CommonHeader title={'Checkout'} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -477,7 +493,10 @@ export const PricingRequestsScreen: React.FC = () => {
 
         {isCartCheckout ? (
           <View style={styles.productCard}>
-            <Text style={styles.sectionTitle}>Order Items</Text>
+            <Text style={styles.sectionTitle}>
+              Order Items ({cartTotals.uniqueCount} products,{' '}
+              {cartTotals.itemCount} units)
+            </Text>
             {cartLoading && cartItems.length === 0 ? (
               <ActivityIndicator
                 style={styles.cartLoader}
@@ -512,13 +531,13 @@ export const PricingRequestsScreen: React.FC = () => {
                       ) : null}
                       <View style={styles.cartPriceRow}>
                         <Text style={styles.cartUnitPrice}>
-                          {formatPrice(item.price)} each
+                          {formatCheckoutPrice(item.price)} each
                         </Text>
                         <Text style={styles.productPriceUnit}>
                           Qty: {item.quantity}
                         </Text>
                         <Text style={styles.productPrice}>
-                          {formatPrice(
+                          {formatCheckoutPrice(
                             item.lineTotal ?? item.price * item.quantity,
                           )}
                         </Text>
@@ -527,9 +546,15 @@ export const PricingRequestsScreen: React.FC = () => {
                   </View>
                 ))}
                 <View style={styles.cartTotalRow}>
-                  <Text style={styles.cartTotalLabel}>Order Total</Text>
+                  <View style={{flex: 1}}>
+                    <Text style={styles.cartTotalLabel}>Order Total (Incl. GST)</Text>
+                    <Text style={styles.cartTotalSub}>
+                      Subtotal {formatCheckoutPrice(cartTotals.subtotal)} + GST{' '}
+                      {gstRate}% {formatCheckoutPrice(gstAmount ?? 0)}
+                    </Text>
+                  </View>
                   <Text style={styles.cartTotalValue}>
-                    {formatPrice(cartTotals.subtotal)}
+                    {formatCheckoutPrice(calculatedPrice ?? cartTotals.subtotal)}
                   </Text>
                 </View>
               </>
@@ -547,7 +572,8 @@ export const PricingRequestsScreen: React.FC = () => {
           </View>
         ) : (
           <View style={styles.productCard}>
-            <View style={styles.productTop}>
+            <Text style={styles.sectionTitle}>Order Item</Text>
+            <View style={[styles.cartProduct, {marginTop: spacing.sm}]}>
               <View style={styles.productImgWrap}>
                 {directImage ? (
                   <Image
@@ -558,64 +584,23 @@ export const PricingRequestsScreen: React.FC = () => {
                 ) : null}
               </View>
               <View style={styles.productInfo}>
-                <Text style={styles.productName}>{productName}</Text>
+                <Text style={styles.productName} numberOfLines={2}>
+                  {productName}
+                </Text>
                 {category ? (
-                  <Text style={styles.productSubtitle}>{category}</Text>
+                  <Text style={styles.productSubtitle} numberOfLines={1}>
+                    {category}
+                  </Text>
                 ) : null}
                 {price != null ? (
-                  <View style={styles.productPriceRow}>
-                    <View style={styles.productPriceLeft}>
-                      <Text style={styles.productPrice}>
-                        {formatPrice(calculatedPrice ?? price)}
-                      </Text>
-                      <Text style={styles.productPriceUnit}>Qty: {quantity}</Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.stepper,
-                        errors.quantity ? styles.stepperError : null,
-                      ]}>
-                      <TouchableOpacity
-                        style={[
-                          styles.stepBtn,
-                          !canDecrement && styles.stepBtnDisabled,
-                        ]}
-                        activeOpacity={0.7}
-                        disabled={!canDecrement}
-                        onPress={handleDecrement}>
-                        <Minus
-                          size={scale(16)}
-                          color={canDecrement ? '#0F172A' : '#CBD5E1'}
-                          strokeWidth={2.5}
-                        />
-                      </TouchableOpacity>
-
-                      <TextInput
-                        style={styles.stepValue}
-                        value={quantity}
-                        onChangeText={v => {
-                          setQuantity(v.replace(/[^0-9]/g, ''));
-                          clearError('quantity');
-                          clearError('calculatedPrice');
-                        }}
-                        keyboardType="numeric"
-                        maxLength={7}
-                        selectTextOnFocus
-                        placeholder="0"
-                        placeholderTextColor="#94A3B8"
-                      />
-
-                      <TouchableOpacity
-                        style={styles.stepBtn}
-                        activeOpacity={0.7}
-                        onPress={handleIncrement}>
-                        <Plus
-                          size={scale(16)}
-                          color="#0F172A"
-                          strokeWidth={2.5}
-                        />
-                      </TouchableOpacity>
-                    </View>
+                  <View style={styles.cartPriceRow}>
+                    <Text style={styles.cartUnitPrice}>
+                      {formatPrice(price)} each
+                    </Text>
+                    <Text style={styles.productPriceUnit}>Qty: {quantity}</Text>
+                    <Text style={styles.productPrice}>
+                      {formatPrice(price * validQty)}
+                    </Text>
                   </View>
                 ) : (
                   <Text style={styles.productPriceMissing}>
@@ -624,6 +609,72 @@ export const PricingRequestsScreen: React.FC = () => {
                 )}
               </View>
             </View>
+
+            {price != null ? (
+              <View style={styles.qtyRow}>
+                <Text style={styles.qtyRowLabel}>Quantity</Text>
+                <View
+                  style={[
+                    styles.stepper,
+                    errors.quantity ? styles.stepperError : null,
+                  ]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.stepBtn,
+                      !canDecrement && styles.stepBtnDisabled,
+                    ]}
+                    activeOpacity={0.7}
+                    disabled={!canDecrement}
+                    onPress={handleDecrement}>
+                    <Minus
+                      size={scale(16)}
+                      color={canDecrement ? '#0F172A' : '#CBD5E1'}
+                      strokeWidth={2.5}
+                    />
+                  </TouchableOpacity>
+
+                  <TextInput
+                    style={styles.stepValue}
+                    value={quantity}
+                    onChangeText={v => {
+                      setQuantity(v.replace(/[^0-9]/g, ''));
+                      clearError('quantity');
+                      clearError('calculatedPrice');
+                    }}
+                    keyboardType="numeric"
+                    maxLength={7}
+                    selectTextOnFocus
+                    placeholder="0"
+                    placeholderTextColor="#94A3B8"
+                  />
+
+                  <TouchableOpacity
+                    style={styles.stepBtn}
+                    activeOpacity={0.7}
+                    onPress={handleIncrement}>
+                    <Plus
+                      size={scale(16)}
+                      color="#0F172A"
+                      strokeWidth={2.5}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.cartTotalRow}>
+              <View style={{flex: 1}}>
+                <Text style={styles.cartTotalLabel}>Order Total (Incl. GST)</Text>
+                <Text style={styles.cartTotalSub}>
+                  Subtotal {formatPrice(price != null ? price * validQty : 0)} + GST{' '}
+                  {gstRate}% {formatPrice(gstAmount ?? 0)}
+                </Text>
+              </View>
+              <Text style={styles.cartTotalValue}>
+                {formatPrice(calculatedPrice ?? 0)}
+              </Text>
+            </View>
+
             {errors.quantity ? (
               <Text style={styles.errorText}>{errors.quantity}</Text>
             ) : null}
@@ -748,7 +799,7 @@ export const PricingRequestsScreen: React.FC = () => {
             {/* Remark (Optional) */}
             <Input
               label="Remark (Optional)"
-              placeholder="Urgent delivery"
+              placeholder="Add any special instructions."
               variant="clean"
               leftIcon={MessageSquare}
               multiline
@@ -919,6 +970,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '700',
     color: '#0F172A',
+  },
+  cartTotalSub: {
+    fontSize: fontSize.xs,
+    fontWeight: '500',
+    color: '#64748B',
+    marginTop: scale(2),
   },
   cartTotalValue: {
     fontSize: scale(18),

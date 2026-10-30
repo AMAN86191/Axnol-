@@ -8,10 +8,11 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { Download } from 'lucide-react-native';
+import { toast } from '../../../components/ui/ToastProvider';
 import { colors, radius, scale, spacing } from '../../../theme';
 import CachedImage from '../../../components/ui/CachedImage';
 
-const BROCHURE_URL = 'https://axnol.tambimotors.com/about';
+
 
 interface IndustryBannerProps {
   title: string;
@@ -19,6 +20,7 @@ interface IndustryBannerProps {
   image: string;
   tags?: string[];
   downloadLabel?: string;
+  brochureUrl?: string | null;
   onDownload?: () => void;
   /** Banner height; defaults to the full-size banner. */
   height?: number;
@@ -34,6 +36,7 @@ export const IndustryBanner: React.FC<IndustryBannerProps> = ({
   image,
   tags = [],
   downloadLabel = 'Download Brochure',
+  brochureUrl,
   onDownload,
   height = scale(228),
   showAccentLine = true,
@@ -44,7 +47,12 @@ export const IndustryBanner: React.FC<IndustryBannerProps> = ({
       onDownload();
       return;
     }
-    Linking.openURL(BROCHURE_URL).catch(() => {});
+    const url = brochureUrl?.trim();
+    if (!url) {
+      toast.warning('No brochure found at the moment');
+      return;
+    }
+    Linking.openURL(url).catch(() => {});
   };
 
   return (

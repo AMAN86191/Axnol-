@@ -17,13 +17,15 @@ export const HomeSectionHeader: React.FC<HomeSectionHeaderProps> = ({
   onAction,
 }) => (
   <View style={styles.row}>
-    <View style={styles.left}>
+   <View style={{flexDirection:"row",  alignItems:"center"}}>
+
       <View style={styles.accentBar} />
-      <View style={styles.titleWrap}>
+     
         <Text style={styles.title}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      </View>
-    </View>
+   </View>
+     
+      
+    
 
     {onAction ? (
       <TouchableOpacity
@@ -54,7 +56,7 @@ const styles = StyleSheet.create({
   },
   accentBar: {
     width: scale(3),
-    height: scale(35),
+    height: scale(25),
     borderRadius: scale(2),
     backgroundColor: colors.primary,
     marginTop: scale(1),
@@ -63,11 +65,12 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   title: {
-    fontSize: scale(14.5),
+    fontSize: scale(14),
     fontWeight: '700',
     color: '#0F172A',
     letterSpacing: -0.3,
     lineHeight: scale(20),
+    paddingLeft:scale(10)
   },
   subtitle: {
     fontSize: scale(11),

@@ -11,8 +11,13 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  NavigationProp,
+  ParamListBase,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   ArrowLeft,
@@ -25,7 +30,7 @@ import {
   Mail,
   ShieldCheck,
 } from 'lucide-react-native';
-import { AuthStackParamList } from '../../navigation/types';
+import {ForgotPasswordParams} from '../../navigation/types';
 import { colors, fontSize, radius, scale, spacing, typography } from '../../theme';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -37,7 +42,11 @@ import Logo from '../../components/ui/Logo';
 import {requestPasswordResetOtp, resetPassword} from '../../api/AuthProvider';
 import {toast} from '../../components/ui/ToastProvider';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList, 'ForgotPassword'>;
+type Nav = NavigationProp<ParamListBase>;
+type ForgotPasswordRoute = RouteProp<
+  {ForgotPassword: ForgotPasswordParams},
+  'ForgotPassword'
+>;
 
 const schema = z
   .object({
@@ -74,7 +83,9 @@ const maskContact = (value?: string): string => {
 
 export const ForgotPasswordScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<ForgotPasswordRoute>();
   const insets = useSafeAreaInsets();
+  const openedFromProfile = route.params?.source === 'profile';
 
 
   const [step, setStep] = useState<number>(1);
@@ -223,7 +234,11 @@ export const ForgotPasswordScreen: React.FC = () => {
         'Password Reset',
         response?.message || 'Log in with your new password.',
       );
-      navigation.navigate('Login');
+      if (openedFromProfile) {
+        navigation.goBack();
+      } else {
+        navigation.navigate('Login');
+      }
     } catch (err: unknown) {
       setResetError(
         getRequestErrorMessage(
@@ -415,14 +430,18 @@ export const ForgotPasswordScreen: React.FC = () => {
                   textStyle={styles.actionBtnText}
                 />
 
-                <View style={styles.signInRow}>
-                  <Text style={styles.signInText}>Remember your password? </Text>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.signInLink}>Sign In</Text>
-                  </TouchableOpacity>
-                </View>
+                {!openedFromProfile && (
+                  <View style={styles.signInRow}>
+                    <Text style={styles.signInText}>
+                      Remember your password?{' '}
+                    </Text>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => navigation.navigate('Login')}>
+                      <Text style={styles.signInLink}>Sign In</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </>
             ) : step === 2 ? (
               <>
