@@ -1,10 +1,11 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {LucideIcon, PackageOpen, RefreshCw} from 'lucide-react-native';
-import {colors, scale} from '../../../theme';
+import {colors, radius, scale, spacing, typography, fontSize} from '../../../theme';
 
 interface SectionEmptyStateProps {
   message: string;
+  subtitle?: string;
   icon?: LucideIcon;
   actionLabel?: string;
   onAction?: () => void;
@@ -12,6 +13,7 @@ interface SectionEmptyStateProps {
 
 export const SectionEmptyState: React.FC<SectionEmptyStateProps> = ({
   message,
+  subtitle,
   icon: Icon = PackageOpen,
   actionLabel,
   onAction,
@@ -19,16 +21,19 @@ export const SectionEmptyState: React.FC<SectionEmptyStateProps> = ({
   <View style={styles.container}>
     <View style={styles.content}>
       <View style={styles.iconWrap}>
-        <Icon size={scale(18)} color={colors.primary} strokeWidth={1.8} />
+        <Icon size={scale(20)} color={colors.primary} strokeWidth={1.6} />
       </View>
-      <Text style={styles.text}>{message}</Text>
+      <View style={styles.textWrap}>
+        <Text style={styles.message}>{message}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
     </View>
     {actionLabel && onAction ? (
       <TouchableOpacity
         style={styles.actionBtn}
         activeOpacity={0.8}
         onPress={onAction}>
-        <RefreshCw size={scale(12)} color={colors.primary} strokeWidth={2.4} />
+        <RefreshCw size={scale(13)} color={colors.primary} strokeWidth={2} />
         <Text style={styles.actionText}>{actionLabel}</Text>
       </TouchableOpacity>
     ) : null}
@@ -39,53 +44,67 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: scale(8),
-    paddingVertical: scale(14),
-    paddingHorizontal: scale(12),
-    borderRadius: scale(12),
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#DBEAFE',
-    backgroundColor: '#F8FAFC',
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    shadowColor: colors.shadow,
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: scale(8),
+    gap: spacing.md,
+    flex: 1,
     flexShrink: 1,
   },
   iconWrap: {
-    width: scale(30),
-    height: scale(30),
-    borderRadius: scale(15),
+    width: scale(44),
+    height: scale(44),
+    borderRadius: scale(22),
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: {
+  textWrap: {
+    flex: 1,
     flexShrink: 1,
-    fontSize: scale(11.5),
-    fontWeight: '600',
-    color: '#64748B',
-    textAlign: 'center',
+  },
+  message: {
+    ...typography.semibold,
+    fontSize: fontSize.sm,
+    color: colors.text,
+    letterSpacing: -0.1,
+  },
+  subtitle: {
+    ...typography.regular,
+    fontSize: fontSize.xs,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    lineHeight: fontSize.xs * 1.5,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: scale(3),
-    paddingHorizontal: scale(10),
-    paddingVertical: scale(5),
-    borderRadius: scale(999),
-    backgroundColor: '#F0F9FF',
+    gap: scale(4),
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primaryLight,
     borderWidth: 1,
-    borderColor: '#E0F2FE',
+    borderColor: colors.primaryMuted,
   },
   actionText: {
-    fontSize: scale(10.5),
-    fontWeight: '700',
+    ...typography.semibold,
+    fontSize: fontSize.xs,
     color: colors.primary,
   },
 });

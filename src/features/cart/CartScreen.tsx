@@ -53,11 +53,15 @@ export const CartScreen: React.FC = () => {
     return (
       <View style={[styles.container]}>
         <CommonHeader title='Cart' />
-        <EmptyState
-          icon={ShoppingBag}
-          title="Your cart is empty"
-          subtitle="Add products to your cart and they'll show up here."
-        />
+        <View style={styles.emptyWrap}>
+          <EmptyState
+            icon={ShoppingBag}
+            title="Your cart is empty"
+            subtitle="Add products to your cart and they'll show up here."
+            actionLabel="Browse Products"
+            onAction={() => navigation.goBack()}
+          />
+        </View>
       </View>
     );
   }
@@ -196,11 +200,22 @@ export const CartScreen: React.FC = () => {
           </>
         ) : null}
 
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>
+            GST ({totals.gstRate ?? 18}%)
+          </Text>
+          <Text style={styles.summaryValue}>
+            {formatPrice(totals.gstAmount ?? 0)}
+          </Text>
+        </View>
+
         <View style={styles.summaryDivider} />
 
         <View style={styles.summaryRow}>
           <Text style={styles.totalLabel}>Total Payable</Text>
-          <Text style={styles.totalValue}>{formatPrice(totals.subtotal)}</Text>
+          <Text style={styles.totalValue}>
+            {formatPrice(totals.total ?? totals.subtotal + (totals.gstAmount ?? 0))}
+          </Text>
         </View>
 
         <Button
@@ -215,6 +230,10 @@ export const CartScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#F8FAFC'},
+  emptyWrap: {
+    flex: 1,
+    justifyContent: 'center',
+  },
   scrollFlex: {flex: 1},
   scrollContent: {
     paddingHorizontal: spacing.lg,

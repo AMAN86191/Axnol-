@@ -1,12 +1,9 @@
 import {useCallback} from 'react';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {
-  addToWishlist,
   clearWishlist,
-  removeFromWishlist,
   setWishlistItems,
   setWishlistLoading,
-  toggleWishlist,
   WishlistItem,
 } from './wishlistSlice';
 import {
@@ -19,29 +16,9 @@ import {
   getWishlist,
   removeFromWishlistApi,
 } from '../../api/WishlistProvider';
-import {getProductById, ProductApi} from '../../api/ProductProvider';
 import {toast} from '../../components/ui/ToastProvider';
+import {useAppNotification} from '../../components/ui/NotificationProvider';
 import {getNetworkErrorKind, getNetworkErrorMessage} from '../../utils/apiError';
-
-const productDetailCache = new Map<string, Promise<ProductApi | null>>();
-
-const loadProductDetails = (productId: string | number) => {
-  const key = String(productId);
-  const cached = productDetailCache.get(key);
-  if (cached) {
-    return cached;
-  }
-  const request = getProductById(key)
-    .then(res => res?.data ?? null)
-    .catch(() => null);
-  productDetailCache.set(key, request);
-  request.then(product => {
-    if (!product) {
-      productDetailCache.delete(key);
-    }
-  });
-  return request;
-};
 
 const getWishlistErrorMessage = (error: any, fallback: string): string => {
   const kind = getNetworkErrorKind(error);
@@ -130,6 +107,7 @@ export const useWishlist = () => {
   const dispatch = useAppDispatch();
   const items = useAppSelector(selectWishlistItems);
   const count = useAppSelector(selectWishlistCount);
+  const {showWishlistNotification} = useAppNotification();
 
   const fetchWishlist = useCallback(
     async (silent = false, force = false) => {
@@ -167,6 +145,7 @@ export const useWishlist = () => {
       try {
         await addToWishlistApi({product_id: productId});
         await fetchWishlist(true);
+        showWishlistNotification({productName: product.name, action: 'added'});
         return true;
       } catch (error) {
         toast.error(
@@ -176,7 +155,7 @@ export const useWishlist = () => {
         return false;
       }
     },
-    [fetchWishlist],
+    [fetchWishlist, showWishlistNotification],
   );
 
   const remove = useCallback(
@@ -205,6 +184,7 @@ export const useWishlist = () => {
           await removeFromWishlistApi(productId);
         } else {
           await addToWishlistApi({product_id: productId});
+          showWishlistNotification({productName: product.name, action: 'added'});
         }
         await fetchWishlist(true);
         return true;
@@ -216,7 +196,7 @@ export const useWishlist = () => {
         return false;
       }
     },
-    [fetchWishlist, items],
+    [fetchWishlist, items, showWishlistNotification],
   );
 
   const clear = useCallback(async () => {

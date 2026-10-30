@@ -12,6 +12,7 @@ import {useCart} from '../features/cart/useCart';
 import {setCartItems} from '../features/cart/cartSlice';
 import {useWishlist} from '../features/wishlist/useWishlist';
 import {clearWishlist} from '../features/wishlist/wishlistSlice';
+import {navigationRef} from './navigationRef';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -60,7 +61,7 @@ export const RootNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={{headerShown: false}}>
         {ready ? (
           <Stack.Screen name="Main" component={MainStack} />

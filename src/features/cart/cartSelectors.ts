@@ -9,6 +9,9 @@ export interface CartTotals {
   mrpTotal: number;
   savings: number;
   discountPercent: number;
+  gstRate: number;
+  gstAmount: number;
+  total: number;
 }
 
 export const selectCartItems = (state: RootState): CartItem[] =>
@@ -31,6 +34,9 @@ export const selectCartTotals = createSelector(
     const savings = mrpTotal - subtotal;
     const discountPercent =
       mrpTotal > 0 ? Math.round((savings / mrpTotal) * 100) : 0;
+    const gstRate = 18;
+    const gstAmount = Math.round((subtotal * gstRate) / 100);
+    const total = subtotal + gstAmount;
 
     return {
       itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
@@ -39,6 +45,9 @@ export const selectCartTotals = createSelector(
       mrpTotal,
       savings,
       discountPercent,
+      gstRate,
+      gstAmount,
+      total,
     };
   },
 );

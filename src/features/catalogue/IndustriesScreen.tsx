@@ -11,7 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { radius, scale, spacing } from '../../theme';
+import { colors, radius, scale, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import CachedImage from '../../components/ui/CachedImage';
 import { useAppDispatch } from '../../redux/hooks';
@@ -81,11 +81,11 @@ export const IndustriesScreen: React.FC = () => {
           {/* Search Bar */}
           <View style={styles.searchBarContainer}>
             <View style={styles.searchBar}>
-              <Search size={scale(18)} color="#718096" strokeWidth={2} />
+              <Search size={scale(18)} color="#94A3B8" strokeWidth={2} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search industries"
-                placeholderTextColor="#718096"
+                placeholder="Search industries..."
+                placeholderTextColor="#94A3B8"
                 value={search}
                 onChangeText={setSearch}
               />
@@ -112,18 +112,19 @@ export const IndustriesScreen: React.FC = () => {
               chunk(filtered, COLUMNS).map((row, rowIndex) => (
                 <View key={`row-${rowIndex}`} style={styles.row}>
                   {row.map(item => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.tile}
-                      activeOpacity={0.8}
-                      onPress={() =>
-                        navigation.navigate('IndustryDetails', {
-                          industryId: item.id,
-                          industryTitle: item.name,
-                          industrybrochure: item.brochure_url,
-                        })
-                      }
-                    >
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.tile}
+                    activeOpacity={0.85}
+                    onPress={() =>
+                      navigation.navigate('IndustryDetails', {
+                        industryId: item.id,
+                        industryTitle: item.name,
+                        industrybrochure: item.brochure_url,
+                      })
+                    }
+                  >
+                    <View style={styles.cardWrap}>
                       <View style={styles.imageWrap}>
                         <CachedImage
                           uri={item.image}
@@ -152,10 +153,11 @@ export const IndustriesScreen: React.FC = () => {
                           }
                         />
                       </View>
-                      <Text style={styles.tileTitle} numberOfLines={1}>
+                      <Text style={styles.tileTitle} numberOfLines={2}>
                         {item.name}
                       </Text>
-                    </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
                   ))}
                   {Array.from({ length: COLUMNS - row.length }).map((_, i) => (
                     <View key={`fill-${i}`} style={styles.tileFill} />
@@ -173,29 +175,33 @@ export const IndustriesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: '#F8FAFC',
   },
   searchBarContainer: {
-    // backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.sm,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    height: scale(44),
-    borderRadius: radius.pill,
+    height: scale(48),
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: '#E3E8EF',
-    paddingHorizontal: spacing.md,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: spacing.lg,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   searchInput: {
     flex: 1,
     marginHorizontal: spacing.sm,
-    fontSize: scale(13),
-    color: '#172033',
+    fontSize: scale(13.5),
+    color: '#0F172A',
     paddingVertical: 0,
   },
   listContent: {
@@ -204,8 +210,8 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    gap: spacing.lg,
-    marginBottom: spacing.xl,
+    gap: spacing.md,
+    marginBottom: spacing.md,
   },
   tile: {
     flex: 1,
@@ -214,23 +220,43 @@ const styles = StyleSheet.create({
   tileFill: {
     flex: 1,
   },
+  cardWrap: {
+    width: '100%',
+    alignItems: 'center',
+    // backgroundColor: '#FFFFFF',
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    paddingHorizontal: scale(6),
+    paddingVertical: scale(10),
+    // shadowColor: '#0F172A',
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.04,
+    // shadowRadius: 8,
+    // elevation: 1,
+  },
   imageWrap: {
     width: '100%',
-    height: scale(78),
+    height: scale(76),
     borderRadius: radius.md,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EEF2F7',
   },
   image: {
     width: '100%',
     height: '100%',
   },
   tileTitle: {
-    fontSize: scale(11),
-    fontWeight: '400',
-    color: '#172033',
-    marginTop: scale(8),
-    marginBottom: scale(2),
+    fontSize: scale(11.5),
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: scale(10),
+    textAlign: 'center',
+    letterSpacing: -0.1,
+    minHeight: scale(30),
+    lineHeight: scale(15),
   },
   fallbackWrap: {
     backgroundColor: '#EFF6FF',

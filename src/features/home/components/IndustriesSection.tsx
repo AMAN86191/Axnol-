@@ -65,13 +65,6 @@ export const IndustriesSection: React.FC<IndustriesSectionProps> = ({
     <>
       <HomeSectionHeader
         title="Industries"
-        subtitle={
-          showError
-            ? 'Unable to load right now'
-            : isEmpty
-            ? 'Please check back later'
-            : 'Solutions built for your sector'
-        }
         onAction={isEmpty || showError ? undefined : onSeeAll}
       />
 

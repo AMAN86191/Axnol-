@@ -1,11 +1,15 @@
 import {NavigatorScreenParams} from '@react-navigation/native';
 
+export type ForgotPasswordParams = {
+  source: 'auth' | 'profile';
+};
+
 export type AuthStackParamList = {
   Splash: undefined;
   Onboarding: undefined;
   Login: undefined;
   Register: undefined;
-  ForgotPassword: undefined;
+  ForgotPassword: ForgotPasswordParams;
   TermsConditions: undefined;
   PrivacyPolicy: undefined;
 };
@@ -120,6 +124,7 @@ export type OrdersStackParamList = {
 export type ProfileStackParamList = {
   ProfileMain: undefined;
   EditProfile: undefined;
+  ForgotPassword: ForgotPasswordParams;
   PricingRequests: undefined;
   ContactUs: undefined;
   About: undefined;

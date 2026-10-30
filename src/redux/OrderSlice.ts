@@ -12,6 +12,7 @@ export const confirmOrderSlice = createAsyncThunk(
   'order/confirmOrderSlice',
   async (payload: ConfirmOrderPayload, { rejectWithValue }) => {
     try {
+      console.log('order api payload :', payload);
       return await confirmOrder(payload);
     } catch (error) {
       return rejectWithValue(error);

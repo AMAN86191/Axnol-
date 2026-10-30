@@ -11,6 +11,7 @@ import {
 } from '../../api/CartProvider';
 import {getProductById, ProductApi} from '../../api/ProductProvider';
 import {toast} from '../../components/ui/ToastProvider';
+import {useAppNotification} from '../../components/ui/NotificationProvider';
 import {getNetworkErrorKind, getNetworkErrorMessage} from '../../utils/apiError';
 import {getRateChartId} from '../../utils/productCardData';
 
@@ -216,6 +217,7 @@ export const useCart = () => {
   const items = useAppSelector(selectCartItems);
   const itemCount = useAppSelector(selectCartItemCount);
   const totals = useAppSelector(selectCartTotals);
+  const {showCartNotification} = useAppNotification();
 
   const fetchCart = useCallback(
     async (silent = false, force = false) => {
@@ -242,7 +244,8 @@ export const useCart = () => {
         dispatch(setCartLoading(false));
       }
     },
-    [dispatch],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchCart],
   );
 
   const add = useCallback(
@@ -265,6 +268,7 @@ export const useCart = () => {
           qty: quantity,
         });
         await fetchCart(true);
+        showCartNotification({id: productId, name: product.name, image: product.image});
         return true;
       } catch (error) {
         toast.error(
@@ -274,6 +278,7 @@ export const useCart = () => {
         return false;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fetchCart],
   );
 
