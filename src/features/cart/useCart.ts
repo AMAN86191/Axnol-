@@ -1,6 +1,11 @@
 import {useCallback} from 'react';
 import {useAppDispatch, useAppSelector} from '../../store';
-import {CartItem, setCartItems, setCartLoading} from './cartSlice';
+import {
+  CartItem,
+  CartSummary,
+  setCartData,
+  setCartLoading,
+} from './cartSlice';
 import {selectCartItemCount, selectCartItems, selectCartTotals} from './cartSelectors';
 import {
   addToCartApi,
@@ -195,6 +200,53 @@ const mapApiCartItem = (item: any): CartItem => {
   };
 };
 
+const toOptionalNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const parseCartResponse = (
+  response: any,
+): {items: any[] | null; summary: CartSummary | null} => {
+  const candidates = [
+    response?.data?.data,
+    response?.data,
+    response,
+  ];
+  const cartData = candidates.find(
+    candidate =>
+      Array.isArray(candidate) ||
+      Array.isArray(candidate?.items) ||
+      Array.isArray(candidate?.cart),
+  );
+
+  if (!cartData) {
+    return {items: null, summary: null};
+  }
+
+  if (Array.isArray(cartData)) {
+    return {items: cartData, summary: null};
+  }
+
+  const summary: CartSummary = {
+    totalItems: toOptionalNumber(cartData.total_items),
+    totalQty: toOptionalNumber(cartData.total_qty),
+    totalPrice: toOptionalNumber(cartData.total_price),
+    gstRate: toOptionalNumber(cartData.gst_rate),
+    gstAmount: toOptionalNumber(cartData.gst_amount),
+    grandTotal: toOptionalNumber(cartData.grand_total),
+  };
+  const hasSummary = Object.values(summary).some(value => value !== undefined);
+
+  return {
+    items: cartData.items ?? cartData.cart,
+    summary: hasSummary ? summary : null,
+  };
+};
+
 const findCartItem = (items: CartItem[], id: string | number) =>
   items.find(
     item =>
@@ -224,13 +276,15 @@ export const useCart = () => {
       try {
         dispatch(setCartLoading(true));
         const res = await getCart(force);
-        const data = res?.data ?? res;
-        const list = Array.isArray(data)
-          ? data
-          : data?.items ?? data?.cart ?? data?.data ?? [];
-        const mappedItems = list.map(mapApiCartItem);
+        const cartResponse = parseCartResponse(res);
+        const mappedItems = (cartResponse.items ?? []).map(mapApiCartItem);
         const enrichedItems = await enrichCartItems(mappedItems);
-        dispatch(setCartItems(enrichedItems));
+        dispatch(
+          setCartData({
+            items: enrichedItems,
+            summary: cartResponse.summary,
+          }),
+        );
         return true;
       } catch (error) {
         if (!silent) {
@@ -244,8 +298,7 @@ export const useCart = () => {
         dispatch(setCartLoading(false));
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fetchCart],
+    [dispatch],
   );
 
   const add = useCallback(
@@ -261,13 +314,25 @@ export const useCart = () => {
         rateChartId !== null &&
         Boolean(String(rateChartId).trim());
       try {
-        await addToCartApi({
+        const response = await addToCartApi({
           product_id: productId,
           ...(hasRateChartId ? {rate_chart_id: rateChartId} : {}),
           ...(!hasRateChartId && size ? {size} : {}),
           qty: quantity,
         });
-        await fetchCart(true);
+        const cartResponse = parseCartResponse(response);
+        if (cartResponse.items) {
+          const mappedItems = cartResponse.items.map(mapApiCartItem);
+          const enrichedItems = await enrichCartItems(mappedItems);
+          dispatch(
+            setCartData({
+              items: enrichedItems,
+              summary: cartResponse.summary,
+            }),
+          );
+        } else {
+          await fetchCart(true);
+        }
         showCartNotification({id: productId, name: product.name, image: product.image});
         return true;
       } catch (error) {
@@ -278,8 +343,7 @@ export const useCart = () => {
         return false;
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [fetchCart],
+    [dispatch, fetchCart, showCartNotification],
   );
 
   const removeItem = useCallback(

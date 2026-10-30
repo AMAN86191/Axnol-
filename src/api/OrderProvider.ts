@@ -299,6 +299,10 @@ export const confirmOrder = async (
 ): Promise<ConfirmOrderResponse> => {
   try {
     const response = await api.post('/orders/confirm', payload);
+    console.log(
+      '[Order API] POST /orders/confirm response:',
+      JSON.stringify(response.data, null, 2),
+    );
     invalidateRequests('/orders');
     // Placing an order empties the server-side cart.
     invalidateRequests('/cart');

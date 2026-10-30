@@ -42,6 +42,10 @@ rate_chart_id?: number | string;
 }): Promise<any> => {
   try {
     const response = await api.post('/cart', payload);
+    console.log(
+      '[Cart API] POST /cart response:',
+      JSON.stringify(response.data, null, 2),
+    );
     invalidateRequests('/cart');
     return response.data;
   } catch (error: any) {

@@ -784,8 +784,8 @@ export const ProductDetailsScreen: React.FC = () => {
                 disabled={addingToCart}
                 accessibilityRole="button"
                 accessibilityState={{disabled: addingToCart}}
-                onPress={handleRequestPrice}>
-                <Text style={styles.buyNowText}>Check out</Text>
+                onPress={handleBuyNow}>
+                <Text style={styles.buyNowText}>Buy Now</Text>
                 <ArrowRight
                   size={scale(16)}
                   color={colors.textInverse}

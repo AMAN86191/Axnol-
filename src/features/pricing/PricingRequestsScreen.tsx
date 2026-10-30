@@ -49,6 +49,9 @@ import { useCart } from '../cart/useCart';
 
 const MIN_QUANTITY = 1;
 
+const formatCheckoutPrice = (value: number): string =>
+  `₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+
 interface SubmitSuccessModalProps {
   visible: boolean;
   onOrderHistory: () => void;
@@ -245,7 +248,7 @@ export const PricingRequestsScreen: React.FC = () => {
   const productName = directProductName;
   const category = directCategory;
   const price = directPrice;
-
+console.log('user :', user);
   const companyFromUser =
     (typeof user?.company === 'string'
       ? user.company
@@ -324,9 +327,19 @@ export const PricingRequestsScreen: React.FC = () => {
     : price != null && validQty > 0
     ? price * validQty
     : null;
-  const gstRate = 18;
-  const gstAmount = basePrice != null ? Math.round((basePrice * gstRate) / 100) : null;
-  const calculatedPrice = basePrice != null && gstAmount != null ? basePrice + gstAmount : null;
+  const gstRate = isCartCheckout ? cartTotals.gstRate : 18;
+  const gstAmount =
+    basePrice == null
+      ? null
+      : isCartCheckout
+      ? cartTotals.gstAmount
+      : Math.round((basePrice * gstRate) / 100);
+  const calculatedPrice =
+    basePrice == null || gstAmount == null
+      ? null
+      : isCartCheckout
+      ? cartTotals.total
+      : basePrice + gstAmount;
 
   const orderItems: ConfirmOrderItem[] = isCartCheckout
     ? cartItems
@@ -419,7 +432,6 @@ export const PricingRequestsScreen: React.FC = () => {
           remark: remark.trim(),
         }),
       ).unwrap();
-      console.log('Confirm order response :', response);
       if (response?.status !== true) {
         throw new Error(
           response?.message || 'Unable to confirm your order. Please try again.',
@@ -481,7 +493,10 @@ export const PricingRequestsScreen: React.FC = () => {
 
         {isCartCheckout ? (
           <View style={styles.productCard}>
-            <Text style={styles.sectionTitle}>Order Items</Text>
+            <Text style={styles.sectionTitle}>
+              Order Items ({cartTotals.uniqueCount} products,{' '}
+              {cartTotals.itemCount} units)
+            </Text>
             {cartLoading && cartItems.length === 0 ? (
               <ActivityIndicator
                 style={styles.cartLoader}
@@ -516,13 +531,13 @@ export const PricingRequestsScreen: React.FC = () => {
                       ) : null}
                       <View style={styles.cartPriceRow}>
                         <Text style={styles.cartUnitPrice}>
-                          {formatPrice(item.price)} each
+                          {formatCheckoutPrice(item.price)} each
                         </Text>
                         <Text style={styles.productPriceUnit}>
                           Qty: {item.quantity}
                         </Text>
                         <Text style={styles.productPrice}>
-                          {formatPrice(
+                          {formatCheckoutPrice(
                             item.lineTotal ?? item.price * item.quantity,
                           )}
                         </Text>
@@ -534,11 +549,12 @@ export const PricingRequestsScreen: React.FC = () => {
                   <View style={{flex: 1}}>
                     <Text style={styles.cartTotalLabel}>Order Total (Incl. GST)</Text>
                     <Text style={styles.cartTotalSub}>
-                      Subtotal {formatPrice(cartTotals.subtotal)} + GST {gstRate}% {formatPrice(gstAmount ?? 0)}
+                      Subtotal {formatCheckoutPrice(cartTotals.subtotal)} + GST{' '}
+                      {gstRate}% {formatCheckoutPrice(gstAmount ?? 0)}
                     </Text>
                   </View>
                   <Text style={styles.cartTotalValue}>
-                    {formatPrice(calculatedPrice ?? cartTotals.subtotal)}
+                    {formatCheckoutPrice(calculatedPrice ?? cartTotals.subtotal)}
                   </Text>
                 </View>
               </>
