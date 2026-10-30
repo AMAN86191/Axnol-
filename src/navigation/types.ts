@@ -50,7 +50,11 @@ export type HomeStackParamList = {
       }
     | undefined;
   Industries: undefined;
-  IndustryDetails: {industryId: string; industryTitle?: string};
+  IndustryDetails: {
+    industryId: string;
+    industryTitle?: string;
+    industrybrochure?: string;
+  };
   Categories: {industryId?: string; industryName?: string} | undefined;
 };
 
@@ -75,7 +79,11 @@ export type CatalogueStackParamList = {
     | undefined;
   ProductDetails: {productId: string};
   Industries: undefined;
-  IndustryDetails: {industryId: string; industryTitle?: string};
+  IndustryDetails: {
+    industryId: string;
+    industryTitle?: string;
+    industrybrochure?: string;
+  };
   Categories: {industryId?: string; industryName?: string} | undefined;
   SubCategories: {
     categoryId: string;

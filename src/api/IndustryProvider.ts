@@ -8,6 +8,7 @@ export interface Industry {
   btn_text: string | null;
   btn_link: string | null;
   image_url: string | null;
+  brochure_url?: string | null;
 }
 
 export interface IndustryDetails extends Industry {

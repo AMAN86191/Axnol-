@@ -250,7 +250,7 @@ export const ProductDetailsScreen: React.FC = () => {
     id: String(productDetail?.id ?? productId ?? ''),
     name: productDetail?.name ?? 'Product',
     subtitle: categoryName || productDetail?.sub_category?.title || 'Product Details',
-    images: hasApiImages ? apiImages : ['product_generic'],
+    images: hasApiImages ? apiImages : [],
     tags: apiTags.length ? apiTags : [],
     description: apiDescription || '',
     packSizes: packSizesFromApi.length ? packSizesFromApi : [defaultPack],
@@ -260,6 +260,42 @@ export const ProductDetailsScreen: React.FC = () => {
     extraInfo: apiExtraInfo,
   };
 
+  const documents = [
+    productDetail?.technical_datasheet_url
+      ? {
+          key: 'technical',
+          title: productDetail?.technical_datasheet_name || 'Technical Datasheet',
+          url: productDetail.technical_datasheet_url,
+          color: '#2563EB',
+          bg: '#DBEAFE',
+        }
+      : null,
+    productDetail?.msds_url
+      ? {
+          key: 'msds',
+          title: productDetail?.msds_name || 'Material Safety Data Sheet',
+          url: productDetail.msds_url,
+          color: '#EF4444',
+          bg: '#FEE2E2',
+        }
+      : null,
+    productDetail?.brochure_url
+      ? {
+          key: 'brochure',
+          title: 'Product Brochure',
+          url: productDetail.brochure_url,
+          color: '#22C55E',
+          bg: '#DCFCE7',
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    key: string;
+    title: string;
+    url: string;
+    color: string;
+    bg: string;
+  }>;
+
   useEffect(() => {
     if (product.packSizes.length > 0) {
       if (!product.packSizes.includes(selectedPack)) {
@@ -267,6 +303,28 @@ export const ProductDetailsScreen: React.FC = () => {
       }
     }
   }, [product.packSizes, selectedPack]);
+
+  useEffect(() => {
+    if (activeTab === 'overview' && !product.description) {
+      if (product.extraInfo) {
+        setActiveTab('specifications');
+      } else if (documents.length > 0) {
+        setActiveTab('documents');
+      }
+    } else if (activeTab === 'specifications' && !product.extraInfo) {
+      if (product.description) {
+        setActiveTab('overview');
+      } else if (documents.length > 0) {
+        setActiveTab('documents');
+      }
+    } else if (activeTab === 'documents' && documents.length === 0) {
+      if (product.description) {
+        setActiveTab('overview');
+      } else if (product.extraInfo) {
+        setActiveTab('specifications');
+      }
+    }
+  }, [activeTab, product.description, product.extraInfo, documents.length]);
 
   const discount =
     product.mrp > product.price && product.price > 0
@@ -311,42 +369,6 @@ export const ProductDetailsScreen: React.FC = () => {
     );
   };
 
-  const documents = [
-    productDetail?.technical_datasheet_url
-      ? {
-          key: 'technical',
-          title: productDetail?.technical_datasheet_name || 'Technical Datasheet',
-          url: productDetail.technical_datasheet_url,
-          color: '#2563EB',
-          bg: '#DBEAFE',
-        }
-      : null,
-    productDetail?.msds_url
-      ? {
-          key: 'msds',
-          title: productDetail?.msds_name || 'Material Safety Data Sheet',
-          url: productDetail.msds_url,
-          color: '#EF4444',
-          bg: '#FEE2E2',
-        }
-      : null,
-    productDetail?.brochure_url
-      ? {
-          key: 'brochure',
-          title: 'Product Brochure',
-          url: productDetail.brochure_url,
-          color: '#22C55E',
-          bg: '#DCFCE7',
-        }
-      : null,
-  ].filter(Boolean) as Array<{
-    key: string;
-    title: string;
-    url: string;
-    color: string;
-    bg: string;
-  }>;
-
   const openDocument = (url: string) => {
     Linking.openURL(url).catch(() => toast.error('Error', 'Unable to open document.'));
   };
@@ -356,7 +378,7 @@ export const ProductDetailsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <CommonHeader
-        title="Product Details"
+        title="Product"
         right={
           <>
             <TouchableOpacity
@@ -467,116 +489,114 @@ export const ProductDetailsScreen: React.FC = () => {
             ) : null}
 
             {/* Horizontal Underlined Tabs */}
-            <View style={styles.tabsRow}>
-              <TouchableOpacity
-                style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
-                activeOpacity={0.7}
-                onPress={() => setActiveTab('overview')}>
-                <Text
-                  style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
-                  Overview
-                </Text>
-              </TouchableOpacity>
+            {(!!product.description || !!product.extraInfo || documents.length > 0) && (
+              <View style={styles.tabsRow}>
+                {!!product.description && (
+                  <TouchableOpacity
+                    style={[styles.tabItem, activeTab === 'overview' && styles.tabItemActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setActiveTab('overview')}>
+                    <Text
+                      style={[styles.tabText, activeTab === 'overview' && styles.tabTextActive]}>
+                      Overview
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-              <TouchableOpacity
-                style={[styles.tabItem, activeTab === 'specifications' && styles.tabItemActive]}
-                activeOpacity={0.7}
-                onPress={() => setActiveTab('specifications')}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === 'specifications' && styles.tabTextActive,
-                  ]}>
-                  Specifications
-                </Text>
-              </TouchableOpacity>
+                {!!product.extraInfo && (
+                  <TouchableOpacity
+                    style={[styles.tabItem, activeTab === 'specifications' && styles.tabItemActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setActiveTab('specifications')}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        activeTab === 'specifications' && styles.tabTextActive,
+                      ]}>
+                      Specifications
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-              <TouchableOpacity
-                style={[styles.tabItem, activeTab === 'documents' && styles.tabItemActive]}
-                activeOpacity={0.7}
-                onPress={() => setActiveTab('documents')}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    activeTab === 'documents' && styles.tabTextActive,
-                  ]}>
-                  Documents
-                </Text>
-              </TouchableOpacity>
-            </View>
+                {documents.length > 0 && (
+                  <TouchableOpacity
+                    style={[styles.tabItem, activeTab === 'documents' && styles.tabItemActive]}
+                    activeOpacity={0.7}
+                    onPress={() => setActiveTab('documents')}>
+                    <Text
+                      style={[
+                        styles.tabText,
+                        activeTab === 'documents' && styles.tabTextActive,
+                      ]}>
+                      Documents
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
 
             {/* Tab Content */}
-            {activeTab === 'overview' && (
+            {activeTab === 'overview' && !!product.description && (
               <View style={styles.tabContentBlock}>
-                {product.description ? (
-                  <RenderHtml
-                    contentWidth={width - scale(48)}
-                    source={{ html: product.description }}
-                    tagsStyles={{
-                      body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700' },
-                      h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700' },
-                      h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700' },
-                      li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      ul: { marginLeft: scale(4) },
-                      strong: { fontWeight: '700', color: '#0F172A' },
-                    }}
-                  />
-                ) : null}
+                <RenderHtml
+                  contentWidth={width - scale(48)}
+                  source={{ html: product.description }}
+                  tagsStyles={{
+                    body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700', textAlign: 'justify' },
+                    h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700', textAlign: 'justify' },
+                    h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700', textAlign: 'justify' },
+                    li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    ul: { marginLeft: scale(4) },
+                    strong: { fontWeight: '700', color: '#0F172A' },
+                  }}
+                />
               </View>
             )}
 
-            {activeTab === 'specifications' && (
+            {activeTab === 'specifications' && !!product.extraInfo && (
               <View style={styles.tabContentBlock}>
-                {product.extraInfo ? (
-                  <RenderHtml
-                    contentWidth={width - scale(48)}
-                    source={{ html: product.extraInfo }}
-                    tagsStyles={{
-                      body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700' },
-                      h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700' },
-                      h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700' },
-                      li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21) },
-                      ul: { marginLeft: scale(4) },
-                      ol: { marginLeft: scale(4) },
-                      strong: { fontWeight: '700', color: '#0F172A' },
-                    }}
-                  />
-                ) : (
-                  <Text style={styles.specLabel}>No specifications available.</Text>
-                )}
+                <RenderHtml
+                  contentWidth={width - scale(48)}
+                  source={{ html: product.extraInfo }}
+                  tagsStyles={{
+                    body: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    p: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    h1: { color: '#0F172A', fontSize: scale(16), fontWeight: '700', textAlign: 'justify' },
+                    h2: { color: '#0F172A', fontSize: scale(15), fontWeight: '700', textAlign: 'justify' },
+                    h3: { color: '#0F172A', fontSize: scale(14), fontWeight: '700', textAlign: 'justify' },
+                    li: { color: '#334155', fontSize: scale(13), lineHeight: scale(21), textAlign: 'justify' },
+                    ul: { marginLeft: scale(4) },
+                    ol: { marginLeft: scale(4) },
+                    strong: { fontWeight: '700', color: '#0F172A' },
+                  }}
+                />
               </View>
             )}
 
-            {activeTab === 'documents' && (
+            {activeTab === 'documents' && documents.length > 0 && (
               <View style={styles.documentsWrap}>
-                {documents.length > 0 ? (
-                  documents.map(doc => (
-                    <View key={doc.key} style={styles.msdsCard}>
-                      <View style={[styles.msdsIconWrap, { backgroundColor: doc.bg }]}>
-                        <FileText size={scale(22)} color={doc.color} strokeWidth={2} />
-                      </View>
-                      <View style={styles.msdsInfo}>
-                        <Text style={styles.msdsTitle} numberOfLines={2}>
-                          {doc.title}
-                        </Text>
-                        <Text style={styles.msdsSubtitle}>PDF</Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.pdfBtn, { backgroundColor: doc.color }]}
-                        activeOpacity={0.8}
-                        onPress={() => openDocument(doc.url)}>
-                        <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
-                        <Text style={styles.pdfBtnText}>View</Text>
-                      </TouchableOpacity>
+                {documents.map(doc => (
+                  <View key={doc.key} style={styles.msdsCard}>
+                    <View style={[styles.msdsIconWrap, { backgroundColor: doc.bg }]}>
+                      <FileText size={scale(22)} color={doc.color} strokeWidth={2} />
                     </View>
-                  ))
-                ) : (
-                  <Text style={styles.specLabel}>No documents available.</Text>
-                )}
+                    <View style={styles.msdsInfo}>
+                      <Text style={styles.msdsTitle} numberOfLines={2}>
+                        {doc.title}
+                      </Text>
+                      <Text style={styles.msdsSubtitle}>PDF</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.pdfBtn, { backgroundColor: doc.color }]}
+                      activeOpacity={0.8}
+                      onPress={() => openDocument(doc.url)}>
+                      <Download size={scale(14)} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={styles.pdfBtnText}>View</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
             )}
 
@@ -584,7 +604,7 @@ export const ProductDetailsScreen: React.FC = () => {
             {/* Available Pack Sizes */}
             {product.packSizes.length > 0 ? (
               <View style={styles.packSection}>
-                <Text style={styles.packHeading}>Available Pack Sizes</Text>
+                <Text style={styles.packHeading}>Available Sizes</Text>
                 <View style={styles.packRow}>
                   {product.packSizes.map(size => {
                     const selected = size === selectedPack;
@@ -612,7 +632,7 @@ export const ProductDetailsScreen: React.FC = () => {
             <View style={styles.qtySection}>
               <View style={styles.qtyInfo}>
                 <Text style={styles.qtyTitle}>Quantity</Text>
-                <Text style={styles.qtyHint}>Select number of packs</Text>
+                <Text style={styles.qtyHint}>Select product quantity</Text>
               </View>
 
               <EditableQuantity
@@ -1165,7 +1185,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   goToCartBtn: {
-    width: '70%',
+    width: '65%',
     height: scale(44),
     paddingHorizontal: scale(10),
     borderRadius: radius.md,

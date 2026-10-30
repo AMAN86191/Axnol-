@@ -465,7 +465,7 @@ export const PricingRequestsScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
 
-      <CommonHeader title={isCartCheckout ? 'Checkout' : 'Request a Quote'} />
+      <CommonHeader title={'Checkout'} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -568,7 +568,7 @@ export const PricingRequestsScreen: React.FC = () => {
                       <Text style={styles.productPrice}>
                         {formatPrice(calculatedPrice ?? price)}
                       </Text>
-                      <Text style={styles.productPriceUnit}>Qty: {quantity}</Text>
+                      <Text style={styles.productPriceUnit}> Qty: {quantity}</Text>
                     </View>
                     <View
                       style={[
@@ -748,7 +748,7 @@ export const PricingRequestsScreen: React.FC = () => {
             {/* Remark (Optional) */}
             <Input
               label="Remark (Optional)"
-              placeholder="Urgent delivery"
+              placeholder="Add any special instructions."
               variant="clean"
               leftIcon={MessageSquare}
               multiline

@@ -95,7 +95,7 @@ export const IndustryDetailsScreen: React.FC = () => {
   const industryDetail = useAppSelector(s => s.industry.industryDetail);
   const detailLoading = useAppSelector(s => s.industry.detailLoading);
   const detailError = useAppSelector(s => s.industry.detailError);
-  const {industryId, industryTitle} = params;
+  const {industryId, industryTitle, industrybrochure} = params;
   const [expanded, setExpanded] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] =
     useState(ALL_FILTER_ID);
@@ -120,6 +120,7 @@ export const IndustryDetailsScreen: React.FC = () => {
     setProductsError(null);
     try {
       const res = await getProducts({industryId});
+      console.log(' Industry details data :', res);
       const data: any = res?.data ?? res;
       const list = Array.isArray(data)
         ? data
@@ -152,10 +153,11 @@ export const IndustryDetailsScreen: React.FC = () => {
 
   const {refreshing, onRefresh} = useRefresh(refreshScreen);
 
-  const title = industryDetail?.title ?? industryTitle ?? 'Industry';
+  const title = industryDetail?.title ?? industryTitle ?? 'Industry Details';
   const image = industryDetail?.image_url ?? '';
   const description = stripHtml(industryDetail?.description);
-
+  const brochureUrl =
+    industryDetail?.brochure_url?.trim() || industrybrochure?.trim() || '';
   const categories = useMemo<IndustryCategory[]>(() => {
     const list = industryDetail?.categories;
     return Array.isArray(list) ? (list as IndustryCategory[]) : [];
@@ -346,7 +348,7 @@ export const IndustryDetailsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <CommonHeader
-        title="Industry Details"
+        title={title}
         onBack={() => navigation.goBack()}
       />
 
@@ -377,6 +379,7 @@ export const IndustryDetailsScreen: React.FC = () => {
             height={scale(176)}
             showAccentLine={false}
             buttonAlign="left"
+           brochureUrl={brochureUrl}
           />
         )}
 
@@ -500,7 +503,7 @@ export const IndustryDetailsScreen: React.FC = () => {
 
         <View style={styles.productsHeader}>
           <Text style={styles.productsTitle}>Products</Text>
-          <Text style={styles.productsCount}>{filteredProducts.length}</Text>
+          {/* <Text style={styles.productsCount}>{filteredProducts.length}</Text> */}
         </View>
 
         {productsLoading && allProducts.length === 0 ? (

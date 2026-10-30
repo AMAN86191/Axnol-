@@ -60,6 +60,7 @@ export const IndustriesScreen: React.FC = () => {
       id: String(item.id),
       name: item.title,
       image: item.image_url ?? '',
+      brochure_url: item.brochure_url ?? '',
     }))
     .filter(item => Boolean(item.image && item.image.trim()));
 
@@ -119,6 +120,7 @@ export const IndustriesScreen: React.FC = () => {
                         navigation.navigate('IndustryDetails', {
                           industryId: item.id,
                           industryTitle: item.name,
+                          industrybrochure: item.brochure_url,
                         })
                       }
                     >

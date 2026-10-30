@@ -130,7 +130,7 @@ export const LoginScreen: React.FC = () => {
           {/* Title Section */}
           <View style={styles.titleSection}>
             <Text style={styles.eyebrow}>WELCOME BACK</Text>
-            <Text style={styles.title}>Login to Your Account</Text>
+            <Text style={styles.title}>Login To Your Account</Text>
             <Text style={styles.subtitle}>
               Access your products, orders, invoices and more.
             </Text>
