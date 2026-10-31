@@ -42,6 +42,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   style,
   gradientImage = false,
 }) => {
+  const price = Number(product.price);
+
+  if (!Number.isFinite(price) || price <= 0) {
+    return null;
+  }
   const cartProduct = {
     id: product.id,
     name: product.name,

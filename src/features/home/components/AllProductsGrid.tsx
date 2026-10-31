@@ -33,9 +33,13 @@ export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
   onSeeAll,
   onPress,
 }) => {
-  const rows = chunk(products, 2);
-  const showError = !loading && products.length === 0 && Boolean(errorMessage);
-  const isEmpty = !loading && !showError && products.length === 0;
+  const visibleProducts = React.useMemo(
+    () => (products || []).filter(p => Number((p as any).price) > 0),
+    [products],
+  );
+  const rows = chunk(visibleProducts, 2);
+  const showError = !loading && visibleProducts.length === 0 && Boolean(errorMessage);
+  const isEmpty = !loading && !showError && visibleProducts.length === 0;
 
   return (
     <View>
@@ -46,12 +50,12 @@ export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
             ? 'Unable to load right now'
             : isEmpty
             ? 'Please check back later'
-            : `${products.length}+ items in catalogue`
+            : `${visibleProducts.length}+ items in catalogue`
         }
         onAction={isEmpty || showError ? undefined : onSeeAll}
       />
 
-      {loading && products.length === 0 ? (
+      {loading && visibleProducts.length === 0 ? (
         <ProductGridSkeleton count={4} />
       ) : showError ? (
         <SectionEmptyState
@@ -74,7 +78,6 @@ export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
                   onPress={() => onPress(prod)}
                 />
               ))}
-              {row.length === 1 && <View style={styles.cardPlaceholder} />}
             </View>
           ))}
         </View>

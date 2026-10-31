@@ -4,6 +4,7 @@ import {
   deleteAccount,
   loginUser,
   registerUser,
+  removeProfileImage,
   resendOtp,
   updateProfile,
   verifyOtp,
@@ -99,6 +100,33 @@ export const updateProfileSlice = createAsyncThunk(
   },
 );
 
+export const removeProfileImageSlice = createAsyncThunk(
+  'auth/removeProfileImageSlice',
+  async (_, {rejectWithValue, getState}) => {
+    try {
+      const res = await removeProfileImage();
+      const data = res?.data ?? res;
+      const responseUser = data?.user ?? data?.data?.user;
+      const currentUser =
+        (getState() as {auth?: {user?: Record<string, any>}}).auth?.user ?? {};
+      const user = {
+        ...currentUser,
+        ...(responseUser && typeof responseUser === 'object'
+          ? responseUser
+          : {}),
+        profile_pic_url: null,
+        profile_pic: null,
+        avatar: null,
+      };
+      await AsyncStorage.setItem('axnol_user', JSON.stringify(user));
+      invalidateRequests('/profile');
+      return user;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 export const changePasswordSlice = createAsyncThunk(
   'auth/changePasswordSlice',
   async (
@@ -136,6 +164,7 @@ const authSlice = createSlice({
   name: 'auth',
   initialState: {
     loading: false,
+    removingProfileImage: false,
     error: null as any,
     user: null as any,
     token: null as string | null,
@@ -214,6 +243,18 @@ const authSlice = createSlice({
       })
       .addCase(updateProfileSlice.rejected, (state, action) => {
         state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(removeProfileImageSlice.pending, state => {
+        state.removingProfileImage = true;
+        state.error = null;
+      })
+      .addCase(removeProfileImageSlice.fulfilled, (state, action) => {
+        state.removingProfileImage = false;
+        state.user = action.payload;
+      })
+      .addCase(removeProfileImageSlice.rejected, (state, action) => {
+        state.removingProfileImage = false;
         state.error = action.payload;
       })
       .addCase(changePasswordSlice.pending, state => {

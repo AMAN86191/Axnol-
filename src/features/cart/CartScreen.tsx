@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ShoppingBag} from 'lucide-react-native';
+import {ShoppingBag, Trash2} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Image} from 'react-native';
 import Button from '../../components/ui/Button';
@@ -139,15 +139,14 @@ export const CartScreen: React.FC = () => {
                       ) : null}
                     </View>
                   </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.removeBtn}
-                    activeOpacity={0.7}
-                    hitSlop={{top: 4, bottom: 4, left: 4, right: 4}}
-                    onPress={() => remove(item.cartItemId ?? item.id)}>
-                    <Text style={styles.removeText}>Remove</Text>
-                  </TouchableOpacity>
                 </View>
+                <TouchableOpacity
+                  style={styles.removeIconBtn}
+                  activeOpacity={0.7}
+                  hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
+                  onPress={() => remove(item.cartItemId ?? item.id)}>
+                  <Trash2 size={scale(16)} color="#EF4444" strokeWidth={2.2} />
+                </TouchableOpacity>
               </View>
 
               <View style={styles.cardDivider} />
@@ -157,9 +156,15 @@ export const CartScreen: React.FC = () => {
                   <Text style={styles.qtyLabel}>Qty</Text>
                   <EditableQuantity
                     value={item.quantity}
-                    onChange={next =>
-                      setQuantity(item.cartItemId ?? item.id, next)
-                    }
+                    min={0}
+                    onChange={next => {
+                      const id = item.cartItemId ?? item.id;
+                      if (next <= 0) {
+                        remove(id);
+                      } else {
+                        setQuantity(id, next);
+                      }
+                    }}
                   />
                 </View>
 
@@ -288,6 +293,8 @@ const styles = StyleSheet.create({
   cardTop: {
     flexDirection: 'row',
     gap: spacing.md,
+    position: 'relative',
+    paddingRight: scale(30),
   },
   imageWrap: {
     width: scale(80),
@@ -334,21 +341,16 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     marginLeft: scale(6),
   },
-  removeBtn: {
-    flexDirection: 'row',
+  removeIconBtn: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: scale(26),
+    height: scale(26),
+    borderRadius: scale(13),
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: scale(3),
-    marginTop: scale(6),
-    // paddingVertical: scale(1),
-    paddingHorizontal: scale(7),
-    borderRadius: radius.pill,
-    backgroundColor: '#fbfbfb',
-  },
-  removeText: {
-    fontSize: scale(9.5),
-    fontWeight: '700',
-    color: "#000",
+    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
   },
   cardDivider: {
     height: 1,

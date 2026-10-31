@@ -10,6 +10,7 @@ export const getProductListKey = (params?: Record<string, any>): string =>
     params?.industryId ?? params?.industry_id ?? null,
     params?.categoryId ?? params?.category_id ?? null,
     params?.subCategoryId ?? params?.sub_category_id ?? null,
+    params?.sort && params.sort !== 'newest' ? params.sort : null,
   ]);
 
 export const fetchProductsSlice = createAsyncThunk(

@@ -33,6 +33,9 @@ export interface ConfirmedOrder {
   invoice_number: string;
   status: string;
   payment_status: string;
+  subtotal?: number;
+  gst_rate?: number;
+  gst_amount?: number;
   total_amount: number;
   total_qty: number;
   items: ConfirmedOrderItem[];
@@ -73,6 +76,9 @@ export interface OrderRecord {
   orderNumber: string;
   status: string;
   paymentStatus: string;
+  subtotal: number;
+  gstRate: number;
+  gstAmount: number;
   totalAmount: number;
   totalQty: number;
   items: OrderItemRecord[];
@@ -209,6 +215,12 @@ const normalizeOrder = (raw: any): OrderRecord => {
       raw?.payment_status ?? raw?.paymentStatus ?? raw?.payment,
       'unpaid',
     ),
+    subtotal:
+      raw?.subtotal !== undefined && raw?.subtotal !== null
+        ? toNumber(raw.subtotal)
+        : itemsTotal,
+    gstRate: toNumber(raw?.gst_rate ?? raw?.gstRate),
+    gstAmount: toNumber(raw?.gst_amount ?? raw?.gstAmount),
     totalAmount:
       toNumber(
         raw?.total_amount ??
@@ -278,6 +290,10 @@ export const getOrderById = async (
       force,
       request: async () => {
         const response = await api.get(`/orders/${orderId}`);
+        console.log(
+          `[Order API] GET /orders/${orderId} response:`,
+          JSON.stringify(response.data, null, 2),
+        );
         const payload = response.data?.data ?? response.data;
         const raw =
           payload?.order ?? payload?.data?.order ?? payload?.data ?? payload;

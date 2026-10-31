@@ -1,5 +1,8 @@
 import api from './axiosConfig';
 import {cachedRequest} from './requestCache';
+import {toProductApiParams} from './productQueryParams';
+
+export {toProductApiParams} from './productQueryParams';
 
 export interface ProductApi {
   id: number;
@@ -34,24 +37,6 @@ export interface ProductDetailResponse {
   status: boolean;
   data: ProductApi;
 }
-
-const PRODUCT_FILTER_ALIASES: Record<string, string> = {
-  industryId: 'industry_id',
-  categoryId: 'category_id',
-  subCategoryId: 'sub_category_id',
-};
-
-const toProductApiParams = (params?: Record<string, any>) => {
-  const apiParams: Record<string, any> = {...(params ?? {})};
-  Object.entries(PRODUCT_FILTER_ALIASES).forEach(([camelKey, snakeKey]) => {
-    const value = apiParams[camelKey];
-    if (value !== undefined && value !== null && value !== '') {
-      apiParams[snakeKey] = value;
-    }
-    delete apiParams[camelKey];
-  });
-  return apiParams;
-};
 
 export const getProducts = async (
   params?: Record<string, any>,

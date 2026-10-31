@@ -26,7 +26,6 @@ import {
   CalendarDays,
   ClipboardCheck,
   Clock,
-  FileDown,
   MapPin,
   Package,
   PackageCheck,
@@ -37,14 +36,13 @@ import type { LucideIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrdersStackParamList } from '../../navigation/types';
 import {Image} from 'react-native';
-import { colors, radius, rfValue, scale, shadows, spacing } from '../../theme';
+import { colors, radius, scale, shadows, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import OrderDetailsSkeleton from './components/OrderDetailsSkeleton';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrderDetailSlice } from '../../redux/OrderSlice';
 import { invalidateRequests } from '../../api/requestCache';
 import { OrderRecord } from '../../api/OrderProvider';
-import { formatPrice } from '../../utils/formatPrice';
 import {
   formatOrderDateTime,
   formatStatusLabel,
@@ -55,11 +53,13 @@ import {
   getStatusBadgeStyle,
   statusKey,
 } from './orderUtils';
-import {Download} from 'lucide-react-native';
 import {downloadInvoice} from '../../utils/invoiceGenerator';
 import Button from '../../components/ui/Button';
 
 type Route = RouteProp<OrdersStackParamList, 'OrderDetails'>;
+
+const formatOrderPrice = (value: number): string =>
+  `₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
 
 type TimelineState = 'completed' | 'current' | 'upcoming' | 'cancelled';
 
@@ -300,7 +300,7 @@ export const OrderDetailsScreen: React.FC = () => {
   const order = useAppSelector(state => state.order.orderDetail);
   const loading = useAppSelector(state => state.order.orderDetailLoading);
   const error = useAppSelector(state => state.order.orderDetailError);
-
+console.log('order Details :', order);
   const fetchOrder = useCallback(
     (force = false) => {
       if (!orderId) return Promise.resolve();
@@ -361,19 +361,20 @@ export const OrderDetailsScreen: React.FC = () => {
   const badge = getStatusBadgeStyle(order.status);
   const paymentBadge = getStatusBadgeStyle(order.paymentStatus);
   const timeline = getOrderTimeline(order);
-  const subtotal = getOrderItemsTotal(order);
-  const total = order.totalAmount || subtotal;
+  const subtotal = order.subtotal ?? getOrderItemsTotal(order);
+  const total = order.totalAmount ?? subtotal;
   const totalQty = getOrderQty(order);
   const address = getOrderAddress(order);
   const addressLines = [
     order.companyName,
     address,
     order.phone ? `Phone: ${order.phone}` : '',
+    order.email ? `Email: ${order.email}` : '',
   ].filter(Boolean);
 
   const handleDownloadInvoice = async () => {
     try {
-      const result = await downloadInvoice(order);
+      await downloadInvoice(order);
       // if (result.success) {
       //   Alert.alert('Invoice Downloaded', 'Invoice saved successfully on this device.');
       // } else {
@@ -431,7 +432,7 @@ export const OrderDetailsScreen: React.FC = () => {
           <View style={styles.heroBottomRow}>
             <View>
               <Text style={styles.heroTotalLabel}>Total Amount</Text>
-              <Text style={styles.heroTotal}>{formatPrice(total)}</Text>
+              <Text style={styles.heroTotal}>{formatOrderPrice(total)}</Text>
             </View>
             <View style={styles.heroItemsPill}>
               <Package size={scale(10.5)} color="#FFFFFF" strokeWidth={1.5} />
@@ -485,11 +486,11 @@ export const OrderDetailsScreen: React.FC = () => {
                       <Text style={styles.itemMeta}>
                         Qty {item.qty}
                         {item.size ? ` • ${item.size}` : ''} •{' '}
-                        {formatPrice(item.unitPrice)}/unit
+                        {formatOrderPrice(item.unitPrice)}/unit
                       </Text>
                     </View>
                     <Text style={styles.itemTotal}>
-                      {formatPrice(lineTotal)}
+                      {formatOrderPrice(lineTotal)}
                     </Text>
                   </View>
                 );
@@ -503,7 +504,15 @@ export const OrderDetailsScreen: React.FC = () => {
           <View style={styles.panel}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Items Subtotal</Text>
-              <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
+              <Text style={styles.summaryValue}>{formatOrderPrice(subtotal)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>
+                GST ({order.gstRate}%)
+              </Text>
+              <Text style={styles.summaryValue}>
+                {formatOrderPrice(order.gstAmount)}
+              </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Quantity</Text>
@@ -520,7 +529,7 @@ export const OrderDetailsScreen: React.FC = () => {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryTotalLabel}>Total</Text>
               <Text style={styles.summaryTotalValue}>
-                {formatPrice(total)}
+                {formatOrderPrice(total)}
               </Text>
             </View>
           </View>
