@@ -15,7 +15,7 @@ import {
 } from '@react-navigation/native';
 import { CalendarDays, ChevronRight, Menu, Package } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {Image} from 'react-native';
+import { Image } from 'react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
 import { colors, fontSize, radius, scale, spacing } from '../../theme';
 import { useAppDispatch, useAppSelector } from '../../store';
@@ -101,7 +101,7 @@ export const OrdersScreen: React.FC = () => {
     STATUS_FILTERS.find(filter => filter.key === selectedFilter)?.label ??
     'All';
   const errorMessage = error ? getOrderErrorMessage(error) : '';
-console.log('filteredOrders :', filteredOrders);
+  console.log('filteredOrders :', filteredOrders);
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -144,19 +144,21 @@ console.log('filteredOrders :', filteredOrders);
                       ]}>
                       {item.label}
                     </Text>
-                    <View
-                      style={[
-                        styles.filterCount,
-                        active && styles.filterCountActive,
-                      ]}>
-                      <Text
+                    {Number(counts[item.key] ?? 0) > 0 && (
+                      <View
                         style={[
-                          styles.filterCountText,
-                          active && styles.filterCountTextActive,
+                          styles.filterCount,
+                          active && styles.filterCountActive,
                         ]}>
-                        {counts[item.key] ?? 0}
-                      </Text>
-                    </View>
+                        <Text
+                          style={[
+                            styles.filterCountText,
+                            active && styles.filterCountTextActive,
+                          ]}>
+                          {counts[item.key]}
+                        </Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 );
               }}

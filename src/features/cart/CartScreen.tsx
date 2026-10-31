@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {ShoppingBag} from 'lucide-react-native';
+import {ShoppingBag, Trash2} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Image} from 'react-native';
 import Button from '../../components/ui/Button';
@@ -28,7 +28,7 @@ export const CartScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectCartItems);
   const totals = useAppSelector(selectCartTotals);
-  const {setQuantity, remove, fetchCart, isMutating} = useCart();
+  const {setQuantity, remove, fetchCart} = useCart();
   const [refreshing, setRefreshing] = React.useState(false);
 
   React.useEffect(() => {
@@ -139,9 +139,14 @@ export const CartScreen: React.FC = () => {
                       ) : null}
                     </View>
                   </TouchableOpacity>
-
-                  {/* Remove button removed - item will be removed automatically when quantity goes below 1 */}
                 </View>
+                <TouchableOpacity
+                  style={styles.removeIconBtn}
+                  activeOpacity={0.7}
+                  hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
+                  onPress={() => remove(item.cartItemId ?? item.id)}>
+                  <Trash2 size={scale(16)} color="#EF4444" strokeWidth={2.2} />
+                </TouchableOpacity>
               </View>
 
               <View style={styles.cardDivider} />
@@ -152,9 +157,6 @@ export const CartScreen: React.FC = () => {
                   <EditableQuantity
                     value={item.quantity}
                     min={0}
-                    busy={isMutating(
-                      `cart-item:${String(item.cartItemId ?? item.id)}`,
-                    )}
                     onChange={next => {
                       const id = item.cartItemId ?? item.id;
                       if (next <= 0) {
@@ -291,6 +293,8 @@ const styles = StyleSheet.create({
   cardTop: {
     flexDirection: 'row',
     gap: spacing.md,
+    position: 'relative',
+    paddingRight: scale(30),
   },
   imageWrap: {
     width: scale(80),
@@ -337,21 +341,16 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     marginLeft: scale(6),
   },
-  removeBtn: {
-    flexDirection: 'row',
+  removeIconBtn: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: scale(26),
+    height: scale(26),
+    borderRadius: scale(13),
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: scale(3),
-    marginTop: scale(6),
-    // paddingVertical: scale(1),
-    paddingHorizontal: scale(7),
-    borderRadius: radius.pill,
-    backgroundColor: '#fbfbfb',
-  },
-  removeText: {
-    fontSize: scale(9.5),
-    fontWeight: '700',
-    color: "#000",
+    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
   },
   cardDivider: {
     height: 1,

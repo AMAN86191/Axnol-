@@ -11,7 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius, scale, spacing } from '../../theme';
+import { colors, radius, scale, shadows, spacing } from '../../theme';
 import CommonHeader from '../../components/ui/CommonHeader';
 import CachedImage from '../../components/ui/CachedImage';
 import { useAppDispatch } from '../../redux/hooks';
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    height: scale(48),
+    height: scale(45),
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -223,17 +223,13 @@ const styles = StyleSheet.create({
   cardWrap: {
     width: '100%',
     alignItems: 'center',
-    // backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFFFF',
     borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    borderWidth: 0,
+    borderColor: 'transparent',
     paddingHorizontal: scale(6),
     paddingVertical: scale(10),
-    // shadowColor: '#0F172A',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.04,
-    // shadowRadius: 8,
-    // elevation: 1,
+    ...shadows.medium
   },
   imageWrap: {
     width: '100%',
@@ -241,8 +237,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: '#F8FAFC',
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#EEF2F7',
   },
   image: {
     width: '100%',

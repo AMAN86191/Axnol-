@@ -266,10 +266,6 @@ export const ProductsScreen: React.FC = () => {
         return [...list].sort((a: any, b: any) => a.price - b.price);
       case 'price-desc':
         return [...list].sort((a: any, b: any) => b.price - a.price);
-      case 'name-asc':
-        return [...list].sort((a: any, b: any) => a.name.localeCompare(b.name));
-      case 'name-desc':
-        return [...list].sort((a: any, b: any) => b.name.localeCompare(a.name));
       default:
         return list;
     }
@@ -384,7 +380,9 @@ export const ProductsScreen: React.FC = () => {
 
       {/* Product List / Grid */}
       {(() => {
-        const visibleFiltered = filtered.filter((p: any) => Number(p?.price) > 0);
+        const visibleFiltered = (filtered || []).filter(
+          (p: any) => Number(p?.price) > 0,
+        );
         if (productsLoading && allProducts.length === 0) {
           return <ProductsSkeleton />;
         }
@@ -600,7 +598,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
+    marginVertical: spacing.md,
     gap: scale(8),
   },
   searchBar: {

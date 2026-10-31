@@ -21,7 +21,10 @@ import Skeleton from '../../components/ui/Skeleton';
 import {ProductApi, getProducts} from '../../api/ProductProvider';
 import {colors, radius, scale, spacing} from '../../theme';
 import {getLoadErrorMessage} from '../../utils/apiError';
-import {toProductCardData} from '../../utils/productCardData';
+import {
+  getProductPrice,
+  toProductCardData,
+} from '../../utils/productCardData';
 import IndustryBanner from './components/IndustryBanner';
 import {useRefresh} from '../../hooks/useRefresh';
 import {useSessionState} from '../../hooks/useSessionState';
@@ -113,6 +116,7 @@ export const IndustryDetailsScreen: React.FC = () => {
     request.catch(() => {});
     return request;
   }, [dispatch, industryId]);
+  console.log('industryDetail :', industryDetail);
 
   const loadProducts = useCallback(async () => {
     // Only a first visit (nothing remembered yet) needs the skeleton.
@@ -309,6 +313,10 @@ export const IndustryDetailsScreen: React.FC = () => {
         return true;
       }),
     [allProducts, selectedCategoryId, selectedSubCategoryId],
+  );
+  const visibleProducts = useMemo(
+    () => filteredProducts.filter(product => getProductPrice(product) > 0),
+    [filteredProducts],
   );
 
   const hasActiveFilters =
@@ -516,7 +524,7 @@ export const IndustryDetailsScreen: React.FC = () => {
             actionLabel="Try Again"
             onAction={loadProducts}
           />
-        ) : filteredProducts.length === 0 ? (
+        ) : visibleProducts.length === 0 ? (
           <EmptyState
             icon={PackageSearch}
             title="No products found"
@@ -530,7 +538,7 @@ export const IndustryDetailsScreen: React.FC = () => {
           />
         ) : (
           <View style={styles.gridContainer}>
-            {chunk(filteredProducts, 2).map((row, rowIndex) => (
+            {chunk(visibleProducts, 2).map((row, rowIndex) => (
               <View key={`row-${rowIndex}`} style={styles.gridRow}>
                 {row.map(product => (
                   <ProductCard
@@ -670,13 +678,13 @@ const styles = StyleSheet.create({
   },
   gridRow: {
     flexDirection: 'row',
-    gap: scale(10),
+    justifyContent: 'space-between',
   },
   gridCard: {
-    flex: 1,
+    width: '48.5%',
   },
   gridCardPlaceholder: {
-    flex: 1,
+    width: '48.5%',
   },
   loader: {
     paddingVertical: spacing.xl,

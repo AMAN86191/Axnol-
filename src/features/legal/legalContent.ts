@@ -1,6 +1,8 @@
 export interface LegalSection {
   title: string;
-  body: string;
+  body?: string;
+  bullets?: string[];
+  after?: string[];
 }
 
 export interface LegalContent {
@@ -22,11 +24,20 @@ export const TERMS_CONTENT: LegalContent = {
     },
     {
       title: 'Eligibility and Account',
-      body: 'You must be at least 18 years old and competent to enter into a binding contract to use the Services. You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. You agree to provide accurate, complete and current information during registration and to keep it updated. Notify us immediately of any unauthorised use of your account. You may delete your account at any time from the Profile section of the App or through https://axnol.in/account-deletion.html. Account deletion is processed immediately after you confirm the request, except for order, invoice and transaction records that we are required to retain by law.',
+      body: 'You must be at least 18 years old and competent to enter into a binding contract to use the Services. You are responsible for maintaining the confidentiality of your login credentials and for all activity that occurs under your account. You agree to provide accurate, complete and current information during registration and to keep it updated. Notify us immediately of any unauthorised use of your account. You may delete your account at any time from the Profile section of the App or through our Account Deletion page. Account deletion is processed immediately after you confirm the request, except for order, invoice and transaction records that we are required to retain by law.',
     },
     {
       title: 'Use of the Services',
-      body: 'You agree to use the Services only for lawful purposes. You must not: (a) use the Services for any unlawful, fraudulent or misleading purpose; (b) attempt to gain unauthorised access to any part of the Services, servers or systems; (c) interfere with or disrupt the Services, servers or networks; (d) reverse engineer, decompile or attempt to extract the source code of the App; (e) misrepresent your identity, business or affiliation; (f) upload or transmit any malicious code, virus or harmful material; or (g) use the Services in a way that infringes the rights of Axnol or any third party.',
+      body: 'You agree to use the Services only for lawful purposes. You must not:',
+      bullets: [
+        'Use the Services for any unlawful, fraudulent or misleading purpose.',
+        'Attempt to gain unauthorised access to any part of the Services, servers or systems.',
+        'Interfere with or disrupt the Services, servers or networks.',
+        'Reverse engineer, decompile or attempt to extract the source code of the App.',
+        'Misrepresent your identity, business or affiliation.',
+        'Upload or transmit any malicious code, virus or harmful material.',
+        'Use the Services in a way that infringes the rights of Axnol or any third party.',
+      ],
     },
     {
       title: 'Products and Information',
@@ -54,15 +65,15 @@ export const TERMS_CONTENT: LegalContent = {
     },
     {
       title: 'Third-Party Links and Services',
-      body: 'The Services may contain links to third-party websites, applications or services that we do not control. We are not responsible for their content, availability, security or privacy practices. Your use of a third-party service is governed by the terms and privacy policy of that third party.',
+      body: "The Services may contain links to third-party websites, applications or services that we do not control. We are not responsible for their content, availability, security or privacy practices. Your use of a third-party service is governed by that party's terms and privacy policy.",
     },
     {
       title: 'Privacy',
-      body: 'Your use of the Services is also governed by our Privacy Policy, available in the App and at https://axnol.in/privacy-policy.html. The Privacy Policy explains how we collect, use, share, retain and protect personal information, and how you can exercise your rights.',
+      body: 'Your use of the Services is also governed by our Privacy Policy, which explains how we collect, use, share, retain and protect personal information, and how you can exercise your rights.',
     },
     {
       title: 'App Stores',
-      body: 'If you download the App from Google Play, the Apple App Store or another app store, you acknowledge that these Terms are between you and Axnol only, and not with the app store. The app store is not responsible for the App, its maintenance, support or any claims relating to it. You must also comply with the terms and policies of the app store.',
+      body: "If you download the App from Google Play, the Apple App Store or another app store, you acknowledge that these Terms are between you and Axnol only, and not with the app store. The app store is not responsible for the App, its maintenance, support or any claims relating to it. You must also comply with the app store's terms and policies.",
     },
     {
       title: 'Suspension and Termination',
@@ -82,7 +93,7 @@ export const TERMS_CONTENT: LegalContent = {
     },
     {
       title: 'Changes to These Terms',
-      body: 'We may update these Terms from time to time. The revised version will be posted on this page with a new Last updated date. Where changes are significant, we will provide additional notice through the App or by other reasonable means. Continued use of the Services after the changes take effect means you accept the revised Terms.',
+      body: 'We may update these Terms from time to time. The revised version will be posted on this page with a new "Last updated" date. Where changes are significant, we will provide additional notice through the App or by other reasonable means. Continued use of the Services after the changes take effect means you accept the revised Terms.',
     },
     {
       title: 'Governing Law and Jurisdiction',
@@ -90,7 +101,14 @@ export const TERMS_CONTENT: LegalContent = {
     },
     {
       title: 'Contact',
-      body: 'Questions about these Terms can be sent to Axnol Lubetech India Pvt. Ltd., Shanti Niketan - Kh 65, Ground Floor, Bhawaninagar, Murlipura-302039, Jaipur, Rajasthan, India. Email: contact@axnol.in. Phone: +91 94390 98999. Website: https://axnol.in.',
+      body: 'Questions about these Terms can be sent to:',
+      after: [
+        'Axnol Lubetech India Pvt. Ltd.',
+        'Shanti Niketan - Kh 65, Ground Floor, Bhawaninagar, Murlipura-302039, Jaipur, Rajasthan, India',
+        'Email: contact@axnol.in',
+        'Phone: +91 94390 98999',
+        'Website: https://axnol.in',
+      ],
     },
   ],
 };
@@ -111,15 +129,49 @@ export const PRIVACY_CONTENT: LegalContent = {
     },
     {
       title: 'Information We Collect',
-      body: '(a) Account and business information: name, email address, mobile number, company name, optional GST number, billing and delivery address, city, state, pincode, profile photo and login credentials. Passwords are sent over HTTPS for authentication and are not stored in local app storage. (b) Order and transaction information: products ordered, quantity, rate, pack size, order and invoice details, payment status, purchase history, delivery address, contact number and order remarks. (c) Device and app information: device and operating system details, app version, network connection information, IP address recorded by our services, push notification token from Google Firebase Cloud Messaging, and technical or security logs generated when you use the Services. (d) Website and communications: information you submit through contact, career, channel-partner or enquiry forms; feedback, complaints and support requests; and browser and cookie information processed when you use the website. (e) Information stored on your device: login token, basic profile details, cart and wishlist items, notification token, cached app data and invoice PDF files that you choose to download or share. (f) Profile photo: only when you choose one from your photo library and submit it. We do not request access to your contacts, SMS messages, call logs or precise location. The current version of the App does not use your camera.',
+      body: 'We collect only the information needed to operate the Services and provide our products and services.',
+      bullets: [
+        'Account and business information: name, email address, mobile number, company name, GST number (optional), billing and delivery address, city, state, pincode, profile photo and login credentials. Passwords are sent over HTTPS for authentication and are not stored in local app storage.',
+        'Order and transaction information: products ordered, quantity, rate, pack size, orders, invoice number, invoice details, payment status, purchase history, delivery address, contact number and order remarks.',
+        'Device and app information: device and operating system details, app version, network connection information, IP address recorded by our services, push notification token from Google Firebase Cloud Messaging, and technical or security logs generated when you use the Services.',
+        'Website and communications: information you submit through contact, career, channel-partner or enquiry forms; feedback, complaints and support requests; and browser and cookie information processed when you use the website.',
+        'Information stored on your device: login token, basic profile details, cart and wishlist items, notification token, cached app data and invoice PDF files that you download or share.',
+        'Profile photo: only when you choose one from your photo library and submit it.',
+      ],
+      after: [
+        'We do not request access to your contacts, SMS messages, call logs or precise location. The current version of the App does not use your camera.',
+      ],
     },
     {
       title: 'Device Permissions We Use',
-      body: 'The App may ask for Internet access to connect to our servers and load products, prices, orders and account information; photo library access to allow you to choose a profile photo; notification permission to send order updates, account updates, invoice notifications and service messages; and storage or file access to save or open invoice PDF files. On older Android versions, the App may ask for storage permission to save invoices to Downloads. You can change these permissions at any time in your device settings. If you disable a permission, some features may not work.',
+      body: 'The App may ask for the following permissions:',
+      bullets: [
+        'Internet: to connect to our servers and load products, prices, orders and account information.',
+        'Photos / photo library: to allow you to choose a profile photo. The current version uses the gallery picker for this purpose.',
+        'Notifications: to send order updates, account updates, invoice notifications and service messages.',
+        'Storage / files: to save or open invoice PDF files on your device. On older Android versions, the App may ask for storage permission to save invoices to Downloads.',
+      ],
+      after: [
+        'You can change these permissions at any time in your device settings. If you disable a permission, some features may not work.',
+      ],
     },
     {
       title: 'How We Use Your Information',
-      body: 'We use personal information to create, verify and manage your account, including email verification through OTP; process, confirm, fulfil and deliver your orders and maintain your purchase history; prepare invoices and record payment status; communicate with you about orders, invoices, account status and service updates; provide customer support and respond to enquiries, complaints and feedback; prevent fraud, misuse and security incidents and protect our users and Services; maintain, troubleshoot and improve the App, website, products and Services; process job applications and channel-partner requests; comply with legal, tax, accounting and regulatory obligations; and send promotional communications only where permitted by law and with an option to opt out. The current version of the App does not process online payments and does not store card, UPI or banking credentials.',
+      bullets: [
+        'To create, verify and manage your account, including email verification through OTP.',
+        'To process, confirm, fulfil and deliver your orders and maintain your purchase history.',
+        'To prepare invoices and record payment status.',
+        'To communicate with you about orders, invoices, account status and service updates.',
+        'To provide customer support and respond to enquiries, complaints and feedback.',
+        'To prevent fraud, misuse and security incidents and to protect our users and Services.',
+        'To maintain, troubleshoot and improve the App, website, products and Services.',
+        'To process job applications and channel-partner requests.',
+        'To comply with legal, tax, accounting and regulatory obligations.',
+        'To send promotional communications only where permitted by law and with an option to opt out.',
+      ],
+      after: [
+        'The current version of the App does not process online payments and does not store card, UPI or banking credentials.',
+      ],
     },
     {
       title: 'Consent and Legal Basis',
@@ -127,7 +179,18 @@ export const PRIVACY_CONTENT: LegalContent = {
     },
     {
       title: 'Sharing and Third-Party Services',
-      body: 'We do not sell your personal information and do not use it for third-party behavioural advertising. We may share information with: cloud hosting, server and API providers that operate our backend and store account, order and invoice data; email and OTP delivery providers that send verification codes and service emails; Google Firebase Cloud Messaging to deliver push notifications and process device push tokens; logistics, delivery and channel partners where needed to fulfil your order or request; professional advisers, auditors and government authorities where required by law; and a successor entity in connection with a merger, acquisition or transfer of assets. The App does not currently offer online payments. Service providers may process information only to provide their services to us and are expected to protect it with appropriate safeguards.',
+      body: 'We do not sell your personal information and do not use it for third-party behavioural advertising. We may share information only with:',
+      bullets: [
+        'Cloud hosting, server and API providers that operate our backend and store account, order and invoice data.',
+        'Email and OTP delivery providers that send verification codes and service emails.',
+        'Google Firebase Cloud Messaging, which is used to deliver push notifications and process device push tokens.',
+        'Logistics, delivery and channel partners where needed to fulfil your order or request.',
+        'Professional advisers, auditors and government authorities where required by law.',
+        'A successor entity in connection with a merger, acquisition or transfer of assets.',
+      ],
+      after: [
+        'The App does not currently offer online payments. Service providers may process information only to provide their services to us and are expected to protect it with appropriate safeguards.',
+      ],
     },
     {
       title: 'Cookies and Local Storage',
@@ -135,11 +198,30 @@ export const PRIVACY_CONTENT: LegalContent = {
     },
     {
       title: 'Data Retention',
-      body: 'Account and profile information is kept while your account is active. When you delete your account, your profile and personal account data are permanently deleted immediately after the deletion request is confirmed or verified. Order, invoice, payment and transaction records may be retained for longer where required by tax, accounting, legal or regulatory requirements; these records are protected and access is restricted. Server logs and security information are retained for a limited period as needed for security, troubleshooting and legal compliance, generally not exceeding 12 months unless required for an investigation. Career application information is retained only for the recruitment process and for a reasonable period thereafter, unless required by law. Support communications may be retained for as long as needed to resolve the matter and meet legal obligations. Deleted account profile data cannot be recovered.',
+      bullets: [
+        'Account and profile information is kept while your account is active.',
+        'When you delete your account, your profile and personal account data are permanently deleted immediately after the deletion request is confirmed or verified.',
+        'Order, invoice, payment and transaction records may be retained for longer where required by tax, accounting, legal or regulatory requirements. These records are protected and access is restricted.',
+        'Server logs and security information are retained for a limited period as needed for security, troubleshooting and legal compliance, generally not exceeding 12 months unless required for an investigation.',
+        'Career application information is retained only for the recruitment process and for a reasonable period thereafter, unless required by law.',
+        'Support communications may be retained for as long as needed to resolve the matter and meet legal obligations.',
+      ],
+      after: [
+        'Deleted account profile data cannot be recovered. Order, invoice, payment and transaction records may be retained only as required by law and are protected with restricted access.',
+      ],
     },
     {
       title: 'Account Deletion',
-      body: 'You can delete your account directly in the App by logging in, opening your Profile, tapping Delete Account and confirming the deletion request. To request deletion without using the App, visit https://axnol.in/account-deletion.html or email contact@axnol.in from the email address associated with your account. Do not send your password. After your request is verified, your account is deleted immediately and your access token stops working. Your personal profile data is permanently removed at that time, except order, invoice and transaction records that we are required to retain by law. Deleted accounts cannot be restored, and you will need to register again to use the App in the future.',
+      body: 'You can delete your account directly in the App:',
+      bullets: [
+        'Log in to your Axnol account.',
+        'Open your Profile.',
+        'Tap "Delete Account".',
+        'Confirm the deletion request.',
+      ],
+      after: [
+        'To request deletion without using the App, visit our Account Deletion page or email contact@axnol.in from the email address associated with your account. Do not send your password. After your request is verified, your account is deleted immediately and your access token stops working. Your personal profile data is permanently removed at that time, except order, invoice and transaction records that we are required to retain by law. Deleted accounts cannot be restored, and you will need to register again to use the App in the future.',
+      ],
     },
     {
       title: 'Security',
@@ -147,7 +229,18 @@ export const PRIVACY_CONTENT: LegalContent = {
     },
     {
       title: 'Your Rights and Grievance Redressal',
-      body: 'Subject to applicable law, you may request access to your personal information; request correction or updating of inaccurate information; request deletion of your personal information; withdraw consent for processing; nominate a person to exercise your rights in the event of death or incapacity; and raise a grievance about how we handle your data. You can update some information directly in the Profile section of the App. For other requests, contact our Grievance Officer at contact@axnol.in or +91 94390 98999. We will acknowledge and address grievances within 30 days or within the period required by applicable law. You may also raise a complaint with the Data Protection Board of India.',
+      body: 'Subject to applicable law, you may:',
+      bullets: [
+        'Request access to your personal information.',
+        'Request correction or updating of inaccurate information.',
+        'Request deletion of your personal information.',
+        'Withdraw consent for processing.',
+        'Nominate a person to exercise your rights in the event of death or incapacity.',
+        'Raise a grievance about how we handle your data.',
+      ],
+      after: [
+        'You can update some information directly in the Profile section of the App. For other requests, contact our Grievance Officer at contact@axnol.in or +91 94390 98999. We will acknowledge and address grievances within 30 days or within the period required by applicable law. You may also raise a complaint with the Data Protection Board of India.',
+      ],
     },
     {
       title: 'International Transfers',
@@ -159,11 +252,18 @@ export const PRIVACY_CONTENT: LegalContent = {
     },
     {
       title: 'Changes to This Policy',
-      body: 'We may update this Privacy Policy from time to time. The revised version will be posted in the App and on our website with a new Last updated date. Where changes are significant, we will provide additional notice through the App or by other reasonable means. Your continued use of the Services after the changes take effect means you accept the revised policy.',
+      body: 'We may update this Privacy Policy from time to time. The revised version will be posted in the App and on our website with a new "Last updated" date. Where changes are significant, we will provide additional notice through the App or by other reasonable means. Your continued use of the Services after the changes take effect means you accept the revised policy.',
     },
     {
       title: 'Contact Us',
-      body: 'For questions, requests or complaints about this Privacy Policy or our data practices, contact Axnol Lubetech India Pvt. Ltd., Shanti Niketan - Kh 65, Ground Floor, Bhawaninagar, Murlipura-302039, Jaipur, Rajasthan, India. Email: contact@axnol.in. Phone: +91 94390 98999. Website: https://axnol.in.',
+      body: 'For questions, requests or complaints about this Privacy Policy or our data practices, contact:',
+      after: [
+        'Axnol Lubetech India Pvt. Ltd.',
+        'Shanti Niketan - Kh 65, Ground Floor, Bhawaninagar, Murlipura-302039, Jaipur, Rajasthan, India',
+        'Email: contact@axnol.in',
+        'Phone: +91 94390 98999',
+        'Website: https://axnol.in',
+      ],
     },
   ],
 };

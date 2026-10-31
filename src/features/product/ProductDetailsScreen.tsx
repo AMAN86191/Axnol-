@@ -24,6 +24,7 @@ import {
   ArrowRight,
   Download,
   FileText,
+  Heart,
   ShoppingCart,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,7 +43,8 @@ import {
 import EditableQuantity from '../cart/components/EditableQuantity';
 import WishlistButton from '../wishlist/components/WishlistButton';
 import { getProductById, ProductApi } from '../../api/ProductProvider';
-import { store } from '../../store';
+import {store, useAppSelector} from '../../store';
+import {selectWishlistCount} from '../wishlist/wishlistSelectors';
 import Skeleton from '../../components/ui/Skeleton';
 import { getLoadErrorMessage } from '../../utils/apiError';
 
@@ -68,16 +70,23 @@ export const ProductDetailsScreen: React.FC = () => {
   const flatListRef = useRef<FlatList>(null);
   const requestIdRef = useRef(0);
   const {add, items, isMutating} = useCart();
+  const wishlistCount = useAppSelector(selectWishlistCount);
   const cartCount = useSyncExternalStore(
     store.subscribe,
-    () =>
-      store
-        .getState()
-        .cart.items.reduce((count, item) => count + item.quantity, 0),
-    () =>
-      store
-        .getState()
-        .cart.items.reduce((count, item) => count + item.quantity, 0),
+    () => {
+      try {
+        return store.getState().cart?.items?.reduce((count, item) => count + (item?.quantity || 0), 0) || 0;
+      } catch {
+        return 0;
+      }
+    },
+    () => {
+      try {
+        return store.getState().cart?.items?.reduce((count, item) => count + (item?.quantity || 0), 0) || 0;
+      } catch {
+        return 0;
+      }
+    },
   );
   const productId = route.params?.productId;
 
@@ -430,41 +439,40 @@ export const ProductDetailsScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <CommonHeader
-        title="Product"
-        right={
-          <>
-            <TouchableOpacity
-              style={styles.headerBtn}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate('Cart')}>
-              <ShoppingCart size={scale(20)} color="#0F172A" strokeWidth={2.1} />
-              {cartCount > 0 ? (
-                <View style={styles.cartBadge}>
-                  <Text style={styles.cartBadgeText}>
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </Text>
-                </View>
-              ) : null}
-            </TouchableOpacity>
-            <WishlistButton
-              product={{
-                id: product.id,
-                name: product.name,
-                code: product.name,
-                image: product.images[0],
-                price: product.price,
-                mrp: product.mrp,
-                unit: selectedSize ?? product.unit,
-                rateChartId: selectedRateChartId,
-              }}
-            size={20}
-            containerSize={30}
-            showBackground={false}
-            style={styles.headerBtn}
-          />
-          </>
-        }
+        <CommonHeader
+          title="Product"
+          right={
+            <View style={{flexDirection: 'row', alignItems: 'center', gap: scale(6)}}>
+              <TouchableOpacity
+                style={styles.headerBtn}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ''}`}
+                onPress={() => navigation.navigate('Wishlist' as never)}>
+                <Heart size={scale(20)} color={colors.text} strokeWidth={2.2} />
+                {wishlistCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerBtn}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Cart${cartCount ? `, ${cartCount} items` : ''}`}
+                onPress={() => navigation.navigate('Cart' as never)}>
+                <ShoppingCart size={scale(20)} color={colors.text} strokeWidth={2.2} />
+                {cartCount > 0 && (
+                  <View style={styles.cartBadge}>
+                    <Text style={styles.cartBadgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          }
       />
 
       {loading ? (
@@ -477,6 +485,22 @@ export const ProductDetailsScreen: React.FC = () => {
 
           {/* Image Gallery */}
           <View style={styles.heroWrap}>
+            <WishlistButton
+              product={{
+                id: product.id,
+                name: product.name,
+                code: product.name,
+                image: product.images[0],
+                price: product.price,
+                mrp: product.mrp,
+                unit: selectedSize ?? product.unit,
+                rateChartId: selectedRateChartId,
+              }}
+              size={18}
+              containerSize={30}
+              showBackground
+              style={styles.galleryWishlistBtn}
+            />
             <FlatList
               ref={flatListRef}
               data={product.images}
@@ -494,15 +518,14 @@ export const ProductDetailsScreen: React.FC = () => {
               onScrollToIndexFailed={() => { }}
               renderItem={({ item }) => (
                 <View style={styles.heroSlide}>
-                    <Image
-                      source={{uri: item}}
-                      style={styles.image}
-                      resizeMode="contain"
-                    />
+                  <Image
+                    source={{uri: item}}
+                    style={styles.image}
+                    resizeMode="contain"
+                  />
                 </View>
               )}
             />
-
           </View>
           {product.images.length > 1 && (
             <View style={styles.thumbRow}>
@@ -836,19 +859,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   headerBtn: {
-    padding: scale(4),
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    alignItems: 'center',
+    justifyContent: 'center',
+    // backgroundColor: '#F8FAFC',
+    position: 'relative',
   },
   cartBadge: {
     position: 'absolute',
-    top: 0,
+    top: -scale(1),
     right: -scale(2),
-    minWidth: scale(15),
-    height: scale(15),
-    borderRadius: scale(7.5),
+    minWidth: scale(16),
+    height: scale(16),
+    borderRadius: scale(8),
     paddingHorizontal: scale(3),
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   cartBadgeText: {
     color: '#FFFFFF',
@@ -862,10 +893,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F4F6F8',
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
+    position: 'relative',
+  },
+  galleryWishlistBtn: {
+    position: 'absolute',
+    bottom: scale(16),
+    right: scale(16),
+    zIndex: 10,
+    elevation: 4,
   },
   heroSlide: {
     width: SCREEN_W,
-    height: verticalScale(212),
+    height: verticalScale(280),
     alignItems: 'center',
     justifyContent: 'center',
   },
