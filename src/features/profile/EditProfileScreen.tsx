@@ -47,7 +47,11 @@ import {
   launchImageLibrary,
 } from 'react-native-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {updateProfileSlice, changePasswordSlice} from '../../redux/AuthSlice';
+import {
+  updateProfileSlice,
+  changePasswordSlice,
+  removeProfileImageSlice,
+} from '../../redux/AuthSlice';
 import {useAppDispatch, useAppSelector} from '../../redux/hooks';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -297,6 +301,9 @@ export const EditProfileScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
   const reduxUser = useAppSelector(s => s.auth.user);
+  const removingProfileImage = useAppSelector(
+    s => s.auth.removingProfileImage,
+  );
   const scrollRef = useRef<ScrollView>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photoSheetVisible, setPhotoSheetVisible] = useState(false);
@@ -420,13 +427,23 @@ export const EditProfileScreen: React.FC = () => {
 
   const changePhoto = () => setPhotoSheetVisible(true);
 
-  const removePhoto = () =>
-    setForm(prev => ({
-      ...prev,
-      avatar: '',
-      avatarFileName: '',
-      avatarMime: '',
-    }));
+  const removePhoto = async () => {
+    try {
+      await dispatch(removeProfileImageSlice()).unwrap();
+      setForm(prev => ({
+        ...prev,
+        avatar: '',
+        avatarFileName: '',
+        avatarMime: '',
+      }));
+      toast.success('Photo Removed', 'Your profile photo has been removed.');
+    } catch (error: any) {
+      toast.error(
+        'Remove Failed',
+        error?.message ?? 'Could not remove your profile photo. Please try again.',
+      );
+    }
+  };
 
   const onSave = async () => {
     if (!form.name.trim()) {
@@ -460,7 +477,6 @@ export const EditProfileScreen: React.FC = () => {
           type: form.avatarMime || 'image/jpeg',
         } as any);
       }
-
       await dispatch(updateProfileSlice(formData)).unwrap();
       setSaving(false);
       toast.success(
@@ -589,7 +605,7 @@ export const EditProfileScreen: React.FC = () => {
 
           {/* Title section */}
           <View style={styles.titleSection}>
-            <Text style={styles.eyebrow}>ACCOUNT SETTINGS</Text>
+            {/* <Text style={styles.eyebrow}>ACCOUNT SETTINGS</Text> */}
             <Text style={styles.title}>Edit Profile</Text>
             <Text style={styles.subtitle}>
               Keep your personal and business{'\n'}details up to date.
@@ -673,11 +689,21 @@ export const EditProfileScreen: React.FC = () => {
                 style={styles.avatarPicker}
                 activeOpacity={0.85}
                 onPress={changePhoto}>
-                <Image
-                  source={form.avatar ? {uri: form.avatar} : require('../../../assets/axnol/default_avatar.webp')}
-                  style={styles.avatarImg}
-                  resizeMode="cover"
-                />
+                {form.avatar ? (
+                  <Image
+                    source={{uri: form.avatar}}
+                    style={styles.avatarImg}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.avatarFallback}>
+                    <User
+                      size={scale(38)}
+                      color={colors.primary}
+                      strokeWidth={1.8}
+                    />
+                  </View>
+                )}
                 <View style={styles.avatarOverlay}>
                   <Camera size={scale(16)} color="#FFFFFF" strokeWidth={2.6} />
                 </View>
@@ -927,6 +953,11 @@ export const EditProfileScreen: React.FC = () => {
         onGallery={() => openPicker(launchImageLibrary)}
         onRemove={removePhoto}
       />
+      {removingProfileImage ? (
+        <View style={styles.photoRemovalOverlay} pointerEvents="auto">
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -1162,6 +1193,18 @@ const styles = StyleSheet.create({
   avatarImg: {
     width: '100%',
     height: '100%',
+  },
+  avatarFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
+  },
+  photoRemovalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(248,250,252,0.55)',
   },
   avatarOverlay: {
     position: 'absolute',

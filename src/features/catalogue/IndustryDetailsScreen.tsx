@@ -584,6 +584,7 @@ const styles = StyleSheet.create({
     fontSize: scale(13.5),
     lineHeight: scale(21),
     color: '#475569',
+    textAlign:"justify"
   },
   fade: {
     position: 'absolute',

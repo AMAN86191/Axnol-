@@ -28,7 +28,7 @@ export const CartScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectCartItems);
   const totals = useAppSelector(selectCartTotals);
-  const {setQuantity, remove, fetchCart} = useCart();
+  const {setQuantity, remove, fetchCart, isMutating} = useCart();
   const [refreshing, setRefreshing] = React.useState(false);
 
   React.useEffect(() => {
@@ -140,13 +140,7 @@ export const CartScreen: React.FC = () => {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={styles.removeBtn}
-                    activeOpacity={0.7}
-                    hitSlop={{top: 4, bottom: 4, left: 4, right: 4}}
-                    onPress={() => remove(item.cartItemId ?? item.id)}>
-                    <Text style={styles.removeText}>Remove</Text>
-                  </TouchableOpacity>
+                  {/* Remove button removed - item will be removed automatically when quantity goes below 1 */}
                 </View>
               </View>
 
@@ -157,9 +151,18 @@ export const CartScreen: React.FC = () => {
                   <Text style={styles.qtyLabel}>Qty</Text>
                   <EditableQuantity
                     value={item.quantity}
-                    onChange={next =>
-                      setQuantity(item.cartItemId ?? item.id, next)
-                    }
+                    min={0}
+                    busy={isMutating(
+                      `cart-item:${String(item.cartItemId ?? item.id)}`,
+                    )}
+                    onChange={next => {
+                      const id = item.cartItemId ?? item.id;
+                      if (next <= 0) {
+                        remove(id);
+                      } else {
+                        setQuantity(id, next);
+                      }
+                    }}
                   />
                 </View>
 

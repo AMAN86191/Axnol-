@@ -1,9 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  Pressable,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -19,7 +15,13 @@ import {
   useNavigation,
   useRoute,
 } from '@react-navigation/native';
-import {Check, PackageOpen, Search, SlidersHorizontal, X} from 'lucide-react-native';
+import {
+  Heart,
+  PackageOpen,
+  Search,
+  ShoppingCart,
+  SlidersHorizontal,
+} from 'lucide-react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {CatalogueStackParamList} from '../../navigation/types';
 import CommonHeader from '../../components/ui/CommonHeader';
@@ -29,29 +31,23 @@ import ProductCard from '../../components/ui/ProductCard';
 import {useRefresh} from '../../hooks/useRefresh';
 import {useAppDispatch} from '../../redux/hooks';
 import {useAppSelector} from '../../store';
-import {fetchProductsSlice, getProductListKey} from '../../redux/ProductSlice';
+import {selectCartItemCount} from '../cart/cartSelectors';
+import {selectWishlistCount} from '../wishlist/wishlistSelectors';
+import {
+  clearProducts,
+  fetchProductsSlice,
+  getProductListKey,
+} from '../../redux/ProductSlice';
 import {invalidateRequests} from '../../api/requestCache';
 import {toProductCardData} from '../../utils/productCardData';
+import {fetchCategoriesSlice} from '../../redux/CategorySlice';
+import {fetchIndustriesSlice} from '../../redux/IndustrySlice';
+import {getLoadErrorMessage} from '../../utils/apiError';
+import ProductFiltersModal, {
+  SortKey,
+} from './components/ProductFiltersModal';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
-
-type SortKey = 'newest' | 'price-asc' | 'price-desc' | 'name-asc' | 'name-desc';
-
-interface SortOption {
-  key: SortKey;
-  label: string;
-  description: string;
-}
-
-const SORT_OPTIONS: SortOption[] = [
-  {key: 'newest', label: 'Newest First', description: 'Latest additions'},
-  {key: 'price-asc', label: 'Price: Low to High', description: 'Budget friendly first'},
-  {key: 'price-desc', label: 'Price: High to Low', description: 'Premium products first'},
-  {key: 'name-asc', label: 'Name: A to Z', description: 'Alphabetical order'},
-  {key: 'name-desc', label: 'Name: Z to A', description: 'Reverse alphabetical'},
-];
-
-const FILTER_PANEL_WIDTH = Math.min(Dimensions.get('window').width * 0.82, scale(320));
 
 const chunk = <T,>(list: T[], size: number): T[][] => {
   const rows: T[][] = [];
@@ -65,36 +61,56 @@ export const ProductsScreen: React.FC = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const dispatch = useAppDispatch();
+  const cartCount = useAppSelector(selectCartItemCount);
+  const wishlistCount = useAppSelector(selectWishlistCount);
   const apiProducts = useAppSelector(s => s.product.products);
   const productsLoading = useAppSelector(s => s.product.loading);
   const pagination = useAppSelector(s => s.product.pagination);
   const listKey = useAppSelector(s => s.product.listKey);
+  const categories = useAppSelector(s => s.category.allCategories);
+  const categoriesLoading = useAppSelector(s => s.category.loading);
+  const categoriesError = useAppSelector(s =>
+    getLoadErrorMessage(s.category.error, 'categories'),
+  );
+  const industries = useAppSelector(s => s.industry.industries);
+  const industriesLoading = useAppSelector(s => s.industry.loading);
+  const industriesError = useAppSelector(s =>
+    getLoadErrorMessage(s.industry.error, 'industries'),
+  );
   const loading = productsLoading && apiProducts.length === 0;
 
   const route = useRoute<Route>();
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(
+    route.params?.categoryId ?? '',
+  );
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(
+    route.params?.subCategoryId ?? '',
+  );
+  const [selectedIndustryId, setSelectedIndustryId] = useState(
+    route.params?.industryId ?? '',
+  );
   const [selectedUnit, setSelectedUnit] = useState('All');
   const [sortBy, setSortBy] = useState<SortKey>('newest');
   const [search, setSearch] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
-  const [pendingCategory, setPendingCategory] = useState(selectedCategory);
-  const [pendingUnit, setPendingUnit] = useState(selectedUnit);
-  const [pendingSort, setPendingSort] = useState<SortKey>(sortBy);
-  const [, setPage] = useState(1);
-  const [, setIsLoadingMore] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-FILTER_PANEL_WIDTH)).current;
+  const [page, setPage] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const filterRequested = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      setSelectedCategory('All');
+      setSelectedCategoryId(route.params?.categoryId ?? '');
+      setSelectedSubCategoryId(route.params?.subCategoryId ?? '');
+      setSelectedIndustryId(route.params?.industryId ?? '');
       setSelectedUnit('All');
       setSortBy('newest');
       setSearch('');
-      setPendingCategory('All');
-      setPendingUnit('All');
-      setPendingSort('newest');
       setFilterVisible(false);
-    }, []),
+    }, [
+      route.params?.categoryId,
+      route.params?.industryId,
+      route.params?.subCategoryId,
+    ]),
   );
 
   const allProducts = useMemo(
@@ -114,11 +130,27 @@ export const ProductsScreen: React.FC = () => {
   }, [allProducts]);
 
   const loadProducts = useCallback(
-    (pageNum = 1) => {
-      const params: Record<string, any> = { page: pageNum };
-      // if (route.params?.industryId) params.industryId = route.params.industryId;
-      // if (route.params?.categoryId) params.categoryId = route.params.categoryId;
-      // if (route.params?.subCategoryId) params.subCategoryId = route.params.subCategoryId;
+    (
+      pageNum = 1,
+      filters?: {
+        categoryId?: string;
+        subCategoryId?: string;
+        industryId?: string;
+        sort?: SortKey;
+      },
+    ) => {
+      const params: Record<string, any> = {
+        page: pageNum,
+        sort: filters?.sort ?? sortBy,
+      };
+      const categoryId = filters ? filters.categoryId : route.params?.categoryId;
+      const industryId = filters ? filters.industryId : route.params?.industryId;
+      if (industryId) params.industryId = industryId;
+      if (categoryId) params.categoryId = categoryId;
+      const subCategoryId = filters
+        ? filters.subCategoryId
+        : route.params?.subCategoryId;
+      if (subCategoryId) params.subCategoryId = subCategoryId;
       if (pageNum === 1) {
         setPage(1);
         dispatch(fetchProductsSlice(params))
@@ -132,14 +164,32 @@ export const ProductsScreen: React.FC = () => {
         .catch(() => undefined)
         .finally(() => setIsLoadingMore(false));
     },
-    [dispatch],
+    [
+      dispatch,
+      route.params?.categoryId,
+      route.params?.industryId,
+      route.params?.subCategoryId,
+      sortBy,
+    ],
   );
 
   const handleRefresh = useCallback(() => {
     invalidateRequests('/products');
-    dispatch({ type: 'product/clearProducts' } as any);
-    loadProducts(1);
-  }, [dispatch, loadProducts]);
+    dispatch(clearProducts());
+    loadProducts(1, {
+      categoryId: selectedCategoryId,
+      subCategoryId: selectedSubCategoryId,
+      industryId: selectedIndustryId,
+      sort: sortBy,
+    });
+  }, [
+    dispatch,
+    loadProducts,
+    selectedCategoryId,
+    selectedIndustryId,
+    selectedSubCategoryId,
+    sortBy,
+  ]);
 
   const {refreshing, onRefresh} = useRefresh(handleRefresh);
 
@@ -160,30 +210,17 @@ export const ProductsScreen: React.FC = () => {
   //   !!industryBanner && pageTitle.toLowerCase() === industryBanner.title.toLowerCase();
 
   const openFilter = () => {
-    setPendingCategory(selectedCategory);
-    setPendingUnit(selectedUnit);
-    setPendingSort(sortBy);
+    if (!filterRequested.current) {
+      dispatch(fetchCategoriesSlice(undefined));
+      dispatch(fetchIndustriesSlice());
+      filterRequested.current = true;
+    }
     setFilterVisible(true);
   };
 
-  const closeFilter = () => {
-    Animated.timing(slideAnim, {
-      toValue: -FILTER_PANEL_WIDTH,
-      duration: 180,
-      useNativeDriver: true,
-    }).start(() => setFilterVisible(false));
-  };
-
-  useEffect(() => {
-    if (filterVisible) {
-      slideAnim.setValue(-FILTER_PANEL_WIDTH);
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 240,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [filterVisible, slideAnim]);
+  const retryCategories = () => dispatch(fetchCategoriesSlice(undefined));
+  const retryIndustries = () => dispatch(fetchIndustriesSlice());
+  const closeFilter = () => setFilterVisible(false);
 
   useEffect(() => {
     if (pagination?.current_page) {
@@ -191,21 +228,25 @@ export const ProductsScreen: React.FC = () => {
     }
   }, [pagination?.current_page]);
 
-  const resetFilters = () => {
-    setPendingCategory('All');
-    setPendingUnit('All');
-    setPendingSort('newest');
-  };
-
   const resetAllFilters = () => {
-    setSelectedCategory('All');
+    setSelectedCategoryId('');
+    setSelectedSubCategoryId('');
+    setSelectedIndustryId('');
     setSelectedUnit('All');
     setSortBy('newest');
     setSearch('');
+    loadProducts(1, {
+      categoryId: '',
+      subCategoryId: '',
+      industryId: '',
+      sort: 'newest',
+    });
   };
 
   const activeFilterCount =
-    (selectedCategory !== 'All' ? 1 : 0) +
+    (selectedCategoryId ? 1 : 0) +
+    (selectedSubCategoryId ? 1 : 0) +
+    (selectedIndustryId ? 1 : 0) +
     (selectedUnit !== 'All' ? 1 : 0) +
     (sortBy !== 'newest' ? 1 : 0);
 
@@ -214,11 +255,10 @@ export const ProductsScreen: React.FC = () => {
     const list = allProducts.filter((product: any) => {
       const matchesSearch =
         !query ||
-        product.name.toLowerCase().includes(query) ||
-        product.code.toLowerCase().includes(query);
-      const matchesCategory = selectedCategory === 'All' || product.code === selectedCategory;
-      const matchesUnit = selectedUnit === 'All' || product.unit === selectedUnit;
-      return matchesSearch && matchesCategory && matchesUnit;
+          String(product.name ?? '').toLowerCase().includes(query) ||
+          String(product.code ?? '').toLowerCase().includes(query);
+        const matchesUnit = selectedUnit === 'All' || product.unit === selectedUnit;
+        return matchesSearch && matchesUnit;
     });
 
     switch (sortBy) {
@@ -233,13 +273,27 @@ export const ProductsScreen: React.FC = () => {
       default:
         return list;
     }
-  }, [search, selectedCategory, selectedUnit, sortBy, allProducts]);
+  }, [search, selectedUnit, sortBy, allProducts]);
 
-  const applyFilters = () => {
-    setSelectedCategory(pendingCategory);
-    setSelectedUnit(pendingUnit);
-    setSortBy(pendingSort);
-    closeFilter();
+  const applyFilters = (filters: {
+    categoryId: string;
+    subCategoryId: string;
+    industryId: string;
+    unit: string;
+    sort: SortKey;
+  }) => {
+    setSelectedCategoryId(filters.categoryId);
+    setSelectedSubCategoryId(filters.subCategoryId);
+    setSelectedIndustryId(filters.industryId);
+    setSelectedUnit(filters.unit);
+    setSortBy(filters.sort);
+    loadProducts(1, {
+      categoryId: filters.categoryId,
+      subCategoryId: filters.subCategoryId,
+      industryId: filters.industryId,
+      sort: filters.sort,
+    });
+    setFilterVisible(false);
   };
 
   const handlePress = (product: any) =>
@@ -249,7 +303,51 @@ export const ProductsScreen: React.FC = () => {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <CommonHeader title={pageTitle} />
+      <CommonHeader
+        title={pageTitle}
+        right={
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.headerAction}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={`Wishlist${wishlistCount ? `, ${wishlistCount} items` : ''}`}
+              onPress={() => navigation.navigate('Wishlist')}>
+              <Heart
+                size={scale(19)}
+                color="#1E293B"
+                strokeWidth={2.2}
+              />
+              {wishlistCount > 0 ? (
+                <View style={styles.headerBadge}>
+                  <Text style={styles.headerBadgeText}>
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerAction}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={`Cart${cartCount ? `, ${cartCount} items` : ''}`}
+              onPress={() => navigation.navigate('Cart')}>
+              <ShoppingCart
+                size={scale(19)}
+                color="#1E293B"
+                strokeWidth={2.2}
+              />
+              {cartCount > 0 ? (
+                <View style={styles.headerBadge}>
+                  <Text style={styles.headerBadgeText}>
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          </View>
+        }
+      />
 
       {loading ? (
         <ProductsSkeleton />
@@ -284,222 +382,151 @@ export const ProductsScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Category Horizontal Filter Pills */}
-      {/* <View style={styles.categoryFilterContainer}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={categories.length ? categories : ['All']}
-          keyExtractor={item => item}
-          contentContainerStyle={styles.filterList}
-          renderItem={({item}: {item: string}) => {
-            const active = item === selectedCategory;
-            return (
-              <TouchableOpacity
-                style={[styles.catPill, active && styles.catPillActive]}
-                activeOpacity={0.8}
-                onPress={() => setSelectedCategory(item)}>
-                <Text style={[styles.catPillText, active && styles.catPillTextActive]}>
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </View> */}
-
       {/* Product List / Grid */}
-      {productsLoading && allProducts.length === 0 ? (
-        <ProductsSkeleton />
-      ) : filtered.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <View style={styles.emptyIconWrap}>
-            <PackageOpen size={scale(30)} color={colors.primary} strokeWidth={1.8} />
-          </View>
-          <Text style={styles.emptyTitle}>No products found</Text>
-          <Text style={styles.emptySubtitle}>
-            Try a different search or clear your filters.
-          </Text>
-          <TouchableOpacity
-            style={styles.emptyResetBtn}
-            activeOpacity={0.8}
-            onPress={resetAllFilters}>
-            <Text style={styles.emptyResetText}>Reset Filters</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
-            />
-          }
-          style={styles.scrollFlex}
-          contentContainerStyle={[styles.gridContainer, {paddingBottom: insets.bottom + scale(85)}]}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews
-          scrollEventThrottle={16}>
-          {chunk(filtered, 2).map((row, rowIndex) => (
-            <View key={`row-${rowIndex}`} style={styles.gridRow}>
-              {row.map(prod => (
-                <ProductCard
-                  style={styles.gridCard}
-                  key={prod.id}
-                  product={prod}
-                  onPress={() => handlePress(prod)}
+      {(() => {
+        const visibleFiltered = filtered.filter((p: any) => Number(p?.price) > 0);
+        if (productsLoading && allProducts.length === 0) {
+          return <ProductsSkeleton />;
+        }
+        if (visibleFiltered.length === 0) {
+          return (
+            <View style={styles.emptyWrap}>
+              <View style={styles.emptyIconWrap}>
+                <PackageOpen
+                  size={scale(30)}
+                  color={colors.primary}
+                  strokeWidth={1.8}
                 />
-              ))}
-              {row.length === 1 && <View style={styles.gridCardPlaceholder} />}
+              </View>
+              <Text style={styles.emptyTitle}>No products found</Text>
+              <Text style={styles.emptySubtitle}>
+                Try a different search or clear your filters.
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyResetBtn}
+                activeOpacity={0.8}
+                onPress={resetAllFilters}>
+                <Text style={styles.emptyResetText}>Reset Filters</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </ScrollView> 
-      )}
+          );
+        }
+        return (
+          <ScrollView
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
+              />
+            }
+            style={styles.scrollFlex}
+            contentContainerStyle={[
+              styles.gridContainer,
+              {paddingBottom: insets.bottom + scale(85)},
+            ]}
+            showsVerticalScrollIndicator={false}
+            removeClippedSubviews
+            scrollEventThrottle={16}
+            onScroll={({nativeEvent}) => {
+              const paddingToBottom = scale(300);
+              const {contentOffset, contentSize, layoutMeasurement} = nativeEvent;
+              if (
+                !isLoadingMore &&
+                !productsLoading &&
+                pagination?.last_page &&
+                page < pagination.last_page &&
+                contentOffset.y +
+                  layoutMeasurement.height +
+                  paddingToBottom >=
+                  contentSize.height
+              ) {
+                loadProducts(page + 1, {
+                  categoryId: selectedCategoryId,
+                  subCategoryId: selectedSubCategoryId,
+                  industryId: selectedIndustryId,
+                  sort: sortBy,
+                });
+              }
+            }}>
+            {chunk(visibleFiltered, 2).map((row, rowIndex) => (
+              <View key={`row-${rowIndex}`} style={styles.gridRow}>
+                {row.map(prod => (
+                  <ProductCard
+                    style={styles.gridCard}
+                    key={prod.id}
+                    product={prod}
+                    onPress={() => handlePress(prod)}
+                  />
+                ))}
+              </View>
+            ))}
+            {isLoadingMore ? (
+              <View style={styles.loadMore}>
+                <Text style={styles.loadMoreText}>Loading more products...</Text>
+              </View>
+            ) : null}
+          </ScrollView>
+        );
+      })()}
         </>
       )}
 
-      <Modal
+      <ProductFiltersModal
         visible={filterVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-        onRequestClose={closeFilter}>
-        <View style={styles.modalRoot}>
-          <Pressable style={styles.backdrop} onPress={closeFilter} />
-
-          <Animated.View
-            style={[
-              styles.filterPanel,
-              {
-                width: FILTER_PANEL_WIDTH,
-                paddingTop: insets.top + scale(14),
-                paddingBottom: Math.max(insets.bottom, spacing.md),
-                transform: [{translateX: slideAnim}],
-              },
-            ]}>
-            <View style={styles.panelHeader}>
-              <View style={styles.panelTitleWrap}>
-                <Text style={styles.panelTitle}>Filters</Text>
-                <Text style={styles.panelSubtitle}>Refine your results</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.panelClose}
-                activeOpacity={0.7}
-                onPress={closeFilter}>
-                <X size={scale(18)} color="#0F172A" strokeWidth={2.2} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              style={styles.panelScroll}
-              contentContainerStyle={styles.panelScrollContent}
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
-              <Text style={styles.sectionLabel}>SORT BY</Text>
-              <View style={styles.sortGroup}>
-                {SORT_OPTIONS.map(option => {
-                  const active = pendingSort === option.key;
-                  return (
-                    <TouchableOpacity
-                      key={option.key}
-                      style={[styles.sortRow, active && styles.sortRowActive]}
-                      activeOpacity={0.8}
-                      onPress={() => setPendingSort(option.key)}>
-                      <View style={[styles.radio, active && styles.radioActive]}>
-                        {active ? (
-                          <Check
-                            size={scale(11)}
-                            color="#FFFFFF"
-                            strokeWidth={3}
-                          />
-                        ) : null}
-                      </View>
-                      <View style={styles.sortTextWrap}>
-                        <Text
-                          style={[
-                            styles.sortLabel,
-                            active && styles.sortLabelActive,
-                          ]}>
-                          {option.label}
-                        </Text>
-                        <Text style={styles.sortDescription}>
-                          {option.description}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* <Text style={styles.sectionLabel}>CATEGORY</Text>
-              <View style={styles.chipWrap}>
-                {(categories.length ? categories : ['All']).map((item: string) => {
-                  const active = pendingCategory === item;
-                  return (
-                    <TouchableOpacity
-                      key={item}
-                      style={[styles.chip, active && styles.chipActive]}
-                      activeOpacity={0.8}
-                      onPress={() => setPendingCategory(item)}>
-                      <Text
-                        style={[
-                          styles.chipText,
-                          active && styles.chipTextActive,
-                        ]}>
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View> */}
-
-              <Text style={styles.sectionLabel}>PACK SIZE / WEIGHT</Text>
-              <View style={styles.chipWrap}>
-                {(units.length ? units : ['All']).map((item: string) => {
-                  const active = pendingUnit === item;
-                  return (
-                    <TouchableOpacity
-                      key={item}
-                      style={[styles.chip, active && styles.chipActive]}
-                      activeOpacity={0.8}
-                      onPress={() => setPendingUnit(item)}>
-                      <Text
-                        style={[
-                          styles.chipText,
-                          active && styles.chipTextActive,
-                        ]}>
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </ScrollView>
-
-            <View style={styles.panelFooter}>
-              <TouchableOpacity
-                style={styles.resetBtn}
-                activeOpacity={0.8}
-                onPress={resetFilters}>
-                <Text style={styles.resetBtnText}>Reset</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.applyBtn}
-                activeOpacity={0.85}
-                onPress={applyFilters}>
-                <Text style={styles.applyBtnText}>Apply Filters</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-      </Modal>
+        categories={categories}
+        industries={industries}
+        categoriesLoading={categoriesLoading}
+        industriesLoading={industriesLoading}
+        categoriesError={categoriesError}
+        industriesError={industriesError}
+        selectedCategoryId={selectedCategoryId}
+        selectedSubCategoryId={selectedSubCategoryId}
+        selectedIndustryId={selectedIndustryId}
+        selectedUnit={selectedUnit}
+        sortBy={sortBy}
+        units={units}
+        onRetryCategories={retryCategories}
+        onRetryIndustries={retryIndustries}
+        onClose={closeFilter}
+        onApply={applyFilters}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(2),
+  },
+  headerAction: {
+    width: scale(34),
+    height: scale(34),
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerBadge: {
+    position: 'absolute',
+    top: scale(1),
+    right: scale(0),
+    minWidth: scale(15),
+    height: scale(15),
+    borderRadius: scale(8),
+    paddingHorizontal: scale(3),
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  headerBadgeText: {
+    color: '#FFFFFF',
+    fontSize: scale(8),
+    fontWeight: '800',
+  },
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
@@ -569,180 +596,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
-  modalRoot: {flex: 1},
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.45)',
-  },
-  filterPanel: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    backgroundColor: '#FFFFFF',
-    borderTopRightRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
-    shadowColor: '#0F172A',
-    shadowOffset: {width: 6, height: 0},
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 16,
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  panelTitleWrap: {flex: 1},
-  panelTitle: {
-    fontSize: scale(18),
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: -0.3,
-  },
-  panelSubtitle: {
-    fontSize: scale(11),
-    color: '#94A3B8',
-    marginTop: scale(1),
-  },
-  panelClose: {
-    width: scale(32),
-    height: scale(32),
-    borderRadius: radius.pill,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  panelScroll: {flex: 1},
-  panelScrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: scale(4),
-    paddingBottom: spacing.lg,
-  },
-  sectionLabel: {
-    fontSize: scale(10),
-    fontWeight: '800',
-    color: '#94A3B8',
-    letterSpacing: 0.8,
-    marginBottom: scale(8),
-    marginTop: scale(14),
-  },
-  sortGroup: {gap: scale(6)},
-  sortRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: scale(9),
-    paddingHorizontal: scale(10),
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#EEF2F6',
-    backgroundColor: '#FBFDFF',
-  },
-  sortRowActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primaryLight,
-  },
-  radio: {
-    width: scale(18),
-    height: scale(18),
-    borderRadius: radius.pill,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: scale(10),
-  },
-  radioActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  sortTextWrap: {flex: 1},
-  sortLabel: {
-    fontSize: scale(12.5),
-    fontWeight: '700',
-    color: '#334155',
-  },
-  sortLabelActive: {color: colors.primary},
-  sortDescription: {
-    fontSize: scale(9.5),
-    color: '#94A3B8',
-    marginTop: scale(1),
-  },
-  chipWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: scale(6),
-  },
-  chip: {
-    paddingHorizontal: scale(11),
-    paddingVertical: scale(6.5),
-    borderRadius: radius.pill,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    fontSize: scale(11),
-    fontWeight: '600',
-    color: '#475569',
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  panelFooter: {
-    flexDirection: 'row',
-    gap: scale(8),
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  resetBtn: {
-    flex: 0.4,
-    height: scale(44),
-    borderRadius: radius.md,
-    borderWidth: 1.2,
-    borderColor: '#E2E8F0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  resetBtnText: {
-    fontSize: scale(12.5),
-    fontWeight: '700',
-    color: '#475569',
-  },
-  applyBtn: {
-    flex: 1,
-    height: scale(44),
-    borderRadius: radius.md,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  applyBtnText: {
-    fontSize: scale(13),
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
-  },
-  industryBannerWrap: {
-    marginTop: spacing.md,
-    marginHorizontal: spacing.lg,
-  },
   searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -774,41 +627,6 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     fontWeight: '500',
   },
-  categoryFilterContainer: {
-    marginTop: scale(14),
-    marginBottom: scale(4),
-  },
-  filterList: {
-    paddingHorizontal: spacing.lg,
-    gap: scale(8),
-  },
-  catPill: {
-    paddingHorizontal: scale(14),
-    paddingVertical: scale(7.5),
-    borderRadius: radius.pill,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  catPillActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  catPillText: {
-    fontSize: scale(11.5),
-    fontWeight: '600',
-    color: '#475569',
-  },
-  catPillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-
   // Grid styles
   gridContainer: {
     paddingHorizontal: spacing.lg,
@@ -829,6 +647,14 @@ const styles = StyleSheet.create({
   },
   gridCard: {
     width: '48.5%',
+  },
+  loadMore: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  loadMoreText: {
+    color: colors.textSecondary,
+    fontSize: fontSize.sm,
   },
   scrollFlex: {
     flex: 1,

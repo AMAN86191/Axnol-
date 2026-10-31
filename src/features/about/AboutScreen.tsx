@@ -858,6 +858,7 @@ const styles = StyleSheet.create({
     lineHeight: scale(19),
     color: colors.textSecondary,
     marginBottom: spacing.sm,
+    textAlign: 'justify',
   },
   quoteBox: {
     flexDirection: 'row',
@@ -919,6 +920,7 @@ const styles = StyleSheet.create({
     lineHeight: scale(14),
     color: colors.textSecondary,
     marginTop: scale(3),
+    textAlign: 'justify',
   },
   innerDivider: {
     height: 1,
@@ -1005,6 +1007,7 @@ const styles = StyleSheet.create({
     lineHeight: scale(19),
     fontWeight: '600',
     color: colors.text,
+    textAlign: 'justify',
   },
   visionFooter: {
     flexDirection: 'row',
@@ -1085,6 +1088,7 @@ const styles = StyleSheet.create({
     fontSize: scale(10.5),
     lineHeight: scale(15),
     color: colors.textSecondary,
+    textAlign: 'justify',
   },
 
   /* Chairman */
@@ -1100,6 +1104,7 @@ const styles = StyleSheet.create({
     fontSize: scale(11.5),
     lineHeight: scale(17),
     color: colors.textSecondary,
+    textAlign: 'justify',
   },
   chairmanFooter: {
     flexDirection: 'row',
@@ -1172,6 +1177,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: scale(8),
     paddingLeft: scale(24),
+    textAlign: 'justify',
   },
 
   /* Why choose */
@@ -1206,6 +1212,7 @@ const styles = StyleSheet.create({
     lineHeight: scale(16),
     color: colors.textSecondary,
     marginTop: scale(2),
+    textAlign: 'justify',
   },
 
   /* Contact */

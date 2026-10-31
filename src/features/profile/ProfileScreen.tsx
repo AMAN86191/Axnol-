@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {useNavigation} from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Building2,
@@ -23,16 +23,17 @@ import {
   ScrollText,
   ShieldCheck,
   Trash2,
+  UserRound,
 } from 'lucide-react-native';
-import type {LucideIcon} from 'lucide-react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {clearAuth, deleteAccountSlice} from '../../redux/AuthSlice';
-import {invalidateRequests} from '../../api/requestCache';
-import {useAppDispatch, useAppSelector} from '../../redux/hooks';
-import {toast} from '../../components/ui/ToastProvider';
-import {ConfirmModal} from '../../components/ui/ConfirmModal';
+import type { LucideIcon } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { clearAuth, deleteAccountSlice } from '../../redux/AuthSlice';
+import { invalidateRequests } from '../../api/requestCache';
+import { useAppDispatch, useAppSelector } from '../../redux/hooks';
+import { toast } from '../../components/ui/ToastProvider';
+import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import images from '../../assets/images';
-import {colors, radius, scale, shadows, spacing} from '../../theme';
+import { colors, radius, scale, shadows, spacing } from '../../theme';
 
 
 interface MenuItem {
@@ -88,7 +89,7 @@ export const ProfileScreen: React.FC = () => {
           // ignore malformed cache
         }
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       active = false;
     };
@@ -135,7 +136,7 @@ export const ProfileScreen: React.FC = () => {
       subtitle: 'Reset your account password',
       icon: KeyRound,
       onPress: () =>
-        navigation.navigate('ForgotPassword', {source: 'profile'}),
+        navigation.navigate('ForgotPassword', { source: 'profile' }),
     },
     {
       title: 'Help & Support',
@@ -173,7 +174,7 @@ export const ProfileScreen: React.FC = () => {
   const cityState = [user?.city, user?.state].filter(Boolean).join(', ');
   const location = [cityState, user?.pincode].filter(Boolean).join(' - ') || '—';
   const avatarUri =
-    user?.profile_pic_url || user?.profile_pic || user?.avatar || 'user_avatar';
+    user?.profile_pic_url || user?.profile_pic || user?.avatar || '';
 
   return (
     <View style={styles.container}>
@@ -223,20 +224,30 @@ export const ProfileScreen: React.FC = () => {
               'rgba(255,255,255,0.25)',
               'rgba(255,255,255,0)',
             ]}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
             style={styles.glassSheen}
           />
 
           <View style={styles.avatarBlock}>
             <View style={styles.avatarRing}>
-              <Image
-                source={avatarUri ? {uri: avatarUri} : require('../../../assets/axnol/default_avatar.webp')}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
+              {avatarUri ? (
+                <Image
+                  source={{uri: avatarUri}}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <UserRound
+                    size={scale(34)}
+                    color={colors.primary}
+                    strokeWidth={1.8}
+                  />
+                </View>
+              )}
             </View>
-        
+
           </View>
 
           <View style={styles.profileInfo}>
@@ -416,7 +427,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     marginBottom: scale(16),
-   
+
   },
   headerTexts: {
     flex: 1,
@@ -472,6 +483,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  avatarFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
+  },
   avatarBadge: {
     position: 'absolute',
     bottom: scale(0),
@@ -520,7 +537,7 @@ const styles = StyleSheet.create({
     paddingVertical: scale(6),
     borderRadius: radius.pill,
     backgroundColor: colors.primary,
-    opacity:0.9,
+    opacity: 0.9,
     ...shadows.small,
   },
   topEditText: {

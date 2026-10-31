@@ -5,6 +5,7 @@ import {
   CartSummary,
   setCartData,
   setCartLoading,
+  setCartMutationPending,
 } from './cartSlice';
 import {selectCartItemCount, selectCartItems, selectCartTotals} from './cartSelectors';
 import {
@@ -32,6 +33,45 @@ interface RateChartMeta {
 
 const rateChartMetaCache = new Map<string, RateChartMeta | null>();
 const productDetailCache = new Map<string, Promise<ProductApi | null>>();
+const activeCartMutations = new Set<string>();
+
+export const getCartProductMutationKey = (product: {
+  id: string | number;
+  productId?: string | number;
+  rateChartId?: string | number;
+  size?: string;
+  unit?: string;
+}): string => {
+  const productId = String(product.productId ?? product.id);
+  const rateChartId = product.rateChartId;
+  if (rateChartId !== undefined && rateChartId !== null) {
+    return `cart-product:${productId}:rate:${String(rateChartId)}`;
+  }
+  const size = product.size ?? product.unit;
+  return `cart-product:${productId}:size:${size ?? ''}`;
+};
+
+export const getCartItemMutationKey = (id: string | number): string =>
+  `cart-item:${String(id)}`;
+
+const runCartMutation = async <T,>(
+  keys: string[],
+  dispatch: ReturnType<typeof useAppDispatch>,
+  request: () => Promise<T>,
+): Promise<T | undefined> => {
+  if (keys.some(key => activeCartMutations.has(key))) {
+    return undefined;
+  }
+
+  keys.forEach(key => activeCartMutations.add(key));
+  dispatch(setCartMutationPending({keys, pending: true}));
+  try {
+    return await request();
+  } finally {
+    keys.forEach(key => activeCartMutations.delete(key));
+    dispatch(setCartMutationPending({keys, pending: false}));
+  }
+};
 
 const loadProductDetails = (productId: string | number) => {
   const key = String(productId);
@@ -269,7 +309,17 @@ export const useCart = () => {
   const items = useAppSelector(selectCartItems);
   const itemCount = useAppSelector(selectCartItemCount);
   const totals = useAppSelector(selectCartTotals);
+  const pendingMutations = useAppSelector(
+    state => state.cart.pendingMutations,
+  );
   const {showCartNotification} = useAppNotification();
+  const isMutating = useCallback(
+    (keys: string | string[]) =>
+      (Array.isArray(keys) ? keys : [keys]).some(
+        key => pendingMutations[key],
+      ),
+    [pendingMutations],
+  );
 
   const fetchCart = useCallback(
     async (silent = false, force = false) => {
@@ -313,37 +363,65 @@ export const useCart = () => {
         rateChartId !== undefined &&
         rateChartId !== null &&
         Boolean(String(rateChartId).trim());
-      try {
-        const response = await addToCartApi({
-          product_id: productId,
-          ...(hasRateChartId ? {rate_chart_id: rateChartId} : {}),
-          ...(!hasRateChartId && size ? {size} : {}),
-          qty: quantity,
-        });
-        const cartResponse = parseCartResponse(response);
-        if (cartResponse.items) {
-          const mappedItems = cartResponse.items.map(mapApiCartItem);
-          const enrichedItems = await enrichCartItems(mappedItems);
-          dispatch(
-            setCartData({
-              items: enrichedItems,
-              summary: cartResponse.summary,
-            }),
+      const mutationKey = getCartProductMutationKey({
+        ...product,
+        productId,
+        size,
+      });
+      const matchingItems = items.filter(
+        item =>
+          getCartProductMutationKey(item) === mutationKey &&
+          item.cartItemId !== undefined &&
+          item.cartItemId !== null,
+      );
+      const mutationKeys = [
+        mutationKey,
+        ...matchingItems.map(item =>
+          getCartItemMutationKey(item.cartItemId as string | number),
+        ),
+      ];
+      return (
+        (await runCartMutation(mutationKeys, dispatch, async () => {
+        try {
+          const response = await addToCartApi({
+            product_id: productId,
+            ...(hasRateChartId ? {rate_chart_id: rateChartId} : {}),
+            ...(!hasRateChartId && size ? {size} : {}),
+            qty: quantity,
+          });
+          const cartResponse = parseCartResponse(response);
+          if (cartResponse.items) {
+            const mappedItems = cartResponse.items.map(mapApiCartItem);
+            const enrichedItems = await enrichCartItems(mappedItems);
+            dispatch(
+              setCartData({
+                items: enrichedItems,
+                summary: cartResponse.summary,
+              }),
+            );
+          } else {
+            await fetchCart(true);
+          }
+          showCartNotification({
+            id: productId,
+            name: product.name,
+            image: product.image,
+          });
+          return true;
+        } catch (error) {
+          toast.error(
+            'Add to Cart',
+            getCartErrorMessage(
+              error,
+              'Unable to add this product to cart. Please try again.',
+            ),
           );
-        } else {
-          await fetchCart(true);
+          return false;
         }
-        showCartNotification({id: productId, name: product.name, image: product.image});
-        return true;
-      } catch (error) {
-        toast.error(
-          'Add to Cart',
-          getCartErrorMessage(error, 'Unable to add this product to cart. Please try again.'),
-        );
-        return false;
-      }
+        })) ?? false
+      );
     },
-    [dispatch, fetchCart, showCartNotification],
+    [dispatch, fetchCart, items, showCartNotification],
   );
 
   const removeItem = useCallback(
@@ -353,19 +431,30 @@ export const useCart = () => {
         toast.warning('Cart', 'Cart was updated. Please try again.');
         return false;
       }
-      try {
-        await removeCartItemApi(item.cartItemId);
-        await fetchCart(true);
-        return true;
-      } catch (error) {
-        toast.error(
-          'Cart',
-          getCartErrorMessage(error, 'Unable to remove this item. Please try again.'),
-        );
-        return false;
-      }
+      return (
+        (await runCartMutation(
+          [getCartItemMutationKey(item.cartItemId)],
+          dispatch,
+          async () => {
+            try {
+              await removeCartItemApi(item.cartItemId as string | number);
+              await fetchCart(true);
+              return true;
+            } catch (error) {
+              toast.error(
+                'Cart',
+                getCartErrorMessage(
+                  error,
+                  'Unable to remove this item. Please try again.',
+                ),
+              );
+              return false;
+            }
+          },
+        )) ?? false
+      );
     },
-    [fetchCart],
+    [dispatch, fetchCart],
   );
 
   const increment = useCallback(
@@ -379,17 +468,28 @@ export const useCart = () => {
         toast.warning('Cart', 'Cart was updated. Please try again.');
         return;
       }
-      try {
-        await updateCartItemApi(item.cartItemId, {qty: (item.quantity || 1) + 1});
-        await fetchCart(true);
-      } catch (error) {
-        toast.error(
-          'Cart',
-          getCartErrorMessage(error, 'Unable to update the quantity. Please try again.'),
-        );
-      }
+      await runCartMutation(
+        [getCartItemMutationKey(item.cartItemId)],
+        dispatch,
+        async () => {
+          try {
+            await updateCartItemApi(item.cartItemId as string | number, {
+              qty: (item.quantity || 1) + 1,
+            });
+            await fetchCart(true);
+          } catch (error) {
+            toast.error(
+              'Cart',
+              getCartErrorMessage(
+                error,
+                'Unable to update the quantity. Please try again.',
+              ),
+            );
+          }
+        },
+      );
     },
-    [fetchCart, items],
+    [dispatch, fetchCart, items],
   );
 
   const decrement = useCallback(
@@ -407,17 +507,28 @@ export const useCart = () => {
         toast.warning('Cart', 'Cart was updated. Please try again.');
         return;
       }
-      try {
-        await updateCartItemApi(item.cartItemId, {qty: item.quantity - 1});
-        await fetchCart(true);
-      } catch (error) {
-        toast.error(
-          'Cart',
-          getCartErrorMessage(error, 'Unable to update the quantity. Please try again.'),
-        );
-      }
+      await runCartMutation(
+        [getCartItemMutationKey(item.cartItemId)],
+        dispatch,
+        async () => {
+          try {
+            await updateCartItemApi(item.cartItemId as string | number, {
+              qty: item.quantity - 1,
+            });
+            await fetchCart(true);
+          } catch (error) {
+            toast.error(
+              'Cart',
+              getCartErrorMessage(
+                error,
+                'Unable to update the quantity. Please try again.',
+              ),
+            );
+          }
+        },
+      );
     },
-    [fetchCart, items, removeItem],
+    [dispatch, fetchCart, items, removeItem],
   );
 
   const setQuantity = useCallback(
@@ -432,17 +543,26 @@ export const useCart = () => {
         toast.warning('Cart', 'Cart was updated. Please try again.');
         return;
       }
-      try {
-        await updateCartItemApi(item.cartItemId, {qty});
-        await fetchCart(true);
-      } catch (error) {
-        toast.error(
-          'Cart',
-          getCartErrorMessage(error, 'Unable to update the quantity. Please try again.'),
-        );
-      }
+      await runCartMutation(
+        [getCartItemMutationKey(item.cartItemId)],
+        dispatch,
+        async () => {
+          try {
+            await updateCartItemApi(item.cartItemId as string | number, {qty});
+            await fetchCart(true);
+          } catch (error) {
+            toast.error(
+              'Cart',
+              getCartErrorMessage(
+                error,
+                'Unable to update the quantity. Please try again.',
+              ),
+            );
+          }
+        },
+      );
     },
-    [fetchCart, items],
+    [dispatch, fetchCart, items],
   );
 
   const remove = useCallback(
@@ -481,6 +601,7 @@ export const useCart = () => {
     remove,
     clear,
     fetchCart,
+    isMutating,
   };
 };
 

@@ -16,6 +16,7 @@ interface EditableQuantityProps {
   min?: number;
   max?: number;
   size?: 'compact' | 'regular';
+  busy?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -25,14 +26,17 @@ export const EditableQuantity: React.FC<EditableQuantityProps> = ({
   min = 1,
   max = 999,
   size = 'compact',
+  busy = false,
   style,
 }) => {
   const [draft, setDraft] = useState(String(value));
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    setDraft(String(value));
-  }, [value]);
+    if (!busy) {
+      setDraft(String(value));
+    }
+  }, [busy, value]);
 
   const parseDraft = () => {
     const parsed = parseInt(draft, 10);
@@ -42,6 +46,10 @@ export const EditableQuantity: React.FC<EditableQuantityProps> = ({
   const clamp = (next: number) => Math.min(max, Math.max(min, next));
 
   const commit = () => {
+    if (busy) {
+      setDraft(String(value));
+      return;
+    }
     const next = clamp(parseDraft());
     setDraft(String(next));
     if (next !== value) {
@@ -50,6 +58,9 @@ export const EditableQuantity: React.FC<EditableQuantityProps> = ({
   };
 
   const step = (delta: number) => {
+    if (busy) {
+      return;
+    }
     const next = clamp(parseDraft() + delta);
     setDraft(String(next));
     if (next !== value) {
@@ -67,13 +78,15 @@ export const EditableQuantity: React.FC<EditableQuantityProps> = ({
         styles.stepper,
         isRegular && styles.stepperRegular,
         focused && styles.stepperFocused,
+        busy && styles.stepperBusy,
         style,
       ]}>
       <TouchableOpacity
         style={[styles.btn, isRegular && styles.btnRegular]}
         activeOpacity={0.7}
         hitSlop={{top: 6, bottom: 6, left: 4, right: 4}}
-        disabled={!canDecrement}
+        disabled={busy || !canDecrement}
+        accessibilityState={{disabled: busy || !canDecrement}}
         onPress={() => step(-1)}>
         <Minus
           size={scale(isRegular ? 17 : 14)}
@@ -89,6 +102,7 @@ export const EditableQuantity: React.FC<EditableQuantityProps> = ({
           focused && styles.inputFocused,
         ]}
         value={draft}
+        editable={!busy}
         onChangeText={text => setDraft(text.replace(/[^0-9]/g, ''))}
         onFocus={() => setFocused(true)}
         onBlur={() => {
@@ -109,7 +123,8 @@ export const EditableQuantity: React.FC<EditableQuantityProps> = ({
         style={[styles.btn, isRegular && styles.btnRegular]}
         activeOpacity={0.7}
         hitSlop={{top: 6, bottom: 6, left: 4, right: 4}}
-        disabled={!canIncrement}
+        disabled={busy || !canIncrement}
+        accessibilityState={{disabled: busy || !canIncrement}}
         onPress={() => step(1)}>
         <Plus
           size={scale(isRegular ? 17 : 14)}
@@ -144,6 +159,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 5,
     elevation: 2,
+  },
+  stepperBusy: {
+    opacity: 0.6,
   },
   btn: {
     width: scale(30),

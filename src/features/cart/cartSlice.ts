@@ -31,6 +31,7 @@ export interface CartState {
   summary: CartSummary | null;
   isHydrated: boolean;
   loading: boolean;
+  pendingMutations: Record<string, boolean>;
 }
 
 const initialState: CartState = {
@@ -38,6 +39,7 @@ const initialState: CartState = {
   summary: null,
   isHydrated: false,
   loading: false,
+  pendingMutations: {},
 };
 
 const cartSlice = createSlice({
@@ -117,6 +119,18 @@ const cartSlice = createSlice({
     setCartLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
+    setCartMutationPending: (
+      state,
+      action: PayloadAction<{keys: string[]; pending: boolean}>,
+    ) => {
+      action.payload.keys.forEach(key => {
+        if (action.payload.pending) {
+          state.pendingMutations[key] = true;
+        } else {
+          delete state.pendingMutations[key];
+        }
+      });
+    },
   },
 });
 
@@ -133,6 +147,7 @@ export const {
   hydrateCart,
   setCartHydrated,
   setCartLoading,
+  setCartMutationPending,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;

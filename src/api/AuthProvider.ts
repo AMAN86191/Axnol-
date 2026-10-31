@@ -90,6 +90,16 @@ export const updateProfile = async (payload: any) => {
   }
 };
 
+export const removeProfileImage = async () => {
+  try {
+    const response = await api.delete('/profile/image');
+    return response.data;
+  } catch (error: any) {
+    const data = error.response?.data ?? {message: error.message};
+    throw data;
+  }
+};
+
 export const changePassword = async (payload: {
   current_password: string;
   password: string;

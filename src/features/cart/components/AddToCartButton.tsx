@@ -10,7 +10,11 @@ import {
 import { Minus, Plus, ShoppingCart } from 'lucide-react-native';
 import { colors, radius, scale } from '../../../theme';
 import { CartItem } from '../cartSlice';
-import { useCart } from '../useCart';
+import {
+  getCartItemMutationKey,
+  getCartProductMutationKey,
+  useCart,
+} from '../useCart';
 
 interface AddToCartButtonProps {
   product: Omit<CartItem, 'quantity'>;
@@ -27,7 +31,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   onAdded,
   style,
 }) => {
-  const { add, increment, decrement, remove, items } = useCart();
+  const {add, increment, decrement, remove, items, isMutating} = useCart();
   const busyRef = useRef(false);
   const productKey = String(product.productId ?? product.id);
   const rateChartKey =
@@ -60,6 +64,11 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   });
   const quantity = existing?.quantity ?? 0;
   const itemId = existing?.cartItemId ?? existing?.id ?? product.id;
+  const mutationPending = isMutating([
+    getCartProductMutationKey(product),
+    getCartItemMutationKey(itemId),
+  ]);
+  const interactionDisabled = disabled || mutationPending;
 
   const run = async (action: () => Promise<unknown> | unknown) => {
     if (busyRef.current) {
@@ -109,13 +118,24 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   if (quantity > 0) {
     return (
       <View
-        style={[styles.stepper, compact && styles.stepperCompact, style]}>
+        style={[
+          styles.stepper,
+          compact && styles.stepperCompact,
+          mutationPending && styles.stepperPending,
+          style,
+        ]}>
         <TouchableOpacity
           style={styles.stepBtn}
           activeOpacity={0.7}
+          disabled={interactionDisabled}
+          accessibilityState={{disabled: interactionDisabled}}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           onPress={handleMinus}>
-          <Minus size={scale(14)} color={colors.primary} strokeWidth={3} />
+          <Minus
+            size={scale(14)}
+            color={mutationPending ? '#94A3B8' : colors.primary}
+            strokeWidth={3}
+          />
         </TouchableOpacity>
         <Text style={[styles.qtyText, compact && styles.qtyTextCompact]}>
           {quantity}
@@ -123,9 +143,15 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
         <TouchableOpacity
           style={styles.stepBtn}
           activeOpacity={0.7}
+          disabled={interactionDisabled}
+          accessibilityState={{disabled: interactionDisabled}}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           onPress={handlePlus}>
-          <Plus size={scale(14)} color={colors.primary} strokeWidth={3} />
+          <Plus
+            size={scale(14)}
+            color={mutationPending ? '#94A3B8' : colors.primary}
+            strokeWidth={3}
+          />
         </TouchableOpacity>
       </View>
     );
@@ -133,15 +159,27 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.addBtn, compact && styles.addBtnCompact, style]}
+      style={[
+        styles.addBtn,
+        compact && styles.addBtnCompact,
+        mutationPending && styles.addBtnPending,
+        style,
+      ]}
       activeOpacity={0.85}
+      disabled={interactionDisabled}
+      accessibilityState={{disabled: interactionDisabled}}
       onPress={handleAdd}>
       <ShoppingCart
         size={scale(13)}
-        color={colors.textInverse}
+        color={mutationPending ? '#64748B' : colors.textInverse}
         strokeWidth={2.4}
       />
-      <Text style={[styles.addText, compact && styles.addTextCompact]}>
+      <Text
+        style={[
+          styles.addText,
+          compact && styles.addTextCompact,
+          mutationPending && styles.addTextDisabled,
+        ]}>
         Add
       </Text>
     </TouchableOpacity>
@@ -166,6 +204,10 @@ const styles = StyleSheet.create({
   },
   addBtnDisabled: {
     backgroundColor: '#E2E8F0',
+  },
+  addBtnPending: {
+    backgroundColor: '#E2E8F0',
+    opacity: 0.8,
   },
   addText: {
     color: colors.textInverse,
@@ -193,6 +235,11 @@ const styles = StyleSheet.create({
   stepperCompact: {
     paddingVertical: scale(4),
     paddingHorizontal: scale(6),
+  },
+  stepperPending: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#CBD5E1',
+    opacity: 0.8,
   },
   stepBtn: {
     alignItems: 'center',

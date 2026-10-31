@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     lineHeight: scale(21),
     color: colors.textSecondary,
+    textAlign: 'justify',
   },
   sectionCard: {
     backgroundColor: colors.surface,
@@ -96,6 +97,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     lineHeight: scale(21),
     color: colors.textSecondary,
+    textAlign: 'justify',
   },
   footerNote: {
     textAlign: 'center',

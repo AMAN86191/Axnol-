@@ -15,7 +15,7 @@ import {
   X,
 } from 'lucide-react-native';
 import type {LucideIcon} from 'lucide-react-native';
-import {colors, radius, scale, shadows, spacing, typography} from '../../theme';
+import {colors, radius, scale, spacing, typography} from '../../theme';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -158,12 +158,13 @@ export const Toast: React.FC<ToastProps> = ({data, onClose}) => {
         },
       ]}>
       <View style={styles.card}>
+        <View style={[styles.accentRail, {backgroundColor: conf.accent}]} />
         <View style={[styles.iconBadge, {backgroundColor: conf.tint}]}>
-          <Icon size={scale(14)} color={conf.accent} strokeWidth={2.4} />
+          <Icon size={scale(20)} color={conf.accent} strokeWidth={2.2} />
         </View>
 
         <View style={styles.textWrap}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={2}>
             {title}
           </Text>
           {message ? (
@@ -175,12 +176,14 @@ export const Toast: React.FC<ToastProps> = ({data, onClose}) => {
           {action ? (
             <View style={styles.actionRow}>
               <TouchableOpacity
+                accessibilityRole="button"
                 activeOpacity={0.7}
                 style={styles.cancelBtn}
                 onPress={close}>
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
+                accessibilityRole="button"
                 activeOpacity={0.85}
                 style={[
                   styles.actionBtn,
@@ -194,6 +197,8 @@ export const Toast: React.FC<ToastProps> = ({data, onClose}) => {
         </View>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss notification"
           style={styles.closeBtn}
           activeOpacity={0.6}
           onPress={close}
@@ -202,12 +207,14 @@ export const Toast: React.FC<ToastProps> = ({data, onClose}) => {
         </TouchableOpacity>
 
         {!action && data.duration > 0 ? (
-          <Animated.View
-            style={[
-              styles.progressBar,
-              {width: progressWidth, backgroundColor: conf.accent},
-            ]}
-          />
+          <View style={styles.progressTrack}>
+            <Animated.View
+              style={[
+                styles.progressBar,
+                {width: progressWidth, backgroundColor: conf.accent},
+              ]}
+            />
+          </View>
         ) : null}
       </View>
     </Animated.View>
@@ -216,81 +223,101 @@ export const Toast: React.FC<ToastProps> = ({data, onClose}) => {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   card: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.borderLight,
-    paddingVertical: scale(9),
-    paddingLeft: scale(9),
-    paddingRight: scale(10),
-    gap: scale(9),
+    borderColor: colors.border,
+    paddingVertical: scale(14),
+    paddingLeft: scale(14),
+    paddingRight: scale(12),
+    gap: scale(12),
     overflow: 'hidden',
-    ...shadows.medium,
   },
   iconBadge: {
-    width: scale(25),
-    height: scale(25),
-    borderRadius: scale(14),
+    width: scale(38),
+    height: scale(38),
+    borderRadius: scale(13),
     alignItems: 'center',
     justifyContent: 'center',
   },
+  accentRail: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: scale(4),
+  },
   textWrap: {
     flex: 1,
+    paddingTop: scale(1),
   },
   title: {
     ...typography.semibold,
-    fontSize: scale(11.5),
+    fontSize: scale(14),
     color: colors.text,
-    letterSpacing: -0.1,
+    lineHeight: scale(19),
   },
   message: {
     ...typography.regular,
-    fontSize: scale(10),
+    fontSize: scale(12),
     color: colors.textSecondary,
-    marginTop: scale(1),
-    lineHeight: scale(14.5),
+    marginTop: scale(3),
+    lineHeight: scale(17),
   },
   closeBtn: {
-    alignSelf: 'flex-start',
-    paddingTop: scale(2),
+    width: scale(28),
+    height: scale(28),
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+    marginTop: scale(-3),
+    marginRight: scale(-2),
   },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: scale(7),
+    gap: spacing.md,
+    marginTop: scale(12),
   },
   cancelBtn: {
-    paddingVertical: scale(4),
-    paddingHorizontal: spacing.sm,
+    minHeight: scale(36),
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
   },
   cancelText: {
     ...typography.semibold,
-    fontSize: scale(11.5),
+    fontSize: scale(12),
     color: colors.textSecondary,
   },
   actionBtn: {
-    paddingVertical: scale(4),
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
+    minHeight: scale(36),
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
   },
   actionText: {
     ...typography.bold,
-    fontSize: scale(11.5),
+    fontSize: scale(12),
     color: colors.textInverse,
   },
-  progressBar: {
+  progressTrack: {
     position: 'absolute',
-    left: 0,
+    left: scale(4),
+    right: 0,
     bottom: 0,
-    height: 2,
-    borderBottomLeftRadius: radius.md,
+    height: scale(3),
+    backgroundColor: colors.surfaceAlt,
+  },
+  progressBar: {
+    height: '100%',
+    borderBottomLeftRadius: radius.lg,
   },
 });
 

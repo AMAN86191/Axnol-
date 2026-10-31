@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Dimensions,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -33,7 +35,10 @@ import { colors, radius, scale, spacing, verticalScale } from '../../theme';
 import { formatPrice } from '../../utils/formatPrice';
 import { getRateChartId } from '../../utils/productCardData';
 import ProductDetailsSkeleton from './components/ProductDetailsSkeleton';
-import { useCart } from '../cart/useCart';
+import {
+  getCartProductMutationKey,
+  useCart,
+} from '../cart/useCart';
 import EditableQuantity from '../cart/components/EditableQuantity';
 import WishlistButton from '../wishlist/components/WishlistButton';
 import { getProductById, ProductApi } from '../../api/ProductProvider';
@@ -62,7 +67,7 @@ export const ProductDetailsScreen: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const requestIdRef = useRef(0);
-  const { add, items } = useCart();
+  const {add, items, isMutating} = useCart();
   const cartCount = useSyncExternalStore(
     store.subscribe,
     () =>
@@ -331,6 +336,16 @@ export const ProductDetailsScreen: React.FC = () => {
   }, [activeTab, product.description, product.extraInfo, documents.length]);
 
   const totalPrice = product.price * quantity;
+  const cartMutationPending = isMutating(
+    getCartProductMutationKey({
+      id: product.id,
+      productId: productDetail?.id ?? product.id,
+      rateChartId: selectedRateChartId,
+      size: selectedSize,
+      unit: selectedPack || product.unit,
+    }),
+  );
+  const cartActionDisabled = addingToCart || cartMutationPending;
 
   const inCart = items.some(item => {
     if (String(item.productId ?? item.id) !== product.id) {
@@ -410,7 +425,9 @@ export const ProductDetailsScreen: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <CommonHeader
@@ -710,14 +727,14 @@ export const ProductDetailsScreen: React.FC = () => {
                   {product.price > 0 ? formatPrice(totalPrice) : 'On request'}
                 </Text>
               </View>
-              {product.price > 0 ? (
+              {/* {product.price > 0 ? (
                 <Text style={styles.bottomQtyText}>
                   {quantity} × {formatPrice(product.price)}
                   {selectedPack || product.unit
                     ? ` / ${selectedPack || product.unit}`
                     : ''}
                 </Text>
-              ) : null}
+              ) : null} */}
             </View>
             <View style={styles.footerQuantity}>
               <Text style={styles.footerQuantityLabel}>Qty</Text>
@@ -758,12 +775,12 @@ export const ProductDetailsScreen: React.FC = () => {
               <TouchableOpacity
                 style={[
                   styles.addToCartBtn,
-                  addingToCart && styles.actionDisabled,
+                  cartActionDisabled && styles.actionDisabled,
                 ]}
                 activeOpacity={0.8}
-                disabled={addingToCart}
+                disabled={cartActionDisabled}
                 accessibilityRole="button"
-                accessibilityState={{disabled: addingToCart}}
+                accessibilityState={{disabled: cartActionDisabled}}
                 onPress={handleAddToCart}>
                 <ShoppingCart
                   size={scale(17)}
@@ -771,19 +788,19 @@ export const ProductDetailsScreen: React.FC = () => {
                   strokeWidth={2.3}
                 />
                 <Text style={styles.addToCartText}>
-                  {addingToCart ? 'Adding...' : 'Add to Cart'}
+                  {cartActionDisabled ? 'Please wait' : 'Add to Cart'}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[
                   styles.buyNowBtn,
-                  addingToCart && styles.actionDisabled,
+                  cartActionDisabled && styles.actionDisabled,
                 ]}
                 activeOpacity={0.9}
-                disabled={addingToCart}
+                disabled={cartActionDisabled}
                 accessibilityRole="button"
-                accessibilityState={{disabled: addingToCart}}
+                accessibilityState={{disabled: cartActionDisabled}}
                 onPress={handleBuyNow}>
                 <Text style={styles.buyNowText}>Buy Now</Text>
                 <ArrowRight
@@ -809,7 +826,7 @@ export const ProductDetailsScreen: React.FC = () => {
           )}
         </View>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
