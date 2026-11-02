@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ActivityIndicator,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -16,7 +17,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import {colors, radius, scale, spacing} from '../../theme';
 import {useAppSelector} from '../../store';
 import {selectCartItems, selectCartTotals} from './cartSelectors';
-import {useCart} from './useCart';
+import {getCartItemMutationKey, useCart} from './useCart';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EditableQuantity from './components/EditableQuantity';
 
@@ -28,8 +29,11 @@ export const CartScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const items = useAppSelector(selectCartItems);
   const totals = useAppSelector(selectCartTotals);
-  const {setQuantity, remove, fetchCart} = useCart();
+  const {setQuantity, remove, fetchCart, isMutating} = useCart();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [removingItems, setRemovingItems] = React.useState<Set<string>>(
+    () => new Set(),
+  );
 
   React.useEffect(() => {
     fetchCart();
@@ -49,6 +53,27 @@ export const CartScreen: React.FC = () => {
 
   const openProduct = (id: string | number) => {
     navigation.navigate('ProductDetails', {productId: String(id)});
+  };
+
+  const handleRemove = async (
+    id: string | number,
+    showDeleteLoading = true,
+  ) => {
+    const key = String(id);
+    if (showDeleteLoading) {
+      setRemovingItems(current => new Set(current).add(key));
+    }
+    try {
+      await remove(id);
+    } finally {
+      if (showDeleteLoading) {
+        setRemovingItems(current => {
+          const next = new Set(current);
+          next.delete(key);
+          return next;
+        });
+      }
+    }
   };
 
   if (items.length === 0) {
@@ -101,6 +126,11 @@ export const CartScreen: React.FC = () => {
         {items.map(item => {
           const lineTotal = item.lineTotal ?? item.price * item.quantity;
           const packLabel = item.packSize || item.size || item.unit;
+          const itemId = item.cartItemId ?? item.id;
+          const isDeleteLoading = removingItems.has(String(itemId));
+          const isItemMutating =
+            item.cartItemId != null &&
+            isMutating(getCartItemMutationKey(item.cartItemId));
 
           return (
             <View
@@ -144,8 +174,19 @@ export const CartScreen: React.FC = () => {
                   style={styles.removeIconBtn}
                   activeOpacity={0.7}
                   hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
-                  onPress={() => remove(item.cartItemId ?? item.id)}>
-                  <Trash2 size={scale(16)} color="#EF4444" strokeWidth={2.2} />
+                  disabled={isDeleteLoading || isItemMutating}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${item.name} from cart`}
+                  accessibilityState={{
+                    disabled: isDeleteLoading || isItemMutating,
+                    busy: isDeleteLoading,
+                  }}
+                  onPress={() => handleRemove(itemId)}>
+                  {isDeleteLoading ? (
+                    <ActivityIndicator size="small" color="#EF4444" />
+                  ) : (
+                    <Trash2 size={scale(16)} color="#EF4444" strokeWidth={2.2} />
+                  )}
                 </TouchableOpacity>
               </View>
 
@@ -157,12 +198,12 @@ export const CartScreen: React.FC = () => {
                   <EditableQuantity
                     value={item.quantity}
                     min={0}
+                    busy={isItemMutating}
                     onChange={next => {
-                      const id = item.cartItemId ?? item.id;
                       if (next <= 0) {
-                        remove(id);
+                        handleRemove(itemId, false);
                       } else {
-                        setQuantity(id, next);
+                        setQuantity(itemId, next);
                       }
                     }}
                   />
