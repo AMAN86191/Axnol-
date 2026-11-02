@@ -811,7 +811,7 @@ export const ProductDetailsScreen: React.FC = () => {
                   strokeWidth={2.3}
                 />
                 <Text style={styles.addToCartText}>
-                  {cartActionDisabled ? 'Please wait' : 'Add to Cart'}
+                  {cartActionDisabled ? 'Please wait...' : 'Add to Cart'}
                 </Text>
               </TouchableOpacity>
 
