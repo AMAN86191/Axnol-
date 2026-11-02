@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {Check, Heart, Minus} from 'lucide-react-native';
 import Animated, {
   cancelAnimation,
@@ -12,7 +12,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {radius, scale} from '../../../theme';
+import {radius, scale, spacing} from '../../../theme';
+import {navigationRef} from '../../../navigation/navigationRef';
 
 interface AnimatedWishlistToastProps {
   visible: boolean;
@@ -117,7 +118,7 @@ const AnimatedWishlistToast: React.FC<AnimatedWishlistToastProps> = ({
 
   return (
     <Animated.View
-      pointerEvents="none"
+      pointerEvents="box-none"
       style={[
         styles.wrap,
         {bottom: insets.bottom + scale(14)},
@@ -160,6 +161,19 @@ const AnimatedWishlistToast: React.FC<AnimatedWishlistToastProps> = ({
             </Text>
           ) : null}
         </View>
+        <TouchableOpacity
+          style={styles.viewButton}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="View wishlist"
+          onPress={() => {
+            onHide();
+            if (navigationRef.isReady()) {
+              navigationRef.navigate('Main', {screen: 'Wishlist'});
+            }
+          }}>
+          <Text style={styles.viewButtonText}>View Wishlist</Text>
+        </TouchableOpacity>
       </View>
     </Animated.View>
   );
@@ -208,6 +222,7 @@ const styles = StyleSheet.create({
   statusBadgeRemoved: {backgroundColor: '#64748B'},
   textCol: {
     flex: 1,
+    marginRight: spacing.sm,
   },
   title: {
     fontSize: scale(12.5),
@@ -218,6 +233,17 @@ const styles = StyleSheet.create({
     fontSize: scale(11),
     color: '#64748B',
     marginTop: scale(2),
+  },
+  viewButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: '#FFF1F3',
+  },
+  viewButtonText: {
+    color: '#D93655',
+    fontSize: scale(10.5),
+    fontWeight: '700',
   },
 });
 
