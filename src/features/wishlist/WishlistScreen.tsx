@@ -10,7 +10,6 @@ import { useNavigation } from '@react-navigation/native';
 import { Heart, Trash2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'react-native';
-import Button from '../../components/ui/Button';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
 import { toast } from '../../components/ui/ToastProvider';
@@ -21,6 +20,8 @@ import { selectWishlistItems } from './wishlistSelectors';
 import { useWishlist } from './useWishlist';
 import { useCart } from '../cart/useCart';
 import AddToCartButton from '../cart/components/AddToCartButton';
+import PageHero, { DEFAULT_HERO_IMAGES } from '../../components/ui/PageHero';
+import BrandFooter from '../../components/ui/BrandFooter';
 
 export const WishlistScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -113,55 +114,77 @@ export const WishlistScreen: React.FC = () => {
     return (
       <View style={styles.container}>
         <CommonHeader title='Wishlist' />
-        <View style={styles.emptyWrap}>
+        <ScrollView
+          style={styles.scrollFlex}
+          contentContainerStyle={{ paddingBottom: insets.bottom + scale(24) }}
+          showsVerticalScrollIndicator={false}>
+          <PageHero
+            title="Wishlist"
+            subtitle="Saved Products"
+            images={DEFAULT_HERO_IMAGES}
+          />
           <EmptyState
+            variant="minimal"
             icon={Heart}
             title="Your wishlist is empty"
             subtitle="Tap the heart icon on any product to save it here for later."
             actionLabel="Browse Products"
             onAction={() => navigation.goBack()}
           />
-        </View>
+          <BrandFooter title={'Your favourites,\nsaved with care'} />
+        </ScrollView>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <CommonHeader
-        title='Wishlist'
-        right={
-          <TouchableOpacity
-            style={styles.clearBtn}
-            activeOpacity={0.75}
-            onPress={handleClear}>
-            <Trash2 size={scale(15)} color={colors.danger} strokeWidth={2.1} />
-            <Text style={styles.clearText}>Clear</Text>
-          </TouchableOpacity>
-        }
-      />
+      <CommonHeader title='Wishlist' />
 
       <ScrollView
         style={styles.scrollFlex}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
+        <View style={styles.heroWrap}>
+          <PageHero
+            title="Wishlist"
+            subtitle="Saved Products"
+            images={DEFAULT_HERO_IMAGES}
+          />
+        </View>
+
         <View style={styles.summaryStrip}>
-          <View style={styles.summaryLeft}>
-            <Text style={styles.summaryCount}>
-              {items.length} {items.length === 1 ? 'item' : 'items'} saved
-            </Text>
-            <Text style={styles.summaryHint}>
-              Total value {formatPrice(totalValue)}
-            </Text>
-          </View>
-          <View style={styles.savedPill}>
-            <Heart
-              size={scale(12)}
-              color="#EF4444"
-              fill="#EF4444"
-              strokeWidth={2}
-            />
-            <Text style={styles.savedPillText}>Saved</Text>
+          <View style={styles.summaryTop}>
+            <View style={styles.heartBadge}>
+              <Heart
+                size={scale(16)}
+                color="#FFFFFF"
+                fill="#FFFFFF"
+                strokeWidth={2}
+              />
+            </View>
+            <View style={styles.summaryLeft}>
+              <Text style={styles.summaryCount}>
+                {items.length} {items.length === 1 ? 'item' : 'items'} saved
+              </Text>
+              <Text style={styles.summaryHint}>
+                Total value {formatPrice(totalValue)}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.clearLink}
+              activeOpacity={0.6}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Clear all saved items"
+              onPress={handleClear}>
+              <Trash2
+                size={scale(13)}
+                color={colors.textMuted}
+                strokeWidth={2.2}
+              />
+              <Text style={styles.clearText}>Clear all</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -235,6 +258,10 @@ export const WishlistScreen: React.FC = () => {
             </View>
           ))}
         </View>
+
+        <View style={styles.footerWrap}>
+          <BrandFooter title={'Your favourites,\nsaved with care'} />
+        </View>
       </ScrollView>
 
 
@@ -245,40 +272,52 @@ export const WishlistScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
   scrollFlex: { flex: 1 },
+  // Hero and footer pad themselves, so cancel this list's padding and gap.
+  heroWrap: {
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.md,
+    marginBottom: -spacing.md,
+  },
+  footerWrap: {
+    marginHorizontal: -spacing.lg,
+  },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
     gap: spacing.md,
   },
-  emptyWrap: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  clearBtn: {
+  // Quiet text action: clearing everything shouldn't look like a main button.
+  clearLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: scale(4),
-    paddingHorizontal: scale(8),
-    paddingVertical: scale(5),
-    borderRadius: radius.md,
-    backgroundColor: colors.dangerLight,
+    gap: scale(5),
   },
   clearText: {
     fontSize: scale(12),
-    fontWeight: '700',
-    color: colors.danger,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   summaryStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: '#FFFFFF',
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: '#EDF2F7',
     paddingVertical: scale(10),
     paddingHorizontal: spacing.md,
+  },
+  summaryTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: scale(10),
+  },
+  heartBadge: {
+    width: scale(34),
+    height: scale(34),
+    borderRadius: scale(17),
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   summaryLeft: { flex: 1 },
   summaryCount: {
@@ -292,20 +331,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#94A3B8',
     marginTop: scale(2),
-  },
-  savedPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: scale(4),
-    backgroundColor: '#FEF2F2',
-    borderRadius: radius.pill,
-    paddingHorizontal: scale(9),
-    paddingVertical: scale(4),
-  },
-  savedPillText: {
-    fontSize: scale(11),
-    fontWeight: '800',
-    color: '#EF4444',
   },
   grid: {
     flexDirection: 'row',

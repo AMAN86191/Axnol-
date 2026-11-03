@@ -1,60 +1,54 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import Skeleton from '../../../components/ui/Skeleton';
-import { radius, scale, spacing } from '../../../theme';
+import { scale, spacing } from '../../../theme';
 
-const IndustriesSkeleton: React.FC = () => (
-  <View style={styles.container}>
-    {/* Search bar */}
-    <View style={styles.searchWrap}>
-      <Skeleton height={scale(44)} borderRadius={radius.pill} />
-    </View>
-
-    {/* Industry cards */}
+/** Placeholder with the same layout as the Industries screen. */
+const IndustriesSkeleton: React.FC = () => {
+  return (
     <ScrollView
+      scrollEnabled={false}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={[styles.content, { paddingTop: scale(12) }]}
     >
-      {[0, 1].map(row => (
-        <View key={`row-${row}`} style={styles.row}>
-          {[0, 1, 2].map(col => (
-            <View key={`tile-${row}-${col}`} style={styles.tile}>
-              <Skeleton height={scale(78)} borderRadius={radius.md} />
-              <Skeleton width="60%" height={scale(10)} style={styles.title} />
-            </View>
-          ))}
-        </View>
-      ))}
+      <Skeleton height={scale(120)} borderRadius={scale(14)} />
+      <View style={styles.grid}>
+        {[0, 1, 2].map(row => (
+          <View key={`row-${row}`} style={styles.row}>
+            {[0, 1, 2].map(col => (
+              <View key={`tile-${row}-${col}`} style={styles.tile}>
+                <Skeleton height={scale(82)} borderRadius={scale(5)} />
+                <Skeleton width="70%" height={scale(10)} style={styles.title} />
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
     </ScrollView>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F7F9FC',
-  },
-  searchWrap: {
+  content: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
   },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+  grid: {
+    marginTop: scale(12),
+    gap: scale(9),
   },
   row: {
     flexDirection: 'row',
-    gap: spacing.lg,
-    marginBottom: spacing.xl,
+    gap: scale(9),
   },
   tile: {
     flex: 1,
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: scale(8),
+    padding: scale(5),
   },
   title: {
-    marginTop: scale(8),
-    marginBottom: scale(2),
+    marginTop: scale(14),
+    marginBottom: scale(14),
   },
 });
 

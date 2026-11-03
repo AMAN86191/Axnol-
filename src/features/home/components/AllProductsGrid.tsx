@@ -14,6 +14,8 @@ interface AllProductsGridProps {
   errorMessage?: string;
   onRetry?: () => void;
   onSeeAll?: () => void;
+  /** Most products to show on Home; the rest are behind "See all". */
+  limit?: number;
   onPress: (product: HomeProduct) => void;
 }
 
@@ -31,13 +33,14 @@ export const AllProductsGrid: React.FC<AllProductsGridProps> = ({
   errorMessage,
   onRetry,
   onSeeAll,
+  limit = 8,
   onPress,
 }) => {
   const visibleProducts = React.useMemo(
     () => (products || []).filter(p => Number((p as any).price) > 0),
     [products],
   );
-  const rows = chunk(visibleProducts, 2);
+  const rows = chunk(visibleProducts.slice(0, limit), 2);
   const showError = !loading && visibleProducts.length === 0 && Boolean(errorMessage);
   const isEmpty = !loading && !showError && visibleProducts.length === 0;
 

@@ -8,6 +8,8 @@ interface LogoProps {
   height?: number;
   /** Show the AXNOL wordmark beside the round emblem. */
   showText?: boolean;
+  /** Show the round emblem; false leaves just the AXNOL wordmark. */
+  showEmblem?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -21,9 +23,15 @@ export const Logo: React.FC<LogoProps> = ({
   width,
   height,
   showText = true,
+  showEmblem = true,
   style,
 }) => {
-  const artWidth = showText ? ART_WIDTH : EMBLEM_WIDTH;
+  const artWidth = !showEmblem
+    ? ART_WIDTH - EMBLEM_WIDTH
+    : showText
+    ? ART_WIDTH
+    : EMBLEM_WIDTH;
+  const artX = showEmblem ? 0 : EMBLEM_WIDTH;
   const aspect = artWidth / ART_HEIGHT;
   // Size from whichever dimension is given; width wins when both are.
   const w = width ?? (height ? height * aspect : 200);
@@ -32,7 +40,7 @@ export const Logo: React.FC<LogoProps> = ({
     <Svg
       width={w}
       height={h}
-      viewBox={`0 0 ${artWidth} ${ART_HEIGHT}`}
+      viewBox={`${artX} 0 ${artWidth} ${ART_HEIGHT}`}
       style={style}
     >
       <G>

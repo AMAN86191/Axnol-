@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   StyleProp,
   StyleSheet,
@@ -31,7 +31,15 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   onAdded,
   style,
 }) => {
-  const {add, increment, decrement, remove, items, isMutating} = useCart();
+  const {
+    add,
+    increment,
+    decrement,
+    remove,
+    items,
+    isMutating,
+    getDisplayQuantity,
+  } = useCart();
   const busyRef = useRef(false);
   const productKey = String(product.productId ?? product.id);
   const rateChartKey =
@@ -62,13 +70,15 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     }
     return item.rateChartId === undefined || item.rateChartId === null;
   });
-  const quantity = existing?.quantity ?? 0;
+  const quantity = existing ? getDisplayQuantity(existing) : 0;
   const itemId = existing?.cartItemId ?? existing?.id ?? product.id;
   const mutationPending = isMutating([
     getCartProductMutationKey(product),
     getCartItemMutationKey(itemId),
   ]);
   const interactionDisabled = disabled || mutationPending;
+  // Just added: shown at once, but the server has not given it an id yet.
+  const syncing = !!existing && existing.cartItemId == null;
 
   const run = async (action: () => Promise<unknown> | unknown) => {
     if (busyRef.current) {
@@ -91,8 +101,43 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       }
     });
 
-  const handleMinus = () =>
-    run(() => (quantity > 1 ? decrement(itemId) : remove(itemId)));
+  // Taking the last unit off: show 0 for a moment, then quietly the Add button.
+  const [zeroPhase, setZeroPhase] = useState<'none' | 'zero' | 'add'>('none');
+  const zeroTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (zeroTimer.current) {
+        clearTimeout(zeroTimer.current);
+      }
+    },
+    [],
+  );
+
+  // Once the item is really gone, the normal Add button takes over.
+  useEffect(() => {
+    if (!existing && zeroPhase !== 'none') {
+      setZeroPhase('none');
+    }
+  }, [existing, zeroPhase]);
+
+  const handleMinus = () => {
+    if (quantity > 1) {
+      return run(() => decrement(itemId));
+    }
+    setZeroPhase('zero');
+    zeroTimer.current = setTimeout(() => setZeroPhase('add'), 350);
+    return run(async () => {
+      const removed = await remove(itemId);
+      if (!removed) {
+        // Could not remove it: go back to showing the real quantity.
+        if (zeroTimer.current) {
+          clearTimeout(zeroTimer.current);
+        }
+        setZeroPhase('none');
+      }
+    });
+  };
 
   const handlePlus = () => run(() => increment(itemId));
 
@@ -115,41 +160,42 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
     );
   }
 
-  if (quantity > 0) {
+  // Taps stay live while a request runs: they are grouped into one update.
+  if (zeroPhase === 'zero' || (quantity > 0 && zeroPhase === 'none')) {
     return (
       <View
         style={[
           styles.stepper,
           compact && styles.stepperCompact,
-          mutationPending && styles.stepperPending,
+          syncing && styles.stepperSyncing,
           style,
         ]}>
         <TouchableOpacity
           style={styles.stepBtn}
           activeOpacity={0.7}
-          disabled={interactionDisabled}
-          accessibilityState={{disabled: interactionDisabled}}
+          disabled={syncing}
+          accessibilityState={{disabled: syncing}}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           onPress={handleMinus}>
           <Minus
             size={scale(14)}
-            color={mutationPending ? '#94A3B8' : colors.primary}
+            color={colors.primary}
             strokeWidth={3}
           />
         </TouchableOpacity>
         <Text style={[styles.qtyText, compact && styles.qtyTextCompact]}>
-          {quantity}
+          {zeroPhase === 'zero' ? 0 : quantity}
         </Text>
         <TouchableOpacity
           style={styles.stepBtn}
           activeOpacity={0.7}
-          disabled={interactionDisabled}
-          accessibilityState={{disabled: interactionDisabled}}
+          disabled={syncing}
+          accessibilityState={{disabled: syncing}}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           onPress={handlePlus}>
           <Plus
             size={scale(14)}
-            color={mutationPending ? '#94A3B8' : colors.primary}
+            color={colors.primary}
             strokeWidth={3}
           />
         </TouchableOpacity>
@@ -236,10 +282,8 @@ const styles = StyleSheet.create({
     paddingVertical: scale(4),
     paddingHorizontal: scale(6),
   },
-  stepperPending: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#CBD5E1',
-    opacity: 0.8,
+  stepperSyncing: {
+    opacity: 0.7,
   },
   stepBtn: {
     alignItems: 'center',

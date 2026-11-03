@@ -1,11 +1,16 @@
 import {useCallback} from 'react';
 import {useAppDispatch, useAppSelector} from '../../store';
 import {
+  addToCart as addToCartAction,
   CartItem,
   CartSummary,
+  clearPendingQuantity,
+  mergeCartItemDetails,
+  restoreCartItems,
   setCartData,
   setCartLoading,
   setCartMutationPending,
+  setPendingQuantity,
 } from './cartSlice';
 import {selectCartItemCount, selectCartItems, selectCartTotals} from './cartSelectors';
 import {
@@ -34,6 +39,12 @@ interface RateChartMeta {
 const rateChartMetaCache = new Map<string, RateChartMeta | null>();
 const productDetailCache = new Map<string, Promise<ProductApi | null>>();
 const activeCartMutations = new Set<string>();
+
+// Quick taps on + / - are grouped: the screen shows each tap at once and one
+// request with the final number is sent after the taps stop.
+const QUANTITY_DEBOUNCE_MS = 450;
+const quantityTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const latestQuantities = new Map<string, number>();
 
 export const getCartProductMutationKey = (product: {
   id: string | number;
@@ -240,6 +251,37 @@ const mapApiCartItem = (item: any): CartItem => {
   };
 };
 
+// The cart reply has no names or images, so borrow them from what the app
+// already knows (the product card that was tapped, or the earlier cart).
+const fillFromKnown = (
+  item: CartItem,
+  known: Array<Partial<CartItem>>,
+): CartItem => {
+  const match = known.find(
+    candidate =>
+      String(candidate.productId ?? candidate.id) ===
+        String(item.productId ?? item.id) &&
+      (candidate.rateChartId === undefined ||
+        candidate.rateChartId === null ||
+        item.rateChartId === undefined ||
+        item.rateChartId === null ||
+        String(candidate.rateChartId) === String(item.rateChartId)),
+  );
+  if (!match) {
+    return item;
+  }
+  return {
+    ...item,
+    name: item.name || match.name || '',
+    code: item.code || match.code,
+    image: item.image || match.image,
+    unit: item.unit || match.unit,
+    size: item.size || match.size,
+    packSize: item.packSize || match.packSize,
+    mrp: item.mrp ?? match.mrp,
+  };
+};
+
 const toOptionalNumber = (value: unknown): number | undefined => {
   if (value === undefined || value === null || value === '') {
     return undefined;
@@ -294,6 +336,14 @@ const findCartItem = (items: CartItem[], id: string | number) =>
       item.cartItemId !== null &&
       String(item.cartItemId) === String(id),
   ) ?? items.find(item => String(item.id) === String(id));
+
+// The server no longer has this cart item (e.g. it was just removed).
+const isItemGoneError = (error: any): boolean =>
+  String(error?.message ?? '')
+    .toLowerCase()
+    .includes('no query results');
+
+const wait = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
 const getCartErrorMessage = (error: any, fallback: string): string => {
   const kind = getNetworkErrorKind(error);
@@ -382,6 +432,17 @@ export const useCart = () => {
       ];
       return (
         (await runCartMutation(mutationKeys, dispatch, async () => {
+        // Show the item in the cart straight away; the server call follows.
+        const snapshot = items;
+        const optimistic = {
+          ...product,
+          id: String(productId),
+          productId,
+          size: size ?? product.unit,
+          packSize: product.packSize ?? size ?? product.unit,
+          quantity,
+        };
+        dispatch(addToCartAction(optimistic as any));
         try {
           const response = await addToCartApi({
             product_id: productId,
@@ -391,14 +452,19 @@ export const useCart = () => {
           });
           const cartResponse = parseCartResponse(response);
           if (cartResponse.items) {
-            const mappedItems = cartResponse.items.map(mapApiCartItem);
-            const enrichedItems = await enrichCartItems(mappedItems);
+            const quickItems = cartResponse.items
+              .map(mapApiCartItem)
+              .map(item => fillFromKnown(item, [...snapshot, optimistic]));
             dispatch(
               setCartData({
-                items: enrichedItems,
+                items: quickItems,
                 summary: cartResponse.summary,
               }),
             );
+            // Pack sizes and other extras are looked up in the background.
+            enrichCartItems(quickItems)
+              .then(enriched => dispatch(mergeCartItemDetails(enriched)))
+              .catch(() => undefined);
           } else {
             await fetchCart(true);
           }
@@ -409,6 +475,8 @@ export const useCart = () => {
           });
           return true;
         } catch (error) {
+          // The server refused or was unreachable: take the item back out.
+          dispatch(restoreCartItems(snapshot));
           toast.error(
             'Add to Cart',
             getCartErrorMessage(
@@ -431,9 +499,26 @@ export const useCart = () => {
         toast.warning('Cart', 'Cart was updated. Please try again.');
         return false;
       }
+      const key = String(item.cartItemId);
+      const mutationKey = getCartItemMutationKey(item.cartItemId);
+
+      // A quantity update still waiting for this item would hit a deleted item.
+      const waiting = quantityTimers.get(key);
+      if (waiting) {
+        clearTimeout(waiting);
+        quantityTimers.delete(key);
+      }
+      latestQuantities.delete(key);
+      dispatch(clearPendingQuantity({id: key}));
+
+      // If an update for this item is already running, let it finish first.
+      for (let i = 0; i < 100 && activeCartMutations.has(mutationKey); i += 1) {
+        await wait(100);
+      }
+
       return (
         (await runCartMutation(
-          [getCartItemMutationKey(item.cartItemId)],
+          [mutationKey],
           dispatch,
           async () => {
             try {
@@ -441,6 +526,11 @@ export const useCart = () => {
               await fetchCart(true);
               return true;
             } catch (error) {
+              if (isItemGoneError(error)) {
+                // Already gone on the server: just refresh, nothing to report.
+                await fetchCart(true);
+                return true;
+              }
               toast.error(
                 'Cart',
                 getCartErrorMessage(
@@ -457,39 +547,84 @@ export const useCart = () => {
     [dispatch, fetchCart],
   );
 
+  const pendingQuantities = useAppSelector(
+    state => state.cart.pendingQuantities,
+  );
+
+  /** Quantity to show: the one just tapped, until the server has caught up. */
+  const getDisplayQuantity = useCallback(
+    (item: CartItem): number =>
+      pendingQuantities[String(item.cartItemId ?? item.id)] ?? item.quantity,
+    [pendingQuantities],
+  );
+
+  const queueQuantity = useCallback(
+    async (item: CartItem, qty: number) => {
+      if (!item.cartItemId) {
+        await fetchCart(true);
+        toast.warning('Cart', 'Cart was updated. Please try again.');
+        return;
+      }
+      const key = String(item.cartItemId);
+      const mutationKey = getCartItemMutationKey(item.cartItemId);
+
+      latestQuantities.set(key, qty);
+      dispatch(setPendingQuantity({id: key, quantity: qty}));
+
+      const flush = async () => {
+        // A previous request for this item is still running: try again shortly.
+        if (activeCartMutations.has(mutationKey)) {
+          quantityTimers.set(key, setTimeout(flush, 200));
+          return;
+        }
+        quantityTimers.delete(key);
+        await runCartMutation([mutationKey], dispatch, async () => {
+          try {
+            await updateCartItemApi(item.cartItemId as string | number, {qty});
+            await fetchCart(true);
+          } catch (error) {
+            if (isItemGoneError(error)) {
+              // Removed meanwhile: refresh quietly instead of showing an error.
+              await fetchCart(true);
+            } else {
+              toast.error(
+                'Cart',
+                getCartErrorMessage(
+                  error,
+                  'Unable to update the quantity. Please try again.',
+                ),
+              );
+            }
+          }
+        });
+        if (latestQuantities.get(key) === qty) {
+          latestQuantities.delete(key);
+        }
+        // On failure this also puts the old number back on screen.
+        dispatch(clearPendingQuantity({id: key, quantity: qty}));
+      };
+
+      const existing = quantityTimers.get(key);
+      if (existing) {
+        clearTimeout(existing);
+      }
+      quantityTimers.set(key, setTimeout(flush, QUANTITY_DEBOUNCE_MS));
+    },
+    [dispatch, fetchCart],
+  );
+
+  const currentQuantity = (item: CartItem) =>
+    latestQuantities.get(String(item.cartItemId ?? item.id)) ?? item.quantity;
+
   const increment = useCallback(
     async (id: string | number) => {
       const item = findCartItem(items, id);
       if (!item) {
         return;
       }
-      if (!item.cartItemId) {
-        await fetchCart(true);
-        toast.warning('Cart', 'Cart was updated. Please try again.');
-        return;
-      }
-      await runCartMutation(
-        [getCartItemMutationKey(item.cartItemId)],
-        dispatch,
-        async () => {
-          try {
-            await updateCartItemApi(item.cartItemId as string | number, {
-              qty: (item.quantity || 1) + 1,
-            });
-            await fetchCart(true);
-          } catch (error) {
-            toast.error(
-              'Cart',
-              getCartErrorMessage(
-                error,
-                'Unable to update the quantity. Please try again.',
-              ),
-            );
-          }
-        },
-      );
+      await queueQuantity(item, currentQuantity(item) + 1);
     },
-    [dispatch, fetchCart, items],
+    [items, queueQuantity],
   );
 
   const decrement = useCallback(
@@ -498,37 +633,14 @@ export const useCart = () => {
       if (!item) {
         return;
       }
-      if (item.quantity <= 1) {
+      const next = currentQuantity(item) - 1;
+      if (next <= 0) {
         await removeItem(item);
         return;
       }
-      if (!item.cartItemId) {
-        await fetchCart(true);
-        toast.warning('Cart', 'Cart was updated. Please try again.');
-        return;
-      }
-      await runCartMutation(
-        [getCartItemMutationKey(item.cartItemId)],
-        dispatch,
-        async () => {
-          try {
-            await updateCartItemApi(item.cartItemId as string | number, {
-              qty: item.quantity - 1,
-            });
-            await fetchCart(true);
-          } catch (error) {
-            toast.error(
-              'Cart',
-              getCartErrorMessage(
-                error,
-                'Unable to update the quantity. Please try again.',
-              ),
-            );
-          }
-        },
-      );
+      await queueQuantity(item, next);
     },
-    [dispatch, fetchCart, items, removeItem],
+    [items, queueQuantity, removeItem],
   );
 
   const setQuantity = useCallback(
@@ -537,41 +649,18 @@ export const useCart = () => {
       if (!item) {
         return;
       }
-      const qty = Math.max(1, quantity);
-      if (!item.cartItemId) {
-        await fetchCart(true);
-        toast.warning('Cart', 'Cart was updated. Please try again.');
-        return;
-      }
-      await runCartMutation(
-        [getCartItemMutationKey(item.cartItemId)],
-        dispatch,
-        async () => {
-          try {
-            await updateCartItemApi(item.cartItemId as string | number, {qty});
-            await fetchCart(true);
-          } catch (error) {
-            toast.error(
-              'Cart',
-              getCartErrorMessage(
-                error,
-                'Unable to update the quantity. Please try again.',
-              ),
-            );
-          }
-        },
-      );
+      await queueQuantity(item, Math.max(1, quantity));
     },
-    [dispatch, fetchCart, items],
+    [items, queueQuantity],
   );
 
   const remove = useCallback(
     async (id: string | number) => {
       const item = findCartItem(items, id);
       if (!item) {
-        return;
+        return false;
       }
-      await removeItem(item);
+      return removeItem(item);
     },
     [items, removeItem],
   );
@@ -602,6 +691,7 @@ export const useCart = () => {
     clear,
     fetchCart,
     isMutating,
+    getDisplayQuantity,
   };
 };
 

@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useState } from 'react';
-import { Image, ImageProps } from 'react-native';
+import { Image, ImageProps, ImageSourcePropType } from 'react-native';
 
 // URIs that finished loading earlier this session. Their decoded image is still
 // in the native cache, so on a revisit we skip the placeholder.
@@ -7,6 +7,8 @@ const loadedUris = new Set<string>();
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   uri?: string | null;
+  /** A require()d local file; used instead of uri when given. */
+  source?: ImageSourcePropType;
   /** Shown (absolutely filled by the caller) until the image has loaded. */
   placeholder?: React.ReactNode;
   /** Shown instead of the image when there is no uri or it fails to load. */
@@ -21,6 +23,7 @@ interface CachedImageProps extends Omit<ImageProps, 'source'> {
 export const CachedImage = memo(
   ({
     uri,
+    source,
     placeholder,
     fallback,
     resizeMode = 'cover',
@@ -35,6 +38,17 @@ export const CachedImage = memo(
       setFailed(false);
       setLoaded(!!uri && loadedUris.has(uri));
     }, [uri]);
+
+    if (source) {
+      return (
+        <Image
+          {...rest}
+          source={source}
+          resizeMode={resizeMode}
+          fadeDuration={0}
+        />
+      );
+    }
 
     if (!uri || failed) {
       return <>{fallback ?? null}</>;

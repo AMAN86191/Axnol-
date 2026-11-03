@@ -22,7 +22,6 @@ import {
   Phone,
   ScrollText,
   ShieldCheck,
-  Trash2,
   UserRound,
 } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
@@ -335,23 +334,34 @@ export const ProfileScreen: React.FC = () => {
               </TouchableOpacity>
             );
           })}
+
+          <TouchableOpacity
+            style={[styles.menuRow, styles.rowDividerTop]}
+            activeOpacity={0.7}
+            onPress={() => setPendingAction('logout')}>
+            <View style={[styles.menuIconWrap, styles.logoutIconWrap]}>
+              <LogOut size={scale(18)} color={colors.danger} strokeWidth={2.2} />
+            </View>
+            <View style={styles.menuTextWrap}>
+              <Text style={[styles.menuTitle, styles.logoutTitle]} numberOfLines={1}>
+                Log Out
+              </Text>
+              <Text style={styles.menuSubtitle} numberOfLines={1}>
+                Sign out of your account
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.logoutBtn}
-          activeOpacity={0.85}
-          onPress={() => setPendingAction('logout')}>
-          <LogOut size={scale(16)} color={colors.danger} strokeWidth={2.4} />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          activeOpacity={0.85}
-          onPress={() => setPendingAction('delete')}>
-          <Trash2 size={scale(16)} color={colors.danger} strokeWidth={2.4} />
-          <Text style={styles.deleteText}>Delete Account</Text>
-        </TouchableOpacity>
+        <Text style={styles.deleteInfo}>
+          Want to delete your account?{' '}
+          <Text
+            style={styles.deleteLink}
+            accessibilityRole="link"
+            onPress={() => setPendingAction('delete')}>
+            Delete Account
+          </Text>
+        </Text>
       </ScrollView>
 
       <ConfirmModal
@@ -665,42 +675,29 @@ const styles = StyleSheet.create({
   },
 
   /* Logout */
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    height: scale(40),
-    borderRadius: radius.md,
+  rowDividerTop: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E8F0',
+  },
+  logoutIconWrap: {
     backgroundColor: colors.dangerLight,
-    marginTop: spacing.sm,
   },
-  logoutText: {
-    fontSize: scale(13.5),
-    fontWeight: '800',
+  logoutTitle: {
     color: colors.danger,
-    letterSpacing: 0.2,
   },
-  deleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.sm,
+  // Information line; only the words "Delete Account" are tappable.
+  deleteInfo: {
+    textAlign: 'center',
+    marginTop: spacing.lg,
     marginBottom: spacing.xl,
-    height: scale(40),
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.danger,
-    backgroundColor: 'transparent',
+    marginHorizontal: spacing.lg,
+    fontSize: scale(12),
+    color: colors.textMuted,
   },
-  deleteText: {
-    fontSize: scale(13.5),
-    fontWeight: '800',
-    color: colors.danger,
-    letterSpacing: 0.2,
+  deleteLink: {
+    color: '#696969', // dim gray
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
 

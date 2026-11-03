@@ -29,6 +29,9 @@ import { getLoadErrorMessage } from '../../utils/apiError';
 import { toProductCardData } from '../../utils/productCardData';
 import AdSlider from './components/AdSlider';
 import { ProductGridSkeleton } from '../../components/ui/ProductCardSkeleton';
+import BrandFooter from '../../components/ui/BrandFooter';
+
+const HOME_PRODUCTS_LIMIT = 8;
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -335,7 +338,10 @@ export const HomeScreen: React.FC = () => {
             !isLoadingMoreProducts &&
             !productsLoading &&
             productsPagination?.last_page &&
-            homeProductsPage < productsPagination.last_page
+            homeProductsPage < productsPagination.last_page &&
+            // The grid shows only HOME_PRODUCTS_LIMIT; load more just to fill it.
+            homeProducts.filter(p => Number((p as any).price) > 0).length <
+              HOME_PRODUCTS_LIMIT
           ) {
             const offsetY = nativeEvent.contentOffset.y;
             const layoutHeight = nativeEvent.layoutMeasurement.height;
@@ -454,6 +460,7 @@ export const HomeScreen: React.FC = () => {
             errorMessage={productsErrorMessage}
             onRetry={retryProducts}
             onSeeAll={() => openAllProducts()}
+            limit={HOME_PRODUCTS_LIMIT}
             onPress={openProduct}
           />
           {isLoadingMoreProducts || (productsLoading && homeProductsPage > 1) ? (
@@ -463,7 +470,10 @@ export const HomeScreen: React.FC = () => {
           ) : null}
         </View>
 
-
+        {/* 7. Closing section; cancels the page's side padding */}
+        <View style={styles.footerWrap}>
+          <BrandFooter title={'Powering industry,\nevery day'} />
+        </View>
       </ScrollView>
     </View>
   );
@@ -475,6 +485,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: scale(14),
+  },
+  footerWrap: {
+    marginHorizontal: -scale(14),
   },
   sectionWrap: {
     marginBottom: scale(20),

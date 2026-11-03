@@ -34,6 +34,8 @@ import {
   getStatusBadgeStyle,
   statusKey,
 } from './orderUtils';
+import PageHero, { PRODUCT_HERO_IMAGES } from '../../components/ui/PageHero';
+import BrandFooter from '../../components/ui/BrandFooter';
 
 const ALL_FILTER = 'all';
 
@@ -182,15 +184,29 @@ export const OrdersScreen: React.FC = () => {
             ]}
             showsVerticalScrollIndicator={false}
             ListHeaderComponent={
-              filteredOrders.length > 0 ? (
-                <View style={styles.listMeta}>
-                  <Text style={styles.listMetaTitle}>Recent Orders</Text>
-                  <Text style={styles.listMetaCount}>
-                    {filteredOrders.length}{' '}
-                    {filteredOrders.length === 1 ? 'order' : 'orders'}
-                  </Text>
+              <>
+                <View style={styles.heroWrap}>
+                  <PageHero
+                    title="My Orders"
+                    subtitle="Track & Manage"
+                    images={PRODUCT_HERO_IMAGES}
+                  />
                 </View>
-              ) : null
+                {filteredOrders.length > 0 ? (
+                  <View style={styles.listMeta}>
+                    <Text style={styles.listMetaTitle}>Recent Orders</Text>
+                    <Text style={styles.listMetaCount}>
+                      {filteredOrders.length}{' '}
+                      {filteredOrders.length === 1 ? 'order' : 'orders'}
+                    </Text>
+                  </View>
+                ) : null}
+              </>
+            }
+            ListFooterComponent={
+              <View style={styles.footerWrap}>
+                <BrandFooter title={'Thank you for\nchoosing Axnol'} />
+              </View>
             }
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
@@ -372,6 +388,15 @@ const styles = StyleSheet.create({
   orderList: {
     padding: spacing.lg,
     gap: spacing.md,
+  },
+  // Hero and footer pad themselves, so cancel the list's padding and gap.
+  heroWrap: {
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
+    marginBottom: -spacing.md,
+  },
+  footerWrap: {
+    marginHorizontal: -spacing.lg,
   },
   listMeta: {
     flexDirection: 'row',

@@ -46,6 +46,8 @@ import {getLoadErrorMessage} from '../../utils/apiError';
 import ProductFiltersModal, {
   SortKey,
 } from './components/ProductFiltersModal';
+import PageHero, {PRODUCT_HERO_IMAGES} from '../../components/ui/PageHero';
+import BrandFooter from '../../components/ui/BrandFooter';
 
 type Route = RouteProp<CatalogueStackParamList, 'Products'>;
 
@@ -448,6 +450,13 @@ export const ProductsScreen: React.FC = () => {
                 });
               }
             }}>
+            <View style={styles.heroWrap}>
+              <PageHero
+                title="Products"
+                subtitle="Product Catalogue"
+                images={PRODUCT_HERO_IMAGES}
+              />
+            </View>
             {chunk(visibleFiltered, 2).map((row, rowIndex) => (
               <View key={`row-${rowIndex}`} style={styles.gridRow}>
                 {row.map(prod => (
@@ -465,6 +474,9 @@ export const ProductsScreen: React.FC = () => {
                 <Text style={styles.loadMoreText}>Loading more products...</Text>
               </View>
             ) : null}
+            <View style={styles.fullBleed}>
+              <BrandFooter title={'Quality products,\nfor every need'} />
+            </View>
           </ScrollView>
         );
       })()}
@@ -626,6 +638,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   // Grid styles
+  // Hero and footer pad themselves, so cancel the grid's side padding.
+  fullBleed: {
+    marginHorizontal: -spacing.lg,
+  },
+  // Also cancel the grid's top padding and row gap so the space above and
+  // below the hero matches the Industries screen (12 each).
+  heroWrap: {
+    marginHorizontal: -spacing.lg,
+    marginTop: -(spacing.md + scale(9)),
+    marginBottom: -scale(10),
+  },
   gridContainer: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,

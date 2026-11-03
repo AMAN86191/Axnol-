@@ -27,6 +27,8 @@ import {fetchIndustriesSlice} from '../../redux/IndustrySlice';
 import {invalidateRequests} from '../../api/requestCache';
 import {CategoryGridSkeleton} from '../../components/ui/ListSkeletons';
 import CachedImage from '../../components/ui/CachedImage';
+import PageHero, {DEFAULT_HERO_IMAGES} from '../../components/ui/PageHero';
+import BrandFooter from '../../components/ui/BrandFooter';
 
 type Route = RouteProp<CatalogueStackParamList, 'Categories'>;
 
@@ -118,6 +120,20 @@ export const CategoriesScreen: React.FC = () => {
           numColumns={3}
           columnWrapperStyle={styles.columnWrapper}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <View style={styles.heroWrap}>
+              <PageHero
+                title="Categories"
+                subtitle="Browse by type"
+                images={DEFAULT_HERO_IMAGES}
+              />
+            </View>
+          }
+          ListFooterComponent={
+            <View style={styles.fullBleed}>
+              <BrandFooter title={'Every category,\none place'} />
+            </View>
+          }
           showsVerticalScrollIndicator={false}
           renderItem={({item}) => (
             <TouchableOpacity
@@ -151,6 +167,17 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,
     gap: spacing.md,
+  },
+  // Hero and footer pad themselves, so cancel the list's padding around them.
+  fullBleed: {
+    marginHorizontal: -spacing.lg,
+  },
+  // Also cancel the list's top padding and row gap so the space above and
+  // below the hero matches the Industries screen (12 each).
+  heroWrap: {
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
+    marginBottom: -spacing.md,
   },
   columnWrapper: {
     gap: CARD_GAP,

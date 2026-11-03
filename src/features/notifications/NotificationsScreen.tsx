@@ -3,6 +3,8 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { Bell, BellOff, ChevronRight, FileText, ReceiptText, Tag, User } from 'lucide-react-native';
 import CommonHeader from '../../components/ui/CommonHeader';
 import EmptyState from '../../components/ui/EmptyState';
+import PageHero, { DEFAULT_HERO_IMAGES } from '../../components/ui/PageHero';
+import BrandFooter from '../../components/ui/BrandFooter';
 import { colors, fontSize, radius, scale, spacing, typography } from '../../theme';
 
 type Notification = {
@@ -73,6 +75,20 @@ export const NotificationsScreen: React.FC = () => {
         data={notifications}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <View style={styles.heroWrap}>
+            <PageHero
+              title="Notifications"
+              subtitle="Stay Updated"
+              images={DEFAULT_HERO_IMAGES}
+            />
+          </View>
+        }
+        ListFooterComponent={
+          <View style={styles.footerWrap}>
+            <BrandFooter title={'Always in the loop,\nnever behind'} />
+          </View>
+        }
         ListEmptyComponent={
           <EmptyState
             icon={BellOff}
@@ -122,6 +138,15 @@ export const NotificationsScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  // Hero and footer pad themselves, so cancel the list's padding and gap.
+  heroWrap: {
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
+    marginBottom: -spacing.sm,
+  },
+  footerWrap: {
+    marginHorizontal: -spacing.lg,
+  },
   list: {
     padding: spacing.lg,
     paddingBottom: spacing.xxxl,

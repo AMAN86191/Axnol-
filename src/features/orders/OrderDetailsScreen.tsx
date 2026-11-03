@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import {
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -42,6 +43,7 @@ import OrderDetailsSkeleton from './components/OrderDetailsSkeleton';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { fetchOrderDetailSlice } from '../../redux/OrderSlice';
 import { invalidateRequests } from '../../api/requestCache';
+import { useRefresh } from '../../hooks/useRefresh';
 import { OrderRecord } from '../../api/OrderProvider';
 import {
   formatOrderDateTime,
@@ -320,6 +322,8 @@ console.log('order Details :', order);
     }, [fetchOrder]),
   );
 
+  const { refreshing, onRefresh } = useRefresh(() => fetchOrder(true));
+
   if (loading && !order) {
     return (
       <View style={styles.container}>
@@ -391,6 +395,14 @@ console.log('order Details :', order);
 
       <CommonHeader title="Order Details" />
       <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,

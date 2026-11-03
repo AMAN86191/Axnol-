@@ -32,6 +32,8 @@ export interface CartState {
   isHydrated: boolean;
   loading: boolean;
   pendingMutations: Record<string, boolean>;
+  /** Quantity the user just chose, shown at once while the server call waits. */
+  pendingQuantities: Record<string, number>;
 }
 
 const initialState: CartState = {
@@ -40,6 +42,7 @@ const initialState: CartState = {
   isHydrated: false,
   loading: false,
   pendingMutations: {},
+  pendingQuantities: {},
 };
 
 const cartSlice = createSlice({
@@ -104,6 +107,30 @@ const cartSlice = createSlice({
         item.quantity -= 1;
       }
     },
+    // Puts the cart back as it was, after an optimistic change failed.
+    restoreCartItems: (state, action: PayloadAction<CartItem[]>) => {
+      state.items = action.payload;
+      state.summary = null;
+    },
+    // Fills in names/images/pack sizes that were looked up after the cart
+    // changed, without touching quantities the user may have edited since.
+    mergeCartItemDetails: (state, action: PayloadAction<CartItem[]>) => {
+      action.payload.forEach(detail => {
+        const item = state.items.find(
+          current =>
+            current.cartItemId !== undefined &&
+            String(current.cartItemId) === String(detail.cartItemId),
+        );
+        if (item) {
+          item.name = detail.name || item.name;
+          item.code = detail.code || item.code;
+          item.image = detail.image || item.image;
+          item.unit = detail.unit || item.unit;
+          item.size = detail.size || item.size;
+          item.packSize = detail.packSize || item.packSize;
+        }
+      });
+    },
     clearCart: state => {
       state.items = [];
       state.summary = null;
@@ -118,6 +145,22 @@ const cartSlice = createSlice({
     },
     setCartLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
+    },
+    setPendingQuantity: (
+      state,
+      action: PayloadAction<{id: string; quantity: number}>,
+    ) => {
+      state.pendingQuantities[action.payload.id] = action.payload.quantity;
+    },
+    // Only clears when nothing newer was chosen since the request was sent.
+    clearPendingQuantity: (
+      state,
+      action: PayloadAction<{id: string; quantity?: number}>,
+    ) => {
+      const {id, quantity} = action.payload;
+      if (quantity === undefined || state.pendingQuantities[id] === quantity) {
+        delete state.pendingQuantities[id];
+      }
     },
     setCartMutationPending: (
       state,
@@ -144,10 +187,14 @@ export const {
   incrementQuantity,
   decrementQuantity,
   clearCart,
+  restoreCartItems,
+  mergeCartItemDetails,
   hydrateCart,
   setCartHydrated,
   setCartLoading,
   setCartMutationPending,
+  setPendingQuantity,
+  clearPendingQuantity,
 } = cartSlice.actions;
 
 export default cartSlice.reducer;
