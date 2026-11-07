@@ -429,7 +429,7 @@ export const HomeScreen: React.FC = () => {
         {/* 4. Featured products */}
         <View style={styles.sectionWrap}>
           <FeaturedProductsSection
-            products={homeProducts.slice(0, 6)}
+            products={homeProducts}
             loading={productsLoading && homeProducts.length === 0}
             onSeeAll={() =>
               openAllProducts()

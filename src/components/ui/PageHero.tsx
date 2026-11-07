@@ -115,7 +115,11 @@ export const PageHero: React.FC<PageHeroProps> = ({
             {title}
           </Text>
           {subtitle ? (
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <Text
+              style={styles.subtitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}>
               {subtitle.toUpperCase()}
             </Text>
           ) : null}
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
   },
   text: {
     paddingLeft: scale(16),
-    width: '46%',
+    width: '54%',
   },
   title: {
     fontSize: scale(26),
@@ -171,7 +175,7 @@ const styles = StyleSheet.create({
     fontSize: scale(10.5),
     fontWeight: '800',
     color: '#0B0F14',
-    letterSpacing: scale(3.2),
+    letterSpacing: scale(2.2),
   },
   photos: {
     position: 'absolute',

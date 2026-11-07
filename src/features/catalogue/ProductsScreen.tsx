@@ -196,20 +196,13 @@ export const ProductsScreen: React.FC = () => {
   const {refreshing, onRefresh} = useRefresh(handleRefresh);
 
   useEffect(() => {
-    // Reuse the list already in the store when it was loaded for these same
-    // filters (e.g. just visited, or loaded by Home); only fetch otherwise.
     const sameFilters =
       listKey === getProductListKey(route.params) && apiProducts.length > 0;
     if (!sameFilters) {
       loadProducts(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadProducts]);
-
-  // const pageTitle = route.params?.title ?? 'Products';
   const pageTitle = 'Products';
-  // const showIndustryBanner =
-  //   !!industryBanner && pageTitle.toLowerCase() === industryBanner.title.toLowerCase();
 
   const openFilter = () => {
     if (!filterRequested.current) {

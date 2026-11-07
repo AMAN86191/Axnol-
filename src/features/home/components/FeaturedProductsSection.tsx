@@ -22,6 +22,7 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
   onPress,
 }) => {
   const isEmpty = !loading && products.length === 0;
+  const featuredProducts = products.slice(-5);
 
   return (
     <>
@@ -51,7 +52,7 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.scrollPad}>
-          {products.map(prod => (
+          {featuredProducts.map(prod => (
             <ProductCard
               key={prod.id}
               product={prod}
