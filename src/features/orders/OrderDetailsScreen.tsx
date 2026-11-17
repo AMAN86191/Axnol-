@@ -7,7 +7,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Alert,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -57,6 +56,7 @@ import {
 } from './orderUtils';
 import {downloadInvoice} from '../../utils/invoiceGenerator';
 import Button from '../../components/ui/Button';
+import {toast} from '../../components/ui/ToastProvider';
 
 type Route = RouteProp<OrdersStackParamList, 'OrderDetails'>;
 
@@ -378,14 +378,23 @@ console.log('order Details :', order);
 
   const handleDownloadInvoice = async () => {
     try {
-      await downloadInvoice(order);
-      // if (result.success) {
-      //   Alert.alert('Invoice Downloaded', 'Invoice saved successfully on this device.');
-      // } else {
-      //   Alert.alert('Error', 'Failed to download invoice. Please try again.');
-      // }
+      const result = await downloadInvoice(order);
+      if (result.success) {
+        toast.success(
+          'Invoice Downloaded',
+          'Invoice saved successfully on this device.',
+        );
+      } else {
+        toast.error(
+          'Download Failed',
+          result.error?.message || 'Failed to download invoice. Please try again.',
+        );
+      }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to download invoice. Please try again.');
+      toast.error(
+        'Download Failed',
+        e?.message || 'Failed to download invoice. Please try again.',
+      );
     }
   };
 
