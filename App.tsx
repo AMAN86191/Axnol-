@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {Alert, AppState} from 'react-native';
+import {AppState} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import notifee, {EventType} from '@notifee/react-native';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -7,7 +7,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {Provider} from 'react-redux';
 import {store} from './src/redux/store';
 import RootNavigator from './src/navigation/RootNavigator';
-import {ToastProvider} from './src/components/ui/ToastProvider';
+import {ToastProvider, toast} from './src/components/ui/ToastProvider';
 import {AddNotificationProvider} from './src/components/ui/AddNotificationProvider';
 import {NotificationProvider} from './src/components/ui/NotificationProvider';
 // import NetworkBanner from './src/components/ui/NetworkBanner';
@@ -28,7 +28,7 @@ const App = () => {
         await openInvoice(path);
       } catch (error: any) {
         openingPath = '';
-        Alert.alert(
+        toast.error(
           'Unable to open invoice',
           error?.message || 'Please install a PDF viewer and try again.',
         );
